@@ -1,0 +1,7 @@
+packages:
+  - web
+
+# Native build scripts pnpm may run. sharp is optional for next/image; Vercel optimises images itself.
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
