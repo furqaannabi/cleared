@@ -13,6 +13,7 @@ const VALID = {
   platform: "youtube_video",
   state: "results",
   deadline: "2026-10-24T23:59:00Z",
+  creatorTimeZone: "UTC",
   hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
   payoutEmail: "ada.okafor@example.com",
   items: [
@@ -44,6 +45,7 @@ describe("DC-FR-01 getDeliverable", () => {
       { ...VALID, state: "approved" }, // not one of the six states
       { ...VALID, items: [{ ...VALID.items[0], status: "probably_fine" }] }, // unknown status
       { ...VALID, deadline: "next Friday" },
+      { ...VALID, creatorTimeZone: "Mars/Olympus_Mons" }, // DC-FR-44: must be a real timezone
     ];
     for (const body of broken) {
       respondWith(body);

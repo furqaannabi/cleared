@@ -33,3 +33,10 @@ export function formatDuration(totalSec: number): string {
   const s = Math.round(totalSec);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
+
+/** "18:59", 24-hour, in the given timezone (the viewer's when omitted). */
+export function formatTime(iso: string, timeZone?: string): string {
+  return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone }).format(
+    new Date(iso),
+  );
+}

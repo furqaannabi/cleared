@@ -9,6 +9,15 @@ import { ITEM_STATUSES } from "@/lib/checklist/item-status";
  */
 
 const itemStatus = z.enum(ITEM_STATUSES);
+
+function isTimeZone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-GB", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
 const isoTime = z.iso.datetime({ offset: true });
 
 export const checklistItemSchema = z.object({
@@ -48,6 +57,8 @@ export const deliverableSchema = z.object({
   platform: z.enum(["youtube_video", "youtube_short", "instagram_reel"]),
   state: z.enum(["no_draft", "checking", "results", "fully_passing", "check_failed", "released"]),
   deadline: isoTime,
+  // DC-FR-44: the deadline is 23:59 on its day here; must be a timezone the browser knows.
+  creatorTimeZone: z.string().refine(isTimeZone, "Unknown timezone"),
   items: z.array(checklistItemSchema),
   // Money is integer minor units, never a float (CLAUDE.md "Money").
   hold: z.object({

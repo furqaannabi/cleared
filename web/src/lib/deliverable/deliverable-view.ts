@@ -1,4 +1,5 @@
 import { describeStatus, tabsFor, type ChecklistTab, type ItemStatus } from "@/lib/checklist/item-status";
+import { deadlineView, type DeadlineView } from "./deadline";
 import { nextStep, type NextStep } from "./next-step";
 import type { ChecklistItem, Deliverable } from "./types";
 
@@ -18,6 +19,8 @@ export interface DeliverableView {
   /** DC-FR-11: leads the next-step bar when the deadline is close, else null. */
   deadlineWarning: string | null;
   nextStep: NextStep;
+  /** DC-FR-44: the shared date, and when it ends for the viewer if their time differs. */
+  deadline: DeadlineView;
 }
 
 export interface ItemView extends ChecklistItem {
@@ -110,5 +113,6 @@ export function deliverableView(d: Deliverable, now: Date, options: { timeZone?:
     items: d.items.map((i) => ({ ...i, change: changeSinceLastRun(i, d.brandName) })),
     deadlineWarning: warning,
     nextStep: leadWith(warning, nextStep(d, options.timeZone)),
+    deadline: deadlineView(d, options.timeZone),
   };
 }

@@ -11,7 +11,8 @@ export const glowTheoryVideo: Deliverable = {
   brandName: "Glow Theory",
   platform: "youtube_video",
   state: "results",
-  deadline: "2026-10-24T23:59:00Z",
+  deadline: "2026-10-24T22:59:00Z", // 23:59 in Lagos
+  creatorTimeZone: "Africa/Lagos",
   hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
   payoutEmail: "ada.okafor@example.com",
   items: [

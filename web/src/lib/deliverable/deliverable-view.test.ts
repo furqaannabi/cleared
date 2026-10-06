@@ -21,6 +21,7 @@ const deliverable = (overrides: Partial<Deliverable> = {}): Deliverable => ({
   platform: "youtube_video",
   state: "results",
   deadline: "2026-10-24T23:59:00Z",
+  creatorTimeZone: "UTC",
   items: [],
   hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
   payoutEmail: "ada.okafor@example.com",
@@ -268,5 +269,40 @@ describe("DC-FR-32 title", () => {
     expect(title("youtube_video")).toBe("Glow Theory · YouTube video");
     expect(title("youtube_short")).toBe("Glow Theory · YouTube Short");
     expect(title("instagram_reel")).toBe("Glow Theory · Instagram Reel");
+  });
+});
+
+describe("DC-FR-44 deadline: one shared date, with the viewer's own time", () => {
+  // 24 Oct, 23:59 in Lagos (UTC+1) is 22:59 UTC.
+  const lagosDeadline = { deadline: "2026-10-24T22:59:00Z", creatorTimeZone: "Africa/Lagos" };
+  const seenFrom = (timeZone: string) =>
+    deliverableView(deliverable(lagosDeadline), NOW, { timeZone }).deadline;
+
+  test("everyone reads the creator's date", () => {
+    expect(seenFrom("Africa/Lagos").date).toBe("24 Oct");
+    expect(seenFrom("America/New_York").date).toBe("24 Oct");
+    expect(seenFrom("Asia/Tokyo").date).toBe("24 Oct");
+  });
+
+  test("adds when it ends for the viewer only when their time differs", () => {
+    expect(seenFrom("Africa/Lagos").yourTime).toBeNull();
+    expect(seenFrom("America/New_York").yourTime).toBe("ends 18:59 your time");
+    expect(seenFrom("Asia/Tokyo").yourTime).toBe("ends 25 Oct, 07:59 your time");
+  });
+
+  test("the next step and the released message use the shared date, with the viewer's time", () => {
+    const fromNewYork = deliverableView(
+      deliverable({ ...lagosDeadline, items: [item("1", "waiting_for_brand")] }),
+      NOW,
+      { timeZone: "America/New_York" },
+    );
+    expect(fromNewYork.nextStep.detail).toBe("You can still upload a fix yourself. Post by 24 Oct (ends 18:59 your time).");
+
+    const fromTokyo = deliverableView(
+      deliverable({ ...lagosDeadline, state: "released", releaseReason: "deadline", releasedAt: "2026-10-25T09:00:00Z" }),
+      NOW,
+      { timeZone: "Asia/Tokyo" },
+    );
+    expect(fromTokyo.nextStep.detail).toContain("The deadline of 24 Oct passed");
   });
 });

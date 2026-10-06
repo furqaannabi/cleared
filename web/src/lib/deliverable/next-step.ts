@@ -1,4 +1,5 @@
 import { formatDay, formatDayTime, formatDuration, formatMoney, itemCount } from "./format";
+import { deadlineView, postBy as postByText } from "./deadline";
 import type { CheckFailure, Deliverable } from "./types";
 
 export type NextStepAction = "upload_draft" | "upload_new_draft" | "upload_again" | "try_again";
@@ -18,7 +19,7 @@ export interface NextStep {
  * @see docs/specs/creator-draft-check-frd.md DC-FR-30
  */
 export function nextStep(d: Deliverable, timeZone?: string): NextStep {
-  const postBy = `Post by ${formatDay(d.deadline, timeZone)}.`;
+  const postBy = postByText(deadlineView(d, timeZone));
   const beforePublish = d.items.filter((i) => i.status !== "at_live_check").length;
 
   switch (d.state) {
@@ -115,7 +116,7 @@ function releasedStep(d: Deliverable, timeZone?: string): NextStep {
   const end = "Nothing more can happen on this deliverable.";
   let why: string;
   if (d.releaseReason === "deadline") {
-    why = `The deadline of ${formatDay(d.deadline, timeZone)} passed before a passing draft was published, so the ${amount} hold was released${on}.`;
+    why = `The deadline of ${deadlineView(d, timeZone).date} passed before a passing draft was published, so the ${amount} hold was released${on}.`;
   } else if (d.cancelledBy === "brand") {
     why = `${d.brandName} cancelled the deal${on}, so the ${amount} hold went back to them.`;
   } else if (d.cancelledBy === "creator") {
