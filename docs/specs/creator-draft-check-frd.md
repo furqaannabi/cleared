@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.3). DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04 and DC-FR-44 are shared product behaviour and still need Furqaan's confirmation; they are not built until he confirms.
+**Status:** Signed by William (revision 1.4). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04) and the deadline timezone (DC-FR-44) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -283,8 +283,7 @@ Fields:
 
 ## Open items
 
-- **Furqaan to confirm** the ask-the-brand behaviour (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04). An ADR is written once he does.
-- **Furqaan to confirm** that deadlines are stored as the end of the day in the creator's timezone (DC-FR-44), and the `person` value for `checkedBy`.
+- **Furqaan to confirm** the `person` value for `checkedBy`.
 - **The length cap** on uploads (and the upload count) is not set. It is an AWS cost limit, owned by Furqaan or both.
 - **Upload draft action** (DC-FR-02, DC-FR-08): until the upload flow's FRD is built, the action runs a mock scenario in development and is behind a flag elsewhere.
 - **API contract**: the provisional shape above becomes the agreed contract, or is revised to match it.
@@ -301,3 +300,5 @@ Fields:
 | 1.2 signed | Revision 1.2 signed by William | none |
 | 1.3 | DC-FR-44 added: deadlines are the end of the day in the creator's timezone, shown in that timezone (William's choice, Furqaan to confirm). `checkedBy` gains `person` for items a person checks. Requests for Furqaan updated | none |
 | 1.3 signed | Revision 1.3 signed by William | none |
+| 1.4 | Ask-the-brand and the deadline timezone recorded as William's decisions; the "wait for Furqaan" gate is removed (Furqaan can supersede). No requirement changes | [Creator asks brand to accept](../decisions/2026-10-06-creator-asks-brand-to-accept-unsure.md), [Deadline in creator's timezone](../decisions/2026-10-06-deadline-end-of-day-creator-timezone.md) |
+| 1.4 signed | Revision 1.4 signed by William | none |

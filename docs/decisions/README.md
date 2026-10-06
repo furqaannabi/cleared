@@ -45,3 +45,5 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-06 | [Frontend mocks are served with MSW](2026-10-06-frontend-mocks-msw.md) | Accepted |
 | 2026-10-06 | [Repo layout: pnpm workspace with web/, backend/ and contract/](2026-10-06-repo-layout-and-package-manager.md) | Accepted |
 | 2026-10-06 | [API responses are validated with Zod](2026-10-06-schema-validation-zod.md) | Accepted |
+| 2026-10-06 | [The creator can ask the brand to accept an Unsure item](2026-10-06-creator-asks-brand-to-accept-unsure.md) | Accepted |
+| 2026-10-06 | [A deadline is the end of its day in the creator's timezone](2026-10-06-deadline-end-of-day-creator-timezone.md) | Accepted |
