@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Revision 1.3 awaiting sign-off (1.2 signed by William). DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04 and DC-FR-44 are shared product behaviour and still need Furqaan's confirmation; they are not built until he confirms.
+**Status:** Signed by William (revision 1.3). DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04 and DC-FR-44 are shared product behaviour and still need Furqaan's confirmation; they are not built until he confirms.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -300,3 +300,4 @@ Fields:
 | 1.2 | Schema validation set to Zod; provisional API paths added to Requests for Furqaan. No requirement changes | [Schema validation with Zod](../decisions/2026-10-06-schema-validation-zod.md) |
 | 1.2 signed | Revision 1.2 signed by William | none |
 | 1.3 | DC-FR-44 added: deadlines are the end of the day in the creator's timezone, shown in that timezone (William's choice, Furqaan to confirm). `checkedBy` gains `person` for items a person checks. Requests for Furqaan updated | none |
+| 1.3 signed | Revision 1.3 signed by William | none |
