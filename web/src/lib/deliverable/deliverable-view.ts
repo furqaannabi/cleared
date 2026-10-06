@@ -9,6 +9,8 @@ export interface TabView {
 }
 
 export interface DeliverableView {
+  /** DC-FR-32: "Glow Theory · YouTube video". */
+  title: string;
   tabs: TabView[];
   /** The item selected when the page opens, if the URL names none. */
   defaultItemId: string | null;
@@ -22,6 +24,12 @@ export interface ItemView extends ChecklistItem {
   /** DC-FR-19: "Was Fix needed", or null when nothing changed. */
   change: string | null;
 }
+
+const PLATFORM_NAME: Record<Deliverable["platform"], string> = {
+  youtube_video: "YouTube video",
+  youtube_short: "YouTube Short",
+  instagram_reel: "Instagram Reel",
+};
 
 const TAB_ORDER: ChecklistTab[] = ["all", "needs_you", "passed", "waiting_for_brand", "at_live_check"];
 
@@ -96,6 +104,7 @@ function leadWith(warning: string | null, step: NextStep): NextStep {
 export function deliverableView(d: Deliverable, now: Date, options: { timeZone?: string } = {}): DeliverableView {
   const warning = deadlineWarning(d, now);
   return {
+    title: `${d.brandName} · ${PLATFORM_NAME[d.platform]}`,
     tabs: checklistTabs(d),
     defaultItemId: defaultItemId(d),
     items: d.items.map((i) => ({ ...i, change: changeSinceLastRun(i, d.brandName) })),

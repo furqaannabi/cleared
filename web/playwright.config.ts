@@ -25,8 +25,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    // CI tests the production build; locally the dev server is reused if already running.
-    command: process.env.CI ? `pnpm build && pnpm start -p ${PORT}` : `pnpm dev -p ${PORT}`,
+    // Until the backend exists, e2e runs on the dev server with MSW mocks on, in CI too:
+    // a production build never mocks (docs/decisions/2026-10-06-frontend-mocks-msw.md).
+    command: `pnpm dev -p ${PORT}`,
+    env: { NEXT_PUBLIC_API_MOCKING: "enabled" },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

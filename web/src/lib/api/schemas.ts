@@ -32,6 +32,8 @@ export const checkFailureSchema = z.discriminatedUnion("kind", [
 export const deliverableSchema = z.object({
   id: z.string().min(1),
   brandName: z.string().min(1),
+  // DC-FR-25, DC-FR-32: sets the title and the player's aspect ratio.
+  platform: z.enum(["youtube_video", "youtube_short", "instagram_reel"]),
   state: z.enum(["no_draft", "checking", "results", "fully_passing", "check_failed", "released"]),
   deadline: isoTime,
   items: z.array(checklistItemSchema),

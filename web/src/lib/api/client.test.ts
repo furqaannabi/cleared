@@ -10,6 +10,7 @@ const api = createApiClient({ baseUrl: BASE });
 const VALID = {
   id: "del_1",
   brandName: "Glow Theory",
+  platform: "youtube_video",
   state: "results",
   deadline: "2026-10-24T23:59:00Z",
   hold: { amountMinor: 120000, currency: "USD" },

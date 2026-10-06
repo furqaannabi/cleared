@@ -15,6 +15,7 @@ const item = (id: string, status: ItemStatus, extra: Partial<ChecklistItem> = {}
 const deliverable = (overrides: Partial<Deliverable> = {}): Deliverable => ({
   id: "del_1",
   brandName: "Glow Theory",
+  platform: "youtube_video",
   state: "results",
   deadline: "2026-10-24T23:59:00Z",
   items: [],
@@ -254,5 +255,14 @@ describe("DC-FR-30 next step", () => {
     expect(next({ state: "check_failed", checkFailure }).detail).toBe(
       "draft_v3.mp4 is longer than drafts can be. Your $1,200.00 hold is still in place.",
     );
+  });
+});
+
+describe("DC-FR-32 title", () => {
+  test("names the brand and the kind of post", () => {
+    const title = (platform: Deliverable["platform"]) => deliverableView(deliverable({ platform }), NOW).title;
+    expect(title("youtube_video")).toBe("Glow Theory · YouTube video");
+    expect(title("youtube_short")).toBe("Glow Theory · YouTube Short");
+    expect(title("instagram_reel")).toBe("Glow Theory · Instagram Reel");
   });
 });
