@@ -17,3 +17,6 @@ coverage/
 *.log
 .vercel/
 .amplify/
+
+# Desktop app output sync
+Claude outputs/

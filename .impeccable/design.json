@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-06T14:27:23+00:00",
+  "title": "Design System: Cleared",
+  "extensions": {
+    "colorMeta": {
+      "espresso": {
+        "role": "primary",
+        "displayName": "Espresso",
+        "canonical": "oklch(32.9% 0.033 75.9)",
+        "tonalRamp": [
+          "#100A04",
+          "#2D251A",
+          "#4E4335",
+          "#716452",
+          "#948775",
+          "#B8AC9C",
+          "#DCD3C5",
+          "#F6EDE1"
+        ]
+      },
+      "marigold": {
+        "role": "secondary",
+        "displayName": "Marigold",
+        "canonical": "oklch(83.7% 0.144 84.5)",
+        "tonalRamp": [
+          "#1A0500",
+          "#3C1F00",
+          "#623D00",
+          "#8A5D00",
+          "#AE8100",
+          "#CFA854",
+          "#F1D08C",
+          "#FFEBB0"
+        ]
+      },
+      "latte": {
+        "role": "neutral",
+        "displayName": "Latte",
+        "canonical": "oklch(95.1% 0.013 82.4)",
+        "tonalRamp": [
+          "#0D0B08",
+          "#292621",
+          "#48453F",
+          "#6A665E",
+          "#8D8981",
+          "#B1ADA7",
+          "#D7D4CE",
+          "#F1EEE9"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(22.0% 0.013 78.0)",
+        "tonalRamp": [
+          "#0D0B08",
+          "#292622",
+          "#48443F",
+          "#6A655E",
+          "#8D8881",
+          "#B1ADA7",
+          "#D7D4CE",
+          "#F1EEE9"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Ground",
+        "canonical": "oklch(97.0% 0.004 91.4)",
+        "tonalRamp": [
+          "#0B0B0A",
+          "#272625",
+          "#464543",
+          "#676663",
+          "#8A8987",
+          "#AEAEAC",
+          "#D5D4D2",
+          "#EFEEED"
+        ]
+      },
+      "pass": {
+        "role": "state",
+        "displayName": "Passed Green",
+        "canonical": "oklch(46.5% 0.114 153.7)",
+        "tonalRamp": [
+          "#001201",
+          "#003113",
+          "#0A532C",
+          "#277848",
+          "#529B6C",
+          "#81BF94",
+          "#AFE3BE",
+          "#CFFCDB"
+        ]
+      },
+      "fail": {
+        "role": "state",
+        "displayName": "Fix Red",
+        "canonical": "oklch(52.0% 0.174 27.6)",
+        "tonalRamp": [
+          "#280000",
+          "#530000",
+          "#811412",
+          "#B2312B",
+          "#D85C51",
+          "#F88A7E",
+          "#FFB8AB",
+          "#FFD6CB"
+        ]
+      },
+      "unsure": {
+        "role": "state",
+        "displayName": "Unsure Amber",
+        "canonical": "oklch(48.1% 0.106 67.1)",
+        "tonalRamp": [
+          "#1A0400",
+          "#3D1D00",
+          "#633A00",
+          "#8C5918",
+          "#B07D45",
+          "#D2A475",
+          "#F4CCA4",
+          "#FFE8C5"
+        ]
+      },
+      "waiting": {
+        "role": "state",
+        "displayName": "Waiting Grey",
+        "canonical": "oklch(46.0% 0.018 76.9)",
+        "tonalRamp": [
+          "#0E0B07",
+          "#2A2620",
+          "#4A443C",
+          "#6C655B",
+          "#8F887E",
+          "#B3ADA4",
+          "#D9D3CC",
+          "#F2EEE7"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "page-title": {
+        "displayName": "Page title",
+        "purpose": "The deliverable name at the top of a screen."
+      },
+      "amount": {
+        "displayName": "Amount",
+        "purpose": "The held amount on the money card only."
+      },
+      "section-title": {
+        "displayName": "Section title",
+        "purpose": "Section headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All running UI text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels in panels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "panel",
+        "value": "0 1px 2px rgba(28,21,10,.05)",
+        "purpose": "Bordered panels; nearly flat."
+      },
+      {
+        "name": "money-card",
+        "value": "0 2px 4px rgba(120,80,0,.12), 0 14px 32px rgba(120,80,0,.18)",
+        "purpose": "The money card, the one lifted surface."
+      },
+      {
+        "name": "floating-bar",
+        "value": "0 8px 24px rgba(28,21,10,.22)",
+        "purpose": "Fixed next-step bar on phones."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(.16,1,.3,1)",
+        "purpose": "Playhead, selection and expand transitions."
+      },
+      {
+        "name": "duration-state",
+        "value": "150-350ms",
+        "purpose": "State changes; never decorative load sequences."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "grid-full-columns",
+        "value": "1000px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action on a screen, named for what it does.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><path d=\"m17 8-5-5-5 5\"/><path d=\"M12 3v12\"/></svg>Upload new draft</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:8px;font-family:Figtree,system-ui,sans-serif;font-weight:700;font-size:14px;background:#3F3322;color:#fff;border:0;border-radius:999px;padding:11px 18px;box-shadow:0 2px 6px rgba(28,21,10,.2);cursor:pointer;transition:background .15s,transform .15s}.ds-btn-primary:hover{background:#554631}.ds-btn-primary:active{transform:translateY(1px)}.ds-btn-primary:focus-visible{outline:2px solid #3F3322;outline-offset:2px}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action beside a primary.",
+      "html": "<button class=\"ds-btn-ghost\">View brief</button>",
+      "css": ".ds-btn-ghost{font-family:Figtree,system-ui,sans-serif;font-weight:700;font-size:14px;background:#fff;color:#3F3322;border:1px solid #E4DCCE;border-radius:999px;padding:11px 18px;cursor:pointer;transition:background .15s}.ds-btn-ghost:hover{background:#FAF8F4}.ds-btn-ghost:focus-visible{outline:2px solid #3F3322;outline-offset:2px}"
+    },
+    {
+      "name": "Result Chips",
+      "kind": "chip",
+      "refersTo": "chip-pass",
+      "description": "Icon plus word for every checklist result.",
+      "html": "<span class=\"ds-chip ds-pass\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></svg>Passed</span> <span class=\"ds-chip ds-fail\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18M6 6l12 12\"/></svg>Fix needed</span>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;gap:6px;font-family:Figtree,system-ui,sans-serif;font-weight:700;font-size:12.5px;padding:4px 10px 4px 8px;border-radius:999px}.ds-pass{background:#DDF4E6;color:#0B6B3A}.ds-fail{background:#FFE7E4;color:#B8302A}"
+    },
+    {
+      "name": "Filter Tabs",
+      "kind": "nav",
+      "refersTo": "tab-selected",
+      "description": "Pill tabs that filter the checklist, with counts.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><button class=\"ds-tab\" aria-selected=\"true\">All 9</button><button class=\"ds-tab\">Needs you 2</button><button class=\"ds-tab\">Passed 4</button></div>",
+      "css": ".ds-tabs{display:inline-flex;gap:4px;background:#fff;border:1px solid #E8E4DC;padding:4px;border-radius:999px}.ds-tab{font-family:Figtree,system-ui,sans-serif;font-weight:700;font-size:13.5px;color:#675F55;background:none;border:0;padding:7px 14px;border-radius:999px;cursor:pointer}.ds-tab:hover{color:#1E1A14}.ds-tab[aria-selected=\"true\"]{background:#3F3322;color:#fff}.ds-tab:focus-visible{outline:2px solid #3F3322;outline-offset:2px}"
+    },
+    {
+      "name": "Money Card",
+      "kind": "card",
+      "refersTo": "money-card",
+      "description": "The held amount, its PayPal reference and its stage.",
+      "html": "<div class=\"ds-money\"><svg class=\"ds-seal\" viewBox=\"0 0 24 24\"><path d=\"M12.00 1.40A2.48 2.48 0 0 1 16.60 2.45A2.48 2.48 0 0 1 20.29 5.39A2.48 2.48 0 0 1 22.33 9.64A2.48 2.48 0 0 1 22.33 14.36A2.48 2.48 0 0 1 20.29 18.61A2.48 2.48 0 0 1 16.60 21.55A2.48 2.48 0 0 1 12.00 22.60A2.48 2.48 0 0 1 7.40 21.55A2.48 2.48 0 0 1 3.71 18.61A2.48 2.48 0 0 1 1.67 14.36A2.48 2.48 0 0 1 1.67 9.64A2.48 2.48 0 0 1 3.71 5.39A2.48 2.48 0 0 1 7.40 2.45A2.48 2.48 0 0 1 12.00 1.40Z\" fill=\"#231A00\"/><g transform=\"translate(6 6) scale(.5)\" stroke=\"#F5C14B\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"11\" width=\"16\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4\"/></g></svg><div class=\"ds-lab\">Held in PayPal for this video</div><div class=\"ds-amt\">$1,200.00</div><div class=\"ds-ref\">Ref 7HK21934LM · held 3 Oct</div><ol class=\"ds-track\"><li class=\"on\">Held</li><li>Confirmed</li><li>Captured</li><li>Paid</li></ol></div>",
+      "css": ".ds-money{position:relative;max-width:380px;background:#F5C14B;color:#231A00;border-radius:20px;padding:20px 22px 18px;overflow:hidden;isolation:isolate;box-shadow:0 2px 4px rgba(120,80,0,.12),0 14px 32px rgba(120,80,0,.18);font-family:Figtree,system-ui,sans-serif}.ds-money::before{content:\"\";position:absolute;top:-110px;right:-90px;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.24);z-index:-1}.ds-seal{position:absolute;top:16px;right:18px;width:50px;height:50px}.ds-lab{font-size:12.5px;font-weight:700;color:#5A4510}.ds-amt{font-family:\"Bricolage Grotesque\",Figtree,sans-serif;font-weight:800;font-size:38px;line-height:1.05;margin-top:6px;font-variant-numeric:tabular-nums}.ds-ref{font-size:12.5px;font-weight:600;color:#5A4510;margin-top:6px}.ds-track{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:16px 0 0;padding:0}.ds-track li{font-size:12px;font-weight:700;text-align:center;padding:6px 0;border-radius:999px;background:#E2B144;color:#5A4510}.ds-track li.on{background:#231A00;color:#F5C14B}"
+    },
+    {
+      "name": "Seal",
+      "kind": "custom",
+      "description": "14-scallop badge that marks a checked item or money state.",
+      "html": "<svg class=\"ds-seal-sm\" viewBox=\"0 0 24 24\"><path d=\"M12.00 1.40A2.48 2.48 0 0 1 16.60 2.45A2.48 2.48 0 0 1 20.29 5.39A2.48 2.48 0 0 1 22.33 9.64A2.48 2.48 0 0 1 22.33 14.36A2.48 2.48 0 0 1 20.29 18.61A2.48 2.48 0 0 1 16.60 21.55A2.48 2.48 0 0 1 12.00 22.60A2.48 2.48 0 0 1 7.40 21.55A2.48 2.48 0 0 1 3.71 18.61A2.48 2.48 0 0 1 1.67 14.36A2.48 2.48 0 0 1 1.67 9.64A2.48 2.48 0 0 1 3.71 5.39A2.48 2.48 0 0 1 7.40 2.45A2.48 2.48 0 0 1 12.00 1.40Z\" fill=\"#DDF4E6\"/><g transform=\"translate(6 6) scale(.5)\" stroke=\"#0B6B3A\" stroke-width=\"3.4\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></g></svg><svg class=\"ds-seal-sm\" viewBox=\"0 0 24 24\"><path d=\"M12.00 1.40A2.48 2.48 0 0 1 16.60 2.45A2.48 2.48 0 0 1 20.29 5.39A2.48 2.48 0 0 1 22.33 9.64A2.48 2.48 0 0 1 22.33 14.36A2.48 2.48 0 0 1 20.29 18.61A2.48 2.48 0 0 1 16.60 21.55A2.48 2.48 0 0 1 12.00 22.60A2.48 2.48 0 0 1 7.40 21.55A2.48 2.48 0 0 1 3.71 18.61A2.48 2.48 0 0 1 1.67 14.36A2.48 2.48 0 0 1 1.67 9.64A2.48 2.48 0 0 1 3.71 5.39A2.48 2.48 0 0 1 7.40 2.45A2.48 2.48 0 0 1 12.00 1.40Z\" fill=\"#FFE7E4\"/><g transform=\"translate(6 6) scale(.5)\" stroke=\"#B8302A\" stroke-width=\"3.4\" fill=\"none\" stroke-linecap=\"round\"><path d=\"M18 6 6 18M6 6l12 12\"/></g></svg>",
+      "css": ".ds-seal-sm{width:32px;height:32px;margin-right:8px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Proof earns the seal, the seal releases the money.",
+    "overview": "Cleared has to win two people at once. Creators should feel welcomed: the screen is warm, rounded and plain-spoken, and it always says what happens next. Brands should feel they are dealing with a creator who takes the work seriously: the screen reads like a calm, premium finance product, never a hype tool. The world gives the product four things only: an espresso and marigold palette, friendly rounded type, comfortable density, and one signature move, the scalloped seal. Everything else is standard, familiar product UI.",
+    "keyCharacteristics": [
+      "Light, warm-neutral ground under a committed espresso shell (rail, top bar, primary actions, selected tabs).",
+      "Marigold is the money colour: the money card is the brightest thing on the screen.",
+      "Evidence and money on the same screen: the money card sits beside the proof.",
+      "Status colours (green, red, amber, grey) never collide with the brand colours.",
+      "Every status is an icon plus a word inside a seal or chip, never colour alone.",
+      "Plain, warm copy that names the next action."
+    ],
+    "rules": [
+      {
+        "name": "The Marigold Is Money Rule",
+        "body": "Marigold marks money and progress only: the money card, the logo seal and the current deal step. Never on decoration, never on a button, never as a page wash.",
+        "section": "colors"
+      },
+      {
+        "name": "The Brand Is Not A Status Rule",
+        "body": "Espresso and marigold never stand in for passed, failed, unsure or waiting. Green means passed and nothing else on the screen is green.",
+        "section": "colors"
+      },
+      {
+        "name": "The Never Colour Alone Rule",
+        "body": "A result is always an icon and a word (check + \"Passed\", cross + \"Fix needed\", question + \"Unsure\", clock + \"At live check\"). Colour reinforces; it never carries the meaning by itself.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Voice Rule",
+        "body": "Bricolage is a headline voice. It never appears in labels, buttons, chips, tables or navigation.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Sideways Table Rule",
+        "body": "A data table never scrolls horizontally. AG Grid renders from 768px up and drops secondary columns as it narrows; below 768px the same rows render as cards (`docs/decisions/2026-10-06-evidence-view-ag-grid.md`).",
+        "section": "layout"
+      },
+      {
+        "name": "The Edge Or Lift Rule",
+        "body": "An element gets a defined edge or a soft lift, not both. Bordered panels stay nearly flat; lifted elements drop the border.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do put the money and the proof on the same screen.",
+      "Do say what happens next in plain words, including when nothing can happen yet.",
+      "Do show every result as an icon plus a word.",
+      "Do use tabular figures for every amount, time and count.",
+      "Do label synthetic or placeholder content as such.",
+      "Do theme browser surfaces: selection in `latte-line`, espresso focus rings with 2px offset, latte-tinted scrollbars."
+    ],
+    "donts": [
+      "Don't use dark, neon \"crypto dashboard\" styling.",
+      "Don't use hype styling: loud gradients, emoji, exclamation-heavy copy.",
+      "Don't use rainbow palettes or one colour per item; the world is espresso, marigold and warm neutrals.",
+      "Don't spend marigold on decoration or buttons.",
+      "Don't use green for anything but \"Passed\".",
+      "Don't scroll a table sideways.",
+      "Don't use Bricolage outside the logo, page title, section titles and the amount.",
+      "Don't put a label or eyebrow above a heading."
+    ]
+  }
+}

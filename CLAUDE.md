@@ -10,7 +10,8 @@
 - Before starting any feature: invoke the `grill-me` skill to stress-test requirements as developer questions, one at a time, with a recommended answer for each.
 - Then invoke `to-prd` to turn the answers into (or update) the surface's FRD in `docs/specs/`, and stop for the human's sign-off. Update the Status table in `docs/specs/README.md`.
 - **A spec is signed only when the human says "signed" or "approve the spec" after seeing it.** "Proceed", "continue", "go", or an answer to a question is not a signature. Before recording a signature, quote the spec's Status line back and wait for the yes. The agent never writes "Signed" on the human's behalf.
-- Before building anything visual: invoke `/impeccable` (install it into `.claude/skills/` first if it is missing). Spec wins over taste. Mockups from the human override both. New surfaces inherit `DESIGN.md`; no new direction rolls.
+- **Exception:** design prototypes in `design/` are exempt from the spec and TDD rules (see `docs/decisions/2026-10-06-design-prototype-first.md`). They never ship and `web/` never imports from them.
+- Before building anything visual: invoke `/impeccable` (vendored in `.claude/skills/impeccable`). Spec wins over taste. Mockups from the human override both. New surfaces inherit `DESIGN.md`; no new direction rolls.
 - Before debugging: invoke the `diagnose` skill.
 - Every feature is test-driven: write the failing test first, then the implementation. Invoke the `tdd` skill before any feature work. Components get tests too, not only pure functions.
 - Never make architecture decisions autonomously. Present 2–3 options with trade-offs; the human chooses.

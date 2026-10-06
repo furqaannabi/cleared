@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Draft check · Glow Theory · Cleared (design prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.0.4/dist/ag-grid-community.min.js"></script>
+<style>
+/* Design prototype: not product code. See docs/decisions/2026-10-06-design-prototype-first.md */
+:root{
+  /* espresso: the brand */
+  --brand-900:#1C150A; --brand-800:#2C2314; --brand-700:#3F3322; --brand-600:#554631;
+  --brand-200:#E4DCCE; --brand-100:#F3EEE5; --brand-50:#FAF8F4;
+  --rail:#2C2314; --scrim:rgba(28,21,10,.84); --ground:#F6F5F2;
+  --on-rail:rgba(255,255,255,.94); --on-rail-2:rgba(255,255,255,.68);
+  /* marigold: the money colour */
+  --marigold:#F5C14B; --marigold-ink:#231A00; --marigold-ink-2:#5A4510; --marigold-chip:#E2B144;
+  --pass:#0B6B3A; --pass-bg:#DDF4E6;
+  --ink:#1E1A14; --ink-2:#4A4339; --ink-3:#675F55; --ink-4:#6E665B;
+  --surface:#FFFFFF; --line:#E8E4DC; --line-2:#F1EEE8;
+  --fail:#B8302A; --fail-bg:#FFE7E4; --fail-tint:#FFF7F6; --fail-line:#F5C9C4;
+  --unsure:#855000; --unsure-bg:#FFEFC7;
+  --wait:#5E574D; --wait-bg:#F0EDE7;
+  --radius-xs:6px; --radius-s:10px; --radius-m:14px; --radius-l:20px;
+  --shadow-1:0 1px 2px rgba(28,21,10,.05);
+  --shadow-card:0 2px 4px rgba(120,80,0,.12),0 14px 32px rgba(120,80,0,.18);
+  --font-ui:Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-head:"Bricolage Grotesque",Figtree,system-ui,sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font-ui);font-size:15px;line-height:1.5;color:var(--ink);background:var(--ground);font-variant-numeric:tabular-nums}
+::selection{background:var(--brand-200);color:var(--brand-900)}
+:focus-visible{outline:2px solid var(--brand-700);outline-offset:2px;border-radius:var(--radius-xs)}
+*{scrollbar-color:var(--brand-200) transparent}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.rail{background:var(--rail);color:var(--on-rail);padding:22px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;padding:0 10px;font-family:var(--font-head);font-weight:800;font-size:21px;color:#fff;text-decoration:none}
+.logo .seal{width:26px;height:26px}
+.rail h2{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--on-rail-2);margin:26px 10px 8px}
+.rail nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;text-decoration:none;font-weight:600;font-size:14.5px;color:var(--on-rail);transition:background .15s}
+.rail nav a:hover{background:rgba(255,255,255,.08)}
+.rail nav a[aria-current="page"]{background:rgba(255,255,255,.14);color:#fff}
+.av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}
+.rail .meta{display:block;font-size:12px;font-weight:500;color:var(--on-rail-2);line-height:1.3}
+.rail nav a[aria-current="page"] .meta{color:var(--on-rail)}
+.rail .me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 10px;border-top:1px solid rgba(255,255,255,.12);font-size:14px;font-weight:600}
+.topbar{display:none}
+
+main{padding:28px 36px 64px;min-width:0}
+.wrap{max-width:1240px;margin:0 auto}
+.crumb{font-size:13px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+.crumb a{text-decoration:none}.crumb a:hover{text-decoration:underline;text-underline-offset:3px}
+.crumb svg{width:14px;height:14px}
+
+.head{margin-top:10px}
+h1{font-family:var(--font-head);font-weight:700;font-size:30px;line-height:1.15;letter-spacing:-.01em}
+.sub{margin-top:6px;color:var(--ink-3);font-size:14.5px;display:flex;flex-wrap:wrap;gap:4px 8px}
+.sub span{display:inline-flex;align-items:center;gap:6px}
+.sub span+span::before{content:"·";margin-right:8px;color:var(--ink-4)}
+.sub svg{width:15px;height:15px}
+
+/* steps */
+.steps{list-style:none;display:flex;align-items:center;gap:0;margin-top:22px}
+.steps li{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--ink-4);white-space:nowrap}
+.steps li .seal{width:22px;height:22px}
+.steps li.done{color:var(--brand-700)}
+.steps li.now{color:var(--ink)}
+.steps .bar{flex:1;min-width:16px;height:2px;background:var(--line);margin:0 10px;border-radius:2px}
+.steps .bar.done{background:var(--brand-700)}
+.steps-compact{display:none}
+
+/* money card: marigold */
+.money{position:relative;background:var(--marigold);color:var(--marigold-ink);border-radius:var(--radius-l);padding:20px 22px 18px;box-shadow:var(--shadow-card);overflow:hidden;isolation:isolate}
+.money::before{content:"";position:absolute;top:-110px;right:-90px;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.24);z-index:-1}
+.money .lab{font-size:12.5px;font-weight:700;color:var(--marigold-ink-2);display:flex;align-items:center;gap:6px}
+.money .amt{font-family:var(--font-head);font-weight:800;font-size:38px;line-height:1.05;margin-top:6px;letter-spacing:-.01em}
+.money .ref{font-size:12.5px;font-weight:600;color:var(--marigold-ink-2);margin-top:6px}
+.money .seal-big{position:absolute;top:16px;right:18px;width:50px;height:50px}
+.track{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:16px}
+.track li{font-size:12px;font-weight:700;text-align:center;padding:6px 0;border-radius:999px;background:var(--marigold-chip);color:var(--marigold-ink-2)}
+.track li.on{background:var(--marigold-ink);color:var(--marigold)}
+.money .to{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;font-weight:600;color:var(--marigold-ink-2);margin-top:14px;padding-top:12px;border-top:1px solid rgba(35,26,0,.14)}
+.money .to b{color:var(--marigold-ink);font-weight:800}
+
+/* work row */
+.work{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,1fr);gap:20px;margin-top:24px;align-items:start}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-l);box-shadow:var(--shadow-1)}
+
+/* player */
+.player{padding:14px}
+.screen{position:relative;aspect-ratio:16/9;border-radius:var(--radius-m);overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 78% 30%,rgba(242,193,78,.30),rgba(242,193,78,0) 55%),
+    radial-gradient(90% 80% at 20% 85%,rgba(255,255,255,.16),rgba(255,255,255,0) 60%),
+    linear-gradient(160deg,var(--brand-700),var(--brand-900) 72%)}
+.screen .file{position:absolute;left:14px;top:12px;font-size:12px;font-weight:700;color:#fff;background:var(--scrim);padding:4px 10px;border-radius:999px}
+.screen .synth{position:absolute;right:14px;top:12px;font-size:11px;font-weight:700;color:#fff;background:var(--scrim);padding:3px 9px;border-radius:999px}
+.screen .play{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(255,255,255,.95);color:var(--brand-700);display:grid;place-items:center;box-shadow:0 6px 18px rgba(28,21,10,.25);transition:transform .2s var(--ease)}
+.screen .play:hover{transform:scale(1.06)}
+.screen .play svg{width:24px;height:24px;fill:currentColor;stroke:none;margin-left:3px}
+.screen .now{position:absolute;left:14px;bottom:12px;font-size:13px;font-weight:700;color:#fff;background:var(--scrim);padding:4px 10px;border-radius:999px}
+.scrub{position:relative;margin:18px 6px 4px;height:58px}
+.scrub .rail-line{position:absolute;left:0;right:0;top:34px;height:8px;border-radius:999px;background:var(--line-2)}
+.scrub .played{position:absolute;left:0;right:0;top:34px;height:8px;border-radius:999px;background:var(--brand-200);transform-origin:left center;transform:scaleX(0);transition:transform .35s var(--ease)}
+.scrub .seg{position:absolute;top:34px;height:8px;background:var(--brand-700);opacity:.28;border-radius:999px}
+.scrub .head-line{position:absolute;top:26px;width:3px;height:24px;margin-left:-1.5px;border-radius:2px;background:var(--ink);transition:left .35s var(--ease)}
+.mk{position:absolute;top:2px;width:30px;height:30px;margin-left:-15px;display:grid;place-items:center;border-radius:50%;transition:transform .15s var(--ease)}
+.mk .seal{width:26px;height:26px}
+.mk::after{content:"";position:absolute;left:50%;top:28px;width:2px;height:6px;margin-left:-1px;background:var(--ink-4)}
+.mk:hover{transform:translateY(-2px)}
+.mk[aria-pressed="true"] .seal{filter:drop-shadow(0 0 0 2px #fff)}
+.mk[aria-pressed="true"]{transform:translateY(-3px) scale(1.12)}
+.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3);margin:0 6px}
+
+/* evidence detail */
+.detail{padding:20px 22px;display:flex;flex-direction:column;min-height:100%}
+.detail .top{display:flex;align-items:flex-start;gap:12px}
+.detail .top .seal{width:40px;height:40px;margin-top:2px}
+.detail h3{font-size:18px;font-weight:700;line-height:1.3}
+.detail .kind{font-size:13px;color:var(--ink-3);margin-top:2px}
+.detail dl{margin-top:16px;display:grid;gap:14px}
+.detail dt{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.02em}
+.detail dd{margin-top:3px;font-size:14.5px;color:var(--ink)}
+.quote{background:var(--brand-50);border-radius:var(--radius-s);padding:10px 12px}
+.fail .quote,.quote.fail{background:var(--fail-tint)}
+.brief{display:flex;gap:8px;align-items:flex-start;color:var(--ink-2)}
+.brief svg{width:16px;height:16px;margin-top:3px;color:var(--ink-3)}
+.detail .what{margin-top:auto;padding-top:16px;font-size:14px;font-weight:600;color:var(--ink-2)}
+.fade{animation:fade .22s var(--ease)}
+@keyframes fade{from{opacity:.35;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:4px 10px 4px 8px;border-radius:999px;white-space:nowrap;line-height:1.4}
+.chip svg{width:14px;height:14px;stroke-width:2.6}
+.chip.pass{background:var(--pass-bg);color:var(--pass)}
+.chip.fail{background:var(--fail-bg);color:var(--fail)}
+.chip.unsure{background:var(--unsure-bg);color:var(--unsure)}
+.chip.live{background:var(--wait-bg);color:var(--wait)}
+
+/* next step */
+.next{display:flex;flex-direction:column;align-items:stretch;gap:14px;background:var(--brand-50);border-radius:var(--radius-l);padding:16px 18px 16px 20px}
+.next p{font-size:14.5px;color:var(--ink-2);max-width:72ch}
+.next p b{color:var(--ink)}
+.next .acts{display:flex;gap:10px;justify-content:flex-end}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:11px 18px;font-weight:700;font-size:14px;transition:background .15s,transform .15s var(--ease),box-shadow .15s}
+.btn svg{width:17px;height:17px}
+.btn.primary{background:var(--brand-700);color:#fff;box-shadow:0 2px 6px rgba(28,21,10,.2)}
+.btn.primary:hover{background:var(--brand-600)}
+.btn.primary:active{transform:translateY(1px)}
+.btn.ghost{background:#fff;color:var(--brand-700);border:1px solid var(--brand-200)}
+.btn.ghost:hover{background:var(--brand-50)}
+
+/* checklist */
+.list-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-top:34px;flex-wrap:wrap}
+h2.sec{font-family:var(--font-head);font-weight:700;font-size:21px}
+h2.sec small{font-family:var(--font-ui);font-size:14px;font-weight:600;color:var(--ink-3);margin-left:6px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);padding:4px;border-radius:999px}
+.tabs button{padding:7px 14px;border-radius:999px;font-size:13.5px;font-weight:700;color:var(--ink-3);display:inline-flex;gap:6px;align-items:center;transition:background .15s,color .15s}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{background:var(--brand-700);color:#fff}
+.tabs .n{font-size:12px;opacity:.8}
+#grid{margin-top:14px}
+.ag-cell-seal{display:flex;align-items:center;height:100%}
+.ag-cell-seal .seal{width:28px;height:28px}
+.cell2{display:flex;flex-direction:column;justify-content:center;height:100%;line-height:1.35}
+.cell2 b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell2 span{font-size:12.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-fail{--ag-row-hover-color:#FFF0EE}
+.ag-row.row-fail{background:var(--fail-tint)}
+.ag-row.row-fail{--ag-selected-row-background-color:#FFEDEA;--ag-row-hover-color:#FFF0EE}
+.t-strong{font-weight:700;color:var(--brand-700)}
+.cards{display:none;list-style:none;margin-top:14px;gap:10px;flex-direction:column}
+.empty{display:none;margin-top:14px;padding:28px;border:1px dashed var(--line);border-radius:var(--radius-l);text-align:center;color:var(--ink-3)}
+.foot{margin-top:28px;font-size:12.5px;color:var(--ink-4)}
+
+/* ---------- tablet ---------- */
+@media (max-width:1023px){
+  .shell{grid-template-columns:1fr}
+  .rail{display:none}
+  .topbar{display:flex;align-items:center;justify-content:space-between;background:var(--rail);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:5}
+  .topbar .logo{padding:0;font-size:19px}
+  .topbar button{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;padding:9px 12px;border-radius:12px;min-height:44px}
+  .topbar button:hover{background:rgba(255,255,255,.1)}
+  main{padding:22px 24px 64px}
+  .head{grid-template-columns:1fr}
+  .work{grid-template-columns:1fr}
+  .col{display:contents}
+  .money{order:1}.player{order:2}.next{order:3}.detail-panel{order:4}
+}
+/* ---------- phone ---------- */
+@media (max-width:767px){
+  body{font-size:15px}
+  main{padding:16px 16px 140px}
+  h1{font-size:24px}
+  .crumb{display:none}
+  .sub span:nth-child(4){display:none}
+  .steps{display:none}
+  .steps-compact{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13.5px;font-weight:700;color:var(--ink-2)}
+  .steps-compact .dots{display:flex;gap:4px}
+  .steps-compact .dots i{width:18px;height:6px;border-radius:999px;background:var(--line)}
+  .steps-compact .dots i.done{background:var(--brand-700)}
+  .steps-compact .dots i.now{background:var(--marigold)}
+  .money{padding:18px}
+  .money .amt{font-size:34px}
+  .money .seal-big{width:46px;height:46px}
+  .work{margin-top:18px}
+  .detail-panel{display:none}
+  .player{padding:10px}
+  .next{position:fixed;left:12px;right:12px;bottom:12px;z-index:6;flex-direction:column;align-items:stretch;gap:12px;padding:14px;background:#fff;box-shadow:0 8px 24px rgba(28,21,10,.22)}
+  .next p{font-size:14px}
+  .next .long{display:none}
+  .next .acts .ghost{display:none}
+  .next .acts .btn{flex:1;justify-content:center;min-height:48px}
+  .list-head{margin-top:24px;align-items:flex-start;flex-direction:column}
+  .tabs{width:100%;justify-content:space-between}
+  .tabs button{padding:8px 10px;font-size:13px;min-height:40px}
+  #grid{display:none}
+  .cards{display:flex}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);overflow:hidden}
+  .card[data-result="fail"]{border-color:var(--fail-line);background:var(--fail-tint)}
+  .card > button{width:100%;display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;text-align:left;padding:13px 14px;min-height:60px}
+  .card .seal{width:30px;height:30px}
+  .card b{display:block;font-weight:700;font-size:14.5px;line-height:1.3}
+  .card .m{font-size:12.5px;color:var(--ink-3)}
+  .card .more{display:none;padding:0 14px 14px 58px;font-size:14px;color:var(--ink-2)}
+  .card .more .quote{margin-bottom:8px}
+  .card[data-open="true"] .more{display:block}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="seal-shape" d="M12.00 1.40A2.48 2.48 0 0 1 16.60 2.45A2.48 2.48 0 0 1 20.29 5.39A2.48 2.48 0 0 1 22.33 9.64A2.48 2.48 0 0 1 22.33 14.36A2.48 2.48 0 0 1 20.29 18.61A2.48 2.48 0 0 1 16.60 21.55A2.48 2.48 0 0 1 12.00 22.60A2.48 2.48 0 0 1 7.40 21.55A2.48 2.48 0 0 1 3.71 18.61A2.48 2.48 0 0 1 1.67 14.36A2.48 2.48 0 0 1 1.67 9.64A2.48 2.48 0 0 1 3.71 5.39A2.48 2.48 0 0 1 7.40 2.45A2.48 2.48 0 0 1 12.00 1.40Z"/>
+    <g id="ic-check"><path d="M20 6 9 17l-5-5"/></g>
+    <g id="ic-x"><path d="M18 6 6 18M6 6l12 12"/></g>
+    <g id="ic-q"><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></g>
+    <g id="ic-clock"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g>
+    <g id="ic-lock"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></g>
+    <g id="ic-dollar"><path d="M12 3v18"/><path d="M16.5 7.5c-.7-1.3-2.4-2-4.5-2-2.6 0-4.5 1.3-4.5 3.2 0 4.6 9 2.4 9 7 0 1.9-1.9 3.3-4.5 3.3-2.3 0-4.1-.8-4.8-2.3"/></g>
+    <g id="ic-dot"><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/></g>
+  </defs>
+</svg>
+
+<div class="shell">
+  <aside class="rail" aria-label="Main">
+    <a class="logo" href="#"><svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--marigold)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-800)" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></g></svg>Cleared</a>
+    <nav>
+      <h2>Deals</h2>
+      <a href="#" aria-current="page"><span class="av" style="background:#FCE3EC;color:#9C2A55">GT</span><span>Glow Theory<span class="meta">Draft check</span></span></a>
+      <a href="#"><span class="av" style="background:#DCEBFF;color:#1F4E9C">NC</span><span>Northbound Coffee<span class="meta">Brand review · 31h left</span></span></a>
+      <a href="#"><span class="av" style="background:#FFF0C9;color:#7A4D00">KA</span><span>Kora Audio<span class="meta">Cleared · paid 2 Oct</span></span></a>
+      <h2>You</h2>
+      <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>Payouts</a>
+      <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Connected accounts</a>
+    </nav>
+    <div class="me"><span class="av" style="background:var(--marigold);color:var(--brand-900)">AO</span>Ada Okafor</div>
+  </aside>
+
+  <div>
+    <header class="topbar">
+      <a class="logo" href="#"><svg class="seal" viewBox="0 0 24 24" style="width:24px;height:24px"><use href="#seal-shape" fill="var(--marigold)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-800)" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></g></svg>Cleared</a>
+      <button aria-label="Open deals menu"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Deals</button>
+    </header>
+
+    <main>
+      <div class="wrap">
+        <div class="crumb"><a href="#">Deals</a><svg class="i" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg><a href="#">Glow Theory</a><svg class="i" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg><span>YouTube video</span></div>
+
+        <section class="head">
+          <div>
+            <h1>Glow Theory · YouTube video</h1>
+            <p class="sub">
+              <span>Draft check, run 2</span>
+              <span>6:48 long</span>
+              <span>Post by 24 Oct</span>
+              <span>Deliverable 1 of 2</span>
+            </p>
+            <ol class="steps" aria-label="Deal progress">
+              <li class="done"><svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--brand-100)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-700)" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></g></svg>Checklist agreed</li>
+              <li class="bar done" aria-hidden="true"></li>
+              <li class="done"><svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--brand-100)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-700)" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></g></svg>Held</li>
+              <li class="bar done" aria-hidden="true"></li>
+              <li class="now" aria-current="step"><svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--marigold)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-900)" stroke-width="3" fill="none"><use href="#ic-dot"/></g></svg>Draft check</li>
+              <li class="bar" aria-hidden="true"></li>
+              <li>Brand review</li>
+              <li class="bar" aria-hidden="true"></li>
+              <li>Publish</li>
+              <li class="bar" aria-hidden="true"></li>
+              <li>Live check</li>
+              <li class="bar" aria-hidden="true"></li>
+              <li>Paid</li>
+            </ol>
+            <div class="steps-compact"><span class="dots"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i></span>Step 3 of 7 · Draft check</div>
+          </div>
+
+        </section>
+
+        <section class="work">
+          <div class="col">
+          <div class="panel player">
+            <div class="screen">
+              <span class="file">draft_v2.mp4</span>
+              <span class="synth">Placeholder frame</span>
+              <button class="play" aria-label="Play draft"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></button>
+              <span class="now" id="nowTime">3:15 / 6:48</span>
+            </div>
+            <div class="scrub" id="scrub" aria-label="Evidence on the draft timeline">
+              <div class="rail-line"></div>
+              <div class="played" id="played"></div>
+              <div class="head-line" id="headLine"></div>
+            </div>
+            <div class="ticks"><span>0:00</span><span>1:42</span><span>3:24</span><span>5:06</span><span>6:48</span></div>
+          </div>
+
+
+        <section class="next" aria-label="What to do next">
+          <p><b>Fix 1 item, then upload a new draft.</b><span class="long"> "Serum shown in use" needs a second look: show it more clearly, or Glow Theory can accept it. Glow Theory's 48-hour review starts once every item passes.</span></p>
+          <div class="acts">
+            <button class="btn ghost">View brief</button>
+            <button class="btn primary"><svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>Upload new draft</button>
+          </div>
+        </section>
+          </div>
+          <div class="col right">
+          <aside class="money" aria-label="Payment for this deliverable">
+            <svg class="seal-big" viewBox="0 0 24 24" aria-hidden="true"><use href="#seal-shape" fill="var(--marigold-ink)"/><g transform="translate(6 6) scale(.5)" stroke="var(--marigold)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></g></svg>
+            <div class="lab">Held in PayPal for this video</div>
+            <div class="amt">$1,200.00</div>
+            <div class="ref">Ref 7HK21934LM · held 3 Oct</div>
+            <ol class="track" aria-label="Money stage">
+              <li class="on" aria-current="step">Held</li><li>Confirmed</li><li>Captured</li><li>Paid</li>
+            </ol>
+            <div class="to"><span>Pays out to</span><b>ada.okafor@example.com</b></div>
+          </aside>
+          <div class="panel detail detail-panel" id="detail" aria-live="polite"></div>
+          </div>
+        </section>
+
+
+        <section>
+          <div class="list-head">
+            <h2 class="sec">Checklist<small>9 items</small></h2>
+            <div class="tabs" role="tablist" aria-label="Filter checklist" id="tabs">
+              <button role="tab" aria-selected="true" data-f="all">All <span class="n">9</span></button>
+              <button role="tab" aria-selected="false" data-f="attn">Needs you <span class="n">2</span></button>
+              <button role="tab" aria-selected="false" data-f="pass">Passed <span class="n">4</span></button>
+              <button role="tab" aria-selected="false" data-f="live">At live check <span class="n">3</span></button>
+            </div>
+          </div>
+          <div id="grid"></div>
+          <ul class="cards" id="cards"></ul>
+          <div class="empty" id="empty">Nothing here right now.</div>
+        </section>
+
+        <p class="foot">Design prototype. All data is synthetic: Glow Theory, Northbound Coffee, Kora Audio and Ada Okafor are made up.</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+const LEN = 408;
+const ITEMS = [
+  {id:1,kind:'Said',name:'Mentions Glow Theory in the first 60 seconds',t:42,time:'0:42',result:'pass',method:'AI, with a timestamp',evLabel:'Transcript',ev:'“…today’s video is sponsored by Glow Theory.”',brief:2,briefText:'Mention Glow Theory within the first minute.'},
+  {id:2,kind:'Timing',name:'Sponsored segment runs at least 45 seconds',t:42,tEnd:98,time:'0:42–1:38',result:'pass',method:'Worked out from the timestamps',evLabel:'Segment',ev:'The segment runs 56 seconds.',brief:3,briefText:'The sponsored segment should be at least 45 seconds long.'},
+  {id:3,kind:'Shown',name:'Glow Theory logo on screen for 3+ seconds',t:70,time:'1:10',result:'pass',method:'AI, with a timestamp',evLabel:'In frame',ev:'Logo on the box is visible for 4.2 seconds.',brief:4,briefText:'Show our logo for at least 3 seconds.'},
+  {id:4,kind:'Said',name:'Says discount code GLOW20',t:126,time:'2:06',result:'pass',method:'Exact match',evLabel:'Transcript',ev:'“…use code GLOW20 for 20% off your first order.”',brief:5,briefText:'Say and show the code GLOW20.'},
+  {id:5,kind:'Shown as text',name:'Code GLOW20 shown on screen',t:195,time:'3:15',result:'fail',method:'Exact match',evLabel:'On-screen text',ev:'Reads “GLOW2O”, with a letter O where the zero should be.',brief:5,briefText:'Say and show the code GLOW20.',what:'Fix the on-screen code in your next draft.'},
+  {id:6,kind:'Shown',name:'Serum shown in use',t:242,time:'4:02',result:'unsure',method:'AI, with a timestamp',evLabel:'In frame',ev:'The bottle is in frame, but it isn’t clear the serum is being applied.',brief:6,briefText:'Show the Dew Drop serum being used on skin.',what:'Show it more clearly, or Glow Theory can accept it. This never clears on a timer.'},
+  {id:7,kind:'Written',name:'Link glowtheory.com/ada in the description',result:'live',method:'Checked on the published post',evLabel:'When',ev:'Checked once the video is public.',brief:7,briefText:'Put glowtheory.com/ada in the description.'},
+  {id:8,kind:'Disclosure',name:'Marked as a paid promotion',result:'live',method:'Checked on the published post',evLabel:'When',ev:'Checked once the video is public.',brief:8,briefText:'Turn on YouTube’s paid promotion label.'},
+  {id:9,kind:'Publication',name:'Public on your channel by 24 Oct',result:'live',method:'YouTube’s record of the video',evLabel:'When',ev:'Checked once the video is public.',brief:9,briefText:'Post by 24 October.'}
+];
+const R = {
+  pass:{label:'Passed',icon:'ic-check',fill:'var(--pass-bg)',stroke:'var(--pass)'},
+  fail:{label:'Fix needed',icon:'ic-x',fill:'var(--fail-bg)',stroke:'var(--fail)'},
+  unsure:{label:'Unsure',icon:'ic-q',fill:'var(--unsure-bg)',stroke:'var(--unsure)'},
+  live:{label:'At live check',icon:'ic-clock',fill:'var(--wait-bg)',stroke:'var(--wait)'}
+};
+const seal = (r, cls='seal') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><use href="#seal-shape" fill="${R[r].fill}"/><g transform="translate(6 6) scale(.5)" stroke="${R[r].stroke}" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#${R[r].icon}"/></g></svg>`;
+const chip = r => `<span class="chip ${r}"><svg class="i" viewBox="0 0 24 24"><use href="#${R[r].icon}"/></svg>${R[r].label}</span>`;
+const fmt = s => `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,'0')}`;
+let selected = 5, filter = 'all', grid = null;
+
+/* timeline */
+const scrub = document.getElementById('scrub');
+ITEMS.filter(i=>i.tEnd).forEach(i=>{
+  const s=document.createElement('div'); s.className='seg';
+  s.style.left=(i.t/LEN*100)+'%'; s.style.width=((i.tEnd-i.t)/LEN*100)+'%'; scrub.appendChild(s);
+});
+ITEMS.filter(i=>i.t!=null && !i.tEnd).forEach(i=>{
+  const b=document.createElement('button'); b.className='mk'; b.dataset.id=i.id;
+  b.style.left=(i.t/LEN*100)+'%';
+  b.setAttribute('aria-label',`${i.name}, ${R[i.result].label}, at ${i.time}`);
+  b.innerHTML=seal(i.result); b.onclick=()=>select(i.id); scrub.appendChild(b);
+});
+
+/* detail */
+function renderDetail(i){
+  const d=document.getElementById('detail');
+  d.innerHTML=`<div class="fade" style="display:flex;flex-direction:column;height:100%">
+    <div class="top">${seal(i.result)}<div><h3>${i.name}</h3><div class="kind">${i.kind}${i.time?` · ${i.time}`:''}</div></div></div>
+    <dl>
+      <div><dt>Result</dt><dd>${chip(i.result)}</dd></div>
+      <div><dt>${i.evLabel}</dt><dd class="quote ${i.result==='fail'?'fail':''}">${i.ev}</dd></div>
+      <div><dt>From the brief</dt><dd class="brief"><svg class="i" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8M16 17H8"/></svg><span>Line ${i.brief}: “${i.briefText}”</span></dd></div>
+      <div><dt>Checked by</dt><dd>${i.method}</dd></div>
+    </dl>
+    ${i.what?`<p class="what">${i.what}</p>`:''}
+  </div>`;
+}
+
+/* cards (phones) */
+function renderCards(rows){
+  const ul=document.getElementById('cards');
+  ul.innerHTML=rows.map(i=>`<li class="card" data-result="${i.result}" data-id="${i.id}" data-open="${i.id===selected}">
+    <button aria-expanded="${i.id===selected}">${seal(i.result)}<span><b>${i.name}</b><span class="m">${i.kind}${i.time?` · ${i.time}`:''}</span></span>${chip(i.result)}</button>
+    <div class="more"><div class="quote ${i.result==='fail'?'fail':''}">${i.ev}</div>Brief line ${i.brief}: “${i.briefText}”${i.what?`<br><b>${i.what}</b>`:''}</div></li>`).join('');
+  ul.querySelectorAll('.card > button').forEach(b=>b.onclick=()=>{
+    const li=b.parentElement, open=li.dataset.open!=='true';
+    li.dataset.open=open; b.setAttribute('aria-expanded',open);
+    if(open) select(+li.dataset.id,{fromCard:true});
+  });
+}
+
+/* grid (md and up) */
+function buildTheme(){
+  const v = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  return agGrid.themeQuartz.withParams({
+    fontFamily:'Figtree, system-ui, sans-serif', fontSize:14, headerFontSize:12.5, headerFontWeight:700,
+    foregroundColor:v('--ink'), textColor:v('--ink'), headerTextColor:v('--ink-3'), headerBackgroundColor:v('--brand-50'),
+    accentColor:v('--brand-700'), borderColor:v('--line'), rowBorder:{color:v('--line-2')}, wrapperBorderRadius:20,
+    rowHoverColor:v('--brand-50'), selectedRowBackgroundColor:v('--brand-100'), cellHorizontalPadding:16,
+    headerHeight:44, rowHeight:64, backgroundColor:'#FFFFFF', columnBorder:false, headerColumnBorder:false
+  });
+}
+let lastWide=null;
+function gridWide(){ lastWide=document.getElementById('grid').clientWidth>=1000; return lastWide; }
+function colDefs(wide){ return [
+      {colId:'seal', headerName:'', field:'result', width:64, sortable:false, cellRenderer:p=>`<div class="ag-cell-seal">${seal(p.value)}</div>`},
+      {colId:'item', headerName:'Item', field:'name', flex:3, minWidth:340, cellRenderer:p=>`<div class="cell2"><b>${p.value}</b><span>${p.data.ev}</span></div>`},
+      {colId:'kind', headerName:'Kind', field:'kind', width:140},
+      {colId:'time', headerName:'Time', field:'t', width:120, cellRenderer:p=>p.data.time?`<span class="t-strong">${p.data.time}</span>`:'<span style="color:var(--ink-4)">After publish</span>'},
+      {colId:'brief', headerName:'Brief', field:'brief', width:96, valueFormatter:p=>'Line '+p.value},
+      {colId:'result', headerName:'Result', field:'result', width:160, cellRenderer:p=>chip(p.value),
+        comparator:(a,b)=>['fail','unsure','pass','live'].indexOf(a)-['fail','unsure','pass','live'].indexOf(b)}
+  ].filter(c=>wide || (c.colId!=='kind' && c.colId!=='brief')); }
+function initGrid(){
+  if(!window.agGrid) return;
+  const {createGrid, themeQuartz, ModuleRegistry, AllCommunityModule} = agGrid;
+  if(ModuleRegistry && AllCommunityModule && !window.__agReg){ ModuleRegistry.registerModules([AllCommunityModule]); window.__agReg=true; }
+  const theme = buildTheme();
+  grid = createGrid(document.getElementById('grid'), {
+    theme, domLayout:'autoHeight', rowData: ITEMS, getRowId:p=>String(p.data.id),
+    rowSelection:{mode:'singleRow', checkboxes:false, enableClickSelection:true},
+    rowClassRules:{'row-fail':p=>p.data.result==='fail'},
+    defaultColDef:{sortable:true, resizable:false, suppressMovable:true},
+    columnDefs: colDefs(gridWide()),
+    onRowClicked:e=>select(e.data.id,{fromGrid:true}),
+    onGridSizeChanged:e=>{ const w=e.clientWidth>=1000; if(w!==lastWide){ lastWide=w; e.api.setGridOption('columnDefs', colDefs(w)); } },
+    onFirstDataRendered:()=>markGrid()
+  });
+}
+function markGrid(){ if(!grid) return; grid.forEachNode(n=>n.setSelected(n.data.id===selected)); }
+
+/* filtering */
+const pred = {all:()=>true, attn:i=>i.result==='fail'||i.result==='unsure', pass:i=>i.result==='pass', live:i=>i.result==='live'};
+function applyFilter(){
+  const rows=ITEMS.filter(pred[filter]);
+  if(grid){ grid.setGridOption('rowData', rows); markGrid(); }
+  renderCards(rows);
+  document.getElementById('empty').style.display=rows.length?'none':'block';
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  filter=b.dataset.f;
+  document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  applyFilter();
+});
+
+/* selection */
+function select(id, o={}){
+  selected=id; const i=ITEMS.find(x=>x.id===id);
+  renderDetail(i);
+  document.querySelectorAll('.mk').forEach(m=>m.setAttribute('aria-pressed', +m.dataset.id===id));
+  if(i.t!=null){
+    const pct=i.t/LEN*100;
+    document.getElementById('headLine').style.left=pct+'%';
+    document.getElementById('played').style.transform=`scaleX(${pct/100})`;
+    document.getElementById('nowTime').textContent=`${fmt(i.t)} / ${fmt(LEN)}`;
+  }
+  if(!o.fromGrid) markGrid();
+  if(!o.fromCard) renderCards(ITEMS.filter(pred[filter]));
+}
+
+const md = window.matchMedia('(min-width:768px)');
+function maybeGrid(){ if(md.matches && !grid) initGrid(); }
+md.addEventListener('change', maybeGrid);
+maybeGrid();
+select(selected);
+applyFilter();
+</script>
+</body>
+</html>
