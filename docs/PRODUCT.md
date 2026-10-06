@@ -112,7 +112,7 @@ Version one covers YouTube videos and Shorts, and Instagram Reels.
 | Pipeline and timers | AWS Step Functions, EventBridge Scheduler, Lambda |
 | App | Next.js on AWS Amplify |
 | Data and files | DynamoDB, S3 |
-| Evidence table and dashboard | AG Grid |
+| Creator dashboard | AG Grid on tablet and up, cards on phones. The evidence view uses cards ([decision](decisions/2026-10-06-evidence-view-cards.md)) |
 
 ## Still open
 
