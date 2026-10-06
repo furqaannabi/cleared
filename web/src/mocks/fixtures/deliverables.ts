@@ -12,7 +12,8 @@ export const glowTheoryVideo: Deliverable = {
   platform: "youtube_video",
   state: "results",
   deadline: "2026-10-24T23:59:00Z",
-  hold: { amountMinor: 120000, currency: "USD" },
+  hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
+  payoutEmail: "ada.okafor@example.com",
   items: [
     { id: "it_1", name: "Mentions Glow Theory in the first 60 seconds", status: "passed" },
     { id: "it_2", name: "Sponsored segment runs at least 45 seconds", status: "passed" },
@@ -26,4 +27,15 @@ export const glowTheoryVideo: Deliverable = {
   ],
 };
 
-export const deliverables: Record<string, Deliverable> = { [glowTheoryVideo.id]: glowTheoryVideo };
+/** The same deliverable after its deadline passed: the hold went back to the brand. */
+export const glowTheoryVideoReleased: Deliverable = {
+  ...glowTheoryVideo,
+  id: "del_glow_released",
+  state: "released",
+  releasedAt: "2026-10-25T09:00:00Z",
+  releaseReason: "deadline",
+};
+
+export const deliverables: Record<string, Deliverable> = Object.fromEntries(
+  [glowTheoryVideo, glowTheoryVideoReleased].map((d) => [d.id, d]),
+);

@@ -19,7 +19,8 @@ const deliverable = (overrides: Partial<Deliverable> = {}): Deliverable => ({
   state: "results",
   deadline: "2026-10-24T23:59:00Z",
   items: [],
-  hold: { amountMinor: 120000, currency: "USD" },
+  hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
+  payoutEmail: "ada.okafor@example.com",
   ...overrides,
 });
 

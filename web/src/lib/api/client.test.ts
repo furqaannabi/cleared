@@ -13,7 +13,8 @@ const VALID = {
   platform: "youtube_video",
   state: "results",
   deadline: "2026-10-24T23:59:00Z",
-  hold: { amountMinor: 120000, currency: "USD" },
+  hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
+  payoutEmail: "ada.okafor@example.com",
   items: [
     { id: "it_5", name: "Code GLOW20 shown on screen", status: "fix_needed" },
     { id: "it_4", name: "Says discount code GLOW20", status: "passed", previousStatus: "fix_needed" },
@@ -39,7 +40,7 @@ describe("DC-FR-01 getDeliverable", () => {
 
   test("rejects a response that breaks the schema, never showing part of it", async () => {
     const broken = [
-      { ...VALID, hold: { amountMinor: 1200.5, currency: "USD" } }, // money must be whole minor units
+      { ...VALID, hold: { ...VALID.hold, amountMinor: 1200.5 } }, // money must be whole minor units
       { ...VALID, state: "approved" }, // not one of the six states
       { ...VALID, items: [{ id: "it_1", name: "x", status: "probably_fine" }] }, // unknown status
       { ...VALID, deadline: "next Friday" },

@@ -38,10 +38,19 @@ export const deliverableSchema = z.object({
   deadline: isoTime,
   items: z.array(checklistItemSchema),
   // Money is integer minor units, never a float (CLAUDE.md "Money").
-  hold: z.object({ amountMinor: z.number().int().nonnegative(), currency: z.string().length(3) }),
+  hold: z.object({
+    amountMinor: z.number().int().nonnegative(),
+    currency: z.string().length(3),
+    // DC-FR-27: the PayPal reference, when it was held, and the money stage (from the API, never derived).
+    reference: z.string().min(1),
+    heldAt: isoTime,
+    stage: z.enum(["held", "confirmed", "captured", "paid"]),
+  }),
+  payoutEmail: z.email(),
   reviewWindowEndsAt: isoTime.optional(),
   checkFailure: checkFailureSchema.optional(),
   releasedAt: isoTime.optional(),
   releaseReason: z.enum(["deadline", "cancelled"]).optional(),
   cancelledBy: z.enum(["creator", "brand"]).optional(),
+  releaseReference: z.string().min(1).optional(),
 });

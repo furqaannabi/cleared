@@ -23,11 +23,13 @@ export function Seal({
   children: ReactNode;
 }) {
   return (
-    <span aria-hidden="true" className={`relative inline-block shrink-0 ${className ?? "size-7"}`}>
-      <svg viewBox="0 0 24 24" className="absolute inset-0 size-full">
+    // Layers stack in one grid cell, so the seal sets no position of its own
+    // and callers can place it (e.g. absolutely, on the money card).
+    <span aria-hidden="true" className={`inline-grid shrink-0 place-items-center ${className ?? "size-7"}`}>
+      <svg viewBox="0 0 24 24" className="size-full [grid-area:1/1]">
         <path data-seal-shape d={SEAL_PATH} className={fillClassName} />
       </svg>
-      <span data-seal-icon className="absolute inset-1/4 grid place-items-center">
+      <span data-seal-icon className="grid size-1/2 place-items-center [grid-area:1/1]">
         {children}
       </span>
     </span>

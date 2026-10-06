@@ -34,4 +34,10 @@ describe("creator draft check page", () => {
     await userEvent.click(retry);
     expect(await screen.findByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
   });
+
+  test("DC-FR-27: puts the money for this deliverable on the page", async () => {
+    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    const money = await screen.findByRole("region", { name: "Payment for this deliverable" });
+    expect(money).toHaveTextContent("$1,200.00");
+  });
 });

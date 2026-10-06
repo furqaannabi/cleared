@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { MoneyCard } from "@/components/money/money-card";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import type { Deliverable } from "@/lib/deliverable/types";
 import { LoadProblem } from "./load-problem";
@@ -31,6 +32,9 @@ function Loaded({ deliverable }: { deliverable: Deliverable }) {
   return (
     <>
       <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">{view.title}</h1>
+      <div className="mt-5">
+        <MoneyCard deliverable={deliverable} />
+      </div>
       <section aria-label="What to do next" className="mt-5 rounded-lg bg-latte-wash px-5 py-4 text-ink-2">
         <p>
           <b className="text-ink">{view.nextStep.lead}</b> {view.nextStep.detail}
