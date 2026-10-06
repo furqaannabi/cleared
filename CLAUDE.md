@@ -14,6 +14,7 @@
 - Before debugging: invoke the `diagnose` skill.
 - Every feature is test-driven: write the failing test first, then the implementation. Invoke the `tdd` skill before any feature work. Components get tests too, not only pure functions.
 - Never make architecture decisions autonomously. Present 2–3 options with trade-offs; the human chooses.
+- **Ownership:** William leads the frontend (`web/`, UI, design system, frontend tests). Furqaan leads the backend (pipeline, PayPal, AWS, data, AI checks). Each makes the calls in their own area. The API contract, repo layout, shared types and product behaviour need both.
 - When William or Furqaan makes an architecture or product decision, record it as a dated ADR in `docs/decisions/` (`YYYY-MM-DD-title.md`, format in that folder's README) and link it from the affected spec's Revision table. Never edit an existing record; write a new one that supersedes it.
 - Never bulk-generate code. One page, one component, one Lambda, one state-machine step at a time.
 - **Before writing more than one document, show the human the list of files and what each will contain, and wait for a yes.** Scope is theirs to set; a broad request ("write the docs") is not consent for a specific list.
@@ -31,6 +32,8 @@ Cleared is where a creator and a brand run a sponsorship deal they have **alread
 Tagline: **Brand deals where the content and the payment clear together.**
 
 The creator is the main user: they start each deal and invite the brand with a link, the way a freelancer sends an invoice. Aimed first at direct deals between small brands and mid-size creators, no agency. **Cleared is not a marketplace.**
+
+Team: William (frontend lead) and Furqaan (backend lead).
 
 Built for the PayPal AI Hackathon. **PayPal sandbox only; no real money moves.** The goal is a good product, not a rushed one.
 
@@ -66,12 +69,16 @@ Chosen in `docs/PRODUCT.md`:
 
 **Not yet decided.** When one of these comes up, present 2–3 options, the human chooses, and it gets an ADR. Then fill it in here:
 
-- Language for Lambdas and shared code
-- Infrastructure as code (Amplify Gen 2, CDK, SAM, …)
-- Package manager and monorepo layout
-- UI kit, styling and motion libraries
-- Test tooling
-- How the brand is authenticated beyond the invite link
+| Decision | Owner |
+| --- | --- |
+| Language for Lambdas | Furqaan |
+| Infrastructure as code (Amplify Gen 2, CDK, SAM, …) | Furqaan |
+| UI kit, styling and motion libraries | William |
+| Frontend test tooling | William |
+| Backend test tooling | Furqaan |
+| Package manager, monorepo layout, shared code | Both |
+| API contract between `web/` and the backend | Both |
+| How the brand is authenticated beyond the invite link | Both |
 
 ---
 
@@ -172,7 +179,9 @@ Route names are set in the specs.
 
 ### API calls
 
-- Never hardcode API paths in components. Use one typed client in `src/lib/api/`; mock it in tests until the backend exists.
+- Never hardcode API paths in components. Use one typed client in `src/lib/api/`.
+- The frontend runs ahead of the backend against mocks. Mock shapes follow the agreed API contract; until that exists, they follow PRODUCT.md's terms and are marked provisional.
+- Never invent backend behaviour. If the frontend needs a field or endpoint the contract doesn't have, write it up for Furqaan instead of mocking it into existence.
 
 ### Motion
 
@@ -258,6 +267,7 @@ Never abbreviate these. Never invent synonyms.
 - Use or wire live PayPal credentials.
 - Change the confirmed stack, or fill a "Not yet decided" item, without explicit human approval and an ADR.
 - Make product decisions: scope, the open questions in PRODUCT.md, page priority, what gets cut. Those belong to William and Furqaan.
+- Make or change backend decisions in a frontend session. If frontend work needs a backend change, write it up for Furqaan.
 - Let any model output trigger a money movement directly.
 - Modify hold / capture / payout / release logic without human sign-off.
 - Add dependencies without justifying them.
