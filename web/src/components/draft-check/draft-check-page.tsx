@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ItemCardList } from "@/components/checklist/item-card-list";
 import { MoneyCard } from "@/components/money/money-card";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import type { Deliverable } from "@/lib/deliverable/types";
@@ -29,6 +30,7 @@ export function DraftCheckPage({ deliverableId }: { deliverableId: string }) {
 function Loaded({ deliverable }: { deliverable: Deliverable }) {
   // Recomputed per load; `now` is read once so the page doesn't shift while open.
   const view = useMemo(() => deliverableView(deliverable, new Date()), [deliverable]);
+  const [selectedId, setSelectedId] = useState<string | null>(view.defaultItemId);
   return (
     <>
       <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">{view.title}</h1>
@@ -39,6 +41,14 @@ function Loaded({ deliverable }: { deliverable: Deliverable }) {
         <p>
           <b className="text-ink">{view.nextStep.lead}</b> {view.nextStep.detail}
         </p>
+      </section>
+      <section aria-label="Checklist" className="mt-6">
+        <h2 className="font-head text-section-title font-bold">
+          Checklist<small className="ml-1.5 font-sans text-[14px] font-semibold text-ink-3">{view.items.length} items</small>
+        </h2>
+        <div className="mt-3.5">
+          <ItemCardList items={view.items} brandName={deliverable.brandName} selectedId={selectedId} onSelect={setSelectedId} />
+        </div>
       </section>
     </>
   );

@@ -8,7 +8,10 @@ const NOW = new Date("2026-10-06T12:00:00Z");
 const item = (id: string, status: ItemStatus, extra: Partial<ChecklistItem> = {}): ChecklistItem => ({
   id,
   name: `Item ${id}`,
+  kind: "said",
   status,
+  briefLine: { number: 1, text: "A brief line." },
+  checkedBy: "ai_timestamp",
   ...extra,
 });
 

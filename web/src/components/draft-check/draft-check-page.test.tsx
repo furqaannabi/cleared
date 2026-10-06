@@ -40,4 +40,11 @@ describe("creator draft check page", () => {
     const money = await screen.findByRole("region", { name: "Payment for this deliverable" });
     expect(money).toHaveTextContent("$1,200.00");
   });
+
+  test("DC-FR-12, DC-FR-21: lists the checklist with the first item to fix open", async () => {
+    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    const checklist = await screen.findByRole("region", { name: "Checklist" });
+    expect(checklist).toHaveTextContent("9 items");
+    expect(screen.getByRole("button", { name: /Code GLOW20 shown on screen/ })).toHaveAttribute("aria-expanded", "true");
+  });
 });

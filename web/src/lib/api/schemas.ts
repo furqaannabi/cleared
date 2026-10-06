@@ -14,8 +14,20 @@ const isoTime = z.iso.datetime({ offset: true });
 export const checklistItemSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
+  kind: z.enum(["said", "shown_as_text", "shown", "timing", "written", "disclosure", "publication"]),
   status: itemStatus,
   previousStatus: itemStatus.optional(),
+  // DC-FR-12: every item cites the brief line it came from.
+  briefLine: z.object({ number: z.number().int().positive(), text: z.string() }),
+  evidence: z
+    .object({
+      label: z.string(),
+      text: z.string(),
+      startSec: z.number().nonnegative().optional(),
+      endSec: z.number().nonnegative().optional(),
+    })
+    .optional(),
+  checkedBy: z.enum(["exact_match", "ai_timestamp", "from_timestamps", "published_post", "platform_record"]),
 });
 
 export const checkFailureSchema = z.discriminatedUnion("kind", [

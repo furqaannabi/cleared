@@ -16,8 +16,8 @@ const VALID = {
   hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
   payoutEmail: "ada.okafor@example.com",
   items: [
-    { id: "it_5", name: "Code GLOW20 shown on screen", status: "fix_needed" },
-    { id: "it_4", name: "Says discount code GLOW20", status: "passed", previousStatus: "fix_needed" },
+    { id: "it_5", name: "Code GLOW20 shown on screen", kind: "shown_as_text", status: "fix_needed", briefLine: { number: 5, text: "Say and show the code GLOW20." }, checkedBy: "exact_match" },
+    { id: "it_4", name: "Says discount code GLOW20", kind: "said", status: "passed", previousStatus: "fix_needed", briefLine: { number: 5, text: "Say and show the code GLOW20." }, checkedBy: "exact_match" },
   ],
 };
 
@@ -42,7 +42,7 @@ describe("DC-FR-01 getDeliverable", () => {
     const broken = [
       { ...VALID, hold: { ...VALID.hold, amountMinor: 1200.5 } }, // money must be whole minor units
       { ...VALID, state: "approved" }, // not one of the six states
-      { ...VALID, items: [{ id: "it_1", name: "x", status: "probably_fine" }] }, // unknown status
+      { ...VALID, items: [{ ...VALID.items[0], status: "probably_fine" }] }, // unknown status
       { ...VALID, deadline: "next Friday" },
     ];
     for (const body of broken) {
