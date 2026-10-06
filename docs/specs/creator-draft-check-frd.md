@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.4). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04) and the deadline timezone (DC-FR-44) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.5). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04) and the deadline timezone (DC-FR-44) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -166,7 +166,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-41 | The grid and the cards show the same status, brief line, evidence and timestamp for every item. |
 | DC-FR-42 | Every animation honours `prefers-reduced-motion`. |
 | DC-FR-43 | Every interactive element is reachable by keyboard, has a visible focus ring and an accessible name; touch targets are at least 44 × 44 px; nothing depends on hover. |
-| DC-FR-44 | **Deadlines are in the creator's timezone.** A deliverable's deadline is the end of its day (23:59) in the creator's timezone, so "Post by 24 Oct" reads the same for the creator and the brand wherever they are. Every deadline date on this page is shown in the creator's timezone; countdowns (DC-FR-11) use the exact moment. |
+| DC-FR-44 | **One shared deadline date, with the viewer's own time.** A deliverable's deadline is the end of its day (23:59) in the creator's timezone, so the creator and the brand read the same date ("Post by 24 Oct"). When the viewer's timezone is different, the page adds when it ends for them ("ends 18:59 your time", or "ends 25 Oct, 07:59 your time" when their date differs). Countdowns (DC-FR-11) use the exact moment. |
 
 ## Business rules
 
@@ -302,3 +302,5 @@ Fields:
 | 1.3 signed | Revision 1.3 signed by William | none |
 | 1.4 | Ask-the-brand and the deadline timezone recorded as William's decisions; the "wait for Furqaan" gate is removed (Furqaan can supersede). No requirement changes | [Creator asks brand to accept](../decisions/2026-10-06-creator-asks-brand-to-accept-unsure.md), [Deadline in creator's timezone](../decisions/2026-10-06-deadline-end-of-day-creator-timezone.md) |
 | 1.4 signed | Revision 1.4 signed by William | none |
+| 1.5 | DC-FR-44 rewritten: one shared date in the creator's timezone, plus the viewer's own time when it differs | [Deadline: shared date with local time](../decisions/2026-10-06-deadline-shared-date-with-local-time.md) |
+| 1.5 signed | Revision 1.5 signed by William | none |
