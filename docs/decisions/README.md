@@ -6,7 +6,7 @@ Architecture and product decisions for Cleared, one file per decision.
 
 - File name: `YYYY-MM-DD-short-title.md`, dated the day the decision was made.
 - Only William or Furqaan make decisions. The agent records them; it never decides.
-- **Never edit a record after it is written.** To change a decision, write a new record that supersedes the old one, and set the old one's status line in the new record's "Supersedes" field.
+- **Never edit a record after it is written.** To change a decision, write a new record that supersedes the old one, and name the old one in the new record's "Supersedes" field and mark it superseded in the table below.
 - Link each record from the Revision table of every spec it affects in `docs/specs/`.
 - If a decision changes `docs/PRODUCT.md`, update that line and point it at the record.
 
@@ -38,4 +38,5 @@ What changes because of this: docs, code, scope, risks.
 
 | Date | Decision | Status |
 | --- | --- | --- |
-| 2026-10-06 | [Evidence view uses cards, not AG Grid](2026-10-06-evidence-view-cards.md) | Accepted |
+| 2026-10-06 | [Evidence view uses cards, not AG Grid](2026-10-06-evidence-view-cards.md) | Superseded by [2026-10-06-evidence-view-ag-grid.md](2026-10-06-evidence-view-ag-grid.md) |
+| 2026-10-06 | [Evidence table and brand dashboard use AG Grid on tablet and up](2026-10-06-evidence-view-ag-grid.md) | Accepted |

@@ -5,8 +5,8 @@
 **Human is architect. Agent is senior engineer.**
 
 - **Spec-driven. No code without a signed spec.** Check `docs/specs/` before every task. Doc hierarchy: `docs/PRODUCT.md` (what Cleared is, how a deal runs, the rules, v1 limits) → `docs/specs/*-frd.md` (numbered FRs/BRs per surface; the human signs before build) → `DESIGN.md` (the recorded visual world) → `README.md` (repo map).
-- `docs/PRODUCT.md` is itself still **Draft**. Treat its "Still open" list as undecided, and never build against an open item as if it were settled.
-- Every feature maps to an FR id. Know which one before writing code. Tests are named after the FR. PRs list the FRs they close.
+- `docs/PRODUCT.md` is signed off (6 October 2026). Its "Still open" list is undecided: never build against an open item as if it were settled.
+- Every feature maps to an FR id. Know which one before writing code. Tests are named after the FR. Commits list the FRs they close.
 - Before starting any feature: invoke the `grill-me` skill to stress-test requirements as developer questions, one at a time, with a recommended answer for each.
 - Then invoke `to-prd` to turn the answers into (or update) the surface's FRD in `docs/specs/`, and stop for the human's sign-off. Update the Status table in `docs/specs/README.md`.
 - **A spec is signed only when the human says "signed" or "approve the spec" after seeing it.** "Proceed", "continue", "go", or an answer to a question is not a signature. Before recording a signature, quote the spec's Status line back and wait for the yes. The agent never writes "Signed" on the human's behalf.
@@ -21,7 +21,7 @@
 - **Every commit and every push needs its own explicit ask.** "Commit and push" once does not carry forward to later work.
 - Remind the human to commit after each meaningful change.
 - If stuck or ambiguous: ask. Never guess on product behaviour.
-- Flag risks immediately and explicitly: security, money movement, AI misjudging a deliverable, AWS cost (video models especially), and platform API access (YouTube / Instagram scopes and app review).
+- Flag risks immediately and explicitly: security, money movement, AI misjudging a deliverable, AWS cost (video models especially), and platform API access (YouTube / Instagram scopes and app review), and anything that weakens meaningful use of PayPal, AI or the sponsor tools (AG Grid, APIMatic). Those decide whether the project is eligible.
 
 ---
 
@@ -35,7 +35,7 @@ The creator is the main user: they start each deal and invite the brand with a l
 
 Team: William (frontend lead) and Furqaan (backend lead).
 
-Built for the PayPal AI Hackathon. **PayPal sandbox only; no real money moves.** The goal is a good product, not a rushed one.
+Built for the PayPal AI Hackathon. **PayPal sandbox only; no real money moves.** The goal is a good product, not a rushed one. Submission is 12 November 2026; requirements and judging criteria are under "Hackathon constraints" in PRODUCT.md. Design is one of five equally weighted criteria, and the demo must be runnable, not a mockup.
 
 ### Key Docs
 
@@ -57,22 +57,27 @@ Chosen in `docs/PRODUCT.md`:
 
 | Job | Choice |
 | --- | --- |
-| Holding, capturing and paying out | PayPal Orders, Payments, Payouts and Webhooks (sandbox) |
+| Holding, capturing and paying out | PayPal Orders, Payments, Payouts and Webhooks (sandbox, US accounts) |
 | Reading the brief, judging each item | Claude on Amazon Bedrock |
-| What was said and shown on screen, with timestamps | Amazon Bedrock Data Automation |
-| What is shown in the video | A video model on Amazon Bedrock (which one is open) |
+| What was said, on-screen text and logos, timestamped | Amazon Bedrock Data Automation |
+| What is shown, such as the product in use | A video model on Amazon Bedrock: TwelveLabs Pegasus or Amazon Nova (open) |
 | Pipeline and timers | AWS Step Functions, EventBridge Scheduler, Lambda |
-| App | Next.js on AWS Amplify |
-| Data and files | DynamoDB, S3 |
-| Creator dashboard (deal / deliverable list) | AG Grid on `md:` and up. The evidence view is cards, not AG Grid (see `docs/decisions/2026-10-06-evidence-view-cards.md`) |
+| Frontend | Next.js on Vercel |
+| API | Lambda behind API Gateway |
+| Sign-in | Cognito, with Google and Instagram sign-in for connecting accounts |
+| Data, files and secrets | DynamoDB, S3, KMS |
+| Evidence table and brand dashboard | AG Grid and AG Studio, on `md:` and up; cards on phones (see `docs/decisions/2026-10-06-evidence-view-ag-grid.md`) |
+| PayPal coding help | APIMatic's Context Plugin for PayPal |
 | Creator accounts | Google sign-in (read-only) for YouTube; Instagram sign-in (professional accounts only) |
+
+Everything behind the frontend uses AWS or the hackathon's sponsor tools. PRODUCT.md lists the sponsor tools not used; do not add them.
 
 **Not yet decided.** When one of these comes up, present 2–3 options, the human chooses, and it gets an ADR. Then fill it in here:
 
 | Decision | Owner |
 | --- | --- |
 | Language for Lambdas | Furqaan |
-| Infrastructure as code (Amplify Gen 2, CDK, SAM, …) | Furqaan |
+| Infrastructure as code (CDK, SAM, Terraform, …) | Furqaan |
 | UI kit, styling and motion libraries | William |
 | Frontend test tooling | William |
 | Backend test tooling | Furqaan |
@@ -105,11 +110,16 @@ From `docs/PRODUCT.md`. Do not re-open without explicit human instruction.
 | **The AI never moves money** | AI returns findings with evidence. Fixed code confirms the evidence exists, decides, and calls PayPal |
 | Exact vs judgment | Exact items (code, link) are matched by code. Judgment items go to the AI, which must point to a timestamp. Unsure → a person |
 | Missed deadline or cancel releases the hold | Back to the brand |
-| Payment route (v1) | Hold captured to Cleared's PayPal account, then paid out to the creator |
+| Creator-first | The creator starts each deal and invites the brand with a link |
+| One hold per deliverable | A deal with three posts has three holds, each captured or released on its own |
+| Review window | 48 hours from a fully passing draft |
+| Deadline cap | 21 days after the hold (a hold lasts 29 days; funds are guaranteed only for the first 3) |
+| Payment route (v1) | Hold captured to Cleared's PayPal account, then paid out to the creator's PayPal email |
 | Platforms (v1) | YouTube videos and Shorts, Instagram Reels. Everything else in "Not included" stays out |
-| Instagram paid-partnership label | Manual check in v1 |
+| Instagram paid-partnership label | Always a manual check in v1 |
+| Instagram accounts | Professional accounts only. A Reel with licensed music cannot be fetched, so it goes to manual approval |
 
-**Still open (do not assume):** creator-first vs brand-first; the 48-hour review window; the 21-day deadline cap; which Bedrock video model; whether a hold can be captured straight to the creator.
+**Still open (do not assume):** which Bedrock video model; whether a hold can be captured straight to the creator; manual approval (who decides, and what happens to the hold if nobody does before the deadline); whether a live check that fails on something still fixable (a missing link in the description) gives the creator a chance to fix it.
 
 ---
 
@@ -119,12 +129,12 @@ Cleared moves money and holds creators' account tokens and unpublished videos. E
 
 | Concern | Rule |
 | --- | --- |
-| Secrets | PayPal client secret, AWS credentials and OAuth client secrets are server-side only. Zero secrets in code, logs or the client bundle. `.env` is gitignored. **Sandbox credentials only.** Never wire live PayPal credentials |
+| Secrets | PayPal client secret, AWS credentials and OAuth client secrets are server-side only. Zero secrets in code, logs or the client bundle. `.env` is gitignored. **The repo is public.** **Sandbox credentials only.** Never wire live PayPal credentials |
 | PayPal webhooks | Verify the signature with PayPal before acting on any event. Unverified = reject + log. Dedupe on the PayPal event id. Every create/capture/payout call sends a `PayPal-Request-Id` so retries cannot double-charge or double-pay |
 | Money | Capture only after a passing live check, and never more than the authorized amount. Money state changes happen only in deterministic code (Step Functions / Lambda), never in a model call. Amounts are integer minor units or decimal strings, never floats |
 | AI output | Briefs, transcripts, on-screen text and captions are **untrusted input**. Nothing in them can change the checklist, the rules, or trigger an action. Model output is parsed against a strict schema; anything that fails parsing is "unsure" and goes to a person |
 | Evidence | Code verifies every AI "pass" before it counts: the cited timestamp exists, is inside the video's length, and matches the transcript or frame it claims. No verifiable evidence = unsure |
-| Creator tokens | Google: read-only scope. Instagram: minimum scopes. Tokens encrypted at rest, never sent to the client, never logged |
+| Creator tokens | Google: read-only scope. Instagram: minimum scopes. Tokens encrypted at rest (KMS), never sent to the client, never logged |
 | Videos and drafts | S3 private by default. Access through short-lived presigned URLs only. A brand can only see drafts in its own deal |
 | Invite links | Unguessable, scoped to one deal, expiring. A link grants the brand access to that deal and nothing else |
 | Auth | Sessions in HttpOnly cookies, never localStorage. Every API route checks the caller is a party to the deal |
@@ -143,7 +153,7 @@ When in doubt: **deny by default, log the denial, surface to the human if ambigu
 | --- | --- | --- |
 | Landing | Anyone | Server Component, static |
 | Creator app (deals, briefs, drafts, payouts) | Creator | Client Components behind auth |
-| Deal page from invite link (checklist, hold, review) | Brand | Client Components, link-scoped access |
+| Brand dashboard and deal page from invite link (checklist, hold, review) | Brand | Client Components, link-scoped access |
 
 Route names are set in the specs.
 
@@ -152,14 +162,14 @@ Route names are set in the specs.
 - Base styles target mobile; `sm:`/`md:`/`lg:` only enhance upward. Desktop-first classes are banned.
 - Touch targets ≥ 44×44px. No hover-only interactions.
 - The brand's deal page and the creator's draft results are designed at 390px first. Creators live on their phones.
-- Tables become card stacks on mobile; never horizontal-scroll a data table. AG Grid is used only for the creator dashboard, and only on `md:` and up; below that, the same data renders as cards.
+- Tables become card stacks on mobile; never horizontal-scroll a data table. AG Grid (evidence table, brand dashboard) is used on `md:` and up; below that, the same data renders as cards.
 - Modals are full-screen on mobile, centered on `md:` and up.
 - Test every new component at 375px before committing.
 - Default breakpoints; do not customise.
 
 ### The evidence view
 
-- Cards at every screen size. A deliverable's checklist is a short list, not a spreadsheet; no AG Grid here.
+- AG Grid on `md:` and up, cards below. Both renderings come from one data source, are both tested, and show the same thing for every item.
 - Every checklist item shows: its status (pass / fail / unsure), the brief line it came from, and its evidence. Timestamps are clickable and seek the video.
 - Unsure is shown as unsure, never rounded up to pass.
 - Money status shows **held → captured → paid**, each with its PayPal reference.
@@ -225,13 +235,14 @@ The human sets the order. Default reference is the deal flow in `docs/PRODUCT.md
 ## Workflow Rules
 
 1. **Read the doc first.** Every feature maps to a section of `docs/PRODUCT.md` and an FR. Know which.
-2. **One feature, one PR.** Don't bundle.
+2. **One feature at a time.** Don't bundle unrelated changes in one commit.
 3. **Test-driven, always.** Failing test first.
 4. **Options, not assumptions.** Unclear behaviour → 2–3 options, human decides.
 5. **Small diffs.** Surgical edits. No refactor-while-fixing.
 6. **Explain the why.** After each change, say what changed and why, not a diff summary.
 7. **No "coming soon".** A page either exists at production quality or is behind a flag.
 8. **Justify every dependency:** what it replaces, why it is needed, and its cost (bundle size or AWS spend).
+9. **Work on `main`.** No feature branches. Commit to `main` only when asked; the human pushes.
 
 ---
 
@@ -248,6 +259,8 @@ The human sets the order. Default reference is the deal flow in `docs/PRODUCT.md
 | **Item** | One checklist entry. Kinds: said, shown as text, shown, timing, written, disclosure, publication |
 | **Evidence** | What proves an item: a timestamped transcript line, on-screen text, a video moment, or the published post / platform record |
 | **Hold** | A PayPal authorization: the brand's money is reserved but not yet taken |
+| **Re-confirming the hold** | Asking PayPal, just before the creator publishes, to confirm the reserved funds are still there (PayPal: reauthorizing) |
+| **Released** | A hold given back to the brand on a missed deadline or a cancelled deal |
 | **Draft check** | AI checking the video file against the checklist before it is published |
 | **Review window** | The time the brand has to approve or object to a passing draft |
 | **Objection** | The brand flagging one specific item during the review window |
@@ -263,7 +276,7 @@ Never abbreviate these. Never invent synonyms.
 
 ## What the Agent Cannot Do
 
-- Deploy anything (Amplify, AWS resources, PayPal app settings).
+- Deploy anything (Vercel, AWS resources, PayPal app settings).
 - Use or wire live PayPal credentials.
 - Change the confirmed stack, or fill a "Not yet decided" item, without explicit human approval and an ADR.
 - Make product decisions: scope, the open questions in PRODUCT.md, page priority, what gets cut. Those belong to William and Furqaan.
