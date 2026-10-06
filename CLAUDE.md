@@ -70,6 +70,8 @@ Chosen in `docs/PRODUCT.md`:
 | Evidence table and brand dashboard | AG Grid and AG Studio, on `md:` and up; cards on phones (see `docs/decisions/2026-10-06-evidence-view-ag-grid.md`) |
 | PayPal coding help | APIMatic's Context Plugin for PayPal |
 | Creator accounts | Google sign-in (read-only) for YouTube; Instagram sign-in (professional accounts only) |
+| Styling, UI primitives, motion | Tailwind v4 (DESIGN.md tokens in `@theme`), Radix UI primitives wrapped in `src/components/ui/`, Motion (`motion/react`, via `LazyMotion`) (see `docs/decisions/2026-10-06-frontend-stack.md`) |
+| Frontend tests | Vitest + React Testing Library for components; Playwright for E2E and 375px checks (see `docs/decisions/2026-10-06-frontend-stack.md`) |
 
 Everything behind the frontend uses AWS or the hackathon's sponsor tools. PRODUCT.md lists the sponsor tools not used; do not add them.
 
@@ -79,8 +81,6 @@ Everything behind the frontend uses AWS or the hackathon's sponsor tools. PRODUC
 | --- | --- |
 | Language for Lambdas | Furqaan |
 | Infrastructure as code (CDK, SAM, Terraform, …) | Furqaan |
-| UI kit, styling and motion libraries | William |
-| Frontend test tooling | William |
 | Backend test tooling | Furqaan |
 | Package manager, monorepo layout, shared code | Both |
 | API contract between `web/` and the backend | Both |
