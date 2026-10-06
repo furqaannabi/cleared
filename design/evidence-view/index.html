@@ -42,7 +42,7 @@ a{color:inherit}
 svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ---------- shell ---------- */
-.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
 .rail{background:var(--rail);color:var(--on-rail);padding:22px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
 .logo{display:flex;align-items:center;gap:10px;padding:0 10px;font-family:var(--font-head);font-weight:800;font-size:21px;color:#fff;text-decoration:none}
 .logo .seal{width:26px;height:26px}
@@ -184,9 +184,97 @@ h2.sec small{font-family:var(--font-ui);font-size:14px;font-weight:600;color:var
 .empty{display:none;margin-top:14px;padding:28px;border:1px dashed var(--line);border-radius:var(--radius-l);text-align:center;color:var(--ink-3)}
 .foot{margin-top:28px;font-size:12.5px;color:var(--ink-4)}
 
+/* ---------- prototype-only state picker (never ships) ---------- */
+.proto{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;padding:8px 10px 8px 14px;border:1px dashed var(--brand-200);border-radius:var(--radius-m);font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.proto{min-width:0}.proto select{min-width:0;font:inherit;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 12px;min-height:40px;max-width:100%}
+
+/* ---------- new statuses ---------- */
+.chip.checking{background:var(--wait-bg);color:var(--wait)}
+.chip.waiting{background:var(--unsure-bg);color:var(--unsure)}
+.chip.accepted{background:var(--wait-bg);color:var(--brand-700)}
+.chip.none{background:transparent;color:var(--ink-4);padding-left:0}
+.spin{transform-box:fill-box;transform-origin:center;animation:spin 1.1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.delta{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ink-3);white-space:nowrap}
+.delta svg{width:13px;height:13px;stroke-width:2.2}
+.cell-res{display:flex;flex-direction:column;justify-content:center;gap:3px;height:100%;align-items:flex-start;line-height:1.3}
+
+/* ---------- deliverable switcher ---------- */
+.dswitch{display:flex;gap:6px;margin-top:14px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;width:max-content;max-width:100%}
+.dswitch a{display:inline-flex;align-items:center;gap:9px;padding:7px 16px 7px 10px;border-radius:999px;text-decoration:none;min-height:44px;transition:background .15s}
+.dswitch a:hover{background:var(--brand-50)}
+.dswitch a svg{width:20px;height:20px;color:var(--ink-3)}
+.dswitch a b{display:block;font-size:13.5px;font-weight:700;line-height:1.2;white-space:nowrap}
+.dswitch a span span{display:block;font-size:12px;font-weight:600;color:var(--ink-3);line-height:1.2;white-space:nowrap}
+.dswitch a[aria-current="page"]{background:var(--brand-700);color:#fff}
+.dswitch a[aria-current="page"] svg,.dswitch a[aria-current="page"] span span{color:rgba(255,255,255,.78)}
+
+/* ---------- check failed banner ---------- */
+.alert{display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:start;margin-top:22px;padding:16px 20px;border-radius:var(--radius-l);border:1px solid var(--line);background:var(--surface)}
+.alert .seal{width:40px;height:40px}
+.alert h3{font-size:15px;font-weight:700;line-height:1.35}
+.alert p{margin-top:3px;font-size:14.5px;color:var(--ink-2);max-width:72ch}
+.alert .hold{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;font-weight:700;color:var(--brand-800);background:var(--brand-100);padding:4px 11px 4px 9px;border-radius:999px}
+.alert .hold svg{width:14px;height:14px}
+.alert.file{background:var(--fail-tint);border-color:var(--fail-line)}
+.prev-note{margin-top:10px;font-size:13px;color:var(--ink-3)}
+
+/* ---------- checking: stages ---------- */
+.stages{padding:20px 22px}
+.stages h3{font-size:18px;font-weight:700;line-height:1.3}
+.stages .kind{font-size:13px;color:var(--ink-3);margin-top:2px}
+.stages ol{list-style:none;margin-top:16px;display:grid;gap:4px}
+.stages li{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:8px 0;font-size:14.5px;font-weight:600;color:var(--ink-4)}
+.stages li .seal{width:26px;height:26px}
+.stages li.done{color:var(--ink-2)}
+.stages li.now{color:var(--ink);font-weight:700}
+.stages li small{font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.stages-panel{display:none}
+
+/* ---------- no draft ---------- */
+.screen.empty-screen{background:var(--brand-50);border:1px dashed var(--brand-200);display:grid;place-items:center;text-align:center;color:var(--ink-3)}
+.empty-screen div{display:grid;justify-items:center;gap:8px;font-size:14px;font-weight:600;padding:0 16px}
+.empty-screen svg{width:30px;height:30px;color:var(--brand-700)}
+
+/* ---------- evidence panel actions ---------- */
+.detail .acts{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.detail .acts small,.card .acts small{font-size:12.5px;color:var(--ink-3);flex-basis:100%}
+.note{background:var(--unsure-bg);color:var(--ink);border-radius:var(--radius-s);padding:10px 12px;font-size:14px}
+.note b{display:block;font-size:12px;color:var(--unsure);letter-spacing:.02em}
+.btn{min-height:44px}
+.t-btn{font-weight:700;color:var(--brand-700);text-decoration:underline;text-decoration-color:var(--brand-200);text-underline-offset:3px;padding:6px 2px;margin:-6px -2px}
+
+/* ---------- released money card ---------- */
+.money.released{background:var(--brand-100);color:var(--ink);box-shadow:none;border:1px solid var(--brand-200)}
+.money.released::before{background:rgba(255,255,255,.5)}
+.money.released .lab,.money.released .ref,.money.released .to{color:var(--ink-3)}
+.money.released .amt{color:var(--ink-2)}
+.money.released .to{border-top-color:var(--brand-200)}
+.money.released .to b{color:var(--ink-2)}
+.track.one{grid-template-columns:1fr}
+.money.released .track li{background:var(--brand-200);color:var(--brand-800)}
+
+/* ---------- 9:16 player (Shorts, Reels) ---------- */
+.screen.v{aspect-ratio:9/16}
+.work.v{grid-template-columns:minmax(260px,320px) minmax(0,1fr)}
+.work.v .col{display:contents}
+.work.v .player{grid-column:1;grid-row:1 / span 3}
+.work.v .money{grid-column:2;grid-row:1}
+.work.v .detail-panel,.work.v .stages-panel{grid-column:2;grid-row:2}
+.work.v .next{grid-column:2;grid-row:3}
+@media (min-width:1280px){
+  .work.v{grid-template-columns:320px minmax(0,1fr) minmax(300px,340px)}
+  .work.v .money{grid-column:3;grid-row:1}
+  .work.v .detail-panel,.work.v .stages-panel{grid-column:2;grid-row:1}
+  .work.v .next{grid-column:2 / span 2;grid-row:2}
+  .work.v .player{grid-row:1 / span 2}
+}
+body[data-state="checking"] .detail-panel{display:none}
+body[data-state="checking"] .stages-panel{display:block}
+
 /* ---------- tablet ---------- */
 @media (max-width:1023px){
-  .shell{grid-template-columns:1fr}
+  .shell{grid-template-columns:minmax(0,1fr)}
   .rail{display:none}
   .topbar{display:flex;align-items:center;justify-content:space-between;background:var(--rail);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:5}
   .topbar .logo{padding:0;font-size:19px}
@@ -194,7 +282,7 @@ h2.sec small{font-family:var(--font-ui);font-size:14px;font-weight:600;color:var
   .topbar button:hover{background:rgba(255,255,255,.1)}
   main{padding:22px 24px 64px}
   .head{grid-template-columns:1fr}
-  .work{grid-template-columns:1fr}
+  .work{grid-template-columns:minmax(0,1fr)}
   .col{display:contents}
   .money{order:1}.player{order:2}.next{order:3}.detail-panel{order:4}
 }
@@ -223,8 +311,9 @@ h2.sec small{font-family:var(--font-ui);font-size:14px;font-weight:600;color:var
   .next .acts .ghost{display:none}
   .next .acts .btn{flex:1;justify-content:center;min-height:48px}
   .list-head{margin-top:24px;align-items:flex-start;flex-direction:column}
-  .tabs{width:100%;justify-content:space-between}
-  .tabs button{padding:8px 10px;font-size:13px;min-height:40px}
+  .tabs{width:100%;max-width:100%;overflow-x:auto;scrollbar-width:none;border-radius:var(--radius-m)}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:none;padding:8px 12px;font-size:13px;min-height:44px}
   #grid{display:none}
   .cards{display:flex}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);overflow:hidden}
@@ -236,6 +325,23 @@ h2.sec small{font-family:var(--font-ui);font-size:14px;font-weight:600;color:var
   .card .more{display:none;padding:0 14px 14px 58px;font-size:14px;color:var(--ink-2)}
   .card .more .quote{margin-bottom:8px}
   .card[data-open="true"] .more{display:block}
+  .card .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .card .acts .btn{flex:1;justify-content:center}
+  .card .note{margin-bottom:8px}
+  .dswitch{width:auto;overflow-x:auto;scrollbar-width:none;border-radius:var(--radius-m)}
+  .dswitch::-webkit-scrollbar{display:none}
+  .dswitch a{flex:none}
+  .alert{grid-template-columns:32px 1fr;gap:12px;padding:14px 16px;margin-top:16px}
+  .alert .seal{width:32px;height:32px}
+  .alert h3{font-size:15px}
+  .alert p{font-size:14px}
+  body[data-state="checking"] .stages-panel{order:3}
+  .stages{padding:16px 18px}
+  .work,.work.v{grid-template-columns:minmax(0,1fr)}
+  .work.v .player,.work.v .money,.work.v .next,.work.v .stages-panel{grid-column:auto;grid-row:auto}
+  .work.v .money{order:1}.work.v .player{order:2}.work.v .stages-panel{order:3}
+  .screen.v{width:min(100%,calc(60vh * 9 / 16));margin-inline:auto}
+  .proto{margin-bottom:14px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -251,6 +357,15 @@ h2.sec small{font-family:var(--font-ui);font-size:14px;font-weight:600;color:var
     <g id="ic-lock"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></g>
     <g id="ic-dollar"><path d="M12 3v18"/><path d="M16.5 7.5c-.7-1.3-2.4-2-4.5-2-2.6 0-4.5 1.3-4.5 3.2 0 4.6 9 2.4 9 7 0 1.9-1.9 3.3-4.5 3.3-2.3 0-4.1-.8-4.8-2.3"/></g>
     <g id="ic-dot"><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/></g>
+    <g id="ic-spin"><path class="spin" d="M21 12a9 9 0 1 1-6.22-8.56"/></g>
+    <g id="ic-check-circle"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.8-5"/></g>
+    <g id="ic-refresh"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></g>
+    <g id="ic-return"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g>
+    <g id="ic-history"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></g>
+    <g id="ic-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></g>
+    <g id="ic-video"><rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="m10 9.5 4.5 2.5-4.5 2.5z"/></g>
+    <g id="ic-reel"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="m10.5 9.5 3.5 2.5-3.5 2.5z"/></g>
+    <g id="ic-hand"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></g>
   </defs>
 </svg>
 
@@ -259,12 +374,9 @@ h2.sec small{font-family:var(--font-ui);font-size:14px;font-weight:600;color:var
     <a class="logo" href="#"><svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--marigold)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-800)" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></g></svg>Cleared</a>
     <nav>
       <h2>Deals</h2>
-      <a href="#" aria-current="page"><span class="av" style="background:#FCE3EC;color:#9C2A55">GT</span><span>Glow Theory<span class="meta">Draft check</span></span></a>
+      <a href="#" aria-current="page"><span class="av" style="background:#FCE3EC;color:#9C2A55">GT</span><span>Glow Theory<span class="meta" id="railGT">Draft check</span></span></a>
       <a href="#"><span class="av" style="background:#DCEBFF;color:#1F4E9C">NC</span><span>Northbound Coffee<span class="meta">Brand review · 31h left</span></span></a>
       <a href="#"><span class="av" style="background:#FFF0C9;color:#7A4D00">KA</span><span>Kora Audio<span class="meta">Cleared · paid 2 Oct</span></span></a>
-      <h2>You</h2>
-      <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>Payouts</a>
-      <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Connected accounts</a>
     </nav>
     <div class="me"><span class="av" style="background:var(--marigold);color:var(--brand-900)">AO</span>Ada Okafor</div>
   </aside>
@@ -277,164 +389,325 @@ h2.sec small{font-family:var(--font-ui);font-size:14px;font-weight:600;color:var
 
     <main>
       <div class="wrap">
-        <div class="crumb"><a href="#">Deals</a><svg class="i" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg><a href="#">Glow Theory</a><svg class="i" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg><span>YouTube video</span></div>
+        <div class="proto"><label for="state">Design prototype · state</label><select id="state"></select></div>
+
+        <div class="crumb"><a href="#">Deals</a><svg class="i" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg><a href="#">Glow Theory</a><svg class="i" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg><span id="crumbD"></span></div>
 
         <section class="head">
-          <div>
-            <h1>Glow Theory · YouTube video</h1>
-            <p class="sub">
-              <span>Draft check, run 2</span>
-              <span>6:48 long</span>
-              <span>Post by 24 Oct</span>
-              <span>Deliverable 1 of 2</span>
-            </p>
-            <ol class="steps" aria-label="Deal progress">
-              <li class="done"><svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--brand-100)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-700)" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></g></svg>Checklist agreed</li>
-              <li class="bar done" aria-hidden="true"></li>
-              <li class="done"><svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--brand-100)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-700)" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></g></svg>Held</li>
-              <li class="bar done" aria-hidden="true"></li>
-              <li class="now" aria-current="step"><svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--marigold)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-900)" stroke-width="3" fill="none"><use href="#ic-dot"/></g></svg>Draft check</li>
-              <li class="bar" aria-hidden="true"></li>
-              <li>Brand review</li>
-              <li class="bar" aria-hidden="true"></li>
-              <li>Publish</li>
-              <li class="bar" aria-hidden="true"></li>
-              <li>Live check</li>
-              <li class="bar" aria-hidden="true"></li>
-              <li>Paid</li>
-            </ol>
-            <div class="steps-compact"><span class="dots"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i></span>Step 3 of 7 · Draft check</div>
-          </div>
-
+          <h1 id="title"></h1>
+          <p class="sub" id="sub"></p>
+          <nav class="dswitch" id="dswitch" aria-label="Deliverables in this deal"></nav>
+          <ol class="steps" id="steps" aria-label="Deal progress"></ol>
+          <div class="steps-compact" id="stepsC"></div>
         </section>
 
-        <section class="work">
+        <div id="alert"></div>
+
+        <section class="work" id="work">
           <div class="col">
-          <div class="panel player">
-            <div class="screen">
-              <span class="file">draft_v2.mp4</span>
-              <span class="synth">Placeholder frame</span>
-              <button class="play" aria-label="Play draft"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></button>
-              <span class="now" id="nowTime">3:15 / 6:48</span>
+            <div class="panel player">
+              <div class="screen" id="screen"></div>
+              <div class="scrub" id="scrub" aria-label="Evidence on the draft timeline"></div>
+              <div class="ticks" id="ticks"></div>
             </div>
-            <div class="scrub" id="scrub" aria-label="Evidence on the draft timeline">
-              <div class="rail-line"></div>
-              <div class="played" id="played"></div>
-              <div class="head-line" id="headLine"></div>
-            </div>
-            <div class="ticks"><span>0:00</span><span>1:42</span><span>3:24</span><span>5:06</span><span>6:48</span></div>
-          </div>
-
-
-        <section class="next" aria-label="What to do next">
-          <p><b>Fix 1 item, then upload a new draft.</b><span class="long"> "Serum shown in use" needs a second look: show it more clearly, or Glow Theory can accept it. Glow Theory's 48-hour review starts once every item passes.</span></p>
-          <div class="acts">
-            <button class="btn ghost">View brief</button>
-            <button class="btn primary"><svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>Upload new draft</button>
-          </div>
-        </section>
+            <section class="next" id="next" aria-label="What to do next"></section>
           </div>
           <div class="col right">
-          <aside class="money" aria-label="Payment for this deliverable">
-            <svg class="seal-big" viewBox="0 0 24 24" aria-hidden="true"><use href="#seal-shape" fill="var(--marigold-ink)"/><g transform="translate(6 6) scale(.5)" stroke="var(--marigold)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></g></svg>
-            <div class="lab">Held in PayPal for this video</div>
-            <div class="amt">$1,200.00</div>
-            <div class="ref">Ref 7HK21934LM · held 3 Oct</div>
-            <ol class="track" aria-label="Money stage">
-              <li class="on" aria-current="step">Held</li><li>Confirmed</li><li>Captured</li><li>Paid</li>
-            </ol>
-            <div class="to"><span>Pays out to</span><b>ada.okafor@example.com</b></div>
-          </aside>
-          <div class="panel detail detail-panel" id="detail" aria-live="polite"></div>
+            <aside class="money" id="money" aria-label="Payment for this deliverable"></aside>
+            <div class="panel detail detail-panel" id="detail" aria-live="polite"></div>
+            <div class="panel stages stages-panel" id="stages" aria-live="polite"></div>
           </div>
         </section>
-
 
         <section>
           <div class="list-head">
-            <h2 class="sec">Checklist<small>9 items</small></h2>
-            <div class="tabs" role="tablist" aria-label="Filter checklist" id="tabs">
-              <button role="tab" aria-selected="true" data-f="all">All <span class="n">9</span></button>
-              <button role="tab" aria-selected="false" data-f="attn">Needs you <span class="n">2</span></button>
-              <button role="tab" aria-selected="false" data-f="pass">Passed <span class="n">4</span></button>
-              <button role="tab" aria-selected="false" data-f="live">At live check <span class="n">3</span></button>
-            </div>
+            <h2 class="sec">Checklist<small id="count"></small></h2>
+            <div class="tabs" role="tablist" aria-label="Filter checklist" id="tabs"></div>
           </div>
           <div id="grid"></div>
           <ul class="cards" id="cards"></ul>
           <div class="empty" id="empty">Nothing here right now.</div>
         </section>
 
-        <p class="foot">Design prototype. All data is synthetic: Glow Theory, Northbound Coffee, Kora Audio and Ada Okafor are made up.</p>
+        <p class="foot">Design prototype. All data is synthetic: Glow Theory, Northbound Coffee, Kora Audio and Ada Okafor are made up. The state picker above exists only in this prototype.</p>
       </div>
     </main>
   </div>
 </div>
 
 <script>
-const LEN = 408;
-const ITEMS = [
+/* ---------- synthetic data ---------- */
+const BRAND = 'Glow Theory';
+const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DELIVS = {
+  yt:{key:'yt', name:'YouTube video', icon:'ic-video', v:false, len:408, file:'draft_v2.mp4', amount:'$1,200.00', amountShort:'$1,200', ref:'7HK21934LM', held:'3 Oct', email:'ada.okafor@example.com'},
+  reel:{key:'reel', name:'Instagram Reel', icon:'ic-reel', v:true, len:45, file:'reel_draft_v1.mp4', amount:'$650.00', amountShort:'$650', ref:'9QD40211XP', held:'3 Oct', email:'ada.okafor@example.com'}
+};
+const YT = [
   {id:1,kind:'Said',name:'Mentions Glow Theory in the first 60 seconds',t:42,time:'0:42',result:'pass',method:'AI, with a timestamp',evLabel:'Transcript',ev:'“…today’s video is sponsored by Glow Theory.”',brief:2,briefText:'Mention Glow Theory within the first minute.'},
   {id:2,kind:'Timing',name:'Sponsored segment runs at least 45 seconds',t:42,tEnd:98,time:'0:42–1:38',result:'pass',method:'Worked out from the timestamps',evLabel:'Segment',ev:'The segment runs 56 seconds.',brief:3,briefText:'The sponsored segment should be at least 45 seconds long.'},
-  {id:3,kind:'Shown',name:'Glow Theory logo on screen for 3+ seconds',t:70,time:'1:10',result:'pass',method:'AI, with a timestamp',evLabel:'In frame',ev:'Logo on the box is visible for 4.2 seconds.',brief:4,briefText:'Show our logo for at least 3 seconds.'},
-  {id:4,kind:'Said',name:'Says discount code GLOW20',t:126,time:'2:06',result:'pass',method:'Exact match',evLabel:'Transcript',ev:'“…use code GLOW20 for 20% off your first order.”',brief:5,briefText:'Say and show the code GLOW20.'},
+  {id:3,kind:'Shown',name:'Glow Theory logo on screen for 3+ seconds',t:70,time:'1:10',result:'pass',prev:'unsure',method:'AI, with a timestamp',evLabel:'In frame',ev:'Logo on the box is visible for 4.2 seconds.',brief:4,briefText:'Show our logo for at least 3 seconds.'},
+  {id:4,kind:'Said',name:'Says discount code GLOW20',t:126,time:'2:06',result:'pass',prev:'fail',method:'Exact match',evLabel:'Transcript',ev:'“…use code GLOW20 for 20% off your first order.”',brief:5,briefText:'Say and show the code GLOW20.'},
   {id:5,kind:'Shown as text',name:'Code GLOW20 shown on screen',t:195,time:'3:15',result:'fail',method:'Exact match',evLabel:'On-screen text',ev:'Reads “GLOW2O”, with a letter O where the zero should be.',brief:5,briefText:'Say and show the code GLOW20.',what:'Fix the on-screen code in your next draft.'},
-  {id:6,kind:'Shown',name:'Serum shown in use',t:242,time:'4:02',result:'unsure',method:'AI, with a timestamp',evLabel:'In frame',ev:'The bottle is in frame, but it isn’t clear the serum is being applied.',brief:6,briefText:'Show the Dew Drop serum being used on skin.',what:'Show it more clearly, or Glow Theory can accept it. This never clears on a timer.'},
+  {id:6,kind:'Shown',name:'Serum shown in use',t:242,time:'4:02',result:'unsure',method:'AI, with a timestamp',evLabel:'In frame',ev:'The bottle is in frame, but it isn’t clear the serum is being applied.',brief:6,briefText:'Show the Dew Drop serum being used on skin.',what:'Show it more clearly in your next draft, or ask Glow Theory to accept it. This never clears on a timer.'},
   {id:7,kind:'Written',name:'Link glowtheory.com/ada in the description',result:'live',method:'Checked on the published post',evLabel:'When',ev:'Checked once the video is public.',brief:7,briefText:'Put glowtheory.com/ada in the description.'},
   {id:8,kind:'Disclosure',name:'Marked as a paid promotion',result:'live',method:'Checked on the published post',evLabel:'When',ev:'Checked once the video is public.',brief:8,briefText:'Turn on YouTube’s paid promotion label.'},
   {id:9,kind:'Publication',name:'Public on your channel by 24 Oct',result:'live',method:'YouTube’s record of the video',evLabel:'When',ev:'Checked once the video is public.',brief:9,briefText:'Post by 24 October.'}
 ];
+const REEL = [
+  {id:11,kind:'Said',name:'Names the Dew Drop serum clearly',t:8,time:'0:08',result:'waiting',asked:'2 hours ago',method:'AI, with a timestamp',evLabel:'Transcript',ev:'“…this is the dew drop…” is said quickly and may be heard as “due drop”.',brief:3,briefText:'Say the product name, Dew Drop serum.'},
+  {id:12,kind:'Said',name:'Says discount code GLOW20',t:12,time:'0:12',result:'pass',method:'Exact match',evLabel:'Transcript',ev:'“…code GLOW20 gets you 20% off.”',brief:5,briefText:'Say and show the code GLOW20.'},
+  {id:13,kind:'Shown',name:'Serum shown in use',t:20,tEnd:27,time:'0:20–0:27',result:'pass',method:'AI, with a timestamp',evLabel:'In frame',ev:'Serum is applied to the cheek for 7 seconds.',brief:6,briefText:'Show the Dew Drop serum being used on skin.'},
+  {id:14,kind:'Shown as text',name:'Code GLOW20 shown on screen',t:31,time:'0:31',result:'pass',method:'Exact match',evLabel:'On-screen text',ev:'Reads “GLOW20”.',brief:5,briefText:'Say and show the code GLOW20.'},
+  {id:15,kind:'Written',name:'Caption has #ad and glowtheory.com/ada',result:'live',method:'Checked on the published post',evLabel:'When',ev:'Checked once the Reel is public.',brief:7,briefText:'Caption must include #ad and our link.'},
+  {id:16,kind:'Disclosure',name:'Paid partnership label on',result:'live',method:'Checked by a person after publishing',evLabel:'When',ev:'Instagram doesn’t report this label, so a person checks it once the Reel is public.',brief:8,briefText:'Use Instagram’s paid partnership label.'},
+  {id:17,kind:'Publication',name:'Posted on your account by 24 Oct',result:'live',method:'Instagram’s record of the post',evLabel:'When',ev:'Checked once the Reel is public.',brief:9,briefText:'Post by 24 October.'}
+];
+
+/* ---------- statuses: one map for every rendering ---------- */
 const R = {
   pass:{label:'Passed',icon:'ic-check',fill:'var(--pass-bg)',stroke:'var(--pass)'},
   fail:{label:'Fix needed',icon:'ic-x',fill:'var(--fail-bg)',stroke:'var(--fail)'},
   unsure:{label:'Unsure',icon:'ic-q',fill:'var(--unsure-bg)',stroke:'var(--unsure)'},
-  live:{label:'At live check',icon:'ic-clock',fill:'var(--wait-bg)',stroke:'var(--wait)'}
+  live:{label:'At live check',icon:'ic-clock',fill:'var(--wait-bg)',stroke:'var(--wait)'},
+  checking:{label:'Checking',icon:'ic-spin',fill:'var(--wait-bg)',stroke:'var(--wait)'},
+  waiting:{label:`Waiting for ${BRAND}`,icon:'ic-clock',fill:'var(--unsure-bg)',stroke:'var(--unsure)'},
+  accepted:{label:`Accepted by ${BRAND}`,icon:'ic-check-circle',fill:'var(--wait-bg)',stroke:'var(--brand-700)'},
+  none:{label:'Not checked yet',icon:'ic-dot',fill:'var(--line-2)',stroke:'var(--ink-4)'}
 };
-const seal = (r, cls='seal') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><use href="#seal-shape" fill="${R[r].fill}"/><g transform="translate(6 6) scale(.5)" stroke="${R[r].stroke}" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#${R[r].icon}"/></g></svg>`;
-const chip = r => `<span class="chip ${r}"><svg class="i" viewBox="0 0 24 24"><use href="#${R[r].icon}"/></svg>${R[r].label}</span>`;
+const ORDER = ['fail','unsure','waiting','checking','none','accepted','pass','live'];
+const icon = id => id==='ic-spin'
+  ? `<path d="M21 12a9 9 0 1 1-6.22-8.56">${RM?'':'<animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1.1s" repeatCount="indefinite"/>'}</path>`
+  : `<use href="#${id}"/>`;
+const seal = (r, cls='seal') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><use href="#seal-shape" fill="${R[r].fill}"/><g transform="translate(6 6) scale(.5)" stroke="${R[r].stroke}" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round">${icon(R[r].icon)}</g></svg>`;
+const chip = r => `<span class="chip ${r}">${r==='none'?'':`<svg class="i" viewBox="0 0 24 24">${icon(R[r].icon)}</svg>`}${R[r].label}</span>`;
+const delta = i => i.prev && i.prev!==i.result && !['checking','none'].includes(i.result)
+  ? `<span class="delta"><svg class="i" viewBox="0 0 24 24"><use href="#ic-history"/></svg>Was ${R[i.prev].label}</span>` : '';
 const fmt = s => `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,'0')}`;
-let selected = 5, filter = 'all', grid = null;
+const ico = (id, cls='i') => `<svg class="${cls}" viewBox="0 0 24 24"><use href="#${id}"/></svg>`;
 
-/* timeline */
-const scrub = document.getElementById('scrub');
-ITEMS.filter(i=>i.tEnd).forEach(i=>{
-  const s=document.createElement('div'); s.className='seg';
-  s.style.left=(i.t/LEN*100)+'%'; s.style.width=((i.tEnd-i.t)/LEN*100)+'%'; scrub.appendChild(s);
-});
-ITEMS.filter(i=>i.t!=null && !i.tEnd).forEach(i=>{
-  const b=document.createElement('button'); b.className='mk'; b.dataset.id=i.id;
-  b.style.left=(i.t/LEN*100)+'%';
-  b.setAttribute('aria-label',`${i.name}, ${R[i.result].label}, at ${i.time}`);
-  b.innerHTML=seal(i.result); b.onclick=()=>select(i.id); scrub.appendChild(b);
-});
+/* ---------- scenarios ---------- */
+const SCENES = {
+  results:'Results, run 2: one to fix, one unsure',
+  waiting:'Results: unsure item waiting for brand',
+  declined:'Results: brand declined the unsure item',
+  deadline:'Results with 2 days left',
+  checking:'Checking run 3: stages, item by item',
+  'failed-file':'Check failed: file too long',
+  'failed-ours':'Check failed: our side',
+  passing:'Fully passing: review window started',
+  released:'Released: deadline passed',
+  nodraft:'No draft yet',
+  reel:'Second deliverable: Instagram Reel, 9:16'
+};
+const clone = a => a.map(x=>({...x}));
+const STEPS = ['Checklist agreed','Held','Draft check','Brand review','Publish','Live check','Paid'];
+const UP = ['Upload new draft','ic-upload'];
 
-/* detail */
-function renderDetail(i){
-  const d=document.getElementById('detail');
+function build(k){
+  const d = k==='reel' ? DELIVS.reel : DELIVS.yt;
+  let items = clone(k==='reel' ? REEL : YT);
+  const by = id => items.find(x=>x.id===id);
+  const s = {k, d, items, state:'results', step:2, money:'held', readOnly:false, alert:null, stages:null,
+    sub:['Draft check, run 2','6:48 long','Post by 24 Oct'], rail:'Draft check', file:d.file,
+    next:{b:'Fix 1 item, then upload a new draft.', long:` “Serum shown in use” needs a second look: show it more clearly, or ask ${BRAND} to accept it. ${BRAND}’s 48-hour review starts once every item passes.`, primary:UP}};
+  switch(k){
+    case 'waiting':
+      Object.assign(by(6),{result:'waiting',asked:'2 hours ago'});
+      s.next={b:'Fix 1 item, then upload a new draft.', long:` “Serum shown in use” is waiting for ${BRAND}; you can still fix it yourself. Post by 24 Oct, 18 days left.`, primary:UP}; break;
+    case 'declined':
+      Object.assign(by(6),{declined:true,note:'The serum needs to go on skin, not just be held up. Could you add a quick shot of it being applied?',what:'Show the serum being applied in your next draft.'});
+      s.next={b:'Fix 2 items, then upload a new draft.', long:` ${BRAND} asked you to show the serum being applied, and the on-screen code still reads GLOW2O.`, primary:UP}; break;
+    case 'deadline':
+      s.sub=['Draft check, run 2','6:48 long','Post by 24 Oct · 2 days left'];
+      s.next={b:'2 days left to post. Fix 1 item and upload a new draft.', long:` ${BRAND}’s review can take up to 48 hours once every item passes.`, primary:UP}; break;
+    case 'checking':
+      s.state='checking'; s.sub=['Draft check, run 3','6:51 long','Post by 24 Oct']; s.rail='Checking your draft'; s.file='draft_v3.mp4';
+      items.forEach(i=>{ if(i.result!=='live'){ i.prev=i.result; i.result='checking'; i.what=null; } });
+      Object.assign(by(4),{result:'pass'}); Object.assign(by(5),{result:'pass',ev:'Reads “GLOW20”.'});
+      s.stages=[['Reading what’s said','done'],['Reading on-screen text','done'],['Watching the video','now'],['Checking each item','wait']];
+      s.next={b:'We’re checking your draft against the 6 items that can be checked before publishing.', long:' You can leave this page; results will be here when it’s done.', primary:null}; break;
+    case 'failed-file':
+      s.state='check_failed';
+      s.alert={kind:'file', seal:'fail', h:'We couldn’t check draft_v3.mp4', p:'It’s 14:20 long, and drafts can be up to 12:00. Upload a shorter cut and we’ll check it straight away.'};
+      s.next={b:'Upload a shorter cut of your draft.', long:' Below are the results from run 2, your last completed check.', primary:['Upload again','ic-upload']}; break;
+    case 'failed-ours':
+      s.state='check_failed';
+      s.alert={kind:'ours', seal:'live', ic:'ic-refresh', h:'Something went wrong on our side checking draft_v3.mp4', p:'It isn’t a problem with your video. We’re trying again, and you don’t need to do anything.'};
+      s.next={b:'Nothing to do right now.', long:' We’ll check draft_v3.mp4 again and the results will appear here. Below are the results from run 2.', primary:null}; break;
+    case 'passing':
+      s.state='fully_passing'; s.step=3; s.sub=['Draft check, run 3','6:51 long','Post by 24 Oct']; s.rail='Brand review · 47h left'; s.file='draft_v3.mp4';
+      items.forEach(i=>{ i.prev=i.result; i.what=null; });
+      Object.assign(by(5),{result:'pass',ev:'Reads “GLOW20”.'});
+      Object.assign(by(6),{result:'accepted',acceptedOn:'7 Oct'});
+      by(3).prev='pass'; by(4).prev='pass';
+      s.next={b:`Every item passed. ${BRAND} has until Thu 9 Oct, 14:00 to review.`, long:' If they say nothing by then, you’re cleared to publish.', primary:null}; break;
+    case 'released':
+      s.state='released'; s.step=-1; s.money='released'; s.readOnly=true; s.sub=['Ended 25 Oct','Was due 24 Oct']; s.rail='Hold released';
+      items.forEach(i=>{ i.what=null; });
+      s.next={b:`The hold went back to ${BRAND}.`, long:` The deadline of 24 Oct passed before a passing draft was published, so the $1,200 hold was released on 25 Oct. Nothing more can happen on this deliverable.`, primary:null}; break;
+    case 'nodraft':
+      s.state='no_draft'; s.sub=['No draft yet','Post by 24 Oct']; s.rail='Waiting for your draft';
+      items.forEach(i=>{ if(i.result!=='live'){ i.result='none'; i.prev=null; i.what=null; } });
+      s.next={b:'Upload your draft to start the draft check.', long:` It’s checked against the 9 items you and ${BRAND} agreed. Post by 24 Oct.`, primary:['Upload draft','ic-upload']}; break;
+    case 'reel':
+      s.sub=['Draft check, run 1','0:45 long','Post by 24 Oct'];
+      s.next={b:`1 item is waiting for ${BRAND}.`, long:` You asked them to accept “Names the Dew Drop serum clearly”. You can still upload a fix yourself. Post by 24 Oct, 18 days left.`, primary:UP}; break;
+  }
+  return s;
+}
+
+/* ---------- render ---------- */
+const $ = id => document.getElementById(id);
+let S, selected, filter='all', grid=null, lastWide=null;
+
+function renderHead(){
+  $('title').textContent = `${BRAND} · ${S.d.name}`;
+  $('crumbD').textContent = S.d.name;
+  $('sub').innerHTML = S.sub.map(x=>`<span>${x}</span>`).join('');
+  $('railGT').textContent = S.rail;
+  const ytStep = S.k==='reel' ? 'Draft check' : (S.step===3?'Brand review':S.step<0?'Hold released':S.k==='nodraft'?'Waiting for draft':'Draft check');
+  $('dswitch').innerHTML = [['yt','YouTube video','ic-video',ytStep,S.k==='reel'?'results':S.k],['reel','Instagram Reel','ic-reel','Draft check','reel']]
+    .map(([key,n,ic,st,to])=>`<a href="?state=${to}" data-to="${to}" ${S.d.key===key?'aria-current="page"':''}>${ico(ic)}<span><b>${n}</b><span>${st}</span></span></a>`).join('');
+  $('dswitch').querySelectorAll('a').forEach(a=>a.onclick=e=>{e.preventDefault(); go(a.dataset.to);});
+  const doneSeal = `<svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--brand-100)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-700)" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></g></svg>`;
+  const nowSeal = `<svg class="seal" viewBox="0 0 24 24"><use href="#seal-shape" fill="var(--marigold)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-900)" stroke-width="3" fill="none"><use href="#ic-dot"/></g></svg>`;
+  const cur = S.step<0 ? 2 : S.step;
+  $('steps').innerHTML = STEPS.map((n,i)=>{
+    const done = S.step<0 ? i<2 : i<cur, now = S.step>=0 && i===cur;
+    return (i?`<li class="bar${done||now?' done':''}" aria-hidden="true"></li>`:'')+`<li class="${done?'done':now?'now':''}"${now?' aria-current="step"':''}>${done?doneSeal:now?nowSeal:''}${n}</li>`;
+  }).join('');
+  $('stepsC').innerHTML = `<span class="dots">${STEPS.map((_,i)=>`<i class="${(S.step<0?i<2:i<cur)?'done':(S.step>=0&&i===cur)?'now':''}"></i>`).join('')}</span>${S.step<0?'Ended · hold released':`Step ${cur+1} of 7 · ${STEPS[cur]}`}`;
+}
+
+function renderAlert(){
+  const a = S.alert;
+  $('alert').innerHTML = !a ? '' : `<div class="alert ${a.kind}" role="status">
+    ${a.ic ? `<svg class="seal" viewBox="0 0 24 24" aria-hidden="true"><use href="#seal-shape" fill="var(--wait-bg)"/><g transform="translate(6 6) scale(.5)" stroke="var(--wait)" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#${a.ic}"/></g></svg>` : seal(a.seal)}
+    <div><h3>${a.h}</h3><p>${a.p}</p><span class="hold">${ico('ic-lock')}Your ${S.d.amountShort} hold is still in place</span></div></div>`;
+}
+
+function renderPlayer(){
+  const sc = $('screen');
+  sc.className = 'screen'+(S.d.v?' v':'')+(S.state==='no_draft'?' empty-screen':'');
+  $('work').className = 'work'+(S.d.v?' v':'');
+  sc.innerHTML = S.state==='no_draft'
+    ? `<div>${ico('ic-upload')}No draft yet<span style="font-weight:500;font-size:13px">Upload the video file to check it against the checklist.</span></div>`
+    : `<span class="file">${S.file}</span><span class="synth">Placeholder frame</span>
+       <button class="play" aria-label="Play draft"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></button>
+       <span class="now" id="nowTime">0:00 / ${fmt(S.d.len)}</span>`;
+  const L = S.d.len, scrub = $('scrub');
+  scrub.innerHTML = `<div class="rail-line"></div><div class="played" id="played"></div><div class="head-line" id="headLine" style="left:0"></div>`;
+  scrub.style.display = $('ticks').style.display = S.state==='no_draft' ? 'none' : '';
+  S.items.filter(i=>i.tEnd && i.result!=='checking').forEach(i=>{
+    const g=document.createElement('div'); g.className='seg';
+    g.style.left=(i.t/L*100)+'%'; g.style.width=((i.tEnd-i.t)/L*100)+'%'; scrub.appendChild(g);
+  });
+  S.items.filter(i=>i.t!=null && !i.tEnd && !['checking','none'].includes(i.result)).forEach(i=>{
+    const b=document.createElement('button'); b.className='mk'; b.dataset.id=i.id;
+    b.style.left=(i.t/L*100)+'%';
+    b.setAttribute('aria-label',`${i.name}, ${R[i.result].label}, at ${i.time}`);
+    b.innerHTML=seal(i.result); b.onclick=()=>select(i.id); scrub.appendChild(b);
+  });
+  $('ticks').innerHTML = [0,.25,.5,.75,1].map(f=>`<span>${fmt(L*f)}</span>`).join('');
+}
+
+function renderMoney(){
+  const m = $('money'), d = S.d;
+  if(S.money==='released'){
+    m.className='money released';
+    m.innerHTML = `<svg class="seal-big" viewBox="0 0 24 24" aria-hidden="true"><use href="#seal-shape" fill="var(--brand-200)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-700)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-return"/></g></svg>
+      <div class="lab">Released to ${BRAND}</div><div class="amt">${d.amount}</div><div class="ref">Released 25 Oct · deadline passed</div>
+      <ol class="track one" aria-label="Money stage"><li aria-current="step">Released</li></ol>
+      <div class="to"><span>Went back to</span><b>${BRAND}’s PayPal</b></div>`;
+    return;
+  }
+  m.className='money';
+  m.innerHTML = `<svg class="seal-big" viewBox="0 0 24 24" aria-hidden="true"><use href="#seal-shape" fill="var(--marigold-ink)"/><g transform="translate(6 6) scale(.5)" stroke="var(--marigold)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></g></svg>
+    <div class="lab">Held in PayPal for this ${d.v?'Reel':'video'}</div><div class="amt">${d.amount}</div><div class="ref">Ref ${d.ref} · held ${d.held}</div>
+    <ol class="track" aria-label="Money stage"><li class="on" aria-current="step">Held</li><li>Confirmed</li><li>Captured</li><li>Paid</li></ol>
+    <div class="to"><span>Pays out to</span><b>${d.email}</b></div>`;
+}
+
+function renderNext(){
+  const n = S.next;
+  $('next').innerHTML = `<p><b>${n.b}</b><span class="long">${n.long}</span></p>
+    <div class="acts"><button class="btn ghost">View brief</button>${n.primary?`<button class="btn primary">${ico(n.primary[1])}${n.primary[0]}</button>`:''}</div>`;
+}
+
+function renderStages(){
+  if(!S.stages){ $('stages').innerHTML=''; return; }
+  const st = {done:'pass', now:'checking', wait:'none'};
+  const doneSeal = `<svg class="seal" viewBox="0 0 24 24" aria-hidden="true"><use href="#seal-shape" fill="var(--brand-100)"/><g transform="translate(6 6) scale(.5)" stroke="var(--brand-700)" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></g></svg>`;
+  const landed = S.items.filter(i=>!['checking','live'].includes(i.result)).length;
+  $('stages').innerHTML = `<h3>Checking your draft</h3><div class="kind">Run 3 · started 2 min ago · ${landed} of 6 items done</div>
+    <ol aria-label="Check stages">${S.stages.map(([n,s])=>`<li class="${s}"${s==='now'?' aria-current="step"':''}>${s==='done'?doneSeal:seal(st[s])}<span>${n}</span><small>${s==='done'?'Done':s==='now'?'Now':'Next'}</small></li>`).join('')}</ol>`;
+}
+
+function itemActs(i){
+  if(S.readOnly) return '';
+  if(i.result==='unsure' && !i.declined) return `<div class="acts"><button class="btn ghost" data-ask="${i.id}">${ico('ic-hand')}Ask ${BRAND} to accept</button><small>${BRAND} sees this moment and the evidence. You can still upload a fix.</small></div>`;
+  if(i.result==='waiting') return `<div class="acts"><button class="btn ghost" data-withdraw="${i.id}">Withdraw</button><small>You asked ${i.asked}. It stays here until ${BRAND} answers; it never clears on a timer.</small></div>`;
+  return '';
+}
+function itemWhat(i){
+  if(i.result==='accepted') return `${BRAND} accepted this moment on ${i.acceptedOn}. It counts as passed for this draft.`;
+  if(i.result==='checking') return '';
+  return S.readOnly ? '' : (i.what||'');
+}
+const evText = i => i.result==='checking' ? 'Being checked now.' : i.result==='none' ? 'Checked once you upload a draft.' : i.ev;
+const timeBtn = i => i.time ? ` · <button class="t-btn" data-seek="${i.id}" aria-label="Play from ${i.time}">${i.time}</button>` : '';
+const noteBlock = i => i.declined ? `<div class="note"><b>${BRAND} asked you to fix this</b>“${i.note}”</div>` : '';
+
+function renderDetail(){
+  const i = S.items.find(x=>x.id===selected), d=$('detail');
+  if(!i){ d.innerHTML=''; return; }
+  const w = itemWhat(i);
   d.innerHTML=`<div class="fade" style="display:flex;flex-direction:column;height:100%">
-    <div class="top">${seal(i.result)}<div><h3>${i.name}</h3><div class="kind">${i.kind}${i.time?` · ${i.time}`:''}</div></div></div>
+    <div class="top">${seal(i.result)}<div><h3>${i.name}</h3><div class="kind">${i.kind}${timeBtn(i)}</div></div></div>
     <dl>
-      <div><dt>Result</dt><dd>${chip(i.result)}</dd></div>
-      <div><dt>${i.evLabel}</dt><dd class="quote ${i.result==='fail'?'fail':''}">${i.ev}</dd></div>
+      <div><dt>Result</dt><dd style="display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center">${chip(i.result)}${delta(i)}</dd></div>
+      ${i.declined?`<div><dt>From ${BRAND}</dt><dd>${noteBlock(i)}</dd></div>`:''}
+      <div><dt>${i.evLabel}</dt><dd class="quote ${i.result==='fail'?'fail':''}">${evText(i)}</dd></div>
       <div><dt>From the brief</dt><dd class="brief"><svg class="i" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8M16 17H8"/></svg><span>Line ${i.brief}: “${i.briefText}”</span></dd></div>
       <div><dt>Checked by</dt><dd>${i.method}</dd></div>
     </dl>
-    ${i.what?`<p class="what">${i.what}</p>`:''}
+    ${w?`<p class="what">${w}</p>`:''}${itemActs(i)}
   </div>`;
+  wire(d);
 }
 
-/* cards (phones) */
+const PRED = {all:()=>true, attn:i=>['fail','unsure'].includes(i.result), pass:i=>['pass','accepted'].includes(i.result), wait:i=>i.result==='waiting', live:i=>i.result==='live'};
+function renderTabs(){
+  const t=$('tabs'), hide=['checking','no_draft'].includes(S.state);
+  t.style.display = hide?'none':'';
+  $('count').textContent = `${S.items.length} items`;
+  const c = k => S.items.filter(PRED[k]).length;
+  const tabs = [['all','All'],['attn','Needs you'],['pass','Passed'],...(c('wait')?[['wait',`Waiting for ${BRAND}`]]:[]),['live','At live check']];
+  if(!tabs.some(x=>x[0]===filter) || hide) filter='all';
+  t.innerHTML = tabs.map(([k,n])=>`<button role="tab" aria-selected="${k===filter}" data-f="${k}">${n} <span class="n">${c(k)}</span></button>`).join('');
+  t.querySelectorAll('button').forEach(b=>b.onclick=()=>{ filter=b.dataset.f; renderTabs(); applyFilter(); });
+}
+
 function renderCards(rows){
-  const ul=document.getElementById('cards');
+  const ul=$('cards');
   ul.innerHTML=rows.map(i=>`<li class="card" data-result="${i.result}" data-id="${i.id}" data-open="${i.id===selected}">
     <button aria-expanded="${i.id===selected}">${seal(i.result)}<span><b>${i.name}</b><span class="m">${i.kind}${i.time?` · ${i.time}`:''}</span></span>${chip(i.result)}</button>
-    <div class="more"><div class="quote ${i.result==='fail'?'fail':''}">${i.ev}</div>Brief line ${i.brief}: “${i.briefText}”${i.what?`<br><b>${i.what}</b>`:''}</div></li>`).join('');
+    <div class="more">${delta(i)?`<div style="margin-bottom:6px">${delta(i)}</div>`:''}${noteBlock(i)}<div class="quote ${i.result==='fail'?'fail':''}">${evText(i)}</div>Brief line ${i.brief}: “${i.briefText}”${itemWhat(i)?`<br><b>${itemWhat(i)}</b>`:''}${itemActs(i)}</div></li>`).join('');
   ul.querySelectorAll('.card > button').forEach(b=>b.onclick=()=>{
     const li=b.parentElement, open=li.dataset.open!=='true';
     li.dataset.open=open; b.setAttribute('aria-expanded',open);
     if(open) select(+li.dataset.id,{fromCard:true});
   });
+  wire(ul);
 }
+
+function wire(root){
+  root.querySelectorAll('[data-ask]').forEach(b=>b.onclick=()=>{ const i=S.items.find(x=>x.id===+b.dataset.ask); Object.assign(i,{result:'waiting',asked:'just now'}); refreshItems(); });
+  root.querySelectorAll('[data-withdraw]').forEach(b=>b.onclick=()=>{ const i=S.items.find(x=>x.id===+b.dataset.withdraw); i.result='unsure'; refreshItems(); });
+  root.querySelectorAll('[data-seek]').forEach(b=>b.onclick=()=>select(+b.dataset.seek));
+}
+function refreshItems(){ renderPlayer(); renderTabs(); applyFilter(); select(selected); }
 
 /* grid (md and up) */
 function buildTheme(){
@@ -447,28 +720,26 @@ function buildTheme(){
     headerHeight:44, rowHeight:64, backgroundColor:'#FFFFFF', columnBorder:false, headerColumnBorder:false
   });
 }
-let lastWide=null;
-function gridWide(){ lastWide=document.getElementById('grid').clientWidth>=1000; return lastWide; }
+function gridWide(){ lastWide=$('grid').clientWidth>=1000; return lastWide; }
 function colDefs(wide){ return [
-      {colId:'seal', headerName:'', field:'result', width:64, sortable:false, cellRenderer:p=>`<div class="ag-cell-seal">${seal(p.value)}</div>`},
-      {colId:'item', headerName:'Item', field:'name', flex:3, minWidth:340, cellRenderer:p=>`<div class="cell2"><b>${p.value}</b><span>${p.data.ev}</span></div>`},
-      {colId:'kind', headerName:'Kind', field:'kind', width:140},
-      {colId:'time', headerName:'Time', field:'t', width:120, cellRenderer:p=>p.data.time?`<span class="t-strong">${p.data.time}</span>`:'<span style="color:var(--ink-4)">After publish</span>'},
-      {colId:'brief', headerName:'Brief', field:'brief', width:96, valueFormatter:p=>'Line '+p.value},
-      {colId:'result', headerName:'Result', field:'result', width:160, cellRenderer:p=>chip(p.value),
-        comparator:(a,b)=>['fail','unsure','pass','live'].indexOf(a)-['fail','unsure','pass','live'].indexOf(b)}
-  ].filter(c=>wide || (c.colId!=='kind' && c.colId!=='brief')); }
+  {colId:'seal', headerName:'', field:'result', width:64, sortable:false, cellRenderer:p=>`<div class="ag-cell-seal">${seal(p.value)}</div>`},
+  {colId:'item', headerName:'Item', field:'name', flex:3, minWidth:300, cellRenderer:p=>`<div class="cell2"><b>${p.value}</b><span>${evText(p.data)}</span></div>`},
+  {colId:'kind', headerName:'Kind', field:'kind', width:130},
+  {colId:'time', headerName:'Time', field:'t', width:128, cellRenderer:p=>p.data.time?`<span class="t-strong">${p.data.time}</span>`:'<span style="color:var(--ink-4)">After publish</span>'},
+  {colId:'brief', headerName:'Brief', field:'brief', width:90, valueFormatter:p=>'Line '+p.value},
+  {colId:'result', headerName:'Result', field:'result', width:236, cellRenderer:p=>`<div class="cell-res">${chip(p.value)}${delta(p.data)}</div>`,
+    comparator:(a,b)=>ORDER.indexOf(a)-ORDER.indexOf(b)}
+].filter(c=>wide || (c.colId!=='kind' && c.colId!=='brief')); }
 function initGrid(){
   if(!window.agGrid) return;
-  const {createGrid, themeQuartz, ModuleRegistry, AllCommunityModule} = agGrid;
+  const {createGrid, ModuleRegistry, AllCommunityModule} = agGrid;
   if(ModuleRegistry && AllCommunityModule && !window.__agReg){ ModuleRegistry.registerModules([AllCommunityModule]); window.__agReg=true; }
-  const theme = buildTheme();
-  grid = createGrid(document.getElementById('grid'), {
-    theme, domLayout:'autoHeight', rowData: ITEMS, getRowId:p=>String(p.data.id),
+  grid = createGrid($('grid'), {
+    theme:buildTheme(), domLayout:'autoHeight', rowData:S.items.filter(PRED[filter]), getRowId:p=>String(p.data.id),
     rowSelection:{mode:'singleRow', checkboxes:false, enableClickSelection:true},
     rowClassRules:{'row-fail':p=>p.data.result==='fail'},
     defaultColDef:{sortable:true, resizable:false, suppressMovable:true},
-    columnDefs: colDefs(gridWide()),
+    columnDefs:colDefs(gridWide()),
     onRowClicked:e=>select(e.data.id,{fromGrid:true}),
     onGridSizeChanged:e=>{ const w=e.clientWidth>=1000; if(w!==lastWide){ lastWide=w; e.api.setGridOption('columnDefs', colDefs(w)); } },
     onFirstDataRendered:()=>markGrid()
@@ -476,41 +747,46 @@ function initGrid(){
 }
 function markGrid(){ if(!grid) return; grid.forEachNode(n=>n.setSelected(n.data.id===selected)); }
 
-/* filtering */
-const pred = {all:()=>true, attn:i=>i.result==='fail'||i.result==='unsure', pass:i=>i.result==='pass', live:i=>i.result==='live'};
 function applyFilter(){
-  const rows=ITEMS.filter(pred[filter]);
-  if(grid){ grid.setGridOption('rowData', rows); markGrid(); }
+  const rows=S.items.filter(PRED[filter]);
+  if(grid){ grid.setGridOption('rowData', rows.map(r=>({...r}))); grid.redrawRows(); markGrid(); }
   renderCards(rows);
-  document.getElementById('empty').style.display=rows.length?'none':'block';
+  $('empty').style.display=rows.length?'none':'block';
 }
-document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
-  filter=b.dataset.f;
-  document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
-  applyFilter();
-});
 
-/* selection */
 function select(id, o={}){
-  selected=id; const i=ITEMS.find(x=>x.id===id);
-  renderDetail(i);
+  selected=id; const i=S.items.find(x=>x.id===id);
+  renderDetail();
   document.querySelectorAll('.mk').forEach(m=>m.setAttribute('aria-pressed', +m.dataset.id===id));
-  if(i.t!=null){
-    const pct=i.t/LEN*100;
-    document.getElementById('headLine').style.left=pct+'%';
-    document.getElementById('played').style.transform=`scaleX(${pct/100})`;
-    document.getElementById('nowTime').textContent=`${fmt(i.t)} / ${fmt(LEN)}`;
+  if(i && i.t!=null && $('headLine')){
+    const pct=i.t/S.d.len*100;
+    $('headLine').style.left=pct+'%';
+    $('played').style.transform=`scaleX(${pct/100})`;
+    if($('nowTime')) $('nowTime').textContent=`${fmt(i.t)} / ${fmt(S.d.len)}`;
   }
   if(!o.fromGrid) markGrid();
-  if(!o.fromCard) renderCards(ITEMS.filter(pred[filter]));
+  if(!o.fromCard) renderCards(S.items.filter(PRED[filter]));
+}
+const firstSel = () => (S.items.find(i=>i.result==='fail') || S.items.find(i=>i.result==='unsure') || S.items[0]).id;
+
+function go(k){
+  if(!SCENES[k]) k='results';
+  S = build(k); filter='all';
+  document.body.dataset.state = S.state;
+  $('state').value = k;
+  try{ history.replaceState(null,'',`?state=${k}`); }catch(e){}
+  renderHead(); renderAlert(); renderPlayer(); renderMoney(); renderNext(); renderStages(); renderTabs();
+  selected = firstSel();
+  applyFilter(); select(selected);
 }
 
+$('state').innerHTML = Object.entries(SCENES).map(([k,n])=>`<option value="${k}">${n}</option>`).join('');
+$('state').onchange = e => go(e.target.value);
 const md = window.matchMedia('(min-width:768px)');
-function maybeGrid(){ if(md.matches && !grid) initGrid(); }
+function maybeGrid(){ if(md.matches && !grid){ initGrid(); applyFilter(); } }
 md.addEventListener('change', maybeGrid);
+go(new URLSearchParams(location.search).get('state') || 'results');
 maybeGrid();
-select(selected);
-applyFilter();
 </script>
 </body>
 </html>

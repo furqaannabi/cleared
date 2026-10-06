@@ -203,11 +203,49 @@ components:
     textColor: "{colors.ink-2}"
     rounded: "{rounded.lg}"
     padding: "16px 18px 16px 20px"
+  chip-checking:
+    backgroundColor: "{colors.waiting-wash}"
+    textColor: "{colors.waiting}"
+    typography: "{typography.chip}"
+    rounded: "{rounded.pill}"
+    padding: "4px 10px 4px 8px"
+  chip-waiting-for-brand:
+    backgroundColor: "{colors.unsure-wash}"
+    textColor: "{colors.unsure}"
+    typography: "{typography.chip}"
+    rounded: "{rounded.pill}"
+    padding: "4px 10px 4px 8px"
+  chip-accepted-by-brand:
+    backgroundColor: "{colors.waiting-wash}"
+    textColor: "{colors.espresso}"
+    typography: "{typography.chip}"
+    rounded: "{rounded.pill}"
+    padding: "4px 10px 4px 8px"
+  money-card-released:
+    backgroundColor: "{colors.latte}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.lg}"
+    padding: "20px 22px 18px"
+  deliverable-switcher:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.pill}"
+    padding: "4px"
+  deliverable-switcher-current:
+    backgroundColor: "{colors.espresso}"
+    textColor: "{colors.surface}"
+  check-failed-file:
+    backgroundColor: "{colors.fail-tint}"
+    rounded: "{rounded.lg}"
+    padding: "16px 20px"
+  check-failed-ours:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.lg}"
+    padding: "16px 20px"
 ---
 
 # Design System: Cleared
 
-Recorded from the built design prototype `design/evidence-view/index.html` (6 October 2026). Direction: "Sealed" merged with the "Wallet pass" money card, recoloured to espresso and marigold at William's request (see `.impeccable/surfaces/design-evidence-view-index-html.md`). Product code in `web/` inherits these rules; the prototype itself never ships.
+Recorded from the built design prototype `design/evidence-view/index.html` (6 October 2026). Direction: "Sealed" merged with the "Wallet pass" money card, recoloured to espresso and marigold at William's request (see `.impeccable/surfaces/design-evidence-view-index-html.md`). Extended the same day with the states the creator draft check FRD needs (`docs/specs/creator-draft-check-frd.md`): no draft, checking, waiting for brand, accepted by brand, check failed, fully passing, released, 9:16 drafts and the deliverable switcher. The prototype's state picker shows each one. Product code in `web/` inherits these rules; the prototype itself never ships.
 
 ## Overview
 
@@ -237,14 +275,15 @@ Cleared has to win two people at once. Creators should feel welcomed: the screen
 
 ### State
 - **Passed:** `pass-wash` / `pass`. **Fix needed:** `fail-wash` / `fail`, with `fail-tint` and `fail-line` for a failed row or card. **Unsure:** `unsure-wash` / `unsure`. **At live check:** `waiting-wash` / `waiting`.
+- **Checking:** `waiting-wash` / `waiting`, with a spinning arc that is static under reduced motion. **Waiting for brand:** `unsure-wash` / `unsure`, because the item is still unresolved. **Accepted by brand:** `waiting-wash` with an `espresso` check-in-circle: settled, but by a person, so never green. **Not checked yet** (no draft): no wash, `ink-4` text, a dot in a `line-soft` seal.
 - **Avatars:** `avatar-rose`, `avatar-sky` and `avatar-sun` (each with its `-ink`) tint deal initials in navigation. They identify a deal and carry no status.
 
 ### Named Rules
 **The Marigold Is Money Rule.** Marigold marks money and progress only: the money card, the logo seal and the current deal step. Never on decoration, never on a button, never as a page wash.
 
-**The Brand Is Not A Status Rule.** Espresso and marigold never stand in for passed, failed, unsure or waiting. Green means passed and nothing else on the screen is green.
+**The Brand Is Not A Status Rule.** Espresso and marigold never stand in for passed, failed, unsure or waiting. Green means passed and nothing else on the screen is green, including an item the brand accepted. The one use of espresso inside a status is the accepted icon, which marks a person's decision rather than a result.
 
-**The Never Colour Alone Rule.** A result is always an icon and a word (check + "Passed", cross + "Fix needed", question + "Unsure", clock + "At live check"). Colour reinforces; it never carries the meaning by itself.
+**The Never Colour Alone Rule.** A result is always an icon and a word (check + "Passed", cross + "Fix needed", question + "Unsure", clock + "At live check", arc + "Checking", clock + "Waiting for {brand}", check-in-circle + "Accepted by {brand}"). Colour reinforces; it never carries the meaning by itself.
 
 ## Typography
 
@@ -267,6 +306,7 @@ Cleared has to win two people at once. Creators should feel welcomed: the screen
 - **Desktop (1024px and up):** 248px espresso rail, content max 1240px with 36px side padding. Header (breadcrumb, title, meta, deal steps) across the full width. Then two columns (1.35fr / min 340px): left holds the draft player and the next-step bar; right holds the money card and the selected-item evidence panel. The checklist runs full width below.
 - **Tablet (768–1023px):** the rail becomes an espresso top bar; one column in this order: money card, player, next-step bar, evidence panel, checklist. The grid drops its Kind and Brief columns under 1000px so nothing scrolls sideways.
 - **Phone (under 768px):** 16px gutter. Deal steps become a compact dot track ("Step 3 of 7"). The evidence panel folds into expandable item cards. The next-step bar is fixed to the bottom with a full-width primary action (48px tall).
+- **9:16 drafts (Shorts, Reels):** from 1280px, three columns: the player (320px), the evidence panel, the money card (300–340px), with the next-step bar under the last two. From 768px to 1279px, two columns: the player (260–320px) on the left, with the money card, evidence panel and next-step bar stacked on the right. On phones a 9:16 player is at most 60% of the viewport height, centred.
 - Rhythm: 20px between major blocks, 24–34px above section headings, 8–14px inside groups.
 
 ### Named Rules
@@ -295,26 +335,34 @@ Rounded and friendly: 6px for focus rings, 10px for small insets (quotes), 12px 
 - **Ghost:** white pill with a `latte-line` border and espresso text; hover fills `latte-wash`.
 
 ### Chips
-Result chips are pills with a 14px stroke icon and a word: Passed, Fix needed, Unsure, At live check.
+Result chips are pills with a 14px stroke icon and a word: Passed, Fix needed, Unsure, At live check, Checking, Waiting for {brand}, Accepted by {brand}. In the grid's result column and on cards, an item that changed since the last run carries a small `ink-3` change marker under its chip: a history icon and "Was Fix needed". It is never coloured, because the chip already shows the current status.
 
 ### Tabs
-A white pill track with 4px padding; the selected tab fills espresso with white text; each tab shows its count.
+A white pill track with 4px padding; the selected tab fills espresso with white text; each tab shows its count. A tab with nothing to show is left out rather than shown at 0 when it is conditional (Waiting for {brand}). On phones the track scrolls sideways instead of wrapping; it is navigation, not a table.
+
+### Deliverable switcher
+The same pill track under the page title, one pill per deliverable. Each pill is a link with a platform icon (landscape frame for a video, portrait frame for a Short or Reel), the deliverable name, and its current step on a second line. The current deliverable fills espresso. On phones the row scrolls sideways.
 
 ### Cards / Containers
 - **Panel:** white, 20px radius, 1px border.
-- **Item card (phones):** a button row (seal, name and kind/time, chip) that expands to show the evidence quote, the brief line and what to do. Failed cards use `fail-tint` with a `fail-line` border.
+- **Item card (phones):** a button row (seal, name and kind/time, chip) that expands to show the evidence quote, the brief line and what to do. Failed cards use `fail-tint` with a `fail-line` border. An Unsure card that the brand declined shows the brand's note in an `unsure-wash` inset above the evidence.
+- **Item actions:** an Unsure item offers a ghost "Ask {brand} to accept" with one line saying what the brand will see; a Waiting item offers a ghost "Withdraw" with when it was asked and that it never clears on a timer. Actions sit in the evidence panel (tablet and up) or inside the expanded card (phones), never in a grid cell.
+- **Check failed banner:** a full-width panel between the header and the work row, with a seal, a one-line heading naming the file, a sentence on what to do, and a latte pill "Your $1,200 hold is still in place". The file kind (the creator's to fix) uses `fail-tint` with a `fail-line` border and a cross seal. The ours kind (Cleared's to fix) is a plain white panel with a grey refresh seal, because nothing is wrong with the creator's work. The banner holds no button; the next-step bar carries the action.
+- **Check stages panel:** while a check runs it takes the evidence panel's place (and sits after the player on phones): "Checking your draft", a meta line (run, started, items done), and the stages as a list of rows with a seal, a name and Done / Now / Next. Done is the deal-step check seal, now is the Checking seal, next is the not-checked seal.
+- **No draft:** the player area becomes a `latte-wash` panel with a dashed `latte-line` border, an espresso upload icon and "No draft yet". The timeline is hidden until there is a draft.
 
 ### Navigation
 Espresso rail with a marigold-seal logo, rail section labels, deal rows with initial avatars and a one-line status ("Brand review · 31h left"). The current page is a lighter fill. On tablet and phone it collapses to an espresso top bar with a "Deals" menu button (44px target).
 
 ### Money card (signature)
 Marigold card with a large soft white circle in the top-right corner: an espresso-ink lock seal, "Held in PayPal for this video", the amount, PayPal reference and date, a four-stage track (Held → Confirmed → Captured → Paid) where the current stage is an espresso-ink pill with marigold text, and a "Pays out to" footer. It is the one place money appears, and it sits next to the evidence.
+- **Released:** when a hold goes back to the brand, the card drops to `latte` with a `latte-line` border and no lift (the Edge Or Lift Rule), the seal becomes a `latte-line` seal with an espresso return arrow, the label reads "Released to {brand}", the reference line gives the date and reason, and the four-stage track becomes a single "Released" stage. Marigold leaves the card because the money is no longer moving towards the creator.
 
 ### Seal (signature)
-A 14-scallop SVG badge with a stroke icon inside. Green wash + check = passed, red wash + cross = fix needed, amber wash + question = unsure, grey + clock = waiting, espresso-ink + marigold lock = money held, marigold + dot = current step. Used on timeline markers, grid rows, item cards, deal steps and the logo.
+A 14-scallop SVG badge with a stroke icon inside. Green wash + check = passed, red wash + cross = fix needed, amber wash + question = unsure, grey + clock = waiting, espresso-ink + marigold lock = money held, marigold + dot = current step, grey + spinning arc = checking, amber + clock = waiting for the brand, grey + espresso check-in-circle = accepted by the brand, latte + espresso return arrow = money released. Used on timeline markers, grid rows, item cards, deal steps and the logo.
 
 ### Evidence timeline
-The draft's scrub bar carries a seal marker at every timestamped item (a band for duration items). Selecting a marker, grid row or card moves the playhead and updates the evidence panel in one 200–350ms ease-out move.
+The draft's scrub bar carries a seal marker at every timestamped item (a band for duration items). Selecting a marker, grid row or card moves the playhead and updates the evidence panel in one 200–350ms ease-out move. Items still being checked have no marker; markers appear as their results land. Every timestamp in the evidence panel is a button that seeks the video.
 
 ### Next-step bar
 Latte-wash bar that states what to do and why in one or two sentences, with the primary action. On phones it is fixed to the bottom and shows the first sentence only.
