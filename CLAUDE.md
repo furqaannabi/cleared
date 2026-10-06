@@ -72,6 +72,7 @@ Chosen in `docs/PRODUCT.md`:
 | Creator accounts | Google sign-in (read-only) for YouTube; Instagram sign-in (professional accounts only) |
 | Styling, UI primitives, motion | Tailwind v4 (DESIGN.md tokens in `@theme`), Radix UI primitives wrapped in `src/components/ui/`, Motion (`motion/react`, via `LazyMotion`) (see `docs/decisions/2026-10-06-frontend-stack.md`) |
 | Frontend tests | Vitest + React Testing Library for components; Playwright for E2E and 375px checks (see `docs/decisions/2026-10-06-frontend-stack.md`) |
+| Frontend mocks | MSW handlers over synthetic fixtures, dev only, shared by dev, Vitest and Playwright (see `docs/decisions/2026-10-06-frontend-mocks-msw.md`) |
 
 Everything behind the frontend uses AWS or the hackathon's sponsor tools. PRODUCT.md lists the sponsor tools not used; do not add them.
 
