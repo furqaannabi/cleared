@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.2). DC-FR-14 to DC-FR-18 and DC-BR-02 to DC-BR-04 are shared product behaviour and still need Furqaan's confirmation; they are not built until he confirms.
+**Status:** Revision 1.3 awaiting sign-off (1.2 signed by William). DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04 and DC-FR-44 are shared product behaviour and still need Furqaan's confirmation; they are not built until he confirms.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -166,6 +166,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-41 | The grid and the cards show the same status, brief line, evidence and timestamp for every item. |
 | DC-FR-42 | Every animation honours `prefers-reduced-motion`. |
 | DC-FR-43 | Every interactive element is reachable by keyboard, has a visible focus ring and an accessible name; touch targets are at least 44 × 44 px; nothing depends on hover. |
+| DC-FR-44 | **Deadlines are in the creator's timezone.** A deliverable's deadline is the end of its day (23:59) in the creator's timezone, so "Post by 24 Oct" reads the same for the creator and the brand wherever they are. Every deadline date on this page is shown in the creator's timezone; countdowns (DC-FR-11) use the exact moment. |
 
 ## Business rules
 
@@ -215,7 +216,7 @@ interface ChecklistItem {
   previousStatus?: ItemStatus;          // Requests for Furqaan
   briefLine: { number: number; text: string };
   evidence?: { label: string; text: string; startSec?: number; endSec?: number };
-  checkedBy: "exact_match" | "ai_timestamp" | "from_timestamps" | "published_post" | "platform_record";
+  checkedBy: "exact_match" | "ai_timestamp" | "from_timestamps" | "published_post" | "platform_record" | "person";
   brandNote?: string;                   // Requests for Furqaan
   askable: boolean;                     // Requests for Furqaan
 }
@@ -253,6 +254,8 @@ Fields:
 | DC-FR-19 | `previousStatus` per item |
 | DC-FR-23, DC-FR-26 | Short-lived video URL and an endpoint to refresh it; `aspectRatio` or platform and format |
 | DC-FR-27 | Hold amount (minor units), currency, PayPal reference, held date, money stage, payout email |
+| DC-FR-44 | `deadline` stored as 23:59 in the creator's timezone, and `creatorTimeZone` (IANA name, e.g. "Africa/Lagos") |
+| DC-FR-12 | `checkedBy: "person"` for items a person checks, such as Instagram's paid-partnership label (PRODUCT.md "Platforms") |
 | DC-FR-31 | Deals list: deal id, brand name, current step and one-line status per deal |
 | DC-FR-37 | Which deliverable's next step is the creator's |
 
@@ -281,6 +284,7 @@ Fields:
 ## Open items
 
 - **Furqaan to confirm** the ask-the-brand behaviour (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04). An ADR is written once he does.
+- **Furqaan to confirm** that deadlines are stored as the end of the day in the creator's timezone (DC-FR-44), and the `person` value for `checkedBy`.
 - **The length cap** on uploads (and the upload count) is not set. It is an AWS cost limit, owned by Furqaan or both.
 - **Upload draft action** (DC-FR-02, DC-FR-08): until the upload flow's FRD is built, the action runs a mock scenario in development and is behind a flag elsewhere.
 - **API contract**: the provisional shape above becomes the agreed contract, or is revised to match it.
@@ -295,3 +299,4 @@ Fields:
 | 1.1 signed | Revision 1.1 signed by William | none |
 | 1.2 | Schema validation set to Zod; provisional API paths added to Requests for Furqaan. No requirement changes | [Schema validation with Zod](../decisions/2026-10-06-schema-validation-zod.md) |
 | 1.2 signed | Revision 1.2 signed by William | none |
+| 1.3 | DC-FR-44 added: deadlines are the end of the day in the creator's timezone, shown in that timezone (William's choice, Furqaan to confirm). `checkedBy` gains `person` for items a person checks. Requests for Furqaan updated | none |
