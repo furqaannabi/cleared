@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.1). DC-FR-14 to DC-FR-18 and DC-BR-02 to DC-BR-04 are shared product behaviour and still need Furqaan's confirmation; they are not built until he confirms.
+**Status:** Signed by William (revision 1.2). DC-FR-14 to DC-FR-18 and DC-BR-02 to DC-BR-04 are shared product behaviour and still need Furqaan's confirmation; they are not built until he confirms.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -192,7 +192,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
   - **Mock layer.** MSW handlers over synthetic fixtures, with named scenarios: no draft, checking (with stages and item-by-item results), results run 1, results run 2 with changes, waiting for brand, accepted, declined, fully passing, check failed (file too long, not the same video, our side), released (deadline, cancelled), expired video URL, two deliverables with one 9:16.
 - **Components** (shallow, each tested): shell with deals sheet, deliverable header with switcher and deal steps, draft player with timeline, money card, next-step bar, evidence panel, checklist tabs, checklist grid, checklist cards, ask-brand action.
 - **Page state comes from the API.** The view model turns API state into what is shown; it never decides deliverable state, the review window or anything about money.
-- **Schema validation** needs a library (Zod or Valibot). It is chosen and justified when the API client is built.
+- **Schema validation** uses Zod (`docs/decisions/2026-10-06-schema-validation-zod.md`).
 - **Before build:** an `/impeccable` pass designs the 9:16 player layout (DC-FR-25), the stages list (DC-FR-04), the check failed banners (DC-FR-08, DC-FR-09), the released money card (DC-FR-29), the deliverable switcher (DC-FR-33) and the three new statuses (DC-FR-13), and records them in DESIGN.md.
 
 ## Mocks and the provisional contract
@@ -224,6 +224,19 @@ interface ChecklistItem {
 ### Requests for Furqaan
 
 Fields and endpoints the frontend needs that no contract has yet. Each is mocked, marked provisional, and removed from this spec by a revision if the backend cannot supply it.
+
+Provisional paths, relative to one API base URL and called only through the typed client:
+
+| For | Method and path |
+| --- | --- |
+| DC-FR-01 | `GET /deliverables/{deliverableId}` |
+| DC-FR-26 | `POST /deliverables/{deliverableId}/draft-url` |
+| DC-FR-14 | `POST /deliverables/{deliverableId}/items/{itemId}/ask` |
+| DC-FR-15 | `DELETE /deliverables/{deliverableId}/items/{itemId}/ask` |
+| DC-FR-09 | `POST /deliverables/{deliverableId}/check/retry` |
+| DC-FR-31 | `GET /deals` |
+
+Fields:
 
 | For | Needs |
 | --- | --- |
@@ -270,7 +283,6 @@ Fields and endpoints the frontend needs that no contract has yet. Each is mocked
 - **Furqaan to confirm** the ask-the-brand behaviour (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04). An ADR is written once he does.
 - **The length cap** on uploads (and the upload count) is not set. It is an AWS cost limit, owned by Furqaan or both.
 - **Upload draft action** (DC-FR-02, DC-FR-08): until the upload flow's FRD is built, the action runs a mock scenario in development and is behind a flag elsewhere.
-- **Schema validation library**: Zod or Valibot, decided when the API client is built.
 - **API contract**: the provisional shape above becomes the agreed contract, or is revised to match it.
 
 ## Revision
@@ -281,3 +293,5 @@ Fields and endpoints the frontend needs that no contract has yet. Each is mocked
 | 1.0 | Signed by William | none |
 | 1.1 | DC-FR-02, DC-FR-03: items checked only after publishing stay At live check before a draft and while a check runs; "Not checked yet" added to DC-FR-13. Found in the `/impeccable` pass | none |
 | 1.1 signed | Revision 1.1 signed by William | none |
+| 1.2 | Schema validation set to Zod; provisional API paths added to Requests for Furqaan. No requirement changes | [Schema validation with Zod](../decisions/2026-10-06-schema-validation-zod.md) |
+| 1.2 signed | Revision 1.2 signed by William | none |

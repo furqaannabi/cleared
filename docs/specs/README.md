@@ -8,4 +8,4 @@ A spec is signed only when William or Furqaan says so after reading it. No code 
 
 | Spec | Prefix | Surface | Owner | Status |
 | --- | --- | --- | --- | --- |
-| [Creator draft check](creator-draft-check-frd.md) | DC | Creator app: one deliverable at the draft check | William | Signed by William (1.1); ask-the-brand FRs await Furqaan |
+| [Creator draft check](creator-draft-check-frd.md) | DC | Creator app: one deliverable at the draft check | William | Signed by William (1.2); ask-the-brand FRs await Furqaan |
