@@ -47,4 +47,12 @@ describe("creator draft check page", () => {
     expect(checklist).toHaveTextContent("9 items");
     expect(screen.getByRole("button", { name: /Code GLOW20 shown on screen/ })).toHaveAttribute("aria-expanded", "true");
   });
+
+  test("DC-FR-20: a filter narrows the checklist", async () => {
+    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Needs you 2" }));
+    const checklist = screen.getByRole("region", { name: "Checklist" });
+    const names = Array.from(checklist.querySelectorAll("li b")).map((b) => b.textContent);
+    expect(names).toEqual(["Code GLOW20 shown on screen", "Serum shown in use"]);
+  });
 });

@@ -38,6 +38,7 @@
   --color-fail-wash: #ffe7e4;
   --color-fail-tint: #fff7f6;
   --color-fail-line: #f5c9c4;
+  --color-fail-tint-strong: #ffedea;
   --color-unsure: #855000;
   --color-unsure-wash: #ffefc7;
   --color-waiting: #5e574d;
@@ -143,4 +144,14 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/*
+ * A failed item's grid row keeps its fail colour when hovered or selected,
+ * so the red signal never disappears under the selection colour (DESIGN.md).
+ */
+.ag-row.row-fail {
+  background-color: var(--color-fail-tint);
+  --ag-row-hover-color: var(--color-fail-tint-strong);
+  --ag-selected-row-background-color: var(--color-fail-tint-strong);
 }

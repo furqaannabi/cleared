@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ItemCardList } from "@/components/checklist/item-card-list";
+import { ChecklistFilter } from "@/components/checklist/checklist-filter";
+import { ChecklistItems } from "@/components/checklist/checklist-items";
+import { tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
 import { MoneyCard } from "@/components/money/money-card";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import type { Deliverable } from "@/lib/deliverable/types";
@@ -31,6 +33,8 @@ function Loaded({ deliverable }: { deliverable: Deliverable }) {
   // Recomputed per load; `now` is read once so the page doesn't shift while open.
   const view = useMemo(() => deliverableView(deliverable, new Date()), [deliverable]);
   const [selectedId, setSelectedId] = useState<string | null>(view.defaultItemId);
+  const [filter, setFilter] = useState<ChecklistTab>("all");
+  const shown = view.items.filter((i) => tabsFor(i.status).includes(filter));
   return (
     <>
       <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">{view.title}</h1>
@@ -43,11 +47,18 @@ function Loaded({ deliverable }: { deliverable: Deliverable }) {
         </p>
       </section>
       <section aria-label="Checklist" className="mt-6">
-        <h2 className="font-head text-section-title font-bold">
-          Checklist<small className="ml-1.5 font-sans text-[14px] font-semibold text-ink-3">{view.items.length} items</small>
-        </h2>
+        <div className="flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between">
+          <h2 className="font-head text-section-title font-bold">
+            Checklist<small className="ml-1.5 font-sans text-[14px] font-semibold text-ink-3">{view.items.length} items</small>
+          </h2>
+          {view.tabs.length > 0 && <ChecklistFilter tabs={view.tabs} value={filter} onChange={setFilter} />}
+        </div>
         <div className="mt-3.5">
-          <ItemCardList items={view.items} brandName={deliverable.brandName} selectedId={selectedId} onSelect={setSelectedId} />
+          {shown.length > 0 ? (
+            <ChecklistItems items={shown} brandName={deliverable.brandName} selectedId={selectedId} onSelect={setSelectedId} />
+          ) : (
+            <p className="rounded-lg border border-dashed border-line p-7 text-center text-ink-3">Nothing here right now.</p>
+          )}
         </div>
       </section>
     </>

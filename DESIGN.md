@@ -27,6 +27,7 @@ colors:
   fail-wash: "#FFE7E4"
   fail-tint: "#FFF7F6"
   fail-line: "#F5C9C4"
+  fail-tint-strong: "#FFEDEA"
   unsure: "#855000"
   unsure-wash: "#FFEFC7"
   waiting: "#5E574D"
@@ -274,7 +275,7 @@ Cleared has to win two people at once. Creators should feel welcomed: the screen
 - **Ink** ramp, warm: `ink` for text, `ink-2` for supporting copy, `ink-3` for meta and labels, `ink-4` (AA on ground) for future steps and "after publish".
 
 ### State
-- **Passed:** `pass-wash` / `pass`. **Fix needed:** `fail-wash` / `fail`, with `fail-tint` and `fail-line` for a failed row or card. **Unsure:** `unsure-wash` / `unsure`. **At live check:** `waiting-wash` / `waiting`.
+- **Passed:** `pass-wash` / `pass`. **Fix needed:** `fail-wash` / `fail`, with `fail-tint` and `fail-line` for a failed row or card, and `fail-tint-strong` for a failed grid row when it is hovered or selected, so the selection colour never hides the red signal. **Unsure:** `unsure-wash` / `unsure`. **At live check:** `waiting-wash` / `waiting`.
 - **Checking:** `waiting-wash` / `waiting`, with a spinning arc that is static under reduced motion. **Waiting for brand:** `unsure-wash` / `unsure`, because the item is still unresolved. **Accepted by brand:** `waiting-wash` with an `espresso` check-in-circle: settled, but by a person, so never green. **Not checked yet** (no draft): no wash, `ink-4` text, a dot in a `line-soft` seal.
 - **Avatars:** `avatar-rose`, `avatar-sky` and `avatar-sun` (each with its `-ink`) tint deal initials in navigation. They identify a deal and carry no status.
 
