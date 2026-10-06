@@ -29,6 +29,15 @@ Cleared is aimed first at direct deals between small brands and mid-size creator
 
 **Cleared is not a marketplace.** Creators and brands do not find each other here. They agree the deal wherever they already do, and bring it to Cleared to run it.
 
+## What is different
+
+The similar projects found as of 6 October 2026 read text or code, and judge the work only once it is public. Cleared differs in four ways.
+
+- **It checks the video itself.** What is said, what appears as on-screen text and what is shown in frame are each checked, and each finding points to a timestamp.
+- **It checks before publishing.** A wrong discount code is caught while the video is still a draft and can be fixed. A check that runs only after posting can approve or reject, but cannot help the creator get it right.
+- **It ties the post to the creator's real account.** The creator signs in with YouTube or Instagram, and Cleared confirms through the platform that the live post is on that account. Nothing has to be pasted into the content to prove who made it.
+- **It uses PayPal accounts both sides already have.** There is no crypto wallet and no token. The brand's money is an ordinary PayPal hold.
+
 ## Words used in this document
 
 | Term | Meaning |
