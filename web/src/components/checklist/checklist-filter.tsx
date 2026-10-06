@@ -1,3 +1,6 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChecklistTab } from "@/lib/checklist/item-status";
 import type { TabView } from "@/lib/deliverable/deliverable-view";
 
@@ -5,7 +8,8 @@ import type { TabView } from "@/lib/deliverable/deliverable-view";
  * The checklist's filter pills: All, Needs you, Passed, Waiting for {brand}
  * (only when something waits) and At live check, each with its count. Filters
  * one list, so these are toggle buttons rather than tabs with panels. On phones
- * the row scrolls sideways; it is navigation, not a table.
+ * the row scrolls sideways (it is navigation, not a table), and its right edge
+ * fades while more filters are hidden off to the right.
  *
  * @param tabs - the visible filters with counts, from the deliverable view
  * @param value - the chosen filter
@@ -21,11 +25,35 @@ export function ChecklistFilter({
   value: ChecklistTab;
   onChange: (tab: ChecklistTab) => void;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [moreRight, setMoreRight] = useState(false);
+
+  const measure = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    // 1px of slack for sub-pixel widths.
+    setMoreRight(el.scrollWidth - el.clientWidth - el.scrollLeft > 1);
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [measure, tabs]);
+
+  // The frame carries the border; only the scrolling row inside it fades, so the edge stays crisp.
   return (
+    <div className="max-w-full overflow-hidden rounded-md border border-line bg-surface md:rounded-pill">
     <div
+      ref={ref}
       role="group"
       aria-label="Filter checklist"
-      className="flex max-w-full gap-1 overflow-x-auto rounded-md border border-line bg-surface p-1 [scrollbar-width:none] md:rounded-pill"
+      onScroll={measure}
+      data-more-right={moreRight || undefined}
+      className="flex gap-1 overflow-x-auto p-1 [scrollbar-width:none] data-[more-right]:[mask-image:linear-gradient(to_right,black_calc(100%-40px),transparent)]"
     >
       {tabs.map((tab) => {
         const pressed = tab.id === value;
@@ -43,6 +71,7 @@ export function ChecklistFilter({
           </button>
         );
       })}
+    </div>
     </div>
   );
 }
