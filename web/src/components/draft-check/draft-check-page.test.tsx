@@ -125,4 +125,12 @@ describe("creator draft check page", () => {
     await screen.findByText("Fix 2 items, then upload a new draft.");
     expect(screen.queryByLabelText("Upload new draft")).toBeNull();
   });
+
+  test("DC-FR-32, DC-FR-34: the header shows the details and where the deal is", async () => {
+    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    expect(await screen.findByRole("navigation", { name: "Breadcrumb" })).toHaveTextContent("DealsGlow TheoryYouTube video");
+    expect(screen.getByText("Draft check, run 2")).toBeVisible();
+    expect(screen.getByText("Step 3 of 7 · Draft check")).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  });
 });

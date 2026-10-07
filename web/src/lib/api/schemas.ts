@@ -77,6 +77,8 @@ export const deliverableSchema = z.object({
   // DC-FR-44: the deadline is 23:59 on its day here; must be a timezone the browser knows.
   creatorTimeZone: z.string().refine(isTimeZone, "Unknown timezone"),
   items: z.array(checklistItemSchema),
+  // DC-FR-32: the latest draft check run (0 before any draft).
+  run: z.number().int().nonnegative().optional(),
   // DC-FR-30: the deal's brief as numbered lines, for View brief. Written by the brand: plain text only.
   brief: z.array(z.object({ number: z.number().int().positive(), text: z.string().max(2000) })).optional(),
   // DC-FR-23: the latest draft, once one has been uploaded.

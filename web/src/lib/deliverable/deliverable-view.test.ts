@@ -338,3 +338,56 @@ describe("DC-FR-14 to DC-FR-18 asking the brand", () => {
     expect(actionOf("waiting_for_brand", {}, "released")).toBeNull();
   });
 });
+
+describe("DC-FR-32 header details", () => {
+  test("the run, the draft's length and the shared deadline", () => {
+    const view = deliverableView(
+      deliverable({ run: 2, draft: { fileName: "d.mp4", durationSec: 408, url: "/v.mp4", urlExpiresAt: "2099-01-01T00:00:00Z" } }),
+      NOW,
+      { timeZone: "UTC" },
+    );
+    expect(view.meta).toEqual(["Draft check, run 2", "6:48 long", "Post by 24 Oct"]);
+  });
+
+  test("after release, when it ended and when it was due", () => {
+    expect(
+      deliverableView(deliverable({ state: "released", releasedAt: "2026-10-25T09:00:00Z" }), NOW, { timeZone: "UTC" }).meta,
+    ).toEqual(["Ended 25 Oct", "Was due 24 Oct"]);
+  });
+
+  test("before a draft, there is no run or length to show", () => {
+    expect(deliverableView(deliverable({ state: "no_draft" }), NOW, { timeZone: "UTC" }).meta).toEqual([
+      "No draft yet",
+      "Post by 24 Oct",
+    ]);
+  });
+});
+
+describe("DC-FR-34 deal steps", () => {
+  const stepsFor = (state: Deliverable["state"]) => deliverableView(deliverable({ state }), NOW).steps;
+
+  test("seven steps; during the draft check, the first two are done and Draft check is current", () => {
+    const steps = stepsFor("results");
+    expect(steps.items.map((s) => s.label)).toEqual([
+      "Checklist agreed",
+      "Held",
+      "Draft check",
+      "Brand review",
+      "Publish",
+      "Live check",
+      "Paid",
+    ]);
+    expect(steps.items.map((s) => s.state)).toEqual(["done", "done", "current", "upcoming", "upcoming", "upcoming", "upcoming"]);
+    expect(steps.summary).toBe("Step 3 of 7 · Draft check");
+  });
+
+  test("a fully passing draft is at Brand review", () => {
+    expect(stepsFor("fully_passing").summary).toBe("Step 4 of 7 · Brand review");
+  });
+
+  test("a released deliverable has ended, with no current step", () => {
+    const steps = stepsFor("released");
+    expect(steps.items.some((s) => s.state === "current")).toBe(false);
+    expect(steps.summary).toBe("Ended · hold released");
+  });
+});

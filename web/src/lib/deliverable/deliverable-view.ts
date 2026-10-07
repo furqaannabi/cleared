@@ -1,6 +1,7 @@
 import { describeStatus, tabsFor, type ChecklistTab, type ItemStatus } from "@/lib/checklist/item-status";
 import { deadlineView, type DeadlineView } from "./deadline";
-import { formatAgo } from "./format";
+import { dealSteps, type DealStepsView } from "./deal-steps";
+import { formatAgo, formatDay, formatDuration } from "./format";
 import { nextStep, type NextStep } from "./next-step";
 import type { ChecklistItem, Deliverable } from "./types";
 
@@ -13,6 +14,8 @@ export interface TabView {
 export interface DeliverableView {
   /** DC-FR-32: "Glow Theory · YouTube video". */
   title: string;
+  /** "YouTube video", "YouTube Short" or "Instagram Reel". */
+  deliverableName: string;
   tabs: TabView[];
   /** The item selected when the page opens, if the URL names none. */
   defaultItemId: string | null;
@@ -22,6 +25,10 @@ export interface DeliverableView {
   nextStep: NextStep;
   /** DC-FR-44: the shared date, and when it ends for the viewer if their time differs. */
   deadline: DeadlineView;
+  /** DC-FR-32: the header's details line, e.g. ["Draft check, run 2", "6:48 long", "Post by 24 Oct"]. */
+  meta: string[];
+  /** DC-FR-34: the deal steps. */
+  steps: DealStepsView;
 }
 
 export interface ItemView extends ChecklistItem {
@@ -102,6 +109,19 @@ function deadlineWarning(d: Deliverable, now: Date): string | null {
   return `${days} ${days === 1 ? "day" : "days"} left to post.`;
 }
 
+function headerMeta(d: Deliverable, deadline: DeadlineView, timeZone?: string): string[] {
+  if (d.state === "released") {
+    return [d.releasedAt ? `Ended ${formatDay(d.releasedAt, timeZone)}` : "Ended", `Was due ${deadline.date}`];
+  }
+  const postBy = `Post by ${deadline.date}`;
+  if (d.state === "no_draft") return ["No draft yet", postBy];
+  return [
+    `Draft check, run ${d.run ?? 1}`,
+    ...(d.draft ? [`${formatDuration(d.draft.durationSec)} long`] : []),
+    postBy,
+  ];
+}
+
 // DC-FR-11: the deadline warning leads the next-step bar.
 function leadWith(warning: string | null, step: NextStep): NextStep {
   return warning ? { ...step, lead: `${warning} ${step.lead}` } : step;
@@ -122,6 +142,7 @@ export function deliverableView(d: Deliverable, now: Date, options: { timeZone?:
   const warning = deadlineWarning(d, now);
   return {
     title: `${d.brandName} · ${PLATFORM_NAME[d.platform]}`,
+    deliverableName: PLATFORM_NAME[d.platform],
     tabs: checklistTabs(d),
     defaultItemId: defaultItemId(d),
     items: d.items.map((i) => ({
@@ -133,5 +154,7 @@ export function deliverableView(d: Deliverable, now: Date, options: { timeZone?:
     deadlineWarning: warning,
     nextStep: leadWith(warning, nextStep(d, options.timeZone)),
     deadline: deadlineView(d, options.timeZone),
+    meta: headerMeta(d, deadlineView(d, options.timeZone), options.timeZone),
+    steps: dealSteps(d),
   };
 }

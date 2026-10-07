@@ -6,6 +6,7 @@ import { ChecklistItems } from "@/components/checklist/checklist-items";
 import { hasItemActions, ItemActions } from "@/components/checklist/item-actions";
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
+import { DealHeader } from "@/components/deal/deal-header";
 import { EvidencePanel } from "@/components/evidence/evidence-panel";
 import { MoneyCard } from "@/components/money/money-card";
 import { BriefSheet } from "@/components/brief/brief-sheet";
@@ -91,7 +92,7 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
   );
   return (
     <>
-      <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">{view.title}</h1>
+      <DealHeader view={view} brandName={deliverable.brandName} deliverableName={view.deliverableName} />
       {/*
         DESIGN.md layout. Phone and tablet: one column (money, player, next step,
         evidence). Desktop: player above the next step on the left; money above
