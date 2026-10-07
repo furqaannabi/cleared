@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 import { DraftCheckPage } from "./draft-check-page";
@@ -11,10 +11,10 @@ test("DC-FR-45: with mocks on, uploading a new draft shows Checking, then the ne
   const input = await screen.findByLabelText("Upload new draft");
   await userEvent.upload(input, new File(["x"], "draft_v3.mp4", { type: "video/mp4" }));
 
-  expect(await within(screen.getByRole("region", { name: "What to do next" })).findByText(/We’re checking your draft against the 6 items/)).toBeVisible();
+  expect(await within(screen.getByRole("region", { name: "What happens next" })).findByText(/We’re checking your draft against the 6 items/)).toBeVisible();
   expect(screen.getByRole("region", { name: "Checking your draft" })).toHaveTextContent("Watching the videoNow");
   expect(
-    await within(screen.getByRole("region", { name: "What to do next" })).findByText("Decide on 1 unsure item.", {}, { timeout: 6000 }),
+    await within(screen.getByRole("region", { name: "What happens next" })).findByText("Decide on 1 unsure item.", {}, { timeout: 6000 }),
   ).toBeVisible();
 }, 10_000);
 
@@ -28,11 +28,9 @@ test("DC-FR-48, DC-FR-21: when the new run lands, the page says what the fix cha
   const input = await screen.findByLabelText("Upload new draft");
   await userEvent.upload(input, new File(["x"], "draft_v3.mp4", { type: "video/mp4" }));
 
-  const banner = await screen.findByRole("region", { name: "Your fix worked" }, { timeout: 6000 });
-  expect(banner).toHaveTextContent("Code GLOW20 shown on screen now passes.");
-  expect(banner).toHaveTextContent("1 item still needs you.");
-  expect(banner).toHaveTextContent("Below are your results from run 3.");
-  expect(screen.getByTestId("run-change-seal")).toHaveAttribute("data-stamp", "true");
+  // Phones: the summary is the What happens next panel's first line (DC-FR-47, DC-FR-48).
+  const panel = screen.getByRole("region", { name: "What happens next" });
+  await waitFor(() => expect(panel.textContent?.startsWith("Your fix worked · 1 item still needs you")).toBe(true), { timeout: 6000 });
 
   // The serum still needs the creator, so it is selected (its card opens on a phone).
   const checklist = screen.getByRole("region", { name: "Checklist" });
@@ -44,3 +42,9 @@ test("DC-FR-48, DC-FR-21: when the new run lands, the page says what the fix cha
   expect(screen.queryByText("Reads “GLOW2O”, with a letter O where the zero should be.")).toBeNull();
 }, 10_000);
 
+test("DC-FR-30: on a phone the fixed bar holds only the action", async () => {
+  render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+  const bar = await screen.findByRole("region", { name: "What to do next" });
+  expect(within(bar).getByText("Upload new draft")).toBeVisible();
+  expect(within(bar).queryByText("Fix 1 item, and decide on 1 unsure item.")).toBeNull();
+});

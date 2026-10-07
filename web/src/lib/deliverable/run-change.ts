@@ -86,3 +86,12 @@ export function fixedLineForPassed(d: Deliverable): string | null {
   const { fixed } = changed(d);
   return fixed.length ? `Your fix worked: ${fixedLine(fixed)}` : null;
 }
+
+/**
+ * DC-FR-48 on phones: the summary as one line for the "What happens next"
+ * panel ("Your fix worked · 1 item still needs you"); the names stay on wider screens.
+ */
+export function runChangeRecap(change: RunChange): { text: string; tone: RunChange["tone"] } {
+  const needs = change.stillNeedsYou?.replace(/\.$/, "");
+  return { text: needs ? `${change.heading} · ${needs}` : change.heading, tone: change.tone };
+}

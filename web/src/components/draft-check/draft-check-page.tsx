@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChecklistFilter } from "@/components/checklist/checklist-filter";
 import { ChecklistItems } from "@/components/checklist/checklist-items";
 import { hasItemActions, ItemActions } from "@/components/checklist/item-actions";
@@ -27,6 +27,7 @@ import { CheckStages } from "./check-stages";
 import { DraftCheckLayout } from "./draft-check-layout";
 import { PassedBanner } from "./passed-banner";
 import { RunChangeBanner } from "./run-change-banner";
+import { runChangeRecap } from "@/lib/deliverable/run-change";
 import { LoadProblem } from "./load-problem";
 import { PageSkeleton } from "./page-skeleton";
 import { useDeliverable } from "./use-deliverable";
@@ -72,15 +73,18 @@ function Loaded({
   const { selectedId, filter, select: setSelectedId, setFilter } = url;
   // DC-FR-21, DC-FR-48: when a run lands while the page is open (Checking turns into results),
   // the old selection belonged to the previous run: select again, show All, and let the summary's seal stamp.
-  const [seenState, setSeenState] = useState(deliverable.state);
+  // After render, since it writes the URL (which other state reads).
   const [landed, setLanded] = useState(false);
-  if (deliverable.state !== seenState) {
-    setSeenState(deliverable.state);
-    if (seenState === "checking") {
+  const lastState = useRef(deliverable.state);
+  const { reset } = url;
+  useEffect(() => {
+    const was = lastState.current;
+    lastState.current = deliverable.state;
+    if (was === "checking" && deliverable.state !== "checking") {
       setLanded(true);
-      url.reset(view.defaultItemId);
+      reset(view.defaultItemId);
     }
-  }
+  }, [deliverable.state, reset, view.defaultItemId]);
   const shown = view.items.filter((i) => tabsFor(i.status).includes(filter));
   const wide = useMediaQuery("(min-width: 768px)");
   // DC-FR-33: the deal's other deliverables, from the shell's deals.
@@ -113,6 +117,8 @@ function Loaded({
         simulate(deliverable.id, onUpdated);
       }
     : undefined;
+  const barHasAction =
+    view.nextStep.action === "try_again" || (view.nextStep.action !== null && simulateUpload !== undefined);
   // DC-FR-26: a fresh link for the draft when the current one stops working.
   const refreshDraftUrl = async () => {
     const result = await api.refreshDraftUrl(deliverable.id);
@@ -179,32 +185,34 @@ function Loaded({
         switcher={deal && <DeliverableSwitcher dealId={dealId} deliverables={deal.deliverables} currentId={deliverable.id} />}
       />
       {view.checkFailed && <CheckFailedBanner banner={view.checkFailed} />}
-      {view.runChange && <RunChangeBanner change={view.runChange} landed={landed} />}
+      {/* DC-FR-48: a banner from md: up; on phones it is the first line of What happens next. */}
+      {view.runChange && wide && <RunChangeBanner change={view.runChange} landed={landed} />}
       {view.passed && <PassedBanner passed={view.passed} brandName={deliverable.brandName} />}
+      {/* DC-FR-47: on phones the work comes first: this panel, the player, the checklist, then the money. */}
+      {!wide && !view.checkFailed && (
+        <div className="mt-5">
+          <WhatHappensNext step={view.nextStep} recap={view.runChange && runChangeRecap(view.runChange)} onShowItem={showItem} />
+        </div>
+      )}
       <DraftCheckLayout
         vertical={deliverable.platform !== "youtube_video"}
-        money={
-          wide ? (
-            <MoneyCard deliverable={deliverable} />
-          ) : (
-            // DC-FR-47: phones get the next step's whole explanation here; the bar keeps only its lead.
-            <div className="flex flex-col gap-3">
-              <MoneyCard deliverable={deliverable} compact />
-              {!view.checkFailed && <WhatHappensNext step={view.nextStep} />}
-            </div>
-          )
-        }
+        money={wide && <MoneyCard deliverable={deliverable} />}
         player={playerSlot}
         next={
-          <NextStepBar
-            step={view.nextStep}
-            onTryAgain={retryCheck}
-            pending={retrying}
-            problem={retryProblem}
-            secondary={wide ? briefSheet : undefined}
-            onUpload={simulateUpload}
-            onShowItem={showItem}
-          />
+          // DC-FR-30: phones show the bar only when it has an action (or a problem to report).
+          (wide || barHasAction || retryProblem) && (
+            <NextStepBar
+              step={view.nextStep}
+              onTryAgain={retryCheck}
+              pending={retrying}
+              problem={retryProblem}
+              secondary={wide ? briefSheet : undefined}
+              onUpload={simulateUpload}
+              onShowItem={wide ? showItem : undefined}
+              // Phones: the panel carries the words, except while a check-failed banner shows (no panel then).
+              showLead={wide || Boolean(view.checkFailed)}
+            />
+          )
         }
         evidence={
           // DC-FR-04: while checking, the stages take the evidence panel's place, at every width.
@@ -240,6 +248,12 @@ function Loaded({
           )}
         </div>
       </section>
+      {/* DC-FR-47: phones keep the money row, after the work. */}
+      {!wide && (
+        <div className="mt-8">
+          <MoneyCard deliverable={deliverable} compact />
+        </div>
+      )}
       {/* DC-BR-10: mock data is labelled as synthetic on screen. Never shown with real data. */}
       {MOCKING_ENABLED && (
         <p className="mt-7 max-w-[72ch] text-chip text-ink-4">

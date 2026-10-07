@@ -16,7 +16,8 @@ describe("creator draft check page", () => {
   test("DC-FR-32, DC-FR-30: shows the deliverable's title and what happens next", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     expect(await screen.findByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
-    expect(within(screen.getByRole("region", { name: "What to do next" })).getByText("Fix 1 item, and decide on 1 unsure item.")).toBeVisible();
+    // Phones: the words are in the What happens next panel (DC-FR-47).
+    expect(within(screen.getByRole("region", { name: "What happens next" })).getByText("Fix 1 item, and decide on 1 unsure item.")).toBeVisible();
   });
 
   test("DC-FR-38: an unknown or not-yours deliverable shows the same plain page", async () => {
@@ -121,7 +122,7 @@ describe("creator draft check page", () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
     expect(await screen.findByText("Try the check again. Your draft doesn’t need to change.")).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await within(screen.getByRole("region", { name: "What to do next" })).findByText(/We’re checking your draft against the 6 items/)).toBeVisible();
+    expect(await within(await screen.findByRole("region", { name: "What happens next" })).findByText(/We’re checking your draft against the 6 items/)).toBeVisible();
   });
 
   test("DC-FR-09: if the retry itself fails, the bar says so", async () => {
@@ -138,10 +139,11 @@ describe("creator draft check page", () => {
     expect(within(dialog).getByText("Say and show the code GLOW20.").closest("li")).toHaveAttribute("aria-current", "true");
   });
 
-  test("DC-FR-45: with mocks off, there is no upload button", async () => {
+  test("DC-FR-45, DC-FR-30: with mocks off, there is no upload button, so phones show no fixed bar", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
-    await within(await screen.findByRole("region", { name: "What to do next" })).findByText("Fix 1 item, and decide on 1 unsure item.");
+    await within(await screen.findByRole("region", { name: "What happens next" })).findByText("Fix 1 item, and decide on 1 unsure item.");
     expect(screen.queryByLabelText("Upload new draft")).toBeNull();
+    expect(screen.queryByRole("region", { name: "What to do next" })).toBeNull();
   });
 
   test("DC-FR-32, DC-FR-34: the header shows the details and where the deal is", async () => {
@@ -226,15 +228,33 @@ describe("creator draft check page", () => {
     expect(screen.getByRole("button", { name: "Ask Glow Theory to accept" })).toHaveFocus();
   });
 
-  test("DC-FR-47: on a phone, the whole explanation sits under the money and above the player", async () => {
+  test("DC-FR-47: on a phone the work comes first: panel, player, checklist, then the money", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
-    const block = await screen.findByRole("region", { name: "What happens next" });
-    expect(block).toHaveTextContent("Fix 1 item, and decide on 1 unsure item.");
-    expect(block).toHaveTextContent("For the unsure one, show it more clearly in a new draft or ask Glow Theory to accept it.");
-    // It sits with the money row (the page's first piece on phones), right after it; the browser check confirms the position.
-    const money = screen.getByRole("region", { name: "Payment for this deliverable" });
-    expect(block.parentElement?.contains(money)).toBe(true);
-    expect(Boolean(money.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    const panel = await screen.findByRole("region", { name: "What happens next" });
+    expect(panel).toHaveTextContent("Fix 1 item, and decide on 1 unsure item.");
+    expect(panel).toHaveTextContent("For the unsure one, show it more clearly in a new draft or ask Glow Theory to accept it.");
+    const order = [
+      panel,
+      screen.getByLabelText("Draft video draft_v2.mp4"),
+      screen.getByRole("region", { name: "Checklist" }),
+      screen.getByRole("region", { name: "Payment for this deliverable" }),
+    ];
+    for (let i = 1; i < order.length; i++) {
+      expect(Boolean(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    }
+  });
+
+  test("DC-FR-30: on a phone there is no fixed bar when there is nothing to do", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_released" />);
+    expect(await screen.findByRole("region", { name: "What happens next" })).toHaveTextContent("The hold went back to Glow Theory.");
+    expect(screen.queryByRole("region", { name: "What to do next" })).toBeNull();
+  });
+
+  test("DC-FR-48: on a phone the run summary is the panel's first line, not a banner", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+    const panel = await screen.findByRole("region", { name: "What happens next" });
+    expect(panel.textContent?.startsWith("Your fix worked · 2 items still need you")).toBe(true);
+    expect(screen.queryByRole("region", { name: "Your fix worked" })).toBeNull();
   });
 
   test("DC-FR-47: while a check-failed banner explains, there is no What happens next block", async () => {
@@ -243,12 +263,19 @@ describe("creator draft check page", () => {
     expect(screen.queryByRole("region", { name: "What happens next" })).toBeNull();
   });
 
-  test("DC-FR-48: run 2 says what the creator's last fix changed; nothing stamps on an ordinary load", async () => {
+  test("DC-FR-48: from md: up, run 2's banner says what the creator's last fix changed; nothing stamps on an ordinary load", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(min-width: 768px)",
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     const banner = await screen.findByRole("region", { name: "Your fix worked" });
     expect(banner).toHaveTextContent("Glow Theory logo on screen for 3+ seconds and Says discount code GLOW20 now pass.");
     expect(banner).toHaveTextContent("2 items still need you.");
     expect(screen.getByTestId("run-change-seal")).not.toHaveAttribute("data-stamp");
+    vi.unstubAllGlobals();
   });
 
   describe("DC-FR-36 selection and tab in the URL", () => {

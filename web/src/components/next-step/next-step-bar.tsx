@@ -21,6 +21,7 @@ const UPLOAD_LABEL: Partial<Record<NonNullable<NextStep["action"]>, string>> = {
  * @param pending - a retry is in flight; the button is disabled
  * @param problem - a plain-language problem from the last retry, or null
  * @param secondary - a secondary action shown beside the main one from `md:` up (View brief)
+ * @param showLead - false on phones, where the page's "What happens next" panel carries the words and the bar holds only the action (DC-FR-30)
  * @param onUpload - receives the chosen file for an upload action; no upload button without it
  * @param onShowItem - opens the first item needing the creator; makes the lead a button
  * @see docs/specs/creator-draft-check-frd.md DC-FR-30, DC-FR-09; DESIGN.md "Next-step bar"
@@ -33,6 +34,7 @@ export function NextStepBar({
   secondary,
   onUpload,
   onShowItem,
+  showLead = true,
 }: {
   step: NextStep;
   onTryAgain: () => void;
@@ -41,6 +43,7 @@ export function NextStepBar({
   secondary?: React.ReactNode;
   onUpload?: (file: File) => void;
   onShowItem?: () => void;
+  showLead?: boolean;
 }) {
   const canTryAgain = step.action === "try_again";
   const uploadLabel = step.action && onUpload ? UPLOAD_LABEL[step.action] : undefined;
@@ -49,21 +52,23 @@ export function NextStepBar({
       aria-label="What to do next"
       className="fixed inset-x-3 bottom-3 z-10 flex flex-col gap-3 rounded-lg bg-surface p-3.5 shadow-floating-bar md:static md:z-auto md:bg-latte-wash md:px-5 md:py-4 md:shadow-none"
     >
-      <p className="text-[14px] text-ink-2 md:text-body-strong md:font-normal">
-        {onShowItem ? (
-          // Tapping the lead goes to the item it is about.
-          <button
-            type="button"
-            onClick={onShowItem}
-            className="relative text-left font-bold text-ink underline before:absolute before:inset-x-0 before:-inset-y-3 before:content-[''] decoration-latte-line decoration-2 underline-offset-4 hover:decoration-espresso"
-          >
-            {step.lead}
-          </button>
-        ) : (
-          <b className="text-ink">{step.lead}</b>
+      {showLead && (
+        <p className="text-[14px] text-ink-2 md:text-body-strong md:font-normal">
+          {onShowItem ? (
+            // Tapping the lead goes to the item it is about.
+            <button
+              type="button"
+              onClick={onShowItem}
+              className="relative text-left font-bold text-ink underline before:absolute before:inset-x-0 before:-inset-y-3 before:content-[''] decoration-latte-line decoration-2 underline-offset-4 hover:decoration-espresso"
+            >
+              {step.lead}
+            </button>
+          ) : (
+            <b className="text-ink">{step.lead}</b>
         )}
         {step.detail && <span className="hidden md:inline"> {step.detail}</span>}
       </p>
+      )}
       {problem && (
         <p role="alert" className="text-meta font-semibold text-fail">
           {problem}
