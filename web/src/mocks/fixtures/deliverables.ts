@@ -15,6 +15,17 @@ export const glowTheoryVideo: Deliverable = {
   creatorTimeZone: "Africa/Lagos",
   hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
   payoutEmail: "ada.okafor@example.com",
+  brief: [
+    { number: 1, text: "One YouTube video featuring the Dew Drop serum, posted on Ada's channel." },
+    { number: 2, text: "Mention Glow Theory within the first minute." },
+    { number: 3, text: "The sponsored segment should be at least 45 seconds long." },
+    { number: 4, text: "Show our logo for at least 3 seconds." },
+    { number: 5, text: "Say and show the code GLOW20." },
+    { number: 6, text: "Show the Dew Drop serum being used on skin." },
+    { number: 7, text: "Put glowtheory.com/ada in the description." },
+    { number: 8, text: "Turn on YouTube's paid promotion label." },
+    { number: 9, text: "Post by 24 October." },
+  ],
   draft: {
     fileName: "draft_v2.mp4",
     durationSec: 408,

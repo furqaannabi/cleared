@@ -8,6 +8,7 @@ import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
 import { EvidencePanel } from "@/components/evidence/evidence-panel";
 import { MoneyCard } from "@/components/money/money-card";
+import { BriefSheet } from "@/components/brief/brief-sheet";
 import { NextStepBar } from "@/components/next-step/next-step-bar";
 import { DraftPlayer } from "@/components/player/draft-player";
 import { api } from "@/lib/api";
@@ -46,6 +47,10 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
   const wide = useMediaQuery("(min-width: 768px)");
   const selected = view.items.find((i) => i.id === selectedId) ?? null;
   const actions = useItemActions(deliverable.id, onUpdated);
+  // DC-FR-30: View brief, beside the next step from md: up and in the checklist header on phones.
+  const briefSheet = deliverable.brief && (
+    <BriefSheet brief={deliverable.brief} brandName={deliverable.brandName} highlightLine={selected?.briefLine.number ?? null} />
+  );
   // DC-FR-09: retry a check that failed on our side; the page shows what the API returns.
   const [retrying, setRetrying] = useState(false);
   const [retryProblem, setRetryProblem] = useState<string | null>(null);
@@ -99,7 +104,13 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
             </div>
           )}
           <div className="order-3">
-            <NextStepBar step={view.nextStep} onTryAgain={retryCheck} pending={retrying} problem={retryProblem} />
+            <NextStepBar
+              step={view.nextStep}
+              onTryAgain={retryCheck}
+              pending={retrying}
+              problem={retryProblem}
+              secondary={wide ? briefSheet : undefined}
+            />
           </div>
         </div>
         <div className="contents lg:flex lg:flex-col lg:gap-5">
@@ -119,6 +130,7 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
           <h2 className="font-head text-section-title font-bold">
             Checklist<small className="ml-1.5 font-sans text-[14px] font-semibold text-ink-3">{view.items.length} items</small>
           </h2>
+          {!wide && briefSheet}
           {view.tabs.length > 0 && <ChecklistFilter tabs={view.tabs} value={filter} onChange={setFilter} />}
         </div>
         <div className="mt-3.5">

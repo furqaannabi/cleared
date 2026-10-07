@@ -13,6 +13,7 @@ import type { NextStep } from "@/lib/deliverable/next-step";
  * @param onTryAgain - retries the check (DC-FR-09)
  * @param pending - a retry is in flight; the button is disabled
  * @param problem - a plain-language problem from the last retry, or null
+ * @param secondary - a secondary action shown beside the main one from `md:` up (View brief)
  * @see docs/specs/creator-draft-check-frd.md DC-FR-30, DC-FR-09; DESIGN.md "Next-step bar"
  */
 export function NextStepBar({
@@ -20,11 +21,13 @@ export function NextStepBar({
   onTryAgain,
   pending = false,
   problem = null,
+  secondary,
 }: {
   step: NextStep;
   onTryAgain: () => void;
   pending?: boolean;
   problem?: string | null;
+  secondary?: React.ReactNode;
 }) {
   const canTryAgain = step.action === "try_again";
   return (
@@ -41,16 +44,21 @@ export function NextStepBar({
           {problem}
         </p>
       )}
-      {canTryAgain && (
-        <button
-          type="button"
-          onClick={onTryAgain}
-          disabled={pending}
-          aria-busy={pending || undefined}
-          className="inline-flex min-h-12 items-center justify-center rounded-pill bg-espresso px-[18px] text-body-strong font-bold text-surface shadow-[0_2px_6px_rgb(28_21_10/0.2)] transition-colors hover:bg-espresso-hover active:translate-y-px disabled:cursor-wait disabled:opacity-70 md:min-h-11 md:self-end"
-        >
-          Try again
-        </button>
+      {(canTryAgain || secondary) && (
+        <div className="flex flex-col gap-2.5 md:flex-row md:justify-end">
+          {secondary}
+          {canTryAgain && (
+            <button
+              type="button"
+              onClick={onTryAgain}
+              disabled={pending}
+              aria-busy={pending || undefined}
+              className="inline-flex min-h-12 items-center justify-center rounded-pill bg-espresso px-[18px] text-body-strong font-bold text-surface shadow-[0_2px_6px_rgb(28_21_10/0.2)] transition-colors hover:bg-espresso-hover active:translate-y-px disabled:cursor-wait disabled:opacity-70 md:min-h-11"
+            >
+              Try again
+            </button>
+          )}
+        </div>
       )}
     </section>
   );

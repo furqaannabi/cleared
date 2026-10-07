@@ -112,4 +112,11 @@ describe("creator draft check page", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("We couldn’t restart the check. Try again in a moment.");
   });
+
+  test("DC-FR-30: View brief opens the brief with the selected item's line marked", async () => {
+    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    await userEvent.click(await screen.findByRole("button", { name: "View brief" }));
+    const dialog = screen.getByRole("dialog", { name: "Glow Theory’s brief" });
+    expect(within(dialog).getByText("Say and show the code GLOW20.").closest("li")).toHaveAttribute("aria-current", "true");
+  });
 });
