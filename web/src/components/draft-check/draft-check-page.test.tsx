@@ -45,7 +45,7 @@ describe("creator draft check page", () => {
     render(<DraftCheckPage deliverableId="del_glow_video" />);
     const checklist = await screen.findByRole("region", { name: "Checklist" });
     expect(checklist).toHaveTextContent("9 items");
-    expect(screen.getByRole("button", { name: /Code GLOW20 shown on screen/ })).toHaveAttribute("aria-expanded", "true");
+    expect(within(checklist).getByRole("button", { name: /Code GLOW20 shown on screen/ })).toHaveAttribute("aria-expanded", "true");
   });
 
   test("DC-FR-20: a filter narrows the checklist", async () => {
@@ -77,15 +77,25 @@ describe("creator draft check page", () => {
 
   test("DC-FR-14, DC-FR-15 on a phone: ask the brand from the card, then withdraw", async () => {
     render(<DraftCheckPage deliverableId="del_glow_video" />);
-    await userEvent.click(await screen.findByRole("button", { name: /Serum shown in use/ }));
+    const checklist = await screen.findByRole("region", { name: "Checklist" });
+    await userEvent.click(within(checklist).getByRole("button", { name: /Serum shown in use/ }));
     await userEvent.click(screen.getByRole("button", { name: "Ask Glow Theory to accept" }));
 
-    const serum = screen.getByRole("button", { name: /Serum shown in use/ });
+    const serum = within(checklist).getByRole("button", { name: /Serum shown in use/ });
     expect(await within(serum).findByText("Waiting for Glow Theory")).toBeVisible();
     expect(screen.getByText(/You asked just now/)).toBeVisible();
 
     await userEvent.click(screen.getByRole("button", { name: "Withdraw" }));
     expect(await within(serum).findByText("Unsure")).toBeVisible();
     expect(screen.getByRole("button", { name: "Ask Glow Theory to accept" })).toBeVisible();
+  });
+
+  test("DC-FR-23: shows the draft video with its timeline", async () => {
+    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    expect(await screen.findByLabelText("Draft video draft_v2.mp4")).toHaveAttribute(
+      "src",
+      "/mock-media/synthetic-draft-16x9.mp4",
+    );
+    expect(screen.getByRole("button", { name: "Code GLOW20 shown on screen, Fix needed, at 3:15" })).toBeVisible();
   });
 });

@@ -15,6 +15,12 @@ export const glowTheoryVideo: Deliverable = {
   creatorTimeZone: "Africa/Lagos",
   hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
   payoutEmail: "ada.okafor@example.com",
+  draft: {
+    fileName: "draft_v2.mp4",
+    durationSec: 408,
+    url: "/mock-media/synthetic-draft-16x9.mp4",
+    urlExpiresAt: "2099-01-01T00:00:00Z",
+  },
   items: [
     { id: "it_1", name: "Mentions Glow Theory in the first 60 seconds", kind: "said", status: "passed", checkedBy: "ai_timestamp",
       briefLine: { number: 2, text: "Mention Glow Theory within the first minute." },

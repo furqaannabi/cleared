@@ -8,6 +8,8 @@ import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
 import { EvidencePanel } from "@/components/evidence/evidence-panel";
 import { MoneyCard } from "@/components/money/money-card";
+import { DraftPlayer } from "@/components/player/draft-player";
+import { api } from "@/lib/api";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import type { Deliverable } from "@/lib/deliverable/types";
@@ -43,6 +45,11 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
   const wide = useMediaQuery("(min-width: 768px)");
   const selected = view.items.find((i) => i.id === selectedId) ?? null;
   const actions = useItemActions(deliverable.id, onUpdated);
+  // DC-FR-26: a fresh link for the draft when the current one stops working.
+  const refreshDraftUrl = async () => {
+    const result = await api.refreshDraftUrl(deliverable.id);
+    return result.ok ? result.data.url : null;
+  };
   const renderActions = (item: ItemView) =>
     hasItemActions(item) && (
     <ItemActions
@@ -58,28 +65,44 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
     <>
       <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">{view.title}</h1>
       {/*
-        DESIGN.md layout. Phone and tablet: one column (money, next step, evidence).
-        Desktop: next step (and the player, when built) on the left; money above
-        the evidence panel on the right; the checklist full width below.
+        DESIGN.md layout. Phone and tablet: one column (money, player, next step,
+        evidence). Desktop: player above the next step on the left; money above
+        the evidence panel on the right; the checklist full width below. Below lg:
+        the two column wrappers dissolve (display: contents) and `order` sets the
+        single-column sequence.
       */}
       <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]">
-        <div className="lg:col-start-2 lg:row-start-1">
-          <MoneyCard deliverable={deliverable} />
+        <div className="contents lg:flex lg:flex-col lg:gap-5">
+          {deliverable.draft && (
+            <div className="order-2">
+              <DraftPlayer
+                draft={deliverable.draft}
+                platform={deliverable.platform}
+                items={view.items}
+                brandName={deliverable.brandName}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                refreshUrl={refreshDraftUrl}
+              />
+            </div>
+          )}
+          <section aria-label="What to do next" className="order-3 rounded-lg bg-latte-wash px-5 py-4 text-ink-2">
+            <p>
+              <b className="text-ink">{view.nextStep.lead}</b> {view.nextStep.detail}
+            </p>
+          </section>
         </div>
-        <section
-          aria-label="What to do next"
-          className="rounded-lg bg-latte-wash px-5 py-4 text-ink-2 lg:col-start-1 lg:row-start-1"
-        >
-          <p>
-            <b className="text-ink">{view.nextStep.lead}</b> {view.nextStep.detail}
-          </p>
-        </section>
-        {/* DC-FR-12: tablet and up only; on phones the expanded card shows the evidence. */}
-        {wide && (
-          <div className="lg:col-start-2 lg:row-start-2">
-            <EvidencePanel item={selected} brandName={deliverable.brandName} actions={selected ? renderActions(selected) : null} />
+        <div className="contents lg:flex lg:flex-col lg:gap-5">
+          <div className="order-1">
+            <MoneyCard deliverable={deliverable} />
           </div>
-        )}
+          {/* DC-FR-12: tablet and up only; on phones the expanded card shows the evidence. */}
+          {wide && (
+            <div className="order-4">
+              <EvidencePanel item={selected} brandName={deliverable.brandName} actions={selected ? renderActions(selected) : null} />
+            </div>
+          )}
+        </div>
       </div>
       <section aria-label="Checklist" className="mt-8">
         <div className="flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between">

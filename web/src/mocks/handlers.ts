@@ -16,6 +16,12 @@ export const handlers: RequestHandler[] = [
     return found ? HttpResponse.json(found) : notFound();
   }),
 
+  // DC-FR-26: the mock's link never really expires, so it hands back the same one.
+  http.post(`${apiBaseUrl}/deliverables/:deliverableId/draft-url`, ({ params }) => {
+    const d = findDeliverable(String(params.deliverableId));
+    return d?.draft ? HttpResponse.json(d.draft) : notFound();
+  }),
+
   // DC-FR-14: only an askable Unsure item that wasn't declined can be asked about.
   http.post(`${apiBaseUrl}/deliverables/:deliverableId/items/:itemId/ask`, ({ params }) => {
     const d = findDeliverable(String(params.deliverableId));

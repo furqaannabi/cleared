@@ -31,7 +31,7 @@ test("DC-FR-40: the checklist is a grid from md: up and cards on phones", async 
 test("DC-FR-14, DC-FR-15: ask the brand to accept the Unsure item, then withdraw", async ({ page }, testInfo) => {
   await page.goto("/deals/deal_glow/deliverables/del_glow_video");
   const phone = testInfo.project.name === "phone-375";
-  if (phone) await page.getByRole("button", { name: /Serum shown in use/ }).click();
+  if (phone) await page.getByRole("region", { name: "Checklist" }).getByRole("button", { name: /Serum shown in use/ }).click();
   else await page.getByRole("row", { name: /Serum shown in use/ }).first().click();
 
   await page.getByRole("button", { name: "Ask Glow Theory to accept" }).click();

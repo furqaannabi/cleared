@@ -46,6 +46,10 @@ describe("DC-FR-01 getDeliverable", () => {
       { ...VALID, items: [{ ...VALID.items[0], status: "probably_fine" }] }, // unknown status
       { ...VALID, deadline: "next Friday" },
       { ...VALID, creatorTimeZone: "Mars/Olympus_Mons" }, // DC-FR-44: must be a real timezone
+      // DC-FR-23: a video source must be https or same-origin, never javascript:, http: or another host
+      { ...VALID, draft: { fileName: "d.mp4", durationSec: 10, url: "javascript:alert(1)", urlExpiresAt: "2099-01-01T00:00:00Z" } },
+      { ...VALID, draft: { fileName: "d.mp4", durationSec: 10, url: "http://evil.test/d.mp4", urlExpiresAt: "2099-01-01T00:00:00Z" } },
+      { ...VALID, draft: { fileName: "d.mp4", durationSec: 10, url: "//evil.test/d.mp4", urlExpiresAt: "2099-01-01T00:00:00Z" } },
     ];
     for (const body of broken) {
       respondWith(body);
@@ -103,5 +107,20 @@ describe("DC-FR-14, DC-FR-15 asking the brand to accept an item", () => {
   test("an ask the API refuses (the item changed, say) is rejected, not unavailable", async () => {
     server.use(http.post(askPath, () => HttpResponse.json({ message: "Item is not unsure" }, { status: 409 })));
     expect(await api.askBrandToAccept("del_1", "it_5")).toEqual({ ok: false, error: "rejected" });
+  });
+});
+
+describe("DC-FR-26 refreshing the draft link", () => {
+  test("asks for a fresh link with POST and returns the draft", async () => {
+    const fresh = { fileName: "draft_v2.mp4", durationSec: 408, url: "https://media.test/d.mp4?sig=new", urlExpiresAt: "2099-01-01T00:00:00Z" };
+    let method = "";
+    server.use(
+      http.post(`${BASE}/deliverables/:id/draft-url`, ({ request }) => {
+        method = request.method;
+        return HttpResponse.json(fresh);
+      }),
+    );
+    expect(await api.refreshDraftUrl("del_1")).toEqual({ ok: true, data: fresh });
+    expect(method).toBe("POST");
   });
 });

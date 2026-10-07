@@ -56,6 +56,17 @@ export const checkFailureSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("ours"), retrying: z.boolean(), fileName: z.string() }),
 ]);
 
+// DC-FR-23: a short-lived link to the draft file. Only https (a presigned link) or a
+// same-origin path (mocks) may become a video source.
+const videoUrl = z.string().refine((u) => u.startsWith("https://") || (u.startsWith("/") && !u.startsWith("//")), "Unsafe video URL");
+
+export const draftSchema = z.object({
+  fileName: z.string(),
+  durationSec: z.number().positive(),
+  url: videoUrl,
+  urlExpiresAt: isoTime,
+});
+
 export const deliverableSchema = z.object({
   id: z.string().min(1),
   brandName: z.string().min(1),
@@ -66,6 +77,8 @@ export const deliverableSchema = z.object({
   // DC-FR-44: the deadline is 23:59 on its day here; must be a timezone the browser knows.
   creatorTimeZone: z.string().refine(isTimeZone, "Unknown timezone"),
   items: z.array(checklistItemSchema),
+  // DC-FR-23: the latest draft, once one has been uploaded.
+  draft: draftSchema.optional(),
   // Money is integer minor units, never a float (CLAUDE.md "Money").
   hold: z.object({
     amountMinor: z.number().int().nonnegative(),

@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { deliverableSchema } from "./schemas";
+import { deliverableSchema, draftSchema } from "./schemas";
 
 /** `rejected`: the API refused a change (the item changed, say); the others are as for reads. */
 export type ApiError = "not_found" | "invalid_response" | "unavailable" | "rejected";
@@ -52,6 +52,9 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** DC-FR-14: ask the brand to accept an Unsure item. Returns the updated deliverable. */
     askBrandToAccept: (deliverableId: string, itemId: string) =>
       request("POST", askPath(deliverableId, itemId), deliverableSchema),
+    /** DC-FR-26: a fresh short-lived link to the draft, when the current one has expired. */
+    refreshDraftUrl: (deliverableId: string) =>
+      request("POST", `${deliverablePath(deliverableId)}/draft-url`, draftSchema),
     /** DC-FR-15: withdraw an ask. Returns the updated deliverable. */
     withdrawAsk: (deliverableId: string, itemId: string) =>
       request("DELETE", askPath(deliverableId, itemId), deliverableSchema),
