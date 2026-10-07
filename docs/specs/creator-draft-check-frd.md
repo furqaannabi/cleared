@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.6). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04) and the deadline timezone (DC-FR-44) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.7). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04) and the deadline timezone (DC-FR-44) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -261,6 +261,7 @@ Fields:
 | DC-FR-12 | `checkedBy: "person"` for items a person checks, such as Instagram's paid-partnership label (PRODUCT.md "Platforms") |
 | DC-FR-31 | Deals list: deal id, brand name, current step and one-line status per deal |
 | DC-FR-37 | Which deliverable's next step is the creator's |
+| DC-FR-33 | Each deal summary's `deliverables: { id, platform, state }[]`, so the switcher can name each deliverable and show its step |
 
 ## Testing Decisions
 
@@ -309,3 +310,5 @@ Fields:
 | 1.5 signed | Revision 1.5 signed by William | none |
 | 1.6 | DC-FR-30: View brief opens a read-only brief view, with `brief` added to Requests for Furqaan. DC-FR-45 added: mock-only upload while the upload flow is unspecced. Security request added: changing requests must be protected from cross-site requests | none |
 | 1.6 signed | Revision 1.6 signed by William | none |
+| 1.7 | Requests for Furqaan: deal summaries gain `deliverables` (id, platform, state) for the deliverable switcher (DC-FR-33). No requirement changes | none |
+| 1.7 signed | Revision 1.7 signed by William | none |
