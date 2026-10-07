@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { ChecklistFilter } from "@/components/checklist/checklist-filter";
 import { ChecklistItems } from "@/components/checklist/checklist-items";
+import { hasItemActions, ItemActions } from "@/components/checklist/item-actions";
+import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
 import { EvidencePanel } from "@/components/evidence/evidence-panel";
 import { MoneyCard } from "@/components/money/money-card";
@@ -12,6 +14,7 @@ import type { Deliverable } from "@/lib/deliverable/types";
 import { LoadProblem } from "./load-problem";
 import { PageSkeleton } from "./page-skeleton";
 import { useDeliverable } from "./use-deliverable";
+import { useItemActions } from "./use-item-actions";
 
 /**
  * The creator's draft check page for one deliverable: loads it and shows
@@ -21,17 +24,17 @@ import { useDeliverable } from "./use-deliverable";
  * @see docs/specs/creator-draft-check-frd.md DC-FR-01, DC-FR-38, DC-FR-39
  */
 export function DraftCheckPage({ deliverableId }: { deliverableId: string }) {
-  const { load, retry } = useDeliverable(deliverableId);
+  const { load, retry, replace } = useDeliverable(deliverableId);
   return (
     <main className="mx-auto w-full max-w-[1240px] px-4 pt-4 pb-36 md:px-6 lg:px-9">
       {load.status === "loading" && <PageSkeleton />}
-      {load.status === "ready" && <Loaded deliverable={load.deliverable} />}
+      {load.status === "ready" && <Loaded deliverable={load.deliverable} onUpdated={replace} />}
       {load.status === "error" && <LoadProblem error={load.error} onRetry={retry} />}
     </main>
   );
 }
 
-function Loaded({ deliverable }: { deliverable: Deliverable }) {
+function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdated: (d: Deliverable) => void }) {
   // Recomputed per load; `now` is read once so the page doesn't shift while open.
   const view = useMemo(() => deliverableView(deliverable, new Date()), [deliverable]);
   const [selectedId, setSelectedId] = useState<string | null>(view.defaultItemId);
@@ -39,6 +42,18 @@ function Loaded({ deliverable }: { deliverable: Deliverable }) {
   const shown = view.items.filter((i) => tabsFor(i.status).includes(filter));
   const wide = useMediaQuery("(min-width: 768px)");
   const selected = view.items.find((i) => i.id === selectedId) ?? null;
+  const actions = useItemActions(deliverable.id, onUpdated);
+  const renderActions = (item: ItemView) =>
+    hasItemActions(item) && (
+    <ItemActions
+      item={item}
+      brandName={deliverable.brandName}
+      onAsk={() => actions.ask(item.id)}
+      onWithdraw={() => actions.withdraw(item.id)}
+      pending={actions.pendingId === item.id}
+      problem={actions.problemFor(item.id)}
+    />
+  );
   return (
     <>
       <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">{view.title}</h1>
@@ -62,7 +77,7 @@ function Loaded({ deliverable }: { deliverable: Deliverable }) {
         {/* DC-FR-12: tablet and up only; on phones the expanded card shows the evidence. */}
         {wide && (
           <div className="lg:col-start-2 lg:row-start-2">
-            <EvidencePanel item={selected} brandName={deliverable.brandName} />
+            <EvidencePanel item={selected} brandName={deliverable.brandName} actions={selected ? renderActions(selected) : null} />
           </div>
         )}
       </div>
@@ -75,7 +90,13 @@ function Loaded({ deliverable }: { deliverable: Deliverable }) {
         </div>
         <div className="mt-3.5">
           {shown.length > 0 ? (
-            <ChecklistItems items={shown} brandName={deliverable.brandName} selectedId={selectedId} onSelect={setSelectedId} />
+            <ChecklistItems
+              items={shown}
+              brandName={deliverable.brandName}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              renderActions={renderActions}
+            />
           ) : (
             <p className="rounded-lg border border-dashed border-line p-7 text-center text-ink-3">Nothing here right now.</p>
           )}

@@ -9,6 +9,7 @@ import { ItemCard } from "./item-card";
  * @param brandName - the deal's brand, for result words
  * @param selectedId - the selected item, or null
  * @param onSelect - called with the item to select, or null to close
+ * @param renderActions - the actions for an item, shown inside its open card
  * @see docs/specs/creator-draft-check-frd.md DC-FR-12, DC-FR-22
  */
 export function ItemCardList({
@@ -16,11 +17,13 @@ export function ItemCardList({
   brandName,
   selectedId,
   onSelect,
+  renderActions,
 }: {
   items: ItemView[];
   brandName: string;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  renderActions?: (item: ItemView) => React.ReactNode;
 }) {
   return (
     <ul className="flex flex-col gap-2.5">
@@ -31,6 +34,7 @@ export function ItemCardList({
           brandName={brandName}
           expanded={item.id === selectedId}
           onToggle={() => onSelect(item.id === selectedId ? null : item.id)}
+          actions={renderActions?.(item)}
         />
       ))}
     </ul>

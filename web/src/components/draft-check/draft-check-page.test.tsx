@@ -74,4 +74,18 @@ describe("creator draft check page", () => {
       expect(await screen.findByRole("region", { name: "Evidence for Serum shown in use" })).toBeVisible();
     });
   });
+
+  test("DC-FR-14, DC-FR-15 on a phone: ask the brand from the card, then withdraw", async () => {
+    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    await userEvent.click(await screen.findByRole("button", { name: /Serum shown in use/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Ask Glow Theory to accept" }));
+
+    const serum = screen.getByRole("button", { name: /Serum shown in use/ });
+    expect(await within(serum).findByText("Waiting for Glow Theory")).toBeVisible();
+    expect(screen.getByText(/You asked just now/)).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: "Withdraw" }));
+    expect(await within(serum).findByText("Unsure")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Ask Glow Theory to accept" })).toBeVisible();
+  });
 });

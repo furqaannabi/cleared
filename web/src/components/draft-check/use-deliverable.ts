@@ -13,10 +13,14 @@ export type DeliverableLoad =
  * Loads one deliverable through the API client and exposes a retry.
  *
  * @param deliverableId - the deliverable's opaque id from the route
- * @returns the load state and a function to load again
+ * @returns the load state, a function to load again, and one to show an updated deliverable
  * @see docs/specs/creator-draft-check-frd.md DC-FR-01, DC-FR-39
  */
-export function useDeliverable(deliverableId: string): { load: DeliverableLoad; retry: () => void } {
+export function useDeliverable(deliverableId: string): {
+  load: DeliverableLoad;
+  retry: () => void;
+  replace: (deliverable: Deliverable) => void;
+} {
   const [load, setLoad] = useState<DeliverableLoad>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -36,5 +40,8 @@ export function useDeliverable(deliverableId: string): { load: DeliverableLoad; 
     setAttempt((n) => n + 1);
   }, []);
 
-  return { load, retry };
+  // After a change (an ask, say), the API returns the whole deliverable; show that.
+  const replace = useCallback((deliverable: Deliverable) => setLoad({ status: "ready", deliverable }), []);
+
+  return { load, retry, replace };
 }

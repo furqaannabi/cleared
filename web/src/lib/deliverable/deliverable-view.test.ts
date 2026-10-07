@@ -306,3 +306,35 @@ describe("DC-FR-44 deadline: one shared date, with the viewer's own time", () =>
     expect(fromTokyo.nextStep.detail).toContain("The deadline of 24 Oct passed");
   });
 });
+
+describe("DC-FR-14 to DC-FR-18 asking the brand", () => {
+  const actionOf = (status: ItemStatus, extra: Partial<ChecklistItem> = {}, state: Deliverable["state"] = "results") =>
+    deliverableView(deliverable({ state, items: [item("1", status, extra)] }), NOW).items[0].action;
+
+  test("DC-FR-14: an Unsure item the API says is askable offers Ask", () => {
+    expect(actionOf("unsure", { askable: true })).toBe("ask");
+    expect(actionOf("unsure", { askable: false })).toBeNull();
+  });
+
+  test("DC-BR-02: a Fix needed item never offers Ask, whatever the API says", () => {
+    expect(actionOf("fix_needed", { askable: true })).toBeNull();
+  });
+
+  test("DC-FR-15: a Waiting item offers Withdraw, with when it was asked", () => {
+    const [waiting] = deliverableView(
+      deliverable({ items: [item("1", "waiting_for_brand", { askedAt: "2026-10-06T10:00:00Z" })] }),
+      NOW,
+    ).items;
+    expect(waiting.action).toBe("withdraw");
+    expect(waiting.asked).toBe("2 hours ago");
+  });
+
+  test("DC-FR-17: a declined item can't be asked about again this run", () => {
+    expect(actionOf("unsure", { askable: true, declined: true, brandNote: "Show it on skin." })).toBeNull();
+  });
+
+  test("DC-FR-10: a released deliverable offers no actions", () => {
+    expect(actionOf("unsure", { askable: true }, "released")).toBeNull();
+    expect(actionOf("waiting_for_brand", {}, "released")).toBeNull();
+  });
+});

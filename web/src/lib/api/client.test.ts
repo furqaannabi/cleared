@@ -72,3 +72,36 @@ describe("DC-FR-01 getDeliverable", () => {
     fetchSpy.mockRestore();
   });
 });
+
+describe("DC-FR-14, DC-FR-15 asking the brand to accept an item", () => {
+  const askPath = `${BASE}/deliverables/:deliverableId/items/:itemId/ask`;
+
+  test("asking sends POST to the item's ask path and returns the updated deliverable", async () => {
+    let seen = "";
+    server.use(
+      http.post(askPath, ({ request, params }) => {
+        seen = `${request.method} ${params.deliverableId}/${params.itemId}`;
+        return HttpResponse.json(VALID);
+      }),
+    );
+    expect(await api.askBrandToAccept("del_1", "it_6")).toEqual({ ok: true, data: VALID });
+    expect(seen).toBe("POST del_1/it_6");
+  });
+
+  test("withdrawing sends DELETE to the same path", async () => {
+    let method = "";
+    server.use(
+      http.delete(askPath, ({ request }) => {
+        method = request.method;
+        return HttpResponse.json(VALID);
+      }),
+    );
+    expect(await api.withdrawAsk("del_1", "it_6")).toEqual({ ok: true, data: VALID });
+    expect(method).toBe("DELETE");
+  });
+
+  test("an ask the API refuses (the item changed, say) is rejected, not unavailable", async () => {
+    server.use(http.post(askPath, () => HttpResponse.json({ message: "Item is not unsure" }, { status: 409 })));
+    expect(await api.askBrandToAccept("del_1", "it_5")).toEqual({ ok: false, error: "rejected" });
+  });
+});

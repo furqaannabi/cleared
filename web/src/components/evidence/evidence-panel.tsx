@@ -10,9 +10,18 @@ import type { ItemView } from "@/lib/deliverable/deliverable-view";
  *
  * @param item - the selected item, or null when none is selected
  * @param brandName - the deal's brand, for result words
+ * @param actions - what the creator can do about the item (ask the brand, withdraw)
  * @see docs/specs/creator-draft-check-frd.md DC-FR-12, DC-FR-22; DESIGN.md "Cards / Containers"
  */
-export function EvidencePanel({ item, brandName }: { item: ItemView | null; brandName: string }) {
+export function EvidencePanel({
+  item,
+  brandName,
+  actions,
+}: {
+  item: ItemView | null;
+  brandName: string;
+  actions?: React.ReactNode;
+}) {
   if (!item) {
     return (
       <section aria-label="Evidence" className="rounded-lg border border-line bg-surface px-[22px] py-5 text-ink-3 shadow-panel">
@@ -56,6 +65,7 @@ export function EvidencePanel({ item, brandName }: { item: ItemView | null; bran
         </Field>
         <Field label="Checked by">{checkedByLabel(item.checkedBy)}</Field>
       </dl>
+      {actions && <div className="mt-4 border-t border-line-soft pt-4">{actions}</div>}
     </section>
   );
 }

@@ -12,6 +12,7 @@ import { StatusSeal } from "./status-seal";
  * @param brandName - the deal's brand, for the result word
  * @param expanded - whether the card is open (it is the selected item)
  * @param onToggle - called when the creator taps the row
+ * @param actions - what the creator can do about the item, shown when expanded
  * @see docs/specs/creator-draft-check-frd.md DC-FR-12, DC-FR-22
  */
 export function ItemCard({
@@ -19,11 +20,13 @@ export function ItemCard({
   brandName,
   expanded,
   onToggle,
+  actions,
 }: {
   item: ItemView;
   brandName: string;
   expanded: boolean;
   onToggle: () => void;
+  actions?: React.ReactNode;
 }) {
   const time = itemTime(item);
   const meta = time ? `${kindLabel(item.kind)} · ${time}` : kindLabel(item.kind);
@@ -63,6 +66,7 @@ export function ItemCard({
             Brief line {item.briefLine.number}: “{item.briefLine.text}”
           </p>
           <p className="text-meta text-ink-3">Checked by: {checkedByLabel(item.checkedBy)}</p>
+          {actions && <div className="mt-1">{actions}</div>}
         </div>
       )}
     </li>

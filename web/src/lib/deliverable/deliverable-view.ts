@@ -1,5 +1,6 @@
 import { describeStatus, tabsFor, type ChecklistTab, type ItemStatus } from "@/lib/checklist/item-status";
 import { deadlineView, type DeadlineView } from "./deadline";
+import { formatAgo } from "./format";
 import { nextStep, type NextStep } from "./next-step";
 import type { ChecklistItem, Deliverable } from "./types";
 
@@ -26,6 +27,10 @@ export interface DeliverableView {
 export interface ItemView extends ChecklistItem {
   /** DC-FR-19: "Was Fix needed", or null when nothing changed. */
   change: string | null;
+  /** DC-FR-14, DC-FR-15: what the creator can do about this item here, if anything. */
+  action: "ask" | "withdraw" | null;
+  /** DC-FR-15: "2 hours ago" for an item waiting on the brand, else null. */
+  asked: string | null;
 }
 
 const PLATFORM_NAME: Record<Deliverable["platform"], string> = {
@@ -76,6 +81,15 @@ function changeSinceLastRun(item: ChecklistItem, brandName: string): string | nu
   return `Was ${SENTENCE_CASE.includes(previousStatus) ? label[0].toLowerCase() + label.slice(1) : label}`;
 }
 
+// DC-FR-14 to DC-FR-18, DC-BR-02: the API's `askable` is the authority, and a
+// Fix needed item is never offered an ask whatever it says.
+function itemAction(item: ChecklistItem, d: Deliverable): ItemView["action"] {
+  if (d.state === "released") return null;
+  if (item.status === "waiting_for_brand") return "withdraw";
+  if (item.status === "unsure" && item.askable && !item.declined) return "ask";
+  return null;
+}
+
 const HOUR_MS = 3_600_000;
 const WARN_STATES: Deliverable["state"][] = ["no_draft", "results", "check_failed"];
 
@@ -110,7 +124,12 @@ export function deliverableView(d: Deliverable, now: Date, options: { timeZone?:
     title: `${d.brandName} · ${PLATFORM_NAME[d.platform]}`,
     tabs: checklistTabs(d),
     defaultItemId: defaultItemId(d),
-    items: d.items.map((i) => ({ ...i, change: changeSinceLastRun(i, d.brandName) })),
+    items: d.items.map((i) => ({
+      ...i,
+      change: changeSinceLastRun(i, d.brandName),
+      action: itemAction(i, d),
+      asked: i.status === "waiting_for_brand" && i.askedAt ? formatAgo(i.askedAt, now) : null,
+    })),
     deadlineWarning: warning,
     nextStep: leadWith(warning, nextStep(d, options.timeZone)),
     deadline: deadlineView(d, options.timeZone),

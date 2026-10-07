@@ -31,7 +31,7 @@ export const glowTheoryVideo: Deliverable = {
     { id: "it_5", name: "Code GLOW20 shown on screen", kind: "shown_as_text", status: "fix_needed", checkedBy: "exact_match",
       briefLine: { number: 5, text: "Say and show the code GLOW20." },
       evidence: { label: "On-screen text", text: "Reads “GLOW2O”, with a letter O where the zero should be.", startSec: 195 } },
-    { id: "it_6", name: "Serum shown in use", kind: "shown", status: "unsure", checkedBy: "ai_timestamp",
+    { id: "it_6", name: "Serum shown in use", kind: "shown", status: "unsure", checkedBy: "ai_timestamp", askable: true,
       briefLine: { number: 6, text: "Show the Dew Drop serum being used on skin." },
       evidence: { label: "In frame", text: "The bottle is in frame, but it isn’t clear the serum is being applied.", startSec: 242 } },
     { id: "it_7", name: "Link glowtheory.com/ada in the description", kind: "written", status: "at_live_check", checkedBy: "published_post",

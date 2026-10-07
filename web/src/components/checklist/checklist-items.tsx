@@ -27,7 +27,11 @@ export function ChecklistItems(props: {
   brandName: string;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  renderActions?: (item: ItemView) => React.ReactNode;
 }) {
   const wide = useMediaQuery(MD);
-  return wide ? <ChecklistGrid {...props} onSelect={(id: string) => props.onSelect(id)} /> : <ItemCardList {...props} />;
+  const { renderActions, ...gridProps } = props;
+  // On wider screens the actions live in the evidence panel, not the grid.
+  void renderActions;
+  return wide ? <ChecklistGrid {...gridProps} onSelect={(id: string) => props.onSelect(id)} /> : <ItemCardList {...props} />;
 }

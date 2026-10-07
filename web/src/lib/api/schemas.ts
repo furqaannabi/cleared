@@ -37,6 +37,12 @@ export const checklistItemSchema = z.object({
     })
     .optional(),
   checkedBy: z.enum(["exact_match", "ai_timestamp", "from_timestamps", "published_post", "platform_record"]),
+  // DC-FR-14 to DC-FR-18: the API decides whether an item can be asked about.
+  askable: z.boolean().optional(),
+  askedAt: isoTime.optional(),
+  declined: z.boolean().optional(),
+  // Written by the brand: shown as plain text only (DC-BR-09).
+  brandNote: z.string().max(1000).optional(),
 });
 
 export const checkFailureSchema = z.discriminatedUnion("kind", [
