@@ -14,6 +14,11 @@ const NEXT_RESULT: Record<string, Deliverable["items"][number]["status"]> = {
   it_6: "unsure",
 };
 
+/** DC-FR-45, DC-FR-48: this run's evidence for the items whose result changed. */
+const NEXT_EVIDENCE: Record<string, Partial<NonNullable<Deliverable["items"][number]["evidence"]>>> = {
+  it_5: { text: "Reads “GLOW20”, with a zero." },
+};
+
 /**
  * Simulates a new draft check for one mock deliverable.
  *
@@ -52,6 +57,8 @@ export function simulateUpload(deliverableId: string, onChange: (d: Deliverable)
       const was = before.get(item.id)!;
       const now = NEXT_RESULT[item.id] ?? (was === "waiting_for_brand" || was === "accepted_by_brand" ? "unsure" : was);
       Object.assign(item, { previousStatus: was, status: now, askable: now === "unsure" });
+      // Evidence always belongs to the latest run.
+      if (NEXT_EVIDENCE[item.id] && item.evidence) item.evidence = { ...item.evidence, ...NEXT_EVIDENCE[item.id] };
     }
     onChange(structuredClone(d));
   }, delayMs);

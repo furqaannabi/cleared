@@ -8,9 +8,9 @@ import type { DeliverableView } from "@/lib/deliverable/deliverable-view";
  * and certain, not a celebration; still under reduced motion. What happens
  * next (the brand's review window) stays in the next-step bar.
  *
- * @param passed - how many draft-check items passed, and their statuses
+ * @param passed - how many draft-check items passed, their statuses, and what the latest run fixed
  * @param brandName - the deal's brand
- * @see DESIGN.md "Creative North Star"; docs/specs/creator-draft-check-frd.md DC-FR-07
+ * @see DESIGN.md "Creative North Star"; docs/specs/creator-draft-check-frd.md DC-FR-07, DC-FR-48
  */
 export function PassedBanner({ passed, brandName }: { passed: NonNullable<DeliverableView["passed"]>; brandName: string }) {
   return (
@@ -30,6 +30,8 @@ export function PassedBanner({ passed, brandName }: { passed: NonNullable<Delive
         <p className="mt-0.5 text-[14px] text-ink-2 md:text-body">
           {passed.count} {passed.count === 1 ? "item" : "items"} checked against {brandName}’s brief. Nothing left to fix.
         </p>
+        {/* DC-FR-48: what the latest run fixed, after a new draft. */}
+        {passed.fixed && <p className="mt-1 text-[14px] font-semibold text-pass md:text-body">{passed.fixed}</p>}
         <ul aria-hidden="true" className="mt-2.5 flex flex-wrap gap-1">
           {passed.statuses.map((status, i) => (
             <li key={i} data-testid="item-seal" className="motion-safe:animate-seal-in" style={{ animationDelay: `${180 + i * 45}ms` }}>

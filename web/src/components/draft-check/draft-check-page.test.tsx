@@ -242,4 +242,13 @@ describe("creator draft check page", () => {
     await screen.findByRole("button", { name: "Try again" });
     expect(screen.queryByRole("region", { name: "What happens next" })).toBeNull();
   });
+
+  test("DC-FR-48: run 2 says what the creator's last fix changed; nothing stamps on an ordinary load", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+    const banner = await screen.findByRole("region", { name: "Your fix worked" });
+    expect(banner).toHaveTextContent("Glow Theory logo on screen for 3+ seconds and Says discount code GLOW20 now pass.");
+    expect(banner).toHaveTextContent("2 items still need you.");
+    expect(screen.getByTestId("run-change-seal")).not.toHaveAttribute("data-stamp");
+  });
 });
+

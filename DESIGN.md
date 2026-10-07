@@ -366,6 +366,9 @@ The money card collapsed to one row: a 32px seal (espresso-ink with a marigold l
 ### Passed banner (signature moment)
 When every draft-check item has passed, a white banner with a pass-wash border sits between the header and the content: a 56px pass seal that stamps in once (scale and a small turn, about 400ms, ease-out-expo), "Every item passed", "N items checked against {brand}'s brief. Nothing left to fix.", and a row of 20px item seals that line up in quick sequence. Still under reduced motion. It is the one celebratory moment in the app and it stays calm: no confetti, no marigold.
 
+### Run change banner
+What the latest run changed (DC-FR-48), in the banner slot between the header and the work row, built like the check-failed banner: a white panel with a 32/40px seal, a bold heading ("Your fix worked", "Your fix worked, but something changed", "Something changed in this draft"), one sentence per change naming the items, a semibold "1 item still needs you.", and an ink-3 "Below are your results from run 3." A pass-wash border and pass seal when something was fixed and nothing got worse; a line border and a latte seal with a history arrow otherwise. Its seal stamps once (the passed banner's stamp) only when the run lands while the page is open. When every item passes, there is no separate banner: the passed banner adds one semibold pass-coloured line, "Your fix worked: … now passes."
+
 ### Seal (signature)
 A 14-scallop SVG badge with a stroke icon inside. Green wash + check = passed, red wash + cross = fix needed, amber wash + question = unsure, grey + clock = waiting, espresso-ink + marigold lock = money held, marigold + dot = current step, grey + spinning arc = checking, amber + clock = waiting for the brand, grey + espresso check-in-circle = accepted by the brand, latte + espresso return arrow = money released. Used on timeline markers, grid rows, item cards, deal steps and the logo.
 

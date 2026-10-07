@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.9). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.10). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -72,6 +72,11 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 52. As a creator whose ask the brand declined, I want the brand's note first and then the suggestion, so that the brand's own words come before Cleared's.
 53. As a creator, I want the suggestion to read as advice, not a promise, so that I know the next draft check still decides.
 54. As a creator whose item passed, I never want to see an old suggestion beside a Passed chip.
+55. As a creator whose new draft fixed an item, I want the page to say so by name, so that I know my fix worked without comparing runs myself.
+56. As a creator, I want to be told plainly if something that passed before now needs fixing, so that good news never hides a new problem.
+57. As a creator whose new draft cancelled the brand's acceptance, I want to be told why that item is unsure again.
+58. As a creator who left the page while the check ran, I want the same summary when I come back, so that I don't miss what changed.
+59. As a creator watching a run land, I want the item that still needs me selected, so that I start on what's left.
 
 ## Functional requirements
 
@@ -90,6 +95,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-09 | **Check failed: our side.** When the API reports a processing failure, the banner says it is not the creator's fault and what happens next. **Depends on backend** for automatic retry ("We're trying again; you don't need to do anything."). Fallback: "Something went wrong on our side checking this draft." with the action "Try again". |
 | DC-FR-10 | **Released.** When the API reports the hold was released (missed deadline or cancelled deal), the page is read-only: the last run's results stay visible, and the upload and ask actions are removed. The next-step bar says what happened, when and, if the API says, who cancelled, and that nothing more can happen on this deliverable. There is no primary action. |
 | DC-FR-11 | **Deadline warning.** In the no draft, results and check failed states, when fewer than 3 days remain before the deliverable's deadline, the next-step bar leads with the time left ("2 days left to post."). This changes emphasis only, not any timing. |
+| DC-FR-48 | **What the new run changed.** In the results state, from run 2 on, when at least one item's status differs from the previous run (DC-FR-19), a panel between the header and the work row says what changed, naming up to three items, then "and N more". Fixed items: "Code GLOW20 shown on screen now passes." Items that passed before and now need fixing or are unsure: said plainly, never hidden behind good news. An acceptance cancelled by the new draft (DC-BR-04): "Glow Theory's acceptance of Serum shown in use was cancelled by the new draft, so it's unsure again." It ends with how many items still need the creator (Fix needed and Unsure, as the Needs you tab) and "Below are your results from run N." Heading: "Your fix worked" when something was fixed and nothing got worse; "Your fix worked, but something changed" when both; "Something changed in this draft" when nothing was fixed. A pass seal only when nothing got worse, else a neutral seal. It is built from `previousStatus`, so it shows on every load of that run; when the run lands while the creator is on the page, its seal stamps in once (still under reduced motion). In the fully passing state there is no separate panel: the passed banner adds one line, "Your fix worked: Code GLOW20 shown on screen now passes." On run 1 there is no panel or line. |
 
 ### Checklist and evidence
 
@@ -118,7 +124,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-18 | **No answer.** A Waiting for brand item stays waiting with no time limit. While any item is waiting, the next-step bar names the brand and shows the deliverable's deadline. |
 | DC-FR-19 | **Change since last run.** From run 2 on, an item whose status differs from the previous run shows the change ("Was Fix needed, now Passed"; "Was accepted by Glow Theory, now Unsure"). Only the latest run is shown; earlier runs cannot be opened. |
 | DC-FR-20 | **Filter tabs.** All; Needs you (Fix needed, Unsure); Passed (Passed, Accepted by brand); Waiting for brand (shown only when its count is above 0); At live check. Each tab shows its count. An empty tab says "Nothing here right now." |
-| DC-FR-21 | **Default selection.** On load, with no item in the URL, the first Fix needed item is selected; else the first Unsure; else the first item. |
+| DC-FR-21 | **Default selection.** On load, with no item in the URL, the first Fix needed item is selected; else the first Unsure; else the first item. When a new run's results land while the creator is on the page, the same rule is applied again (the earlier selection belonged to the previous run) and the filter returns to All; the page does not scroll. |
 | DC-FR-46 | **Suggested fix.** When the API sends an item's `fixHint`, an item that is Fix needed, Unsure (including one the brand declined) or Waiting for brand shows it as "Suggested fix": one plain sentence saying what to change. It sits after the evidence and before the brief line, in the evidence panel (tablet and up) and in the expanded item card (phones); on a declined item it comes after the brand's note. The grid and the collapsed card do not show it. No other status shows a hint, even if one is sent. With no hint, nothing is shown (no placeholder). The hint is plain text: no links or formatting, and it never changes the item's status, the checklist or the money. |
 | DC-FR-22 | **Selecting an item** from the grid, a card or a timeline marker selects it everywhere: the evidence panel (tablet and up) or the expanded card (phone), the grid row, the timeline marker, and the video seeks to its timestamp. The change moves in one 200–350 ms ease-out step. |
 
@@ -177,7 +183,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-42 | Every animation honours `prefers-reduced-motion`. |
 | DC-FR-43 | Every interactive element is reachable by keyboard, has a visible focus ring and an accessible name; touch targets are at least 44 × 44 px; nothing depends on hover. |
 | DC-FR-44 | **One shared deadline date, with the viewer's own time.** A deliverable's deadline is the end of its day (23:59) in the creator's timezone, so the creator and the brand read the same date ("Post by 24 Oct"). When the viewer's timezone is different, the page adds when it ends for them ("ends 18:59 your time", or "ends 25 Oct, 07:59 your time" when their date differs). Countdowns (DC-FR-11) use the exact moment. |
-| DC-FR-45 | **Upload while the upload flow is unspecced.** When mocks are on, the upload actions (Upload draft, Upload new draft, Upload again) open the file picker and simulate a new run: the page shows Checking, then the new results, from the mocks only; nothing is uploaded. When mocks are off, no upload button is shown until the upload flow's FRD is built. |
+| DC-FR-45 | **Upload while the upload flow is unspecced.** When mocks are on, the upload actions (Upload draft, Upload new draft, Upload again) open the file picker and simulate a new run: the page shows Checking, then the new results with fresh evidence for the items that changed, from the mocks only; nothing is uploaded. When mocks are off, no upload button is shown until the upload flow's FRD is built. |
 
 ## Business rules
 
@@ -273,6 +279,7 @@ Fields:
 | DC-FR-31 | Deals list: deal id, brand name, current step and one-line status per deal |
 | DC-FR-37 | Which deliverable's next step is the creator's |
 | DC-FR-46 | Optional `fixHint` per Fix needed and Unsure item: one imperative sentence, at most 280 characters, plain text. Built by code for exact items (codes, links: "Show GLOW20 exactly, with a zero"), written by the AI for judgment items. Model output is validated against a schema like every model response; a missing or malformed hint is left out rather than guessed. It is guidance only and never affects the result. Built against the mock first (William's call); Furqaan can change it |
+| DC-FR-48, DC-FR-19 | Each run returns fresh evidence (and `fixHint`) for every item it checked; evidence from earlier runs is not sent. `previousStatus` is the item's status in the run before |
 | DC-FR-33 | Each deal summary's `deliverables: { id, platform, state }[]`, so the switcher can name each deliverable and show its step |
 
 ## Testing Decisions
@@ -281,7 +288,7 @@ Fields:
 - **Deliverable view model:** every state in DC-FR-01, the next-step copy and action for each state, DC-FR-11 at 3 days and just over, DC-FR-19, DC-FR-20 counts, DC-FR-21 and DC-BR-01 to DC-BR-06.
 - **Item status map:** every status has an icon and a word (never colour alone), Accepted by brand is never the pass colour, and each status sits in the right tab.
 - **API client:** schema-invalid responses become errors; not-found and not-a-party give the same outcome; the video URL refreshes once on expiry and then reports failure.
-- **Components:** each one with mocked API data, at 375 px and at desktop width. The ask-brand action appears only on Unsure items. DC-FR-46: the Suggested fix shows on Fix needed, Unsure, declined (after the brand's note) and Waiting for brand items, in the evidence panel and the expanded card, never on other statuses, never in the grid, and nothing at all when the hint is missing. The schema rejects a hint over 280 characters. The grid and the cards are tested for DC-FR-41 parity on the same fixture.
+- **Components:** each one with mocked API data, at 375 px and at desktop width. The ask-brand action appears only on Unsure items. DC-FR-46: the Suggested fix shows on Fix needed, Unsure, declined (after the brand's note) and Waiting for brand items, in the evidence panel and the expanded card, never on other statuses, never in the grid, and nothing at all when the hint is missing. The schema rejects a hint over 280 characters. DC-FR-48: the summary for fixed only, fixed and worse, worse only, a cancelled acceptance, more than three names, run 1 (none), and the fully passing line; re-selection when a run lands, and none on an ordinary load. The grid and the cards are tested for DC-FR-41 parity on the same fixture.
 - **End to end (Playwright, on MSW):** every named mock scenario at 375 px and 1280 px, including selecting an item from the timeline, grid and card, Back through selection, asking and withdrawing, and the 9:16 deliverable.
 - Coverage of at least 70% on components and lib code.
 - There are no earlier tests in the repo; these are the first.
@@ -328,3 +335,5 @@ Fields:
 | 1.8 signed | Revision 1.8 signed by William | none |
 | 1.9 | DC-FR-30 amended and DC-FR-47 added: on phones the next step's full explanation is a "What happens next" block on the page (the bar keeps the lead and the action); while a check-failed banner shows, the bar states only the action and the banner explains. From the re-critique (phones hid the why) | none |
 | 1.9 signed | Revision 1.9 signed by William | none |
+| 1.10 | DC-FR-48 added: a summary of what the new run changed (or one line on the passed banner); DC-FR-21 amended: re-select when a run lands; evidence is always the latest run's (Requests for Furqaan); DC-FR-45's mock replaces changed items' evidence. User stories 55 to 59. From the re-critique (a successful fix was the quietest moment) | none |
+| 1.10 signed | Revision 1.10 signed by William | none |

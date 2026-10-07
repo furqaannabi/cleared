@@ -474,7 +474,7 @@ describe("fully passing moment", () => {
       }),
       NOW,
     );
-    expect(view.passed).toEqual({ count: 3, statuses: ["passed", "accepted_by_brand", "passed"] });
+    expect(view.passed).toEqual({ count: 3, statuses: ["passed", "accepted_by_brand", "passed"], fixed: null });
   });
 
   test("only when fully passing", () => {
@@ -499,3 +499,62 @@ describe("fully passing moment", () => {
     expect(deliverableView(deliverable({ items: [item("a", "fix_needed")] }), NOW).items[0].suggestedFix).toBeNull();
   });
 });
+
+describe("DC-FR-48 what the new run changed", () => {
+  const change = (items: ChecklistItem[], extra: Partial<Deliverable> = {}) =>
+    deliverableView(deliverable({ run: 3, items, ...extra }), NOW).runChange;
+  const was = (id: string, status: ItemStatus, previousStatus: ItemStatus) => item(id, status, { previousStatus, name: `Item ${id}` });
+
+  test("something fixed and nothing worse: your fix worked, by name, with what still needs you", () => {
+    expect(change([was("a", "passed", "fix_needed"), item("b", "unsure"), item("c", "passed")])).toEqual({
+      heading: "Your fix worked",
+      tone: "pass",
+      lines: ["Item a now passes."],
+      stillNeedsYou: "1 item still needs you.",
+      showing: "Below are your results from run 3.",
+    });
+  });
+
+  test("fixed and worse: both said plainly", () => {
+    expect(change([was("a", "passed", "fix_needed"), was("b", "fix_needed", "passed"), was("c", "unsure", "passed")])).toMatchObject({
+      heading: "Your fix worked, but something changed",
+      tone: "neutral",
+      lines: ["Item a now passes.", "Item b passed before and now needs fixing.", "Item c passed before and is now unsure."],
+      stillNeedsYou: "2 items still need you.",
+    });
+  });
+
+  test("nothing fixed: something changed in this draft", () => {
+    expect(change([was("a", "fix_needed", "unsure")])).toMatchObject({
+      heading: "Something changed in this draft",
+      tone: "neutral",
+      lines: ["Item a was unsure and now needs fixing."],
+    });
+  });
+
+  test("an acceptance the new draft cancelled says why the item is unsure again", () => {
+    expect(change([was("a", "unsure", "accepted_by_brand")])?.lines).toEqual([
+      "Glow Theory’s acceptance of Item a was cancelled by the new draft, so it’s unsure again.",
+    ]);
+  });
+
+  test("names up to three items, then how many more", () => {
+    const items = ["a", "b", "c", "d", "e"].map((id) => was(id, "passed", "fix_needed"));
+    expect(change(items)?.lines).toEqual(["Item a, Item b, Item c and 2 more now pass."]);
+    expect(change(items.slice(0, 2))?.lines).toEqual(["Item a and Item b now pass."]);
+  });
+
+  test("no summary on run 1, when nothing changed, or outside the results state", () => {
+    expect(change([was("a", "passed", "fix_needed")], { run: 1 })).toBeNull();
+    expect(change([item("a", "passed"), was("b", "unsure", "unsure")])).toBeNull();
+    expect(change([was("a", "passed", "fix_needed")], { state: "fully_passing" })).toBeNull();
+  });
+
+  test("fully passing after a fix: one line on the passed banner instead", () => {
+    const view = deliverableView(deliverable({ state: "fully_passing", run: 3, items: [was("a", "passed", "fix_needed"), item("b", "passed")] }), NOW);
+    expect(view.passed?.fixed).toBe("Your fix worked: Item a now passes.");
+    const first = deliverableView(deliverable({ state: "fully_passing", run: 1, items: [item("a", "passed")] }), NOW);
+    expect(first.passed?.fixed).toBeNull();
+  });
+});
+

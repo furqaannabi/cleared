@@ -1,3 +1,4 @@
+import { fixedLineForPassed, runChange, type RunChange } from "./run-change";
 import { describeStatus, tabsFor, type ChecklistTab, type ItemStatus } from "@/lib/checklist/item-status";
 import { deadlineView, type DeadlineView } from "./deadline";
 import { dealSteps, type DealStepsView } from "./deal-steps";
@@ -32,7 +33,9 @@ export interface DeliverableView {
   /** DC-FR-08, DC-FR-09: the check-failed banner, or null. */
   checkFailed: CheckFailedBanner | null;
   /** Fully passing: the draft-check items that passed (or were accepted), for the seal moment; else null. */
-  passed: { count: number; statuses: ItemStatus[] } | null;
+  passed: { count: number; statuses: ItemStatus[]; fixed: string | null } | null;
+  /** DC-FR-48: what the latest run changed, in the results state; else null. */
+  runChange: RunChange | null;
   /** DC-FR-04: the running check's stages, or null when not checking or the API sends none. */
   checking: { meta: string; stages: NonNullable<Deliverable["stages"]> } | null;
 }
@@ -186,8 +189,9 @@ export function deliverableView(d: Deliverable, now: Date, options: { timeZone?:
       d.state === "fully_passing"
         ? (() => {
             const statuses = d.items.filter((i) => i.status !== "at_live_check").map((i) => i.status);
-            return { count: statuses.length, statuses };
+            return { count: statuses.length, statuses, fixed: fixedLineForPassed(d) };
           })()
         : null,
+    runChange: runChange(d),
   };
 }

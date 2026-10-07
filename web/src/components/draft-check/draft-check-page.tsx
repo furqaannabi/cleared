@@ -26,6 +26,7 @@ import { CheckFailedBanner } from "./check-failed-banner";
 import { CheckStages } from "./check-stages";
 import { DraftCheckLayout } from "./draft-check-layout";
 import { PassedBanner } from "./passed-banner";
+import { RunChangeBanner } from "./run-change-banner";
 import { LoadProblem } from "./load-problem";
 import { PageSkeleton } from "./page-skeleton";
 import { useDeliverable } from "./use-deliverable";
@@ -63,6 +64,18 @@ function Loaded({
   const view = useMemo(() => deliverableView(deliverable, new Date()), [deliverable]);
   const [selectedId, setSelectedId] = useState<string | null>(view.defaultItemId);
   const [filter, setFilter] = useState<ChecklistTab>("all");
+  // DC-FR-21, DC-FR-48: when a run lands while the page is open (Checking turns into results),
+  // the old selection belonged to the previous run: select again, show All, and let the summary's seal stamp.
+  const [seenState, setSeenState] = useState(deliverable.state);
+  const [landed, setLanded] = useState(false);
+  if (deliverable.state !== seenState) {
+    setSeenState(deliverable.state);
+    if (seenState === "checking") {
+      setLanded(true);
+      setSelectedId(view.defaultItemId);
+      setFilter("all");
+    }
+  }
   const shown = view.items.filter((i) => tabsFor(i.status).includes(filter));
   const wide = useMediaQuery("(min-width: 768px)");
   // DC-FR-33: the deal's other deliverables, from the shell's deals.
@@ -162,6 +175,7 @@ function Loaded({
         switcher={deal && <DeliverableSwitcher dealId={dealId} deliverables={deal.deliverables} currentId={deliverable.id} />}
       />
       {view.checkFailed && <CheckFailedBanner banner={view.checkFailed} />}
+      {view.runChange && <RunChangeBanner change={view.runChange} landed={landed} />}
       {view.passed && <PassedBanner passed={view.passed} brandName={deliverable.brandName} />}
       <DraftCheckLayout
         vertical={deliverable.platform !== "youtube_video"}

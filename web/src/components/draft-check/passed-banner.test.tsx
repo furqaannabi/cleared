@@ -3,8 +3,14 @@ import { expect, test } from "vitest";
 import { PassedBanner } from "./passed-banner";
 
 test("fully passing: the proof earns the seal, one small seal per item", () => {
-  render(<PassedBanner passed={{ count: 3, statuses: ["passed", "accepted_by_brand", "passed"] }} brandName="Northbound Coffee" />);
+  render(<PassedBanner passed={{ count: 3, statuses: ["passed", "accepted_by_brand", "passed"], fixed: null }} brandName="Northbound Coffee" />);
   const banner = screen.getByRole("region", { name: "Every item passed" });
   expect(banner).toHaveTextContent("3 items checked against Northbound Coffee’s brief. Nothing left to fix.");
   expect(within(banner).getAllByTestId("item-seal")).toHaveLength(3);
+});
+
+test("DC-FR-48: after a fix, the passed banner names what the fix changed", () => {
+  const fixed = "Your fix worked: Code GLOW20 shown on screen now passes.";
+  render(<PassedBanner passed={{ count: 6, statuses: Array(6).fill("passed"), fixed }} brandName="Glow Theory" />);
+  expect(screen.getByRole("region", { name: "Every item passed" })).toHaveTextContent(fixed);
 });
