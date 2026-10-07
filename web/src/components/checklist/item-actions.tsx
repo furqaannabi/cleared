@@ -51,14 +51,16 @@ export function ItemActions({
           {brandName} accepted this moment. It counts as passed for this draft.
         </p>
       )}
-      {item.action === "ask" && (
-        <Action label={`Ask ${brandName} to accept`} onPress={onAsk} pending={pending}>
-          {brandName} sees this moment and its evidence. You can still upload a fix.
-        </Action>
-      )}
-      {item.action === "withdraw" && (
-        <Action label="Withdraw" onPress={onWithdraw} pending={pending}>
-          You asked {item.asked ?? "earlier"}. It stays here until {brandName} answers; it never clears on a timer.
+      {/* One slot for Ask and Withdraw, so the same button keeps focus when one becomes the other. */}
+      {item.action && (
+        <Action
+          label={item.action === "ask" ? `Ask ${brandName} to accept` : "Withdraw"}
+          onPress={item.action === "ask" ? onAsk : onWithdraw}
+          pending={pending}
+        >
+          {item.action === "ask"
+            ? `${brandName} sees this moment and its evidence. You can still upload a fix.`
+            : `You asked ${item.asked ?? "earlier"}. It stays here until ${brandName} answers; it never clears on a timer.`}
         </Action>
       )}
       {problem && (
@@ -85,10 +87,11 @@ function Action({
     <div className="flex flex-col items-start gap-1.5">
       <button
         type="button"
-        onClick={onPress}
-        disabled={pending}
+        // aria-disabled, not disabled: a disabled button would drop keyboard focus mid-request.
+        onClick={() => !pending && onPress()}
+        aria-disabled={pending || undefined}
         aria-busy={pending || undefined}
-        className="inline-flex min-h-11 items-center rounded-pill border border-latte-line bg-surface px-[18px] text-body-strong font-bold text-espresso transition-colors hover:bg-latte-wash active:translate-y-px disabled:cursor-wait disabled:opacity-60"
+        className="inline-flex min-h-11 items-center rounded-pill border border-latte-line bg-surface px-[18px] text-body-strong font-bold text-espresso transition-colors hover:bg-latte-wash active:translate-y-px aria-disabled:cursor-wait aria-disabled:opacity-60"
       >
         {label}
       </button>

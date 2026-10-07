@@ -20,6 +20,7 @@ type Draft = NonNullable<Deliverable["draft"]>;
  * @param selectedId - the selected item; the video seeks to it
  * @param onSelect - called when a timeline marker is chosen
  * @param refreshUrl - fetches a fresh link when the current one stops working
+ * @param seekKey - bumped to play the selected item's moment again ("Play from")
  * @see docs/specs/creator-draft-check-frd.md DC-FR-23 to DC-FR-26, DC-FR-22
  */
 export function DraftPlayer(props: PlayerProps) {
@@ -35,6 +36,7 @@ type PlayerProps = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   refreshUrl: () => Promise<string | null>;
+  seekKey?: number;
 };
 
 function Player({
@@ -45,6 +47,7 @@ function Player({
   selectedId,
   onSelect,
   refreshUrl,
+  seekKey = 0,
 }: PlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentSec, setCurrentSec] = useState(0);
@@ -81,7 +84,20 @@ function Player({
     if (start == null || !videoRef.current) return;
     videoRef.current.currentTime = start;
     setCurrentSec(start);
-  }, [selectedId, items]);
+  }, [selectedId, items, seekKey]);
+
+  // DC-FR-23: "Play from" brings the video into view and plays it.
+  const lastSeekKey = useRef(seekKey);
+  useEffect(() => {
+    if (seekKey === lastSeekKey.current) return;
+    lastSeekKey.current = seekKey;
+    const video = videoRef.current;
+    if (!video) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    video.scrollIntoView?.({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    // A browser may refuse to play; the video is still at the moment.
+    video.play?.()?.catch(() => {});
+  }, [seekKey]);
 
   return (
     <div className="rounded-lg border border-line bg-surface p-2.5 shadow-panel md:p-3.5">
@@ -109,7 +125,7 @@ function Player({
           onLoadedData={() => {
             refreshed.current = false;
           }}
-          className="size-full object-contain"
+          className="size-full scroll-mt-20 object-contain"
         />
       </div>
       {failed && (

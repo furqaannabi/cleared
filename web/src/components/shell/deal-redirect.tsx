@@ -23,7 +23,7 @@ export function DealRedirect({ dealId }: { dealId: string }) {
   }, [deal, router]);
 
   return (
-    <main className="mx-auto w-full max-w-[1240px] px-4 pt-4 md:px-6 lg:px-9">
+    <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1240px] focus:outline-none px-4 pt-4 md:px-6 lg:px-9">
       {load.status === "ready" && !deal && <LoadProblem error="not_found" onRetry={() => {}} />}
       {load.status === "error" && <LoadProblem error="unavailable" onRetry={() => window.location.reload()} />}
       {(load.status === "loading" || deal) && <PageSkeleton />}

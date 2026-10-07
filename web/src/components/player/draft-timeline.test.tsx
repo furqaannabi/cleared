@@ -13,6 +13,7 @@ describe("DC-FR-24 draft timeline", () => {
     const markers = screen.getAllByRole("button");
     expect(markers.map((m) => m.getAttribute("aria-label"))).toEqual([
       "Mentions Glow Theory in the first 60 seconds, Passed, at 0:42",
+      "Sponsored segment runs at least 45 seconds, Passed, at 0:42–1:38",
       "Glow Theory logo on screen for 3+ seconds, Passed, at 1:10",
       "Says discount code GLOW20, Passed, at 2:06",
       "Code GLOW20 shown on screen, Fix needed, at 3:15",
@@ -27,5 +28,12 @@ describe("DC-FR-24 draft timeline", () => {
     expect(screen.getByRole("button", { name: /Code GLOW20 shown on screen/ })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(screen.getByRole("button", { name: /Serum shown in use/ }));
     expect(onSelect).toHaveBeenCalledWith("it_6");
+  });
+
+  test("DC-FR-24: choosing a band selects its item", async () => {
+    const onSelect = vi.fn();
+    render(<DraftTimeline items={view.items} brandName="Glow Theory" durationSec={408} selectedId={null} onSelect={onSelect} />);
+    await userEvent.click(screen.getByRole("button", { name: /Sponsored segment runs at least 45 seconds/ }));
+    expect(onSelect).toHaveBeenCalledWith("it_2");
   });
 });

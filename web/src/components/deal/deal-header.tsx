@@ -34,7 +34,7 @@ export function DealHeader({
         <ol className="flex items-center gap-1.5 text-meta text-ink-3">
           <li className="flex items-center gap-1.5 after:text-ink-4 after:content-['›']">Deals</li>
           <li className="flex items-center gap-1.5 after:text-ink-4 after:content-['›']">
-            <Link href={`/deals/${encodeURIComponent(dealId)}`} className="underline-offset-[3px] hover:underline">
+            <Link href={`/deals/${encodeURIComponent(dealId)}`} className="relative underline-offset-[3px] before:absolute before:-inset-x-1.5 before:-inset-y-[13px] before:content-[''] hover:underline">
               {brandName}
             </Link>
           </li>

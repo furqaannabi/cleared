@@ -61,6 +61,9 @@ const WIDE_MIN_PX = 1000;
 const SealCell = ({ data }: ICellRendererParams<ItemView>) =>
   data ? <StatusSeal status={data.status} className="size-7" /> : null;
 
+// The seal column shows no header text, but is still named for screen readers.
+const SealHeader = () => <span className="sr-only">Status</span>;
+
 const ItemCell = ({ data }: ICellRendererParams<ItemView>) =>
   data ? (
     <div className="flex h-full flex-col justify-center leading-snug">
@@ -95,7 +98,7 @@ function resultCell(brandName: string) {
  * @param items - the checklist items to show
  * @param brandName - the deal's brand, for result words
  * @param selectedId - the selected item, or null
- * @param onSelect - called with the item the creator clicks
+ * @param onSelect - called with the item the creator clicks, or picks with Enter or Space
  * @param wide - force the wide column set (tests); measured from the grid otherwise
  * @see docs/specs/creator-draft-check-frd.md DC-FR-40, DC-FR-41, DC-FR-22
  */
@@ -119,7 +122,7 @@ export default function ChecklistGrid({
   const columnDefs = useMemo<ColDef<ItemView>[]>(() => {
     const order = (s: ItemStatus) => NEED_ORDER.indexOf(s);
     const cols: (ColDef<ItemView> & { wideOnly?: boolean })[] = [
-      { colId: "seal", headerName: "", width: 64, sortable: false, cellRenderer: SealCell },
+      { colId: "seal", headerName: "Status", headerComponent: SealHeader, width: 64, sortable: false, cellRenderer: SealCell },
       { colId: "item", headerName: "Item", field: "name", flex: 3, minWidth: 280, cellRenderer: ItemCell },
       { colId: "kind", headerName: "Kind", field: "kind", width: 140, valueFormatter: (p) => kindLabel(p.value), wideOnly: true },
       { colId: "time", headerName: "Time", width: 128, valueGetter: (p) => p.data?.evidence?.startSec ?? Infinity, cellRenderer: TimeCell },
@@ -154,6 +157,13 @@ export default function ChecklistGrid({
       rowSelection={{ mode: "singleRow", checkboxes: false, enableClickSelection: true }}
       rowClassRules={{ "row-fail": (p) => p.data?.status === "fix_needed" }}
       onRowClicked={(e) => e.data && onSelect(e.data.id)}
+      // Keyboard: arrows move between rows, Enter or Space selects (DC-FR-22).
+      onCellKeyDown={(e) => {
+        const event = e.event as KeyboardEvent | null | undefined;
+        if (!e.data || (event?.key !== "Enter" && event?.key !== " ")) return;
+        event.preventDefault();
+        onSelect(e.data.id);
+      }}
       onFirstDataRendered={(e) => e.api.forEachNode((node) => node.setSelected(node.data?.id === selectedId))}
       onGridSizeChanged={(e) => setMeasuredWide(e.clientWidth >= WIDE_MIN_PX)}
     />

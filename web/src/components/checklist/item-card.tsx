@@ -1,5 +1,6 @@
 import { checkedByLabel, itemTime, kindLabel } from "@/lib/checklist/item-labels";
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
+import { PlayFrom } from "@/components/player/seek";
 import { StatusChip } from "./status-chip";
 import { StatusSeal } from "./status-seal";
 
@@ -63,6 +64,7 @@ export function ItemCard({
               {item.evidence.text}
             </p>
           )}
+          <PlayFrom itemId={item.id} startSec={item.evidence?.startSec} />
           <p>
             Brief line {item.briefLine.number}: “{item.briefLine.text}”
           </p>

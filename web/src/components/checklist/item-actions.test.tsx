@@ -48,9 +48,14 @@ describe("DC-FR-14 to DC-FR-18 item actions", () => {
     expect(screen.getByText("Glow Theory accepted this moment. It counts as passed for this draft.")).toBeVisible();
   });
 
-  test("while sending, the button can't be pressed twice; a problem is said plainly", () => {
-    renderActions({ action: "ask" }, { pending: true, problem: "We couldn’t send that. Try again." });
-    expect(screen.getByRole("button", { name: "Ask Glow Theory to accept" })).toBeDisabled();
+  test("while sending, the button can't be pressed twice; a problem is said plainly", async () => {
+    const onAsk = vi.fn();
+    renderActions({ action: "ask" }, { pending: true, problem: "We couldn’t send that. Try again.", onAsk });
+    // aria-disabled rather than disabled, so keyboard focus stays on it.
+    const button = screen.getByRole("button", { name: "Ask Glow Theory to accept" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(button);
+    expect(onAsk).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent("We couldn’t send that. Try again.");
   });
 

@@ -32,11 +32,15 @@ function Frame({ currentDealId, children }: { currentDealId: string | null; chil
   if (desktop) {
     return (
       <div className="grid min-h-dvh grid-cols-[248px_minmax(0,1fr)]">
+        <SkipLink />
         <aside aria-label="Main" className="sticky top-0 flex h-dvh flex-col bg-espresso-deep px-3.5 py-[22px]">
           <span className="px-2.5">
             <Logo />
           </span>
-          <h2 className="mx-2.5 mt-[26px] mb-2 text-nav-section font-bold tracking-[0.08em] text-white/70 uppercase">Deals</h2>
+          {/* A label, not a heading: the nav below is named "Deals", and the page's h1 comes first. */}
+          <p aria-hidden="true" className="mx-2.5 mt-[26px] mb-2 text-nav-section font-bold tracking-[0.08em] text-white/70 uppercase">
+            Deals
+          </p>
           <DealsBody load={deals} currentDealId={currentDealId} tone="rail" />
         </aside>
         <div className="min-w-0">{children}</div>
@@ -46,6 +50,7 @@ function Frame({ currentDealId, children }: { currentDealId: string | null; chil
 
   return (
     <div className="min-h-dvh">
+      <SkipLink />
       <header className="sticky top-0 z-20 flex items-center justify-between bg-espresso-deep px-4 py-3">
         <Logo compact />
         <Sheet
@@ -72,4 +77,16 @@ function DealsBody({ load, currentDealId, tone }: { load: DealsLoad; currentDeal
   const text = tone === "rail" ? "text-white/70" : "text-ink-3";
   if (load.status === "error") return <p className={`px-2.5 text-meta ${text}`}>We couldn’t load your deals.</p>;
   return <p className={`px-2.5 text-meta ${text}`}>Loading your deals…</p>;
+}
+
+/** Lets keyboard users jump past the deals to the page (its `<main id="main">`). */
+function SkipLink() {
+  return (
+    <a
+      href="#main"
+      className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-pill focus:bg-surface focus:px-4 focus:text-body-strong focus:font-bold focus:text-espresso focus:shadow-floating-bar"
+    >
+      Skip to content
+    </a>
+  );
 }

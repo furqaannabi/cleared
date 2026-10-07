@@ -14,31 +14,37 @@ const PROBLEM: Record<ApiError, string> = {
 /**
  * Asks the brand to accept an item, or withdraws an ask, and hands the
  * updated deliverable back. Tracks which item is in flight so its button
- * can't be pressed twice, and the last problem in plain words.
+ * can't be pressed twice, the last problem in plain words, and a line for
+ * screen readers saying what was done.
  *
  * @param deliverableId - the deliverable the items belong to
+ * @param brandName - the deal's brand, for the announcement
  * @param onUpdated - called with the deliverable the API returns
  * @see docs/specs/creator-draft-check-frd.md DC-FR-14, DC-FR-15
  */
-export function useItemActions(deliverableId: string, onUpdated: (d: Deliverable) => void) {
+export function useItemActions(deliverableId: string, brandName: string, onUpdated: (d: Deliverable) => void) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [problem, setProblem] = useState<{ itemId: string; text: string } | null>(null);
+  const [announcement, setAnnouncement] = useState("");
 
   const run = useCallback(
-    async (itemId: string, call: typeof api.askBrandToAccept) => {
+    async (itemId: string, call: typeof api.askBrandToAccept, done: string) => {
       setPendingId(itemId);
       setProblem(null);
       const result = await call(deliverableId, itemId);
       setPendingId(null);
-      if (result.ok) onUpdated(result.data);
-      else setProblem({ itemId, text: PROBLEM[result.error] });
+      if (result.ok) {
+        onUpdated(result.data);
+        setAnnouncement(done);
+      } else setProblem({ itemId, text: PROBLEM[result.error] });
     },
     [deliverableId, onUpdated],
   );
 
   return {
-    ask: (itemId: string) => run(itemId, api.askBrandToAccept),
-    withdraw: (itemId: string) => run(itemId, api.withdrawAsk),
+    ask: (item: { id: string; name: string }) => run(item.id, api.askBrandToAccept, `Asked ${brandName} to accept “${item.name}”.`),
+    withdraw: (item: { id: string; name: string }) => run(item.id, api.withdrawAsk, `Withdrew your ask for “${item.name}”.`),
+    announcement,
     pendingId,
     problemFor: (itemId: string) => (problem?.itemId === itemId ? problem.text : null),
   };

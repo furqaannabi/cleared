@@ -55,7 +55,7 @@ export function NextStepBar({
           <button
             type="button"
             onClick={onShowItem}
-            className="text-left font-bold text-ink underline decoration-latte-line decoration-2 underline-offset-4 hover:decoration-espresso"
+            className="relative text-left font-bold text-ink underline before:absolute before:inset-x-0 before:-inset-y-3 before:content-[''] decoration-latte-line decoration-2 underline-offset-4 hover:decoration-espresso"
           >
             {step.lead}
           </button>

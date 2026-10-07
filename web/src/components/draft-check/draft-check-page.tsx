@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ChecklistFilter } from "@/components/checklist/checklist-filter";
 import { ChecklistItems } from "@/components/checklist/checklist-items";
 import { hasItemActions, ItemActions } from "@/components/checklist/item-actions";
@@ -15,6 +15,7 @@ import { BriefSheet } from "@/components/brief/brief-sheet";
 import { NextStepBar } from "@/components/next-step/next-step-bar";
 import { DraftPlaceholder } from "@/components/player/draft-placeholder";
 import { DraftPlayer } from "@/components/player/draft-player";
+import { SeekProvider } from "@/components/player/seek";
 import { api } from "@/lib/api";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { MOCKING_ENABLED } from "@/lib/mocking/mocking-enabled";
@@ -40,7 +41,7 @@ import { useItemActions } from "./use-item-actions";
 export function DraftCheckPage({ dealId, deliverableId }: { dealId: string; deliverableId: string }) {
   const { load, retry, replace } = useDeliverable(deliverableId);
   return (
-    <main className="mx-auto w-full max-w-[1240px] px-4 pt-4 pb-36 md:px-6 lg:px-9">
+    <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1240px] focus:outline-none px-4 pt-4 pb-36 md:px-6 lg:px-9">
       {load.status === "loading" && <PageSkeleton />}
       {load.status === "ready" && <Loaded dealId={dealId} deliverable={load.deliverable} onUpdated={replace} />}
       {load.status === "error" && <LoadProblem error={load.error} onRetry={retry} />}
@@ -67,7 +68,7 @@ function Loaded({
   const dealsLoad = useOptionalDeals();
   const deal = dealsLoad?.status === "ready" ? dealsLoad.deals.find((d) => d.id === dealId) : undefined;
   const selected = view.items.find((i) => i.id === selectedId) ?? null;
-  const actions = useItemActions(deliverable.id, onUpdated);
+  const actions = useItemActions(deliverable.id, deliverable.brandName, onUpdated);
   // DC-FR-30: View brief, beside the next step from md: up and in the checklist header on phones.
   const briefSheet = deliverable.brief && (
     <BriefSheet brief={deliverable.brief} brandName={deliverable.brandName} highlightLine={selected?.briefLine.number ?? null} />
@@ -103,8 +104,8 @@ function Loaded({
     <ItemActions
       item={item}
       brandName={deliverable.brandName}
-      onAsk={() => actions.ask(item.id)}
-      onWithdraw={() => actions.withdraw(item.id)}
+      onAsk={() => actions.ask(item)}
+      onWithdraw={() => actions.withdraw(item)}
       pending={actions.pendingId === item.id}
       problem={actions.problemFor(item.id)}
     />
@@ -126,6 +127,13 @@ function Loaded({
       }
     : undefined;
 
+  // DC-FR-23: "Play from" selects the item and plays the draft from its moment.
+  const [seekKey, setSeekKey] = useState(0);
+  const seek = useCallback((itemId: string) => {
+    setSelectedId(itemId);
+    setSeekKey((k) => k + 1);
+  }, []);
+
   // DC-FR-02: before a draft, the player's space says so.
   const playerSlot =
     deliverable.state === "no_draft" ? (
@@ -139,10 +147,12 @@ function Loaded({
         selectedId={selectedId}
         onSelect={setSelectedId}
         refreshUrl={refreshDraftUrl}
+        seekKey={seekKey}
       />
     ) : null;
   return (
-    <>
+    // Timestamps can play the draft only when there is one (DC-FR-23).
+    <SeekProvider seek={playerSlot && deliverable.draft ? seek : null}>
       <DealHeader
         view={view}
         dealId={dealId}
@@ -207,6 +217,10 @@ function Loaded({
           Demo data. Glow Theory, Northbound Coffee, Kora Audio and Ada Okafor are made up, and no money moves.
         </p>
       )}
-    </>
+      {/* Says what Ask and Withdraw did, for screen readers (DC-FR-14, DC-FR-15). */}
+      <p role="status" className="sr-only">
+        {actions.announcement}
+      </p>
+    </SeekProvider>
   );
 }

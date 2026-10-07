@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
+import { SeekProvider } from "@/components/player/seek";
 import { glowTheoryVideo } from "@/mocks/fixtures/deliverables";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import { ItemCard } from "./item-card";
@@ -35,5 +36,16 @@ describe("DC-FR-12 item card", () => {
     render(<ItemCard item={byId("it_5")} brandName="Glow Theory" expanded={false} onToggle={onToggle} />);
     await userEvent.click(screen.getByRole("button", { name: /Code GLOW20 shown on screen/ }));
     expect(onToggle).toHaveBeenCalledOnce();
+  });
+
+  test("DC-FR-23: an expanded card's timestamp plays the draft from that moment", async () => {
+    const seek = vi.fn();
+    render(
+      <SeekProvider seek={seek}>
+        <ItemCard item={byId("it_2")} brandName="Glow Theory" expanded onToggle={() => {}} />
+      </SeekProvider>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Play from 0:42" }));
+    expect(seek).toHaveBeenCalledWith("it_2");
   });
 });

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, test, vi } from "vitest";
@@ -89,6 +89,11 @@ describe("creator draft check page", () => {
     await userEvent.click(screen.getByRole("button", { name: "Withdraw" }));
     expect(await within(serum).findByText("Unsure")).toBeVisible();
     expect(screen.getByRole("button", { name: "Ask Glow Theory to accept" })).toBeVisible();
+  });
+
+  test("the page's main region is the skip link's target", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+    expect(await screen.findByRole("main")).toHaveAttribute("id", "main");
   });
 
   test("DC-FR-23: shows the draft video with its timeline", async () => {
@@ -194,5 +199,18 @@ describe("creator draft check page", () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
     await screen.findByRole("button", { name: "Try again" });
     expect(screen.queryByRole("button", { name: /Something went wrong on our side/ })).toBeNull();
+  });
+
+  test("DC-FR-14: asking the brand is announced, and focus stays on the item's button", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+    const checklist = await screen.findByRole("region", { name: "Checklist" });
+    await userEvent.click(within(checklist).getByRole("button", { name: /Serum shown in use/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Ask Glow Theory to accept" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Asked Glow Theory to accept “Serum shown in use”.");
+    expect(screen.getByRole("button", { name: "Withdraw" })).toHaveFocus();
+
+    await userEvent.click(screen.getByRole("button", { name: "Withdraw" }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Withdrew your ask for “Serum shown in use”."));
+    expect(screen.getByRole("button", { name: "Ask Glow Theory to accept" })).toHaveFocus();
   });
 });

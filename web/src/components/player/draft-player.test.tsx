@@ -58,4 +58,13 @@ describe("DC-FR-23, DC-FR-25 draft player", () => {
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(refreshUrl).toHaveBeenCalledTimes(2);
   });
+
+  test("DC-FR-23: a seek request plays the selected item's moment again", () => {
+    const seek = vi.fn();
+    vi.spyOn(HTMLMediaElement.prototype, "currentTime", "set").mockImplementation(seek);
+    const { rerender } = render(<DraftPlayer {...props} platform="youtube_video" selectedId="it_5" seekKey={0} />);
+    seek.mockClear();
+    rerender(<DraftPlayer {...props} platform="youtube_video" selectedId="it_5" seekKey={1} />);
+    expect(seek).toHaveBeenCalledWith(195);
+  });
 });

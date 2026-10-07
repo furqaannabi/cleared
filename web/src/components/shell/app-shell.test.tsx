@@ -49,4 +49,22 @@ describe("DC-FR-31 app shell", () => {
     shell();
     expect(await screen.findByText("We couldn’t load your deals.")).toBeVisible();
   });
+
+  test("a skip link to the page content comes first, at every width", () => {
+    for (const px of [1280, 375]) {
+      screenWidth(px);
+      const { unmount } = shell();
+      const skip = screen.getByRole("link", { name: "Skip to content" });
+      expect(skip).toHaveAttribute("href", "#main");
+      expect(document.querySelector("a, button")).toBe(skip);
+      unmount();
+    }
+  });
+
+  test("the rail's Deals label is not a heading, so the page's h1 is the first heading", async () => {
+    screenWidth(1280);
+    shell();
+    expect(screen.queryByRole("heading", { name: "Deals" })).toBeNull();
+    expect(await screen.findByRole("navigation", { name: "Deals" })).toBeInTheDocument();
+  });
 });

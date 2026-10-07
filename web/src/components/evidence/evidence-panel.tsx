@@ -1,3 +1,4 @@
+import { PlayFrom } from "@/components/player/seek";
 import { StatusChip } from "@/components/checklist/status-chip";
 import { StatusSeal } from "@/components/checklist/status-seal";
 import { checkedByLabel, itemTime, kindLabel } from "@/lib/checklist/item-labels";
@@ -39,7 +40,7 @@ export function EvidencePanel({
       <div className="flex items-start gap-3">
         <StatusSeal status={item.status} className="mt-0.5 size-10" />
         <div className="min-w-0">
-          <h3 className="text-item-title font-bold">{item.name}</h3>
+          <h2 className="text-item-title font-bold">{item.name}</h2>
           <p className="mt-0.5 text-meta text-ink-3">{time ? `${kindLabel(item.kind)} · ${time}` : kindLabel(item.kind)}</p>
         </div>
       </div>
@@ -53,6 +54,9 @@ export function EvidencePanel({
         {item.evidence && (
           <Field label={item.evidence.label}>
             <p className={`rounded-sm px-3 py-2.5 ${failed ? "bg-fail-tint" : "bg-latte-wash"}`}>{item.evidence.text}</p>
+            <span className="mt-2 flex">
+              <PlayFrom itemId={item.id} startSec={item.evidence.startSec} />
+            </span>
           </Field>
         )}
         <Field label="From the brief">

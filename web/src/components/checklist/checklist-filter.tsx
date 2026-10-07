@@ -67,7 +67,7 @@ export function ChecklistFilter({
               pressed ? "bg-espresso text-surface" : "text-ink-3 hover:text-ink"
             }`}
           >
-            {tab.label} <span className="text-label opacity-80">{tab.count}</span>
+            {tab.label} <span className="text-label font-semibold">{tab.count}</span>
           </button>
         );
       })}
