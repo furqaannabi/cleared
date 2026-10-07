@@ -36,4 +36,18 @@ describe("DC-FR-24 draft timeline", () => {
     await userEvent.click(screen.getByRole("button", { name: /Sponsored segment runs at least 45 seconds/ }));
     expect(onSelect).toHaveBeenCalledWith("it_2");
   });
+
+  test("DC-FR-24: on a narrow timeline, a marker that would cover its neighbour moves up a row", () => {
+    const lane = (name: RegExp) => screen.getByRole("button", { name }).getAttribute("data-lane");
+    const { unmount } = render(
+      <DraftTimeline items={view.items} brandName="Glow Theory" durationSec={408} selectedId={null} onSelect={() => {}} widthPx={331} />,
+    );
+    expect(lane(/Mentions Glow Theory/)).toBe("0");
+    expect(lane(/Glow Theory logo on screen/)).toBe("1");
+    expect(lane(/Says discount code GLOW20/)).toBe("0");
+    unmount();
+    render(<DraftTimeline items={view.items} brandName="Glow Theory" durationSec={408} selectedId={null} onSelect={() => {}} widthPx={1000} />);
+    expect(lane(/Glow Theory logo on screen/)).toBe("0");
+  });
 });
+
