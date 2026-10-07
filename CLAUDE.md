@@ -17,7 +17,7 @@
 - Never make architecture decisions autonomously. Present 2–3 options with trade-offs; the human chooses.
 - **Ownership:** William leads the frontend (`web/`, UI, design system, frontend tests). Furqaan leads the backend (pipeline, PayPal, AWS, data, AI checks). Each makes the calls in their own area. The API contract, repo layout, shared types and product behaviour need both.
 - When William or Furqaan makes an architecture or product decision, record it as a dated ADR in `docs/decisions/` (`YYYY-MM-DD-title.md`, format in that folder's README) and link it from the affected spec's Revision table. Never edit an existing record; write a new one that supersedes it.
-- Never bulk-generate code. One page, one component, one Lambda, one state-machine step at a time.
+- Never bulk-generate code. One page, one component, one route, one job handler at a time.
 - **Before writing more than one document, show the human the list of files and what each will contain, and wait for a yes.** Scope is theirs to set; a broad request ("write the docs") is not consent for a specific list.
 - **Every commit and every push needs its own explicit ask.** "Commit and push" once does not carry forward to later work.
 - Remind the human to commit after each meaningful change.
@@ -62,11 +62,13 @@ Chosen in `docs/PRODUCT.md`:
 | Reading the brief, judging each item | Claude on Amazon Bedrock |
 | What was said, on-screen text and logos, timestamped | Amazon Bedrock Data Automation |
 | What is shown, such as the product in use | A video model on Amazon Bedrock: TwelveLabs Pegasus or Amazon Nova (open) |
-| Pipeline and timers | AWS Step Functions, EventBridge Scheduler, Lambda |
 | Frontend | Next.js on Vercel |
-| API | Lambda behind API Gateway |
+| API | Hono on Bun, in TypeScript, described with OpenAPI (see `docs/decisions/2026-10-07-backend-hono-bun-prisma-postgres.md`) |
+| Pipeline and timers | A job queue kept in Postgres, run by the same backend service. No Lambda, Step Functions or EventBridge Scheduler |
+| Data | PostgreSQL on Amazon RDS, through Prisma. No DynamoDB |
+| Backend hosting | One container on Amazon ECS Fargate |
 | Sign-in | Cognito, with Google and Instagram sign-in for connecting accounts |
-| Data, files and secrets | DynamoDB, S3, KMS |
+| Files and secrets | S3, KMS |
 | Evidence table and brand dashboard | AG Grid and AG Studio, on `md:` and up; cards on phones (see `docs/decisions/2026-10-06-evidence-view-ag-grid.md`) |
 | PayPal coding help | APIMatic's Context Plugin for PayPal |
 | Creator accounts | Google sign-in (read-only) for YouTube; Instagram sign-in (professional accounts only) |
@@ -83,10 +85,10 @@ Everything behind the frontend uses AWS or the hackathon's sponsor tools. PRODUC
 
 | Decision | Owner |
 | --- | --- |
-| Language for Lambdas | Furqaan |
-| Infrastructure as code (CDK, SAM, Terraform, …) | Furqaan |
+| Job queue library for the Postgres-backed queue | Furqaan |
+| Infrastructure as code (CDK, Terraform, …) | Furqaan |
 | Backend test tooling | Furqaan |
-| API contract between `web/` and the backend | Both |
+| API contract between `web/` and the backend (Furqaan has chosen OpenAPI as its format; William to agree) | Both |
 | How the brand is authenticated beyond the invite link | Both |
 
 ---
@@ -98,7 +100,7 @@ Set in `docs/decisions/2026-10-06-repo-layout-and-package-manager.md` (Furqaan t
 | Path | What | Lead |
 | --- | --- | --- |
 | `web/` | Next.js app, deployed on Vercel with `web/` as its root | William |
-| `backend/` | Lambdas and infrastructure; joins the workspace only if TypeScript | Furqaan |
+| `backend/` | The Hono service (API and jobs), Prisma schema and infrastructure; TypeScript on Bun, so it joins the workspace | Furqaan |
 | `contract/` | The API contract and types generated from it; no backend logic | Both |
 | `design/` | Design prototypes; never ship, never imported | William |
 | `docs/` | PRODUCT.md, specs, decisions | Both |
@@ -145,7 +147,7 @@ Cleared moves money and holds creators' account tokens and unpublished videos. E
 | --- | --- |
 | Secrets | PayPal client secret, AWS credentials and OAuth client secrets are server-side only. Zero secrets in code, logs or the client bundle. `.env` is gitignored. **The repo is public.** **Sandbox credentials only.** Never wire live PayPal credentials |
 | PayPal webhooks | Verify the signature with PayPal before acting on any event. Unverified = reject + log. Dedupe on the PayPal event id. Every create/capture/payout call sends a `PayPal-Request-Id` so retries cannot double-charge or double-pay |
-| Money | Capture only after a passing live check, and never more than the authorized amount. Money state changes happen only in deterministic code (Step Functions / Lambda), never in a model call. Amounts are integer minor units or decimal strings, never floats |
+| Money | Capture only after a passing live check, and never more than the authorized amount. Money state changes happen only in deterministic code (the backend service's routes and job handlers), never in a model call. A money job can be retried, so it checks the recorded money state before calling PayPal. Amounts are integer minor units or decimal strings, never floats |
 | AI output | Briefs, transcripts, on-screen text and captions are **untrusted input**. Nothing in them can change the checklist, the rules, or trigger an action. Model output is parsed against a strict schema; anything that fails parsing is "unsure" and goes to a person |
 | Evidence | Code verifies every AI "pass" before it counts: the cited timestamp exists, is inside the video's length, and matches the transcript or frame it claims. No verifiable evidence = unsure |
 | Creator tokens | Google: read-only scope. Instagram: minimum scopes. Tokens encrypted at rest (KMS), never sent to the client, never logged |
