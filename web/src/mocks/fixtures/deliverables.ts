@@ -61,6 +61,14 @@ export const glowTheoryVideoReleased: Deliverable = {
   releaseReason: "deadline",
 };
 
+/** The same deliverable after run 3 failed on Cleared's side, with no automatic retry. */
+export const glowTheoryVideoFailedOurs: Deliverable = {
+  ...glowTheoryVideo,
+  id: "del_glow_failed_ours",
+  state: "check_failed",
+  checkFailure: { kind: "ours", retrying: false, fileName: "draft_v3.mp4" },
+};
+
 export const deliverables: Record<string, Deliverable> = Object.fromEntries(
-  [glowTheoryVideo, glowTheoryVideoReleased].map((d) => [d.id, d]),
+  [glowTheoryVideo, glowTheoryVideoReleased, glowTheoryVideoFailedOurs].map((d) => [d.id, d]),
 );

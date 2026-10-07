@@ -22,6 +22,19 @@ export const handlers: RequestHandler[] = [
     return d?.draft ? HttpResponse.json(d.draft) : notFound();
   }),
 
+  // DC-FR-09: retrying restarts the check; draft-check items go back to Checking.
+  http.post(`${apiBaseUrl}/deliverables/:deliverableId/check/retry`, ({ params }) => {
+    const d = findDeliverable(String(params.deliverableId));
+    if (!d) return notFound();
+    if (d.state !== "check_failed" || d.checkFailure?.kind !== "ours") return refused();
+    d.state = "checking";
+    d.checkFailure = undefined;
+    for (const item of d.items) {
+      if (item.status !== "at_live_check") Object.assign(item, { previousStatus: item.status, status: "checking" });
+    }
+    return HttpResponse.json(d);
+  }),
+
   // DC-FR-14: only an askable Unsure item that wasn't declined can be asked about.
   http.post(`${apiBaseUrl}/deliverables/:deliverableId/items/:itemId/ask`, ({ params }) => {
     const d = findDeliverable(String(params.deliverableId));

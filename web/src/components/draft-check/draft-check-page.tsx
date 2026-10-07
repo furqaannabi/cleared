@@ -8,6 +8,7 @@ import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
 import { EvidencePanel } from "@/components/evidence/evidence-panel";
 import { MoneyCard } from "@/components/money/money-card";
+import { NextStepBar } from "@/components/next-step/next-step-bar";
 import { DraftPlayer } from "@/components/player/draft-player";
 import { api } from "@/lib/api";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
@@ -45,6 +46,17 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
   const wide = useMediaQuery("(min-width: 768px)");
   const selected = view.items.find((i) => i.id === selectedId) ?? null;
   const actions = useItemActions(deliverable.id, onUpdated);
+  // DC-FR-09: retry a check that failed on our side; the page shows what the API returns.
+  const [retrying, setRetrying] = useState(false);
+  const [retryProblem, setRetryProblem] = useState<string | null>(null);
+  const retryCheck = async () => {
+    setRetrying(true);
+    setRetryProblem(null);
+    const result = await api.retryCheck(deliverable.id);
+    setRetrying(false);
+    if (result.ok) onUpdated(result.data);
+    else setRetryProblem("We couldn’t restart the check. Try again in a moment.");
+  };
   // DC-FR-26: a fresh link for the draft when the current one stops working.
   const refreshDraftUrl = async () => {
     const result = await api.refreshDraftUrl(deliverable.id);
@@ -86,11 +98,9 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
               />
             </div>
           )}
-          <section aria-label="What to do next" className="order-3 rounded-lg bg-latte-wash px-5 py-4 text-ink-2">
-            <p>
-              <b className="text-ink">{view.nextStep.lead}</b> {view.nextStep.detail}
-            </p>
-          </section>
+          <div className="order-3">
+            <NextStepBar step={view.nextStep} onTryAgain={retryCheck} pending={retrying} problem={retryProblem} />
+          </div>
         </div>
         <div className="contents lg:flex lg:flex-col lg:gap-5">
           <div className="order-1">

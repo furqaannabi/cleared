@@ -55,6 +55,9 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** DC-FR-26: a fresh short-lived link to the draft, when the current one has expired. */
     refreshDraftUrl: (deliverableId: string) =>
       request("POST", `${deliverablePath(deliverableId)}/draft-url`, draftSchema),
+    /** DC-FR-09: retry a check that failed on our side. Returns the updated deliverable. */
+    retryCheck: (deliverableId: string) =>
+      request("POST", `${deliverablePath(deliverableId)}/check/retry`, deliverableSchema),
     /** DC-FR-15: withdraw an ask. Returns the updated deliverable. */
     withdrawAsk: (deliverableId: string, itemId: string) =>
       request("DELETE", askPath(deliverableId, itemId), deliverableSchema),

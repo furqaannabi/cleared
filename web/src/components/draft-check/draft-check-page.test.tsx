@@ -98,4 +98,18 @@ describe("creator draft check page", () => {
     );
     expect(screen.getByRole("button", { name: "Code GLOW20 shown on screen, Fix needed, at 3:15" })).toBeVisible();
   });
+
+  test("DC-FR-09: after a check failed on our side, Try again restarts it", async () => {
+    render(<DraftCheckPage deliverableId="del_glow_failed_ours" />);
+    expect(await screen.findByText("Something went wrong on our side checking draft_v3.mp4.")).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByText(/We’re checking your draft against the 6 items/)).toBeVisible();
+  });
+
+  test("DC-FR-09: if the retry itself fails, the bar says so", async () => {
+    server.use(http.post(`${apiBaseUrl}/deliverables/:id/check/retry`, () => HttpResponse.json({}, { status: 500 })));
+    render(<DraftCheckPage deliverableId="del_glow_failed_ours" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("We couldn’t restart the check. Try again in a moment.");
+  });
 });

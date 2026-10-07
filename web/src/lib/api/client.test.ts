@@ -124,3 +124,17 @@ describe("DC-FR-26 refreshing the draft link", () => {
     expect(method).toBe("POST");
   });
 });
+
+describe("DC-FR-09 retrying a check that failed on our side", () => {
+  test("posts to the retry path and returns the updated deliverable", async () => {
+    let method = "";
+    server.use(
+      http.post(`${BASE}/deliverables/:id/check/retry`, ({ request }) => {
+        method = request.method;
+        return HttpResponse.json({ ...VALID, state: "checking" });
+      }),
+    );
+    expect(await api.retryCheck("del_1")).toEqual({ ok: true, data: { ...VALID, state: "checking" } });
+    expect(method).toBe("POST");
+  });
+});
