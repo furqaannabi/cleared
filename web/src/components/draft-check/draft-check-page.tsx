@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { ChecklistFilter } from "@/components/checklist/checklist-filter";
 import { ChecklistItems } from "@/components/checklist/checklist-items";
 import { tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
+import { EvidencePanel } from "@/components/evidence/evidence-panel";
 import { MoneyCard } from "@/components/money/money-card";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import type { Deliverable } from "@/lib/deliverable/types";
 import { LoadProblem } from "./load-problem";
@@ -35,18 +37,36 @@ function Loaded({ deliverable }: { deliverable: Deliverable }) {
   const [selectedId, setSelectedId] = useState<string | null>(view.defaultItemId);
   const [filter, setFilter] = useState<ChecklistTab>("all");
   const shown = view.items.filter((i) => tabsFor(i.status).includes(filter));
+  const wide = useMediaQuery("(min-width: 768px)");
+  const selected = view.items.find((i) => i.id === selectedId) ?? null;
   return (
     <>
       <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">{view.title}</h1>
-      <div className="mt-5">
-        <MoneyCard deliverable={deliverable} />
+      {/*
+        DESIGN.md layout. Phone and tablet: one column (money, next step, evidence).
+        Desktop: next step (and the player, when built) on the left; money above
+        the evidence panel on the right; the checklist full width below.
+      */}
+      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]">
+        <div className="lg:col-start-2 lg:row-start-1">
+          <MoneyCard deliverable={deliverable} />
+        </div>
+        <section
+          aria-label="What to do next"
+          className="rounded-lg bg-latte-wash px-5 py-4 text-ink-2 lg:col-start-1 lg:row-start-1"
+        >
+          <p>
+            <b className="text-ink">{view.nextStep.lead}</b> {view.nextStep.detail}
+          </p>
+        </section>
+        {/* DC-FR-12: tablet and up only; on phones the expanded card shows the evidence. */}
+        {wide && (
+          <div className="lg:col-start-2 lg:row-start-2">
+            <EvidencePanel item={selected} brandName={deliverable.brandName} />
+          </div>
+        )}
       </div>
-      <section aria-label="What to do next" className="mt-5 rounded-lg bg-latte-wash px-5 py-4 text-ink-2">
-        <p>
-          <b className="text-ink">{view.nextStep.lead}</b> {view.nextStep.detail}
-        </p>
-      </section>
-      <section aria-label="Checklist" className="mt-6">
+      <section aria-label="Checklist" className="mt-8">
         <div className="flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between">
           <h2 className="font-head text-section-title font-bold">
             Checklist<small className="ml-1.5 font-sans text-[14px] font-semibold text-ink-3">{view.items.length} items</small>

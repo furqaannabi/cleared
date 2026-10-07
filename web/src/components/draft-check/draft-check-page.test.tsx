@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
 import { server } from "@/mocks/node";
 import { DraftCheckPage } from "./draft-check-page";
@@ -54,5 +54,24 @@ describe("creator draft check page", () => {
     const checklist = screen.getByRole("region", { name: "Checklist" });
     const names = Array.from(checklist.querySelectorAll("li b")).map((b) => b.textContent);
     expect(names).toEqual(["Code GLOW20 shown on screen", "Serum shown in use"]);
+  });
+
+  describe("on tablet and up", () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    test("DC-FR-22: the evidence panel shows the selected item, and follows a row click", async () => {
+      vi.stubGlobal("matchMedia", (query: string) => ({
+        matches: query === "(min-width: 768px)",
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }));
+      render(<DraftCheckPage deliverableId="del_glow_video" />);
+      expect(await screen.findByRole("region", { name: "Evidence for Code GLOW20 shown on screen" })).toBeVisible();
+
+      const [serumRow] = await screen.findAllByRole("row", { name: /Serum shown in use/ });
+      await userEvent.click(within(serumRow).getByText("Serum shown in use"));
+      expect(await screen.findByRole("region", { name: "Evidence for Serum shown in use" })).toBeVisible();
+    });
   });
 });
