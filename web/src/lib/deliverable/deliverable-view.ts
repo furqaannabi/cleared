@@ -81,7 +81,10 @@ function checklistTabs(d: Deliverable): TabView[] {
   if (d.state === "checking" || d.state === "no_draft") return [];
   const count = (tab: ChecklistTab) => d.items.filter((i) => tabsFor(i.status).includes(tab)).length;
   return TAB_ORDER.map((id) => ({ id, label: tabLabel(id, d.brandName), count: count(id) })).filter(
-    (t) => t.id !== "waiting_for_brand" || t.count > 0,
+    (t) =>
+      (t.id !== "waiting_for_brand" || t.count > 0) &&
+      // DC-FR-20, DC-FR-10: once released nothing can be done, so nothing "needs you".
+      (t.id !== "needs_you" || d.state !== "released"),
   );
 }
 

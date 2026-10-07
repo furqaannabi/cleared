@@ -558,3 +558,13 @@ describe("DC-FR-48 what the new run changed", () => {
   });
 });
 
+describe("DC-FR-20, DC-FR-10 tabs once released", () => {
+  test("a released deliverable has no Needs you tab; its items stay under All", () => {
+    const items = [item("a", "fix_needed"), item("b", "unsure"), item("c", "passed")];
+    const tabs = deliverableView(deliverable({ state: "released", items }), NOW).tabs;
+    expect(tabs.map((t) => t.id)).not.toContain("needs_you");
+    expect(tabs.find((t) => t.id === "all")?.count).toBe(3);
+    expect(deliverableView(deliverable({ items }), NOW).tabs.map((t) => t.id)).toContain("needs_you");
+  });
+});
+
