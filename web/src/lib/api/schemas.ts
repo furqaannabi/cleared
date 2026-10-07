@@ -108,6 +108,14 @@ export const dealSummarySchema = z.object({
   // One line, e.g. "Brand review · 31h left"; shown as plain text.
   status: z.string().max(120),
   openDeliverableId: z.string().min(1),
+  // DC-FR-33: the deal's deliverables, for the switcher.
+  deliverables: z.array(
+    z.object({
+      id: z.string().min(1),
+      platform: z.enum(["youtube_video", "youtube_short", "instagram_reel"]),
+      state: z.enum(["no_draft", "checking", "results", "fully_passing", "check_failed", "released"]),
+    }),
+  ),
 });
 
 export const dealsSchema = z.array(dealSummarySchema);

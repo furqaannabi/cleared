@@ -7,6 +7,8 @@ import { hasItemActions, ItemActions } from "@/components/checklist/item-actions
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
 import { DealHeader } from "@/components/deal/deal-header";
+import { DeliverableSwitcher } from "@/components/deal/deliverable-switcher";
+import { useOptionalDeals } from "@/components/shell/use-deals";
 import { EvidencePanel } from "@/components/evidence/evidence-panel";
 import { MoneyCard } from "@/components/money/money-card";
 import { BriefSheet } from "@/components/brief/brief-sheet";
@@ -17,6 +19,7 @@ import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { MOCKING_ENABLED } from "@/lib/mocking/mocking-enabled";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import type { Deliverable } from "@/lib/deliverable/types";
+import { DraftCheckLayout } from "./draft-check-layout";
 import { LoadProblem } from "./load-problem";
 import { PageSkeleton } from "./page-skeleton";
 import { useDeliverable } from "./use-deliverable";
@@ -56,6 +59,9 @@ function Loaded({
   const [filter, setFilter] = useState<ChecklistTab>("all");
   const shown = view.items.filter((i) => tabsFor(i.status).includes(filter));
   const wide = useMediaQuery("(min-width: 768px)");
+  // DC-FR-33: the deal's other deliverables, from the shell's deals.
+  const dealsLoad = useOptionalDeals();
+  const deal = dealsLoad?.status === "ready" ? dealsLoad.deals.find((d) => d.id === dealId) : undefined;
   const selected = view.items.find((i) => i.id === selectedId) ?? null;
   const actions = useItemActions(deliverable.id, onUpdated);
   // DC-FR-30: View brief, beside the next step from md: up and in the checklist header on phones.
@@ -101,52 +107,46 @@ function Loaded({
   );
   return (
     <>
-      <DealHeader view={view} dealId={dealId} brandName={deliverable.brandName} deliverableName={view.deliverableName} />
-      {/*
-        DESIGN.md layout. Phone and tablet: one column (money, player, next step,
-        evidence). Desktop: player above the next step on the left; money above
-        the evidence panel on the right; the checklist full width below. Below lg:
-        the two column wrappers dissolve (display: contents) and `order` sets the
-        single-column sequence.
-      */}
-      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]">
-        <div className="contents lg:flex lg:flex-col lg:gap-5">
-          {deliverable.draft && (
-            <div className="order-2">
-              <DraftPlayer
-                draft={deliverable.draft}
-                platform={deliverable.platform}
-                items={view.items}
-                brandName={deliverable.brandName}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-                refreshUrl={refreshDraftUrl}
-              />
-            </div>
-          )}
-          <div className="order-3">
-            <NextStepBar
-              step={view.nextStep}
-              onTryAgain={retryCheck}
-              pending={retrying}
-              problem={retryProblem}
-              secondary={wide ? briefSheet : undefined}
-              onUpload={simulateUpload}
+      <DealHeader
+        view={view}
+        dealId={dealId}
+        brandName={deliverable.brandName}
+        deliverableName={view.deliverableName}
+        switcher={deal && <DeliverableSwitcher dealId={dealId} deliverables={deal.deliverables} currentId={deliverable.id} />}
+      />
+      <DraftCheckLayout
+        vertical={deliverable.platform !== "youtube_video"}
+        money={<MoneyCard deliverable={deliverable} />}
+        player={
+          deliverable.draft && (
+            <DraftPlayer
+              draft={deliverable.draft}
+              platform={deliverable.platform}
+              items={view.items}
+              brandName={deliverable.brandName}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              refreshUrl={refreshDraftUrl}
             />
-          </div>
-        </div>
-        <div className="contents lg:flex lg:flex-col lg:gap-5">
-          <div className="order-1">
-            <MoneyCard deliverable={deliverable} />
-          </div>
-          {/* DC-FR-12: tablet and up only; on phones the expanded card shows the evidence. */}
-          {wide && (
-            <div className="order-4">
-              <EvidencePanel item={selected} brandName={deliverable.brandName} actions={selected ? renderActions(selected) : null} />
-            </div>
-          )}
-        </div>
-      </div>
+          )
+        }
+        next={
+          <NextStepBar
+            step={view.nextStep}
+            onTryAgain={retryCheck}
+            pending={retrying}
+            problem={retryProblem}
+            secondary={wide ? briefSheet : undefined}
+            onUpload={simulateUpload}
+          />
+        }
+        // DC-FR-12: tablet and up only; on phones the expanded card shows the evidence.
+        evidence={
+          wide && (
+            <EvidencePanel item={selected} brandName={deliverable.brandName} actions={selected ? renderActions(selected) : null} />
+          )
+        }
+      />
       <section aria-label="Checklist" className="mt-8">
         <div className="flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between">
           <h2 className="font-head text-section-title font-bold">

@@ -132,6 +132,35 @@ export const koraReel: Deliverable = {
   ],
 };
 
+/** Glow Theory's second deliverable, an Instagram Reel: one item waits for the brand. */
+export const glowTheoryReel: Deliverable = {
+  id: "del_glow_reel",
+  brandName: "Glow Theory",
+  platform: "instagram_reel",
+  state: "results",
+  run: 1,
+  deadline: "2026-10-24T22:59:00Z",
+  creatorTimeZone: "Africa/Lagos",
+  hold: { amountMinor: 65000, currency: "USD", reference: "9QD40211XP", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
+  payoutEmail: "ada.okafor@example.com",
+  draft: { fileName: "reel_draft_v1.mp4", durationSec: 45, url: "/mock-media/synthetic-draft-9x16.mp4", urlExpiresAt: "2099-01-01T00:00:00Z" },
+  brief: glowTheoryVideo.brief,
+  items: [
+    { id: "gr_1", name: "Names the Dew Drop serum clearly", kind: "said", status: "waiting_for_brand", askedAt: "2026-10-06T10:00:00Z", checkedBy: "ai_timestamp",
+      briefLine: { number: 6, text: "Show the Dew Drop serum being used on skin." },
+      evidence: { label: "Transcript", text: "“…this is the dew drop…” is said quickly and may be heard as “due drop”.", startSec: 8 } },
+    { id: "gr_2", name: "Says discount code GLOW20", kind: "said", status: "passed", checkedBy: "exact_match",
+      briefLine: { number: 5, text: "Say and show the code GLOW20." },
+      evidence: { label: "Transcript", text: "“…code GLOW20 gets you 20% off.”", startSec: 14 } },
+    { id: "gr_3", name: "Serum shown in use", kind: "shown", status: "passed", checkedBy: "ai_timestamp",
+      briefLine: { number: 6, text: "Show the Dew Drop serum being used on skin." },
+      evidence: { label: "In frame", text: "Serum is applied to the cheek for 7 seconds.", startSec: 22, endSec: 29 } },
+    { id: "gr_4", name: "Caption has #ad and glowtheory.com/ada", kind: "written", status: "at_live_check", checkedBy: "published_post",
+      briefLine: { number: 7, text: "Put glowtheory.com/ada in the description." },
+      evidence: { label: "When", text: "Checked once the Reel is public." } },
+  ],
+};
+
 export const deliverables: Record<string, Deliverable> = Object.fromEntries(
-  [glowTheoryVideo, glowTheoryVideoReleased, glowTheoryVideoFailedOurs, northboundShort, koraReel].map((d) => [d.id, d]),
+  [glowTheoryVideo, glowTheoryVideoReleased, glowTheoryVideoFailedOurs, glowTheoryReel, northboundShort, koraReel].map((d) => [d.id, d]),
 );

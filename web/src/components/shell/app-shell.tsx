@@ -5,7 +5,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { DealsNav } from "./deals-nav";
 import { Logo } from "./logo";
-import { useDeals, type DealsLoad } from "./use-deals";
+import { DealsProvider, useDeals, type DealsLoad } from "./use-deals";
 
 /**
  * The creator app's frame: an espresso rail with the logo and the deals on
@@ -17,7 +17,15 @@ import { useDeals, type DealsLoad } from "./use-deals";
  * @param children - the page
  * @see docs/specs/creator-draft-check-frd.md DC-FR-31; DESIGN.md "Navigation", "Layout"
  */
-export function AppShell({ currentDealId, children }: { currentDealId: string | null; children: ReactNode }) {
+export function AppShell(props: { currentDealId: string | null; children: ReactNode }) {
+  return (
+    <DealsProvider>
+      <Frame {...props} />
+    </DealsProvider>
+  );
+}
+
+function Frame({ currentDealId, children }: { currentDealId: string | null; children: ReactNode }) {
   const desktop = useMediaQuery("(min-width: 1024px)");
   const deals = useDeals();
 

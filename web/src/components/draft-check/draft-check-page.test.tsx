@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
 import { server } from "@/mocks/node";
+import { DealsProvider } from "@/components/shell/use-deals";
 import { DraftCheckPage } from "./draft-check-page";
 
 describe("creator draft check page", () => {
@@ -132,5 +133,19 @@ describe("creator draft check page", () => {
     expect(screen.getByText("Draft check, run 2")).toBeVisible();
     expect(screen.getByText("Step 3 of 7 · Draft check")).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  });
+
+  test("DC-FR-33: inside the shell, the switcher shows the deal's deliverables", async () => {
+    render(
+      <DealsProvider>
+        <DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />
+      </DealsProvider>,
+    );
+    const switcher = await screen.findByRole("navigation", { name: "Deliverables in this deal" });
+    expect(within(switcher).getByRole("link", { name: /YouTube video/ })).toHaveAttribute("aria-current", "page");
+    expect(within(switcher).getByRole("link", { name: /Instagram Reel/ })).toHaveAttribute(
+      "href",
+      "/deals/deal_glow/deliverables/del_glow_reel",
+    );
   });
 });

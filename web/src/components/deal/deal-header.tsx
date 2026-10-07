@@ -11,6 +11,7 @@ import type { DeliverableView } from "@/lib/deliverable/deliverable-view";
  * @param dealId - the deal, for the brand crumb's link
  * @param brandName - the deal's brand, for the breadcrumb
  * @param deliverableName - "YouTube video", for the breadcrumb
+ * @param switcher - the deliverable switcher, shown under the details line
  * @see docs/specs/creator-draft-check-frd.md DC-FR-32, DC-FR-34; DESIGN.md "Layout"
  */
 export function DealHeader({
@@ -18,9 +19,11 @@ export function DealHeader({
   dealId,
   brandName,
   deliverableName,
+  switcher,
 }: {
   view: DeliverableView;
   dealId: string;
+  switcher?: React.ReactNode;
   brandName: string;
   deliverableName: string;
 }) {
@@ -49,6 +52,8 @@ export function DealHeader({
           </span>
         ))}
       </p>
+
+      {switcher}
 
       {/* Phones: a compact dot track. */}
       <div className="mt-3.5 flex items-center gap-2.5 text-[13.5px] font-bold text-ink-2 md:hidden">

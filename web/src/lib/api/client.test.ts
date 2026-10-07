@@ -141,8 +141,8 @@ describe("DC-FR-09 retrying a check that failed on our side", () => {
 
 describe("DC-FR-31, DC-FR-37 the creator's deals", () => {
   const DEALS = [
-    { id: "deal_glow", brandName: "Glow Theory", status: "Draft check", openDeliverableId: "del_glow_video" },
-    { id: "deal_nb", brandName: "Northbound Coffee", status: "Brand review · 31h left", openDeliverableId: "del_nb_short" },
+    { id: "deal_glow", brandName: "Glow Theory", status: "Draft check", openDeliverableId: "del_glow_video", deliverables: [] },
+    { id: "deal_nb", brandName: "Northbound Coffee", status: "Brand review · 31h left", openDeliverableId: "del_nb_short", deliverables: [] },
   ];
 
   test("lists the deals with what to open for each", async () => {

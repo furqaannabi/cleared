@@ -61,3 +61,12 @@ test("DC-FR-31, DC-FR-37: move between deals from the rail (desktop) or the Deal
     await expect(page.getByRole("heading", { level: 1, name: "Northbound Coffee · YouTube Short" })).toBeVisible();
   }
 });
+
+test("DC-FR-33: the switcher moves between a deal's deliverables", async ({ page }) => {
+  await page.goto("/deals/deal_glow/deliverables/del_glow_video");
+  const switcher = page.getByRole("navigation", { name: "Deliverables in this deal" });
+  await switcher.getByRole("link", { name: /Instagram Reel/ }).click();
+  await expect(page).toHaveURL(/\/deals\/deal_glow\/deliverables\/del_glow_reel$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Glow Theory · Instagram Reel" })).toBeVisible();
+  await expect(switcher.getByRole("link", { name: /Instagram Reel/ })).toHaveAttribute("aria-current", "page");
+});

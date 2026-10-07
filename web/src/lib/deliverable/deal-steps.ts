@@ -36,3 +36,10 @@ export function dealSteps(d: Deliverable): DealStepsView {
     summary: `Step ${current + 1} of ${DEAL_STEPS.length} · ${DEAL_STEPS[current]}`,
   };
 }
+
+/** A deliverable's step in a few words, for the switcher: "Draft check", "Brand review", "Hold released". */
+export function stepLabel(state: Deliverable["state"]): string {
+  if (state === "released") return "Hold released";
+  if (state === "no_draft") return "Waiting for your draft";
+  return DEAL_STEPS[CURRENT[state]];
+}
