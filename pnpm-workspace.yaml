@@ -1,7 +1,11 @@
 packages:
   - web
+  - backend
 
 # Native build scripts pnpm may run. sharp is optional for next/image; Vercel optimises images itself.
+# Prisma's scripts check the runtime and download the engine `prisma migrate` needs (backend/).
 allowBuilds:
+  '@prisma/engines': true
+  prisma: true
   sharp: false
   unrs-resolver: false

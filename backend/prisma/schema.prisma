@@ -1,0 +1,11 @@
+// No models yet. Each model is added with the spec that needs it
+// (CLAUDE.md: no code without a signed spec).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

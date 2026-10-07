@@ -10,7 +10,7 @@ A pnpm workspace ([decision](docs/decisions/2026-10-06-repo-layout-and-package-m
 | Path | What |
 | --- | --- |
 | `web/` | Next.js frontend (Vercel) |
-| `backend/` | Lambdas and infrastructure (AWS) |
+| `backend/` | Hono service on Bun (API and jobs), Prisma schema and infrastructure (AWS) |
 | `contract/` | API contract and generated types |
 | `design/` | Design prototypes, never shipped |
 | `docs/` | [Product](docs/PRODUCT.md), [specs](docs/specs/), [decisions](docs/decisions/) |
