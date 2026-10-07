@@ -9,3 +9,4 @@ A spec is signed only when William or Furqaan says so after reading it. No code 
 | Spec | Prefix | Surface | Owner | Status |
 | --- | --- | --- | --- | --- |
 | [Creator draft check](creator-draft-check-frd.md) | DC | Creator app: one deliverable at the draft check | William | Signed by William (1.12) |
+| [Landing page](landing-frd.md) | LP | Landing at `/`, and the `/deals` entry into the creator app | William | Signed by William (1.1) |

@@ -378,6 +378,9 @@ The draft's scrub bar carries a seal marker at every timestamped item (a band fo
 ### Next-step bar
 Latte-wash bar that states what to do and why in one or two sentences, with the primary action. On phones it is fixed to the bottom and holds only the action (no bar when there is none); the words sit on the page as "What happens next": a quiet latte-wash panel above the player (the run summary first, then the lead in bold and the rest), with no icon and no button. While a check-failed banner shows, the bar states only the action, at every width, and the banner explains.
 
+### Landing page (Persuade)
+The landing at `/` (docs/specs/landing-frd.md, design B2 in design/landing/option-b2.html) uses the same world at a louder volume: the light ground, Bricolage at display size (42px phone, 70px desktop) with "clear together" on a marigold highlighter band, and the product itself as the picture: a phone showing the example deal (a real photo frame of a hand and a serum bottle, timeline seals, three items) with the marigold money card tilted beside it. The problem is a chat on an espresso panel (the creator's marigold bubbles, the brand's translucent ones). How a deal runs is one example deal on a dashed marigold thread: five marigold number seals, each step's words and app panel alternating sides from `lg:`, ending in a pass-coloured CLEARED seal beside held, captured and paid with their PayPal references. The rules carry tilted pass seals; the brand note sits on latte with the lock seal; an espresso closing band holds a marigold button. Motion is CSS: on load the phone's seals pop and a pass seal stamps; on scroll (where supported) the thread draws, number seals stamp, steps slide in from their sides, items settle, the review countdown ticks and CLEARED stamps. All still under reduced motion. No faces in photography, and no real brands.
+
 ## Do's and Don'ts
 
 ### Do:

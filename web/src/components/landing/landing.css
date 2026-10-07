@@ -1,0 +1,83 @@
+/* Landing page motion (LP-FR-06). CSS only; still under reduced motion; scroll-driven
+   parts only where the browser supports them, so everything else simply shows. */
+@property --lp-s {
+  syntax: "<integer>";
+  initial-value: 12;
+  inherits: false;
+}
+@keyframes lp-tick { from { --lp-s: 12; } to { --lp-s: 0; } }
+.lp-sec { counter-reset: lp-s var(--lp-s); }
+.lp-sec::after { content: counter(lp-s, decimal-leading-zero); }
+
+.lp-result { display: inline-grid; }
+.lp-result > * { grid-area: 1 / 1; }
+
+@keyframes lp-pop { from { transform: scale(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+/* Stamps add to the element's own tilt (its rotate class), so they end at none. */
+@keyframes lp-stamp {
+  0% { transform: scale(1.8) rotate(-14deg); opacity: 0; }
+  60% { transform: scale(0.94) rotate(2deg); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes lp-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+@keyframes lp-slide-l { from { opacity: 0; transform: translateX(-36px); } to { opacity: 1; transform: none; } }
+@keyframes lp-slide-r { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
+@keyframes lp-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes lp-bubble { from { opacity: 0; transform: translateY(10px) scale(0.9); } to { opacity: 1; transform: none; } }
+@keyframes lp-draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes lp-seal-in {
+  0% { transform: scale(0.3) rotate(-40deg); opacity: 0; }
+  70% { transform: scale(1.12) rotate(6deg); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes lp-cleared {
+  0% { transform: scale(1.9) rotate(-18deg); opacity: 0; }
+  70% { transform: scale(0.92) rotate(2deg); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes lp-settle { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes lp-leave { from { opacity: 1; } to { opacity: 0; } }
+
+/* The marigold thread joining the five steps. */
+.lp-deal::before {
+  content: "";
+  position: absolute;
+  left: 25px;
+  top: 30px;
+  bottom: 60px;
+  width: 3px;
+  transform-origin: top;
+  background: repeating-linear-gradient(var(--color-marigold) 0 10px, transparent 10px 18px);
+}
+@media (min-width: 1024px) { .lp-deal::before { left: 50%; margin-left: -1.5px; } }
+
+/* Without motion, "Checking" never shows: the results are simply there. */
+.lp-result .lp-was { opacity: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-sec { animation: lp-tick 12s steps(12) infinite; }
+  .lp-pop { animation: lp-pop 0.4s var(--ease-out-expo) both; }
+  .lp-stamp { animation: lp-stamp 0.6s var(--ease-out-expo) 1.2s both; }
+  .lp-bob { animation: lp-bob 4s ease-in-out 2s infinite; }
+
+  @supports (animation-timeline: view()) {
+    .lp-deal::before { animation: lp-draw linear both; animation-timeline: view(); animation-range: entry 20% cover 70%; }
+    .lp-band .lp-copy { animation: lp-slide-l linear both; animation-timeline: view(); animation-range: entry 5% cover 35%; }
+    .lp-band .lp-panel { animation: lp-slide-r linear both; animation-timeline: view(); animation-range: entry 5% cover 35%; }
+    @media (min-width: 1024px) {
+      .lp-band:nth-child(even) .lp-copy { animation-name: lp-slide-r; }
+      .lp-band:nth-child(even) .lp-panel { animation-name: lp-slide-l; }
+    }
+    .lp-num { animation: lp-seal-in linear both; animation-timeline: view(); animation-range: entry 10% cover 30%; }
+    .lp-bubble { animation: lp-bubble linear both; animation-timeline: view(); }
+    .lp-bubble:nth-child(1) { animation-range: entry 0% entry 60%; }
+    .lp-bubble:nth-child(2) { animation-range: entry 20% entry 90%; }
+    .lp-bubble:nth-child(3) { animation-range: entry 40% cover 25%; }
+    .lp-bubble:nth-child(4) { animation-range: entry 70% cover 32%; }
+    .lp-bubble:nth-child(5) { animation-range: entry 100% cover 40%; }
+    .lp-rule, .lp-close { animation: lp-up linear both; animation-timeline: view(); animation-range: entry 0% cover 30%; }
+    .lp-cleared { animation: lp-cleared linear both; animation-timeline: view(); animation-range: entry 40% cover 45%; }
+    .lp-result .lp-was { animation: lp-leave linear both; animation-timeline: view(); animation-range: entry 35% cover 38%; opacity: 1; }
+    .lp-result .lp-now { animation: lp-settle linear both; animation-timeline: view(); animation-range: entry 40% cover 40%; }
+  }
+}

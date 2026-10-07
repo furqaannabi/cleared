@@ -1,0 +1,85 @@
+/* Landing mockups (design/ prototypes: never shipped, never imported by web/).
+   Tokens are DESIGN.md's, as in design/evidence-view. */
+:root{
+  --espresso:#3F3322; --espresso-deep:#2C2314; --espresso-ink:#1C150A;
+  --latte-line:#E4DCCE; --latte:#F3EEE5; --latte-wash:#FAF8F4;
+  --marigold:#F5C14B; --marigold-ink:#231A00; --marigold-ink-2:#5A4510; --marigold-chip:#E2B144;
+  --pass:#0B6B3A; --pass-wash:#DDF4E6; --fail:#B8302A; --fail-wash:#FFE7E4;
+  --unsure:#855000; --unsure-wash:#FFEFC7; --waiting:#5E574D; --waiting-wash:#F0EDE7;
+  --ink:#1E1A14; --ink-2:#4A4339; --ink-3:#675F55; --ink-4:#6E665B;
+  --ground:#F6F5F2; --surface:#fff; --line:#E8E4DC; --line-soft:#F1EEE8;
+  --font:Figtree,system-ui,sans-serif; --head:"Bricolage Grotesque",Figtree,system-ui,sans-serif;
+  --card-shadow:0 2px 4px rgba(120,80,0,.12),0 14px 32px rgba(120,80,0,.18);
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);font-size:16px;line-height:1.55;color:var(--ink);background:var(--ground);font-variant-numeric:tabular-nums}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+@media (min-width:768px){.wrap{padding:0 32px}}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo{display:inline-flex;align-items:center;gap:10px;font-family:var(--head);font-weight:800;font-size:21px;text-decoration:none}
+.logo svg{width:26px;height:26px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:999px;background:var(--espresso);color:#fff;font-weight:700;text-decoration:none;box-shadow:0 2px 6px rgba(28,21,10,.2)}
+.btn.sm{min-height:44px;padding:0 18px;font-size:15px}
+.top .btn{display:none}
+@media (min-width:768px){.top .btn{display:inline-flex}}
+.note{font-size:13.5px;color:var(--ink-3);margin-top:10px}
+
+/* type */
+h1{font-family:var(--head);font-weight:800;letter-spacing:-.02em;line-height:1.02}
+h2{font-family:var(--head);font-weight:800;letter-spacing:-.015em;line-height:1.1;font-size:28px}
+@media (min-width:768px){h2{font-size:38px}}
+.lede{font-size:18px;color:var(--ink-2);max-width:34ch}
+.eyebrow{font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+
+/* seal */
+.seal{display:inline-grid;place-items:center;flex:none}
+.seal > *{grid-area:1/1}
+.seal svg.s{width:100%;height:100%}
+.seal svg.i{width:50%;height:50%;fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+
+/* money card */
+.money{position:relative;overflow:hidden;background:var(--marigold);color:var(--marigold-ink);border-radius:20px;padding:20px 22px;box-shadow:var(--card-shadow)}
+.money::after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.18)}
+.money small{font-size:13px;font-weight:700;color:var(--marigold-ink-2)}
+.money .amt{font-family:var(--head);font-weight:800;font-size:40px;letter-spacing:-.02em;line-height:1.1;margin:4px 0 2px}
+.money .ref{font-size:13px;font-weight:600;color:var(--marigold-ink-2)}
+.money .stages{display:flex;gap:6px;margin-top:14px;position:relative;z-index:1}
+.money .stages span{flex:1;text-align:center;font-size:11.5px;font-weight:700;padding:5px 0;border-radius:999px;background:var(--marigold-chip)}
+.money .stages span:first-child{background:var(--espresso-ink);color:#fff}
+.money .lock{position:absolute;right:20px;top:18px;width:40px;height:40px;z-index:1}
+
+/* items */
+.items{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:6px 0;box-shadow:0 1px 2px rgba(28,21,10,.05)}
+.item{display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:center;padding:12px 16px}
+.item + .item{border-top:1px solid var(--line-soft)}
+.item b{display:block;font-size:15px}
+.item span.meta{font-size:13px;color:var(--ink-3)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.chip.pass{background:var(--pass-wash);color:var(--pass)} .chip.fail{background:var(--fail-wash);color:var(--fail)}
+.chip.unsure{background:var(--unsure-wash);color:var(--unsure)} .chip.wait{background:var(--waiting-wash);color:var(--waiting)}
+.example{font-size:12px;font-weight:700;color:var(--ink-4);letter-spacing:.04em;text-transform:uppercase}
+
+/* the one moment: items settle from Checking to their result, once */
+@keyframes settle{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes leave{from{opacity:1}to{opacity:0}}
+.result{display:inline-grid}
+.result > *{grid-area:1/1}
+@media (prefers-reduced-motion:no-preference){
+  .result .now{animation:settle .45s var(--ease) both}
+  .result .was{animation:leave .2s linear both}
+  .item:nth-child(1) .now{animation-delay:.6s} .item:nth-child(1) .was{animation-delay:.55s}
+  .item:nth-child(2) .now{animation-delay:1s} .item:nth-child(2) .was{animation-delay:.95s}
+  .item:nth-child(3) .now{animation-delay:1.4s} .item:nth-child(3) .was{animation-delay:1.35s}
+}
+@media (prefers-reduced-motion:reduce){.result .was{display:none}}
+
+/* footer */
+.foot{background:var(--espresso-deep);color:rgba(255,255,255,.78);margin-top:80px;padding:40px 0;font-size:14px}
+.foot a{color:#fff}
+.foot .cols{display:grid;gap:18px}
+@media (min-width:768px){.foot .cols{grid-template-columns:1.2fr 1fr 1fr}}
+.foot b{color:#fff;display:block;margin-bottom:4px}
