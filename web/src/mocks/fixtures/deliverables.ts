@@ -81,6 +81,57 @@ export const glowTheoryVideoFailedOurs: Deliverable = {
   checkFailure: { kind: "ours", retrying: false, fileName: "draft_v3.mp4" },
 };
 
+/** Northbound Coffee YouTube Short: every item passed, the brand's review window is open. */
+export const northboundShort: Deliverable = {
+  id: "del_nb_short",
+  brandName: "Northbound Coffee",
+  platform: "youtube_short",
+  state: "fully_passing",
+  run: 1,
+  deadline: "2026-10-20T22:59:00Z",
+  creatorTimeZone: "Africa/Lagos",
+  hold: { amountMinor: 45000, currency: "USD", reference: "3PN88120QA", heldAt: "2026-10-02T09:00:00Z", stage: "held" },
+  payoutEmail: "ada.okafor@example.com",
+  reviewWindowEndsAt: "2026-10-08T14:00:00Z",
+  draft: { fileName: "nb_short_v1.mp4", durationSec: 45, url: "/mock-media/synthetic-draft-9x16.mp4", urlExpiresAt: "2099-01-01T00:00:00Z" },
+  brief: [
+    { number: 1, text: "One YouTube Short about the Morning Ritual blend." },
+    { number: 2, text: "Say \"Northbound Coffee\" in the first 10 seconds." },
+    { number: 3, text: "Show the bag on screen." },
+    { number: 4, text: "Put northbound.coffee/ada in the description." },
+  ],
+  items: [
+    { id: "nb_1", name: "Says Northbound Coffee in the first 10 seconds", kind: "said", status: "passed", checkedBy: "ai_timestamp",
+      briefLine: { number: 2, text: "Say \"Northbound Coffee\" in the first 10 seconds." },
+      evidence: { label: "Transcript", text: "“…this is Northbound Coffee’s Morning Ritual.”", startSec: 4 } },
+    { id: "nb_2", name: "The bag is shown on screen", kind: "shown", status: "passed", checkedBy: "ai_timestamp",
+      briefLine: { number: 3, text: "Show the bag on screen." },
+      evidence: { label: "In frame", text: "The bag is in frame for 6 seconds.", startSec: 18, endSec: 24 } },
+    { id: "nb_3", name: "Link northbound.coffee/ada in the description", kind: "written", status: "at_live_check", checkedBy: "published_post",
+      briefLine: { number: 4, text: "Put northbound.coffee/ada in the description." },
+      evidence: { label: "When", text: "Checked once the Short is public." } },
+  ],
+};
+
+/** Kora Audio Instagram Reel: the checklist is agreed and held, no draft yet. */
+export const koraReel: Deliverable = {
+  id: "del_kora_reel",
+  brandName: "Kora Audio",
+  platform: "instagram_reel",
+  state: "no_draft",
+  run: 0,
+  deadline: "2026-10-27T22:59:00Z",
+  creatorTimeZone: "Africa/Lagos",
+  hold: { amountMinor: 80000, currency: "USD", reference: "8KA20044TR", heldAt: "2026-10-06T16:00:00Z", stage: "held" },
+  payoutEmail: "ada.okafor@example.com",
+  items: [
+    { id: "ka_1", name: "Names the Kora Pods in the first 5 seconds", kind: "said", status: "not_checked", checkedBy: "ai_timestamp",
+      briefLine: { number: 2, text: "Name the Kora Pods early." } },
+    { id: "ka_2", name: "Caption has #ad and kora.audio/ada", kind: "written", status: "at_live_check", checkedBy: "published_post",
+      briefLine: { number: 3, text: "Caption must include #ad and our link." } },
+  ],
+};
+
 export const deliverables: Record<string, Deliverable> = Object.fromEntries(
-  [glowTheoryVideo, glowTheoryVideoReleased, glowTheoryVideoFailedOurs].map((d) => [d.id, d]),
+  [glowTheoryVideo, glowTheoryVideoReleased, glowTheoryVideoFailedOurs, northboundShort, koraReel].map((d) => [d.id, d]),
 );

@@ -1,22 +1,26 @@
+import Link from "next/link";
 import { Seal } from "@/components/ui/seal";
 import type { DeliverableView } from "@/lib/deliverable/deliverable-view";
 
 /**
  * The top of a deliverable's page: breadcrumb, title, details line and the
- * seven deal steps (a dot track on phones). Crumbs are plain text until the
- * deals list and deal routes exist.
+ * seven deal steps (a dot track on phones). The brand crumb links to the deal;
+ * "Deals" stays plain text until an all-deals page exists.
  *
  * @param view - the deliverable view (title, meta, steps)
+ * @param dealId - the deal, for the brand crumb's link
  * @param brandName - the deal's brand, for the breadcrumb
  * @param deliverableName - "YouTube video", for the breadcrumb
  * @see docs/specs/creator-draft-check-frd.md DC-FR-32, DC-FR-34; DESIGN.md "Layout"
  */
 export function DealHeader({
   view,
+  dealId,
   brandName,
   deliverableName,
 }: {
   view: DeliverableView;
+  dealId: string;
   brandName: string;
   deliverableName: string;
 }) {
@@ -25,11 +29,12 @@ export function DealHeader({
     <header>
       <nav aria-label="Breadcrumb" className="hidden md:block">
         <ol className="flex items-center gap-1.5 text-meta text-ink-3">
-          {["Deals", brandName].map((crumb) => (
-            <li key={crumb} className="flex items-center gap-1.5 after:text-ink-4 after:content-['›']">
-              {crumb}
-            </li>
-          ))}
+          <li className="flex items-center gap-1.5 after:text-ink-4 after:content-['›']">Deals</li>
+          <li className="flex items-center gap-1.5 after:text-ink-4 after:content-['›']">
+            <Link href={`/deals/${encodeURIComponent(dealId)}`} className="underline-offset-[3px] hover:underline">
+              {brandName}
+            </Link>
+          </li>
           <li aria-current="page" className="text-ink-2">
             {deliverableName}
           </li>

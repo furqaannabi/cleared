@@ -8,10 +8,11 @@ const view = deliverableView(glowTheoryVideo, new Date("2026-10-06T12:00:00Z"), 
 
 describe("DC-FR-32, DC-FR-34 deal header", () => {
   test("breadcrumb, title and details line", () => {
-    render(<DealHeader view={view} brandName="Glow Theory" deliverableName="YouTube video" />);
+    render(<DealHeader view={view} dealId="deal_glow" brandName="Glow Theory" deliverableName="YouTube video" />);
     const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
     expect(within(crumbs).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Deals", "Glow Theory", "YouTube video"]);
     expect(within(crumbs).getByText("YouTube video")).toHaveAttribute("aria-current", "page");
+    expect(within(crumbs).getByRole("link", { name: "Glow Theory" })).toHaveAttribute("href", "/deals/deal_glow");
     expect(screen.getByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
     expect(screen.getByText("Draft check, run 2")).toBeVisible();
     expect(screen.getByText("6:48 long")).toBeVisible();
@@ -19,7 +20,7 @@ describe("DC-FR-32, DC-FR-34 deal header", () => {
   });
 
   test("the deal steps, with the current one marked", () => {
-    render(<DealHeader view={view} brandName="Glow Theory" deliverableName="YouTube video" />);
+    render(<DealHeader view={view} dealId="deal_glow" brandName="Glow Theory" deliverableName="YouTube video" />);
     const steps = screen.getByRole("list", { name: "Deal progress" });
     expect(within(steps).getAllByRole("listitem")).toHaveLength(7);
     expect(within(steps).getByText("Draft check").closest("li")).toHaveAttribute("aria-current", "step");

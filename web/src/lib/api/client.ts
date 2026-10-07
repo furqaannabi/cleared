@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { deliverableSchema, draftSchema } from "./schemas";
+import { dealsSchema, deliverableSchema, draftSchema } from "./schemas";
 
 /** `rejected`: the API refused a change (the item changed, say); the others are as for reads. */
 export type ApiError = "not_found" | "invalid_response" | "unavailable" | "rejected";
@@ -47,6 +47,8 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     `${deliverablePath(deliverableId)}/items/${encodeURIComponent(itemId)}/ask`;
 
   return {
+    /** DC-FR-31: the creator's deals, each with the deliverable to open (DC-FR-37). */
+    getDeals: () => request("GET", "/deals", dealsSchema),
     /** DC-FR-01: one deliverable for the draft check page. */
     getDeliverable: (deliverableId: string) => request("GET", deliverablePath(deliverableId), deliverableSchema),
     /** DC-FR-14: ask the brand to accept an Unsure item. Returns the updated deliverable. */

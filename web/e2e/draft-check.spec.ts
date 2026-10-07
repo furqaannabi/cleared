@@ -46,3 +46,18 @@ test("DC-FR-45: on mocks, uploading a new draft runs a simulated check", async (
   await expect(page.getByText(/We’re checking your draft against the 6 items/)).toBeVisible();
   await expect(page.getByText("Fix 1 item, then upload a new draft.")).toBeVisible({ timeout: 8000 });
 });
+
+test("DC-FR-31, DC-FR-37: move between deals from the rail (desktop) or the Deals sheet (phone)", async ({ page }, testInfo) => {
+  await page.goto("/deals/deal_glow/deliverables/del_glow_video");
+  if (testInfo.project.name === "phone-375") {
+    await page.getByRole("button", { name: "Deals" }).click();
+    await page.getByRole("dialog", { name: "Deals" }).getByRole("link", { name: /Kora Audio/ }).click();
+    await expect(page).toHaveURL(/\/deals\/deal_kora\/deliverables\/del_kora_reel$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Kora Audio · Instagram Reel" })).toBeVisible();
+    await expect(page.getByText("No draft yet")).toBeVisible();
+  } else {
+    await page.getByRole("complementary", { name: "Main" }).getByRole("link", { name: /Northbound Coffee/ }).click();
+    await expect(page).toHaveURL(/\/deals\/deal_nb\/deliverables\/del_nb_short$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Northbound Coffee · YouTube Short" })).toBeVisible();
+  }
+});

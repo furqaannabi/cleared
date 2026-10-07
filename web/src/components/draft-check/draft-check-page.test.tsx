@@ -8,18 +8,18 @@ import { DraftCheckPage } from "./draft-check-page";
 
 describe("creator draft check page", () => {
   test("DC-FR-39: shows the page's shape while loading, announced to screen readers", () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     expect(screen.getByRole("status")).toHaveTextContent("Loading this deliverable");
   });
 
   test("DC-FR-32, DC-FR-30: shows the deliverable's title and what happens next", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     expect(await screen.findByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
     expect(screen.getByText("Fix 2 items, then upload a new draft.")).toBeVisible();
   });
 
   test("DC-FR-38: an unknown or not-yours deliverable shows the same plain page", async () => {
-    render(<DraftCheckPage deliverableId="del_nope" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_nope" />);
     expect(await screen.findByRole("heading", { level: 1, name: "We couldn’t find this deal" })).toBeVisible();
   });
 
@@ -27,7 +27,7 @@ describe("creator draft check page", () => {
     server.use(
       http.get(`${apiBaseUrl}/deliverables/:id`, () => HttpResponse.json({}, { status: 500 }), { once: true }),
     );
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     const retry = await screen.findByRole("button", { name: "Try again" });
     expect(screen.getByText("We couldn’t load this deliverable.")).toBeVisible();
 
@@ -36,20 +36,20 @@ describe("creator draft check page", () => {
   });
 
   test("DC-FR-27: puts the money for this deliverable on the page", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     const money = await screen.findByRole("region", { name: "Payment for this deliverable" });
     expect(money).toHaveTextContent("$1,200.00");
   });
 
   test("DC-FR-12, DC-FR-21: lists the checklist with the first item to fix open", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     const checklist = await screen.findByRole("region", { name: "Checklist" });
     expect(checklist).toHaveTextContent("9 items");
     expect(within(checklist).getByRole("button", { name: /Code GLOW20 shown on screen/ })).toHaveAttribute("aria-expanded", "true");
   });
 
   test("DC-FR-20: a filter narrows the checklist", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     await userEvent.click(await screen.findByRole("button", { name: "Needs you 2" }));
     const checklist = screen.getByRole("region", { name: "Checklist" });
     const names = Array.from(checklist.querySelectorAll("li b")).map((b) => b.textContent);
@@ -66,7 +66,7 @@ describe("creator draft check page", () => {
         addEventListener: () => {},
         removeEventListener: () => {},
       }));
-      render(<DraftCheckPage deliverableId="del_glow_video" />);
+      render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
       expect(await screen.findByRole("region", { name: "Evidence for Code GLOW20 shown on screen" })).toBeVisible();
 
       const [serumRow] = await screen.findAllByRole("row", { name: /Serum shown in use/ });
@@ -76,7 +76,7 @@ describe("creator draft check page", () => {
   });
 
   test("DC-FR-14, DC-FR-15 on a phone: ask the brand from the card, then withdraw", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     const checklist = await screen.findByRole("region", { name: "Checklist" });
     await userEvent.click(within(checklist).getByRole("button", { name: /Serum shown in use/ }));
     await userEvent.click(screen.getByRole("button", { name: "Ask Glow Theory to accept" }));
@@ -91,7 +91,7 @@ describe("creator draft check page", () => {
   });
 
   test("DC-FR-23: shows the draft video with its timeline", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     expect(await screen.findByLabelText("Draft video draft_v2.mp4")).toHaveAttribute(
       "src",
       "/mock-media/synthetic-draft-16x9.mp4",
@@ -100,7 +100,7 @@ describe("creator draft check page", () => {
   });
 
   test("DC-FR-09: after a check failed on our side, Try again restarts it", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_failed_ours" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
     expect(await screen.findByText("Something went wrong on our side checking draft_v3.mp4.")).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText(/We’re checking your draft against the 6 items/)).toBeVisible();
@@ -108,26 +108,26 @@ describe("creator draft check page", () => {
 
   test("DC-FR-09: if the retry itself fails, the bar says so", async () => {
     server.use(http.post(`${apiBaseUrl}/deliverables/:id/check/retry`, () => HttpResponse.json({}, { status: 500 })));
-    render(<DraftCheckPage deliverableId="del_glow_failed_ours" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
     await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("We couldn’t restart the check. Try again in a moment.");
   });
 
   test("DC-FR-30: View brief opens the brief with the selected item's line marked", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     await userEvent.click(await screen.findByRole("button", { name: "View brief" }));
     const dialog = screen.getByRole("dialog", { name: "Glow Theory’s brief" });
     expect(within(dialog).getByText("Say and show the code GLOW20.").closest("li")).toHaveAttribute("aria-current", "true");
   });
 
   test("DC-FR-45: with mocks off, there is no upload button", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     await screen.findByText("Fix 2 items, then upload a new draft.");
     expect(screen.queryByLabelText("Upload new draft")).toBeNull();
   });
 
   test("DC-FR-32, DC-FR-34: the header shows the details and where the deal is", async () => {
-    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     expect(await screen.findByRole("navigation", { name: "Breadcrumb" })).toHaveTextContent("DealsGlow TheoryYouTube video");
     expect(screen.getByText("Draft check, run 2")).toBeVisible();
     expect(screen.getByText("Step 3 of 7 · Draft check")).toBeInTheDocument();

@@ -100,3 +100,14 @@ export const deliverableSchema = z.object({
   cancelledBy: z.enum(["creator", "brand"]).optional(),
   releaseReference: z.string().min(1).optional(),
 });
+
+/** DC-FR-31, DC-FR-37: one deal in the creator's list, and which deliverable to open for it. */
+export const dealSummarySchema = z.object({
+  id: z.string().min(1),
+  brandName: z.string().min(1),
+  // One line, e.g. "Brand review · 31h left"; shown as plain text.
+  status: z.string().max(120),
+  openDeliverableId: z.string().min(1),
+});
+
+export const dealsSchema = z.array(dealSummarySchema);

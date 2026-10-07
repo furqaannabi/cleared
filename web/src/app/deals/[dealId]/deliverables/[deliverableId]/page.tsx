@@ -8,6 +8,6 @@ export const metadata: Metadata = { title: "Draft check · Cleared" };
  * opaque values from the API; no names appear in the URL.
  */
 export default async function Page(props: PageProps<"/deals/[dealId]/deliverables/[deliverableId]">) {
-  const { deliverableId } = await props.params;
-  return <DraftCheckPage deliverableId={deliverableId} />;
+  const { dealId, deliverableId } = await props.params;
+  return <DraftCheckPage dealId={dealId} deliverableId={deliverableId} />;
 }

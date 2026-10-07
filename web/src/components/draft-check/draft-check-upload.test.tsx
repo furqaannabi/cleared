@@ -7,7 +7,7 @@ import { DraftCheckPage } from "./draft-check-page";
 vi.mock("@/lib/mocking/mocking-enabled", () => ({ MOCKING_ENABLED: true }));
 
 test("DC-FR-45: with mocks on, uploading a new draft shows Checking, then the new run", async () => {
-  render(<DraftCheckPage deliverableId="del_glow_video" />);
+  render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
   const input = await screen.findByLabelText("Upload new draft");
   await userEvent.upload(input, new File(["x"], "draft_v3.mp4", { type: "video/mp4" }));
 

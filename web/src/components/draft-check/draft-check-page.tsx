@@ -26,21 +26,30 @@ import { useItemActions } from "./use-item-actions";
  * The creator's draft check page for one deliverable: loads it and shows
  * the loading, not-found, error and loaded states.
  *
+ * @param dealId - the deal's opaque id from the route
  * @param deliverableId - the deliverable's opaque id from the route
  * @see docs/specs/creator-draft-check-frd.md DC-FR-01, DC-FR-38, DC-FR-39
  */
-export function DraftCheckPage({ deliverableId }: { deliverableId: string }) {
+export function DraftCheckPage({ dealId, deliverableId }: { dealId: string; deliverableId: string }) {
   const { load, retry, replace } = useDeliverable(deliverableId);
   return (
     <main className="mx-auto w-full max-w-[1240px] px-4 pt-4 pb-36 md:px-6 lg:px-9">
       {load.status === "loading" && <PageSkeleton />}
-      {load.status === "ready" && <Loaded deliverable={load.deliverable} onUpdated={replace} />}
+      {load.status === "ready" && <Loaded dealId={dealId} deliverable={load.deliverable} onUpdated={replace} />}
       {load.status === "error" && <LoadProblem error={load.error} onRetry={retry} />}
     </main>
   );
 }
 
-function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdated: (d: Deliverable) => void }) {
+function Loaded({
+  dealId,
+  deliverable,
+  onUpdated,
+}: {
+  dealId: string;
+  deliverable: Deliverable;
+  onUpdated: (d: Deliverable) => void;
+}) {
   // Recomputed per load; `now` is read once so the page doesn't shift while open.
   const view = useMemo(() => deliverableView(deliverable, new Date()), [deliverable]);
   const [selectedId, setSelectedId] = useState<string | null>(view.defaultItemId);
@@ -92,7 +101,7 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
   );
   return (
     <>
-      <DealHeader view={view} brandName={deliverable.brandName} deliverableName={view.deliverableName} />
+      <DealHeader view={view} dealId={dealId} brandName={deliverable.brandName} deliverableName={view.deliverableName} />
       {/*
         DESIGN.md layout. Phone and tablet: one column (money, player, next step,
         evidence). Desktop: player above the next step on the left; money above

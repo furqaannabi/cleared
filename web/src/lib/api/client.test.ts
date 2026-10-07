@@ -138,3 +138,20 @@ describe("DC-FR-09 retrying a check that failed on our side", () => {
     expect(method).toBe("POST");
   });
 });
+
+describe("DC-FR-31, DC-FR-37 the creator's deals", () => {
+  const DEALS = [
+    { id: "deal_glow", brandName: "Glow Theory", status: "Draft check", openDeliverableId: "del_glow_video" },
+    { id: "deal_nb", brandName: "Northbound Coffee", status: "Brand review · 31h left", openDeliverableId: "del_nb_short" },
+  ];
+
+  test("lists the deals with what to open for each", async () => {
+    server.use(http.get(`${BASE}/deals`, () => HttpResponse.json(DEALS)));
+    expect(await api.getDeals()).toEqual({ ok: true, data: DEALS });
+  });
+
+  test("rejects a deals list that breaks the schema", async () => {
+    server.use(http.get(`${BASE}/deals`, () => HttpResponse.json([{ id: "deal_x" }])));
+    expect(await api.getDeals()).toEqual({ ok: false, error: "invalid_response" });
+  });
+});
