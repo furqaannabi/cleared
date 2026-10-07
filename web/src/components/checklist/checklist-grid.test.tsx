@@ -76,4 +76,19 @@ describe("DC-FR-40 checklist grid", () => {
     await screen.findAllByRole("row", { name: /Serum shown in use/ });
     expect(screen.queryByText(hint)).toBeNull();
   });
+
+  test("DC-FR-12: only items checked after publishing say After publish; an item not timed yet says so", async () => {
+    const base = view.items.find((i) => i.id === "it_5")!;
+    const items = [
+      { ...base, id: "x1", name: "Names the Kora Pods early", status: "not_checked" as const, evidence: undefined },
+      { ...base, id: "x2", name: "Link in the description", status: "at_live_check" as const, evidence: undefined },
+    ];
+    render(<ChecklistGrid items={items} brandName="Kora Audio" selectedId={null} onSelect={() => {}} wide />);
+    const [early] = await screen.findAllByRole("row", { name: /Names the Kora Pods early/ });
+    expect(within(early).queryByText("After publish")).toBeNull();
+    expect(within(early).getByText("No time yet")).toBeInTheDocument();
+    const [link] = screen.getAllByRole("row", { name: /Link in the description/ });
+    expect(within(link).getByText("After publish")).toBeInTheDocument();
+  });
 });
+

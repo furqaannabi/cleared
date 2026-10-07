@@ -242,7 +242,7 @@ function Loaded({
       </section>
       {/* DC-BR-10: mock data is labelled as synthetic on screen. Never shown with real data. */}
       {MOCKING_ENABLED && (
-        <p className="mt-7 text-chip text-ink-4">
+        <p className="mt-7 max-w-[72ch] text-chip text-ink-4">
           Demo data. Glow Theory, Northbound Coffee, Kora Audio and Ada Okafor are made up, and no money moves.
         </p>
       )}

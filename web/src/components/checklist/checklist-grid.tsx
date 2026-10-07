@@ -75,7 +75,15 @@ const ItemCell = ({ data }: ICellRendererParams<ItemView>) =>
 const TimeCell = ({ data }: ICellRendererParams<ItemView>) => {
   if (!data) return null;
   const time = itemTime(data);
-  return time ? <span className="font-bold text-espresso">{time}</span> : <span className="text-ink-4">After publish</span>;
+  if (time) return <span className="font-bold text-espresso">{time}</span>;
+  // Only live-check items are checked after publishing; anything else simply has no time yet.
+  if (data.status === "at_live_check") return <span className="text-ink-4">After publish</span>;
+  return (
+    <span className="text-ink-4">
+      <span aria-hidden="true">–</span>
+      <span className="sr-only">No time yet</span>
+    </span>
+  );
 };
 
 function resultCell(brandName: string) {

@@ -85,9 +85,10 @@ export function DraftTimeline({
     <div>
       <div className="relative mx-1.5 mt-[18px] mb-1 h-[58px]">
         <div className="absolute inset-x-0 top-[34px] h-2 rounded-pill bg-line-soft" />
+        {/* How far the video has played. Clipped rather than resized, so moving it never costs a layout. */}
         <div
-          className="absolute top-[34px] left-0 h-2 rounded-pill bg-latte-line transition-[width] duration-300 ease-out-expo"
-          style={{ width: pct(currentSec) }}
+          className="absolute inset-x-0 top-[34px] h-2 rounded-pill bg-latte-line transition-[clip-path] duration-300 ease-out-expo"
+          style={{ clipPath: `inset(0 calc(100% - ${pct(currentSec)}) 0 0 round 999px)` }}
         />
         <div
           aria-hidden="true"
