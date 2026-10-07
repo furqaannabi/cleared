@@ -43,6 +43,7 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-06 | [Visual world is set by a design prototype in design/](2026-10-06-design-prototype-first.md) | Accepted |
 | 2026-10-06 | [Frontend stack for web/: Tailwind, Radix, Motion, Vitest and Playwright](2026-10-06-frontend-stack.md) | Accepted |
 | 2026-10-06 | [Frontend mocks are served with MSW](2026-10-06-frontend-mocks-msw.md) | Accepted |
+| 2026-10-07 | [Mock data is on by default in development](2026-10-07-mock-data-on-by-default-in-dev.md) | Accepted |
 | 2026-10-06 | [Repo layout: pnpm workspace with web/, backend/ and contract/](2026-10-06-repo-layout-and-package-manager.md) | Accepted |
 | 2026-10-06 | [API responses are validated with Zod](2026-10-06-schema-validation-zod.md) | Accepted |
 | 2026-10-06 | [The creator can ask the brand to accept an Unsure item](2026-10-06-creator-asks-brand-to-accept-unsure.md) | Accepted |
