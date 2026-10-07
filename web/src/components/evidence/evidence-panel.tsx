@@ -1,3 +1,4 @@
+import { BrandNote } from "@/components/checklist/brand-note";
 import { PlayFrom } from "@/components/player/seek";
 import { StatusChip } from "@/components/checklist/status-chip";
 import { StatusSeal } from "@/components/checklist/status-seal";
@@ -12,7 +13,7 @@ import type { ItemView } from "@/lib/deliverable/deliverable-view";
  * @param item - the selected item, or null when none is selected
  * @param brandName - the deal's brand, for result words
  * @param actions - what the creator can do about the item (ask the brand, withdraw)
- * @see docs/specs/creator-draft-check-frd.md DC-FR-12, DC-FR-22; DESIGN.md "Cards / Containers"
+ * @see docs/specs/creator-draft-check-frd.md DC-FR-12, DC-FR-22, DC-FR-46; DESIGN.md "Cards / Containers"
  */
 export function EvidencePanel({
   item,
@@ -44,6 +45,9 @@ export function EvidencePanel({
           <p className="mt-0.5 text-meta text-ink-3">{time ? `${kindLabel(item.kind)} · ${time}` : kindLabel(item.kind)}</p>
         </div>
       </div>
+      <div className="mt-4 empty:hidden">
+        <BrandNote item={item} brandName={brandName} />
+      </div>
       <dl className="mt-4 grid gap-3.5">
         <Field label="Result">
           <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
@@ -59,6 +63,8 @@ export function EvidencePanel({
             </span>
           </Field>
         )}
+        {/* DC-FR-46: advice in plain text; the next draft check still decides. */}
+        {item.suggestedFix && <Field label="Suggested fix">{item.suggestedFix}</Field>}
         <Field label="From the brief">
           <span className="flex items-start gap-2 text-ink-2">
             <BriefIcon />

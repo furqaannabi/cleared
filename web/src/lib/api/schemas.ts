@@ -43,6 +43,8 @@ export const checklistItemSchema = z.object({
   declined: z.boolean().optional(),
   // Written by the brand: shown as plain text only (DC-BR-09).
   brandNote: z.string().max(1000).optional(),
+  // DC-FR-46: from code or the AI; plain text only, never affects the result.
+  fixHint: z.string().max(280).optional(),
 });
 
 export const checkFailureSchema = z.discriminatedUnion("kind", [

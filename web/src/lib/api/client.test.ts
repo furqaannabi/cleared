@@ -32,6 +32,12 @@ describe("DC-FR-01 getDeliverable", () => {
     expect(result).toEqual({ ok: true, data: VALID });
   });
 
+  test("DC-FR-46: an item may carry a suggested fix", async () => {
+    const withHint = { ...VALID, items: [{ ...VALID.items[0], fixHint: "Change the on-screen code to GLOW20, with a zero." }] };
+    respondWith(withHint);
+    expect(await api.getDeliverable("del_1")).toEqual({ ok: true, data: withHint });
+  });
+
   test("DC-FR-38: missing and not-yours look the same", async () => {
     respondWith({ message: "no" }, { status: 404 });
     expect(await api.getDeliverable("del_x")).toEqual({ ok: false, error: "not_found" });
@@ -46,6 +52,7 @@ describe("DC-FR-01 getDeliverable", () => {
       { ...VALID, items: [{ ...VALID.items[0], status: "probably_fine" }] }, // unknown status
       { ...VALID, deadline: "next Friday" },
       { ...VALID, creatorTimeZone: "Mars/Olympus_Mons" }, // DC-FR-44: must be a real timezone
+      { ...VALID, items: [{ ...VALID.items[0], fixHint: "x".repeat(281) }] }, // DC-FR-46: a hint is one sentence, at most 280 characters
       // DC-FR-23: a video source must be https or same-origin, never javascript:, http: or another host
       { ...VALID, draft: { fileName: "d.mp4", durationSec: 10, url: "javascript:alert(1)", urlExpiresAt: "2099-01-01T00:00:00Z" } },
       { ...VALID, draft: { fileName: "d.mp4", durationSec: 10, url: "http://evil.test/d.mp4", urlExpiresAt: "2099-01-01T00:00:00Z" } },

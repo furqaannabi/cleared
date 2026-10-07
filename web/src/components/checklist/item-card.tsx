@@ -1,6 +1,7 @@
 import { checkedByLabel, itemTime, kindLabel } from "@/lib/checklist/item-labels";
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { PlayFrom } from "@/components/player/seek";
+import { BrandNote } from "./brand-note";
 import { StatusChip } from "./status-chip";
 import { StatusSeal } from "./status-seal";
 
@@ -14,7 +15,7 @@ import { StatusSeal } from "./status-seal";
  * @param expanded - whether the card is open (it is the selected item)
  * @param onToggle - called when the creator taps the row
  * @param actions - what the creator can do about the item, shown when expanded
- * @see docs/specs/creator-draft-check-frd.md DC-FR-12, DC-FR-22
+ * @see docs/specs/creator-draft-check-frd.md DC-FR-12, DC-FR-22, DC-FR-46
  */
 export function ItemCard({
   item,
@@ -59,12 +60,20 @@ export function ItemCard({
               {item.change}
             </span>
           )}
+          <BrandNote item={item} brandName={brandName} />
           {item.evidence && (
             <p className={`rounded-sm px-3 py-2.5 text-ink ${item.status === "fix_needed" ? "bg-surface" : "bg-latte-wash"}`}>
               {item.evidence.text}
             </p>
           )}
           <PlayFrom itemId={item.id} startSec={item.evidence?.startSec} />
+          {/* DC-FR-46: advice in plain text; the next draft check still decides. */}
+          {item.suggestedFix && (
+            <div className="rounded-sm border border-line-soft bg-surface px-3 py-2.5 text-ink">
+              <p className="text-label font-bold text-ink-3">Suggested fix</p>
+              <p className="mt-0.5">{item.suggestedFix}</p>
+            </div>
+          )}
           <p>
             Brief line {item.briefLine.number}: “{item.briefLine.text}”
           </p>

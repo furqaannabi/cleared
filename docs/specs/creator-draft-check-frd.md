@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.7). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04) and the deadline timezone (DC-FR-44) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.8). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -67,6 +67,11 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 47. As a creator, I want a plain "couldn't find" page for a deal that doesn't exist or isn't mine, so that I'm not shown an error dump.
 48. As a creator who prefers reduced motion, I want the page to stay still, so that it is comfortable to use.
 49. As a creator using a keyboard or screen reader, I want every marker, card, tab and action reachable and named, so that I can use the page without a mouse.
+50. As a creator with a Fix needed item, I want one plain sentence saying what to change, so that I don't have to work out the fix from the evidence and the brief line.
+51. As a creator with an Unsure item, I want a suggestion for showing it more clearly next to the Ask button, so that I can choose between a new draft and asking the brand.
+52. As a creator whose ask the brand declined, I want the brand's note first and then the suggestion, so that the brand's own words come before Cleared's.
+53. As a creator, I want the suggestion to read as advice, not a promise, so that I know the next draft check still decides.
+54. As a creator whose item passed, I never want to see an old suggestion beside a Passed chip.
 
 ## Functional requirements
 
@@ -114,6 +119,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-19 | **Change since last run.** From run 2 on, an item whose status differs from the previous run shows the change ("Was Fix needed, now Passed"; "Was accepted by Glow Theory, now Unsure"). Only the latest run is shown; earlier runs cannot be opened. |
 | DC-FR-20 | **Filter tabs.** All; Needs you (Fix needed, Unsure); Passed (Passed, Accepted by brand); Waiting for brand (shown only when its count is above 0); At live check. Each tab shows its count. An empty tab says "Nothing here right now." |
 | DC-FR-21 | **Default selection.** On load, with no item in the URL, the first Fix needed item is selected; else the first Unsure; else the first item. |
+| DC-FR-46 | **Suggested fix.** When the API sends an item's `fixHint`, an item that is Fix needed, Unsure (including one the brand declined) or Waiting for brand shows it as "Suggested fix": one plain sentence saying what to change. It sits after the evidence and before the brief line, in the evidence panel (tablet and up) and in the expanded item card (phones); on a declined item it comes after the brand's note. The grid and the collapsed card do not show it. No other status shows a hint, even if one is sent. With no hint, nothing is shown (no placeholder). The hint is plain text: no links or formatting, and it never changes the item's status, the checklist or the money. |
 | DC-FR-22 | **Selecting an item** from the grid, a card or a timeline marker selects it everywhere: the evidence panel (tablet and up) or the expanded card (phone), the grid row, the timeline marker, and the video seeks to its timestamp. The change moves in one 200–350 ms ease-out step. |
 
 ### Draft player
@@ -220,6 +226,7 @@ interface ChecklistItem {
   checkedBy: "exact_match" | "ai_timestamp" | "from_timestamps" | "published_post" | "platform_record" | "person";
   brandNote?: string;                   // Requests for Furqaan
   askable: boolean;                     // Requests for Furqaan
+  fixHint?: string;                     // Requests for Furqaan; plain text, at most 280 characters
 }
 ```
 
@@ -261,6 +268,7 @@ Fields:
 | DC-FR-12 | `checkedBy: "person"` for items a person checks, such as Instagram's paid-partnership label (PRODUCT.md "Platforms") |
 | DC-FR-31 | Deals list: deal id, brand name, current step and one-line status per deal |
 | DC-FR-37 | Which deliverable's next step is the creator's |
+| DC-FR-46 | Optional `fixHint` per Fix needed and Unsure item: one imperative sentence, at most 280 characters, plain text. Built by code for exact items (codes, links: "Show GLOW20 exactly, with a zero"), written by the AI for judgment items. Model output is validated against a schema like every model response; a missing or malformed hint is left out rather than guessed. It is guidance only and never affects the result. Built against the mock first (William's call); Furqaan can change it |
 | DC-FR-33 | Each deal summary's `deliverables: { id, platform, state }[]`, so the switcher can name each deliverable and show its step |
 
 ## Testing Decisions
@@ -269,7 +277,7 @@ Fields:
 - **Deliverable view model:** every state in DC-FR-01, the next-step copy and action for each state, DC-FR-11 at 3 days and just over, DC-FR-19, DC-FR-20 counts, DC-FR-21 and DC-BR-01 to DC-BR-06.
 - **Item status map:** every status has an icon and a word (never colour alone), Accepted by brand is never the pass colour, and each status sits in the right tab.
 - **API client:** schema-invalid responses become errors; not-found and not-a-party give the same outcome; the video URL refreshes once on expiry and then reports failure.
-- **Components:** each one with mocked API data, at 375 px and at desktop width. The ask-brand action appears only on Unsure items. The grid and the cards are tested for DC-FR-41 parity on the same fixture.
+- **Components:** each one with mocked API data, at 375 px and at desktop width. The ask-brand action appears only on Unsure items. DC-FR-46: the Suggested fix shows on Fix needed, Unsure, declined (after the brand's note) and Waiting for brand items, in the evidence panel and the expanded card, never on other statuses, never in the grid, and nothing at all when the hint is missing. The schema rejects a hint over 280 characters. The grid and the cards are tested for DC-FR-41 parity on the same fixture.
 - **End to end (Playwright, on MSW):** every named mock scenario at 375 px and 1280 px, including selecting an item from the timeline, grid and card, Back through selection, asking and withdrawing, and the 9:16 deliverable.
 - Coverage of at least 70% on components and lib code.
 - There are no earlier tests in the repo; these are the first.
@@ -312,3 +320,5 @@ Fields:
 | 1.6 signed | Revision 1.6 signed by William | none |
 | 1.7 | Requests for Furqaan: deal summaries gain `deliverables` (id, platform, state) for the deliverable switcher (DC-FR-33). No requirement changes | none |
 | 1.7 signed | Revision 1.7 signed by William | none |
+| 1.8 | DC-FR-46 added: a Suggested fix line on Fix needed, Unsure and Waiting for brand items, from an optional `fixHint` (Requests for Furqaan). User stories 50 to 54. William's call to build against the mock first; Furqaan can change it | none |
+| 1.8 signed | Revision 1.8 signed by William | none |

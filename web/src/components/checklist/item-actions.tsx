@@ -2,13 +2,13 @@ import type { ItemView } from "@/lib/deliverable/deliverable-view";
 
 /** Whether an item has anything for ItemActions to show, so callers can skip its frame. */
 export function hasItemActions(item: ItemView): boolean {
-  return item.action !== null || (Boolean(item.declined) && item.status === "unsure") || item.status === "accepted_by_brand";
+  return item.action !== null || item.status === "accepted_by_brand";
 }
 
 /**
  * What the creator can do about one item, and what the brand has said about
- * it: ask the brand to accept an Unsure item, withdraw an ask, the brand's
- * note on a declined item, or that the brand accepted it. Used in the evidence
+ * it: ask the brand to accept an Unsure item, withdraw an ask, or that the
+ * brand accepted it. A declined item's note is BrandNote, above the evidence. Used in the evidence
  * panel (tablet and up) and inside the expanded item card (phones).
  *
  * @param item - the item, with its action from the deliverable view
@@ -35,17 +35,10 @@ export function ItemActions({
   problem: string | null;
 }) {
   if (!hasItemActions(item)) return null;
-  const declined = item.declined && item.status === "unsure";
   const accepted = item.status === "accepted_by_brand";
 
   return (
     <div className="flex flex-col gap-2.5">
-      {declined && (
-        <div className="rounded-sm bg-unsure-wash px-3 py-2.5 text-[14px] text-ink">
-          <p className="text-label font-bold text-unsure">{brandName} asked you to fix this</p>
-          {item.brandNote && <p className="mt-0.5">“{item.brandNote}”</p>}
-        </div>
-      )}
       {accepted && (
         <p className="text-[14px] font-semibold text-ink-2">
           {brandName} accepted this moment. It counts as passed for this draft.

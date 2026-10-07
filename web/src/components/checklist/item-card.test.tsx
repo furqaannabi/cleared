@@ -48,4 +48,29 @@ describe("DC-FR-12 item card", () => {
     await userEvent.click(screen.getByRole("button", { name: "Play from 0:42" }));
     expect(seek).toHaveBeenCalledWith("it_2");
   });
+
+  test("DC-FR-46: an expanded card shows the suggested fix after the evidence and before the brief line", () => {
+    const hint = "Change the on-screen code to GLOW20, with a zero, not the letter O.";
+    render(<ItemCard item={{ ...byId("it_5"), suggestedFix: hint }} brandName="Glow Theory" expanded onToggle={() => {}} />);
+    const follows = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const label = screen.getByText("Suggested fix");
+    expect(screen.getByText(hint)).toBeVisible();
+    expect(follows(screen.getByText("Reads “GLOW2O”, with a letter O where the zero should be."), label)).toBe(true);
+    expect(follows(label, screen.getByText("Brief line 5: “Say and show the code GLOW20.”"))).toBe(true);
+  });
+
+  test("DC-FR-46: collapsed, the card does not show the suggested fix", () => {
+    render(<ItemCard item={{ ...byId("it_5"), suggestedFix: "Change the code." }} brandName="Glow Theory" expanded={false} onToggle={() => {}} />);
+    expect(screen.queryByText("Suggested fix")).toBeNull();
+  });
+
+  test("DC-FR-17, DC-FR-46: on a declined item, the brand's note comes first, then the evidence and the suggested fix", () => {
+    const item = { ...byId("it_6"), declined: true, brandNote: "Please show it on skin.", suggestedFix: "Show the serum being applied to skin, close up." };
+    render(<ItemCard item={item} brandName="Glow Theory" expanded onToggle={() => {}} />);
+    const follows = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const note = screen.getByText("“Please show it on skin.”");
+    const evidence = screen.getByText("The bottle is in frame, but it isn’t clear the serum is being applied.");
+    expect(screen.getByText("Glow Theory asked you to fix this")).toBeVisible();
+    expect(follows(note, evidence) && follows(evidence, screen.getByText("Suggested fix"))).toBe(true);
+  });
 });

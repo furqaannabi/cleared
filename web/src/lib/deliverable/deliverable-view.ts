@@ -44,7 +44,12 @@ export interface ItemView extends ChecklistItem {
   action: "ask" | "withdraw" | null;
   /** DC-FR-15: "2 hours ago" for an item waiting on the brand, else null. */
   asked: string | null;
+  /** DC-FR-46: the API's suggested fix, only while the item still needs the creator; else null. */
+  suggestedFix: string | null;
 }
+
+/** DC-FR-46: statuses that show a suggested fix. Any other status ignores a hint the API sends. */
+const SUGGESTS_FIX: ItemStatus[] = ["fix_needed", "unsure", "waiting_for_brand"];
 
 const PLATFORM_NAME: Record<Deliverable["platform"], string> = {
   youtube_video: "YouTube video",
@@ -168,6 +173,7 @@ export function deliverableView(d: Deliverable, now: Date, options: { timeZone?:
       change: changeSinceLastRun(i, d.brandName),
       action: itemAction(i, d),
       asked: i.status === "waiting_for_brand" && i.askedAt ? formatAgo(i.askedAt, now) : null,
+      suggestedFix: SUGGESTS_FIX.includes(i.status) ? (i.fixHint ?? null) : null,
     })),
     deadlineWarning: warning,
     nextStep: leadWith(warning, nextStep(d, options.timeZone)),

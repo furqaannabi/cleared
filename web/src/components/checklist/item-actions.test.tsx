@@ -14,6 +14,7 @@ const base: ItemView = {
   change: null,
   action: null,
   asked: null,
+  suggestedFix: null,
 };
 const renderActions = (item: Partial<ItemView>, props: Partial<Parameters<typeof ItemActions>[0]> = {}) =>
   render(
@@ -35,12 +36,6 @@ describe("DC-FR-14 to DC-FR-18 item actions", () => {
     expect(screen.getByText("You asked 2 hours ago. It stays here until Glow Theory answers; it never clears on a timer.")).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Withdraw" }));
     expect(onWithdraw).toHaveBeenCalledOnce();
-  });
-
-  test("DC-FR-17: a declined item shows the brand's note, as plain text", () => {
-    renderActions({ declined: true, brandNote: "<b>Show it on skin.</b>" });
-    expect(screen.getByText("Glow Theory asked you to fix this")).toBeVisible();
-    expect(screen.getByText("“<b>Show it on skin.</b>”")).toBeVisible();
   });
 
   test("DC-FR-16: an accepted item says the brand accepted it", () => {
@@ -67,7 +62,7 @@ describe("DC-FR-14 to DC-FR-18 item actions", () => {
   test("hasItemActions says whether there is anything to show", () => {
     expect(hasItemActions({ ...base, status: "passed" })).toBe(false);
     expect(hasItemActions({ ...base, action: "ask" })).toBe(true);
-    expect(hasItemActions({ ...base, declined: true })).toBe(true);
+    expect(hasItemActions({ ...base, declined: true })).toBe(false); // its note is BrandNote, above the evidence
     expect(hasItemActions({ ...base, status: "accepted_by_brand" })).toBe(true);
   });
 });

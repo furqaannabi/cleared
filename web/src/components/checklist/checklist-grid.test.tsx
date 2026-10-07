@@ -68,4 +68,12 @@ describe("DC-FR-40 checklist grid", () => {
     fireEvent.keyDown(cell, { key: " " });
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith("it_6"));
   });
+
+  test("DC-FR-46: the grid never shows a suggested fix; the evidence panel beside it does", async () => {
+    const hint = "Change the on-screen code to GLOW20, with a zero.";
+    const items = view.items.map((i) => ({ ...i, suggestedFix: hint }));
+    render(<ChecklistGrid items={items} brandName="Glow Theory" selectedId={null} onSelect={() => {}} wide />);
+    await screen.findAllByRole("row", { name: /Serum shown in use/ });
+    expect(screen.queryByText(hint)).toBeNull();
+  });
 });

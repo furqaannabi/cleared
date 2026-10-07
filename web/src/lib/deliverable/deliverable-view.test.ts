@@ -482,4 +482,22 @@ describe("fully passing moment", () => {
   test("only when fully passing", () => {
     expect(deliverableView(deliverable(), NOW).passed).toBeNull();
   });
+
+  test("DC-FR-46: an item's suggested fix shows only while the item still needs the creator", () => {
+    const hint = "Change the on-screen code to GLOW20, with a zero.";
+    const statuses: ItemStatus[] = ["fix_needed", "unsure", "waiting_for_brand", "passed", "accepted_by_brand", "checking", "not_checked", "at_live_check"];
+    const view = deliverableView(deliverable({ items: statuses.map((s) => item(s, s, { fixHint: hint })) }), NOW);
+    const shown = Object.fromEntries(view.items.map((i) => [i.status, i.suggestedFix]));
+    expect(shown).toEqual({
+      fix_needed: hint,
+      unsure: hint,
+      waiting_for_brand: hint,
+      passed: null,
+      accepted_by_brand: null,
+      checking: null,
+      not_checked: null,
+      at_live_check: null,
+    });
+    expect(deliverableView(deliverable({ items: [item("a", "fix_needed")] }), NOW).items[0].suggestedFix).toBeNull();
+  });
 });
