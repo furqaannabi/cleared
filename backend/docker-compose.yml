@@ -1,0 +1,23 @@
+# Local development database only. Production is PostgreSQL on Amazon RDS
+# (docs/decisions/2026-10-07-backend-hono-bun-prisma-postgres.md).
+# The credentials below are for this local container and nothing else; the
+# port is bound to 127.0.0.1 so the database is not reachable from the network.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: cleared
+      POSTGRES_PASSWORD: cleared
+      POSTGRES_DB: cleared
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cleared -d cleared"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  db-data:
