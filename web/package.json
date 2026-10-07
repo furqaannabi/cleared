@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "check:no-mock-data": "node scripts/check-no-mock-data.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.2.0",
