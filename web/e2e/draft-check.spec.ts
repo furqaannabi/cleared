@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 test("DC-FR-35: the draft check page loads a deliverable without sideways scroll", async ({ page }) => {
   await page.goto("/deals/deal_glow/deliverables/del_glow_video");
   await expect(page.getByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
-  await expect(page.getByText("Fix 1 item, and decide on 1 unsure item.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "What to do next" }).getByText("Fix 1 item, and decide on 1 unsure item.")).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBe(0);
 });
@@ -43,8 +43,8 @@ test("DC-FR-14, DC-FR-15: ask the brand to accept the Unsure item, then withdraw
 test("DC-FR-45: on mocks, uploading a new draft runs a simulated check", async ({ page }) => {
   await page.goto("/deals/deal_glow/deliverables/del_glow_video");
   await page.getByLabel("Upload new draft").setInputFiles({ name: "draft_v3.mp4", mimeType: "video/mp4", buffer: Buffer.from("x") });
-  await expect(page.getByText(/We’re checking your draft against the 6 items/)).toBeVisible();
-  await expect(page.getByText("Decide on 1 unsure item.")).toBeVisible({ timeout: 8000 });
+  await expect(page.getByRole("region", { name: "What to do next" }).getByText(/We’re checking your draft against the 6 items/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "What to do next" }).getByText("Decide on 1 unsure item.")).toBeVisible({ timeout: 8000 });
 });
 
 test("DC-FR-31, DC-FR-37: move between deals from the rail (desktop) or the Deals sheet (phone)", async ({ page }, testInfo) => {

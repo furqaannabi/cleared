@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.8). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.9). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -143,7 +143,11 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 
 | ID | Requirement |
 | --- | --- |
-| DC-FR-30 | In every state, the next-step bar says in one or two sentences what happens next and who has to act. On phones it is fixed to the bottom, shows the first sentence only, and has a full-width primary action 48 px tall when there is one. Its secondary action, "View brief", opens the brief read-only: full-screen on phones, a side panel from `md:` up, with the selected item's brief line highlighted. |
+| DC-FR-30 | In every state, the next-step bar says in one or two sentences what happens next and who has to act. On phones it is fixed to the bottom, shows the first sentence (the lead) only, and has a full-width primary action 48 px tall when there is one; the rest of the explanation is on the page (DC-FR-47). While a check-failed banner is shown (DC-FR-08, DC-FR-09), the bar states only the action, at every width, and the banner carries the explanation: "Nothing to do right now. We're trying the check again." (ours, retrying); "Try the check again. Your draft doesn't need to change." (ours, not retrying); the file problem's own lead, such as "Upload a shorter cut of your draft." (file). Its secondary action, "View brief", opens the brief read-only: full-screen on phones, a side panel from `md:` up, with the selected item's brief line highlighted. |
+
+| ID | Requirement |
+| --- | --- |
+| DC-FR-47 | **What happens next, on phones.** Below `md:`, when the next step has a second sentence, the page shows a quiet "What happens next" block under the header and the money row, above the player: the lead in bold, then the rest. No icon and no button (the action stays in the bar). Not shown while a check-failed banner is shown, since the banner explains. From `md:` up there is no block; the bar shows both sentences. |
 
 ### Shell, header and navigation
 
@@ -322,3 +326,5 @@ Fields:
 | 1.7 signed | Revision 1.7 signed by William | none |
 | 1.8 | DC-FR-46 added: a Suggested fix line on Fix needed, Unsure and Waiting for brand items, from an optional `fixHint` (Requests for Furqaan). User stories 50 to 54. William's call to build against the mock first; Furqaan can change it | none |
 | 1.8 signed | Revision 1.8 signed by William | none |
+| 1.9 | DC-FR-30 amended and DC-FR-47 added: on phones the next step's full explanation is a "What happens next" block on the page (the bar keeps the lead and the action); while a check-failed banner shows, the bar states only the action and the banner explains. From the re-critique (phones hid the why) | none |
+| 1.9 signed | Revision 1.9 signed by William | none |

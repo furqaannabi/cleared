@@ -187,7 +187,7 @@ describe("DC-FR-30 next step", () => {
     });
   });
 
-  test("DC-FR-08, DC-FR-28 check failed on the file: say what to do, and that the hold is safe", () => {
+  test("DC-FR-08, DC-FR-30 check failed on the file: the bar says what to do (the banner says why and that the hold is safe)", () => {
     expect(
       next({
         state: "check_failed",
@@ -195,40 +195,34 @@ describe("DC-FR-30 next step", () => {
       }),
     ).toEqual({
       lead: "Upload a shorter cut of your draft.",
-      detail: "draft_v3.mp4 is 14:20 long, and drafts can be up to 12:00. Your $1,200.00 hold is still in place.",
+      detail: "",
       action: "upload_again",
     });
   });
 
-  test("DC-FR-09 check failed on our side: not the creator's fault, retry or nothing to do", () => {
+  test("DC-FR-09, DC-FR-30 check failed on our side: the bar states only the action; the banner explains", () => {
     const failure = (retrying: boolean) => ({ kind: "ours" as const, retrying, fileName: "draft_v3.mp4" });
     expect(next({ state: "check_failed", checkFailure: failure(true) })).toEqual({
-      lead: "Nothing to do right now.",
-      detail:
-        "Something went wrong on our side checking draft_v3.mp4, and we’re trying again. Your $1,200.00 hold is still in place.",
+      lead: "Nothing to do right now. We’re trying the check again.",
+      detail: "",
       action: null,
     });
     expect(next({ state: "check_failed", checkFailure: failure(false) })).toEqual({
-      lead: "Something went wrong on our side checking draft_v3.mp4.",
-      detail: "It isn’t a problem with your video. Your $1,200.00 hold is still in place.",
+      lead: "Try the check again. Your draft doesn’t need to change.",
+      detail: "",
       action: "try_again",
     });
   });
 
-  test("DC-FR-08: each file problem says what is wrong and what to do", () => {
+  test("DC-FR-08, DC-FR-30: each file problem's bar says what to do; the banner says what is wrong", () => {
     const fileStep = (reason: "unreadable" | "format" | "not_same_video") =>
       next({ state: "check_failed", checkFailure: { kind: "file", reason, fileName: "draft_v3.mp4" } });
-    expect(fileStep("unreadable")).toMatchObject({
-      lead: "Upload your draft again.",
-      detail: "We couldn’t read draft_v3.mp4; the file may be damaged. Your $1,200.00 hold is still in place.",
-    });
-    expect(fileStep("format")).toMatchObject({
-      lead: "Upload your draft as a different file type.",
-      detail: "We can’t check draft_v3.mp4 in this format. Your $1,200.00 hold is still in place.",
-    });
-    expect(fileStep("not_same_video")).toMatchObject({
+    expect(fileStep("unreadable")).toEqual({ lead: "Upload your draft again.", detail: "", action: "upload_again" });
+    expect(fileStep("format")).toEqual({ lead: "Upload your draft as a different file type.", detail: "", action: "upload_again" });
+    expect(fileStep("not_same_video")).toEqual({
       lead: "Upload the same video you put on YouTube as unlisted.",
-      detail: "draft_v3.mp4 doesn’t match your unlisted YouTube upload. Your $1,200.00 hold is still in place.",
+      detail: "",
+      action: "upload_again",
     });
   });
 
@@ -256,11 +250,7 @@ describe("DC-FR-30 next step", () => {
     expect(next({ state: "fully_passing" }).lead).toBe(
       "Every item passed. Glow Theory has until the end of the review window to review.",
     );
-    expect(next({ state: "check_failed" })).toEqual({
-      lead: "We couldn’t check this draft.",
-      detail: "Your $1,200.00 hold is still in place.",
-      action: "upload_again",
-    });
+    expect(next({ state: "check_failed" })).toEqual({ lead: "Upload your draft again.", detail: "", action: "upload_again" });
   });
 
   test("plural wording when several items wait for the brand", () => {
@@ -270,10 +260,10 @@ describe("DC-FR-30 next step", () => {
     );
   });
 
-  test("a too-long file without its lengths still says what to do", () => {
+  test("a too-long file without its lengths still says what is wrong", () => {
     const checkFailure = { kind: "file" as const, reason: "too_long" as const, fileName: "draft_v3.mp4" };
-    expect(next({ state: "check_failed", checkFailure }).detail).toBe(
-      "draft_v3.mp4 is longer than drafts can be. Your $1,200.00 hold is still in place.",
+    expect(deliverableView(deliverable({ state: "check_failed", checkFailure }), NOW).checkFailed?.body).toBe(
+      "draft_v3.mp4 is longer than drafts can be.",
     );
   });
 });
@@ -420,6 +410,14 @@ describe("DC-FR-08, DC-FR-09, DC-FR-28 check-failed banner", () => {
       hold: "Your $1,200.00 hold is still in place",
       showing: "Below are your results from run 2.",
     });
+  });
+
+  test("each file problem says what is wrong", () => {
+    const body = (reason: "unreadable" | "format" | "not_same_video") =>
+      banner({ checkFailure: { kind: "file", reason, fileName: "draft_v3.mp4" } })?.body;
+    expect(body("unreadable")).toBe("We couldn’t read draft_v3.mp4; the file may be damaged.");
+    expect(body("format")).toBe("We can’t check draft_v3.mp4 in this format.");
+    expect(body("not_same_video")).toBe("draft_v3.mp4 doesn’t match your unlisted YouTube upload.");
   });
 
   test("our side: not the creator's fault", () => {

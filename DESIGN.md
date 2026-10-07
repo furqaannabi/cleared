@@ -373,7 +373,7 @@ A 14-scallop SVG badge with a stroke icon inside. Green wash + check = passed, r
 The draft's scrub bar carries a seal marker at every timestamped item (a band for duration items). Selecting a marker, grid row or card moves the playhead and updates the evidence panel in one 200–350ms ease-out move. Items still being checked have no marker; markers appear as their results land. Bands are buttons too: espresso at 30% (50% on hover), solid espresso when selected, with a hit area that reaches below the markers so a band under a marker can still be chosen. Markers and bands are in time order for Tab. The evidence panel and an expanded item card carry a "Play from 3:15" secondary pill (latte-line border, a small play triangle) that jumps the video to the moment, brings it into view and plays it.
 
 ### Next-step bar
-Latte-wash bar that states what to do and why in one or two sentences, with the primary action. On phones it is fixed to the bottom and shows the first sentence only.
+Latte-wash bar that states what to do and why in one or two sentences, with the primary action. On phones it is fixed to the bottom and shows the first sentence only; the whole explanation sits on the page as "What happens next": a quiet latte-wash panel under the money row (the lead in bold, then the rest), with no icon and no button. While a check-failed banner shows, the bar states only the action, at every width, and the banner explains.
 
 ## Do's and Don'ts
 

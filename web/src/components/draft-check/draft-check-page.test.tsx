@@ -16,7 +16,7 @@ describe("creator draft check page", () => {
   test("DC-FR-32, DC-FR-30: shows the deliverable's title and what happens next", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     expect(await screen.findByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
-    expect(screen.getByText("Fix 1 item, and decide on 1 unsure item.")).toBeVisible();
+    expect(within(screen.getByRole("region", { name: "What to do next" })).getByText("Fix 1 item, and decide on 1 unsure item.")).toBeVisible();
   });
 
   test("DC-FR-38: an unknown or not-yours deliverable shows the same plain page", async () => {
@@ -59,6 +59,18 @@ describe("creator draft check page", () => {
 
   describe("on tablet and up", () => {
     afterEach(() => vi.unstubAllGlobals());
+
+    test("DC-FR-47: no What happens next block; the bar carries the whole explanation", async () => {
+      vi.stubGlobal("matchMedia", (query: string) => ({
+        matches: query === "(min-width: 768px)",
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }));
+      render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+      await screen.findByRole("region", { name: "What to do next" });
+      expect(screen.queryByRole("region", { name: "What happens next" })).toBeNull();
+    });
 
     test("DC-FR-22: the evidence panel shows the selected item, and follows a row click", async () => {
       vi.stubGlobal("matchMedia", (query: string) => ({
@@ -107,9 +119,9 @@ describe("creator draft check page", () => {
 
   test("DC-FR-09: after a check failed on our side, Try again restarts it", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
-    expect(await screen.findByText("Something went wrong on our side checking draft_v3.mp4.")).toBeVisible();
+    expect(await screen.findByText("Try the check again. Your draft doesn’t need to change.")).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByText(/We’re checking your draft against the 6 items/)).toBeVisible();
+    expect(await within(screen.getByRole("region", { name: "What to do next" })).findByText(/We’re checking your draft against the 6 items/)).toBeVisible();
   });
 
   test("DC-FR-09: if the retry itself fails, the bar says so", async () => {
@@ -128,7 +140,7 @@ describe("creator draft check page", () => {
 
   test("DC-FR-45: with mocks off, there is no upload button", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
-    await screen.findByText("Fix 1 item, and decide on 1 unsure item.");
+    await within(await screen.findByRole("region", { name: "What to do next" })).findByText("Fix 1 item, and decide on 1 unsure item.");
     expect(screen.queryByLabelText("Upload new draft")).toBeNull();
   });
 
@@ -212,5 +224,22 @@ describe("creator draft check page", () => {
     await userEvent.click(screen.getByRole("button", { name: "Withdraw" }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Withdrew your ask for “Serum shown in use”."));
     expect(screen.getByRole("button", { name: "Ask Glow Theory to accept" })).toHaveFocus();
+  });
+
+  test("DC-FR-47: on a phone, the whole explanation sits under the money and above the player", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+    const block = await screen.findByRole("region", { name: "What happens next" });
+    expect(block).toHaveTextContent("Fix 1 item, and decide on 1 unsure item.");
+    expect(block).toHaveTextContent("For the unsure one, show it more clearly in a new draft or ask Glow Theory to accept it.");
+    // It sits with the money row (the page's first piece on phones), right after it; the browser check confirms the position.
+    const money = screen.getByRole("region", { name: "Payment for this deliverable" });
+    expect(block.parentElement?.contains(money)).toBe(true);
+    expect(Boolean(money.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+  });
+
+  test("DC-FR-47: while a check-failed banner explains, there is no What happens next block", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
+    await screen.findByRole("button", { name: "Try again" });
+    expect(screen.queryByRole("region", { name: "What happens next" })).toBeNull();
   });
 });

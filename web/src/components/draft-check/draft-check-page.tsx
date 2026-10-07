@@ -13,6 +13,7 @@ import { EvidencePanel } from "@/components/evidence/evidence-panel";
 import { MoneyCard } from "@/components/money/money-card";
 import { BriefSheet } from "@/components/brief/brief-sheet";
 import { NextStepBar } from "@/components/next-step/next-step-bar";
+import { WhatHappensNext } from "@/components/next-step/what-happens-next";
 import { DraftPlaceholder } from "@/components/player/draft-placeholder";
 import { DraftPlayer } from "@/components/player/draft-player";
 import { SeekProvider } from "@/components/player/seek";
@@ -164,7 +165,17 @@ function Loaded({
       {view.passed && <PassedBanner passed={view.passed} brandName={deliverable.brandName} />}
       <DraftCheckLayout
         vertical={deliverable.platform !== "youtube_video"}
-        money={<MoneyCard deliverable={deliverable} compact={!wide} />}
+        money={
+          wide ? (
+            <MoneyCard deliverable={deliverable} />
+          ) : (
+            // DC-FR-47: phones get the next step's whole explanation here; the bar keeps only its lead.
+            <div className="flex flex-col gap-3">
+              <MoneyCard deliverable={deliverable} compact />
+              {!view.checkFailed && <WhatHappensNext step={view.nextStep} />}
+            </div>
+          )
+        }
         player={playerSlot}
         next={
           <NextStepBar

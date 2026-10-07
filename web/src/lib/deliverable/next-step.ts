@@ -85,24 +85,15 @@ function resultsStep(d: Deliverable, postBy: string): NextStep {
 }
 
 function checkFailedStep(d: Deliverable): NextStep {
-  const holdSafe = `Your ${formatMoney(d.hold.amountMinor, d.hold.currency)} hold is still in place.`;
+  // DC-FR-30: the check-failed banner explains (and says the hold is safe); the bar states only the action.
   const f = d.checkFailure;
-  if (!f) return { lead: "We couldn’t check this draft.", detail: holdSafe, action: "upload_again" };
+  if (!f) return { lead: "Upload your draft again.", detail: "", action: "upload_again" };
   if (f.kind === "ours") {
     return f.retrying
-      ? {
-          lead: "Nothing to do right now.",
-          detail: `Something went wrong on our side checking ${f.fileName}, and we’re trying again. ${holdSafe}`,
-          action: null,
-        }
-      : {
-          lead: `Something went wrong on our side checking ${f.fileName}.`,
-          detail: `It isn’t a problem with your video. ${holdSafe}`,
-          action: "try_again",
-        };
+      ? { lead: "Nothing to do right now. We’re trying the check again.", detail: "", action: null }
+      : { lead: "Try the check again. Your draft doesn’t need to change.", detail: "", action: "try_again" };
   }
-  const { lead, why } = fileProblem(f);
-  return { lead, detail: `${why} ${holdSafe}`, action: "upload_again" };
+  return { lead: fileProblem(f).lead, detail: "", action: "upload_again" };
 }
 
 export function fileProblem(f: Extract<CheckFailure, { kind: "file" }>): { lead: string; why: string } {
