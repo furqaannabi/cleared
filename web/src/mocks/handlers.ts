@@ -1,5 +1,6 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
 import { apiBaseUrl } from "@/lib/api";
+import { dealDraftHandlers, draftSummaries } from "./deal-drafts";
 import { deals } from "./fixtures/deals";
 import { findDeliverable } from "./store";
 
@@ -12,7 +13,9 @@ import { findDeliverable } from "./store";
  */
 export const handlers: RequestHandler[] = [
   // DC-FR-31, DC-FR-37
-  http.get(`${apiBaseUrl}/deals`, () => HttpResponse.json(deals)),
+  http.get(`${apiBaseUrl}/deals`, () => HttpResponse.json([...deals, ...draftSummaries()])),
+  // BC FRD: deals at the brief → checklist step.
+  ...dealDraftHandlers,
 
   // DC-FR-01, DC-FR-38
   http.get(`${apiBaseUrl}/deliverables/:deliverableId`, ({ params }) => {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Sheet } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
@@ -37,6 +38,9 @@ function Frame({ currentDealId, children }: { currentDealId: string | null; chil
           <span className="px-2.5">
             <Logo />
           </span>
+          <span className="mt-[22px] px-0.5">
+            <NewDealLink tone="rail" />
+          </span>
           {/* A label, not a heading: the nav below is named "Deals", and the page's h1 comes first. */}
           <p aria-hidden="true" className="mx-2.5 mt-[26px] mb-2 text-nav-section font-bold tracking-[0.08em] text-white/70 uppercase">
             Deals
@@ -64,6 +68,9 @@ function Frame({ currentDealId, children }: { currentDealId: string | null; chil
             </button>
           }
         >
+          <div className="mb-4">
+            <NewDealLink tone="sheet" />
+          </div>
           <DealsBody load={deals} currentDealId={currentDealId} tone="sheet" />
         </Sheet>
       </header>
@@ -90,3 +97,21 @@ function SkipLink() {
     </a>
   );
 }
+
+/** BC-FR-01: start a new deal, from the rail (marigold on espresso) or the phone Deals sheet. */
+function NewDealLink({ tone }: { tone: "rail" | "sheet" }) {
+  return (
+    <Link
+      href="/deals/new"
+      className={`flex min-h-11 items-center justify-center gap-1.5 rounded-nav font-extrabold ${
+        tone === "rail" ? "bg-marigold text-marigold-ink hover:bg-marigold-chip" : "bg-espresso text-surface hover:bg-espresso-hover"
+      }`}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" aria-hidden="true" className="size-4">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      New deal
+    </Link>
+  );
+}
+

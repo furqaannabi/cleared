@@ -4,11 +4,12 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { LoadProblem } from "@/components/draft-check/load-problem";
 import { PageSkeleton } from "@/components/draft-check/page-skeleton";
+import { dealHref } from "./deal-href";
 import { useDeals } from "./use-deals";
 
 /**
  * `/deals/[dealId]`: opens the deliverable the API says needs the creator
- * (DC-FR-37). A deal that doesn't exist or isn't the creator's shows the same
+ * (DC-FR-37), or the checklist while the deal is at that step (BC-FR-03). A deal that doesn't exist or isn't the creator's shows the same
  * plain not-found page (DC-FR-38).
  *
  * @param dealId - the deal's opaque id from the route
@@ -19,7 +20,8 @@ export function DealRedirect({ dealId }: { dealId: string }) {
   const deal = load.status === "ready" ? load.deals.find((d) => d.id === dealId) : undefined;
 
   useEffect(() => {
-    if (deal) router.replace(`/deals/${encodeURIComponent(deal.id)}/deliverables/${encodeURIComponent(deal.openDeliverableId)}`);
+    const href = deal && dealHref(deal);
+    if (href) router.replace(href);
   }, [deal, router]);
 
   return (

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { PageSkeleton } from "@/components/draft-check/page-skeleton";
+import { dealHref } from "./deal-href";
 import { useDeals } from "./use-deals";
 
 /**
@@ -19,7 +20,8 @@ export function FirstDealRedirect() {
   const first = load.status === "ready" ? load.deals[0] : undefined;
 
   useEffect(() => {
-    if (first) router.replace(`/deals/${encodeURIComponent(first.id)}/deliverables/${encodeURIComponent(first.openDeliverableId)}`);
+    const href = first && dealHref(first);
+    if (href) router.replace(href);
   }, [first, router]);
 
   return (

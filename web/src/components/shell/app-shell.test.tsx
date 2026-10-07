@@ -67,4 +67,16 @@ describe("DC-FR-31 app shell", () => {
     expect(screen.queryByRole("heading", { name: "Deals" })).toBeNull();
     expect(await screen.findByRole("navigation", { name: "Deals" })).toBeInTheDocument();
   });
+
+  test("BC-FR-01: New deal in the rail on desktop, and in the Deals sheet on phones", async () => {
+    screenWidth(1280);
+    const { unmount } = shell();
+    expect(within(screen.getByRole("complementary", { name: "Main" })).getByRole("link", { name: "New deal" })).toHaveAttribute("href", "/deals/new");
+    unmount();
+    screenWidth(375);
+    shell();
+    await userEvent.click(screen.getByRole("button", { name: "Deals" }));
+    expect(within(await screen.findByRole("dialog", { name: "Deals" })).getByRole("link", { name: "New deal" })).toHaveAttribute("href", "/deals/new");
+  });
 });
+

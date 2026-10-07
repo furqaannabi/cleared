@@ -13,7 +13,7 @@ test("every deliverable fixture passes the provisional schema", () => {
 test("the deals fixture passes its schema, and every deal opens a deliverable that exists", () => {
   expect(dealsSchema.safeParse(deals).success).toBe(true);
   for (const deal of deals) {
-    expect(deliverables[deal.openDeliverableId], deal.id).toBeDefined();
+    expect(deal.openDeliverableId && deliverables[deal.openDeliverableId], deal.id).toBeDefined();
     for (const d of deal.deliverables) {
       expect(deliverables[d.id], d.id).toBeDefined();
       expect(deliverables[d.id].state, d.id).toBe(d.state);

@@ -1,4 +1,5 @@
 import type { Deliverable } from "@/lib/deliverable/types";
+import { resetDealDrafts } from "./deal-drafts";
 import { deliverables } from "./fixtures/deliverables";
 
 /*
@@ -13,4 +14,5 @@ export const findDeliverable = (id: string) => data[id];
 /** Restores every mock deliverable to its fixture. */
 export function resetMockData() {
   data = structuredClone(deliverables);
+  resetDealDrafts();
 }

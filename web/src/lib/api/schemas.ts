@@ -112,7 +112,9 @@ export const dealSummarySchema = z.object({
   brandName: z.string().min(1),
   // One line, e.g. "Brand review · 31h left"; shown as plain text.
   status: z.string().max(120),
-  openDeliverableId: z.string().min(1),
+  // BC-FR-03: a deal still at the checklist or invite step has no deliverable to open yet.
+  step: z.enum(["checklist", "invite"]).optional(),
+  openDeliverableId: z.string().min(1).optional(),
   // DC-FR-33: the deal's deliverables, for the switcher.
   deliverables: z.array(
     z.object({
@@ -124,3 +126,45 @@ export const dealSummarySchema = z.object({
 });
 
 export const dealsSchema = z.array(dealSummarySchema);
+
+const platform = z.enum(["youtube_video", "youtube_short", "instagram_reel"]);
+const itemKind = z.enum(["said", "shown_as_text", "shown", "timing", "written", "disclosure", "publication"]);
+
+/** BC-FR-10: one checklist item being built, citing its brief line unless the creator added it (BC-BR-01). */
+export const draftItemSchema = z
+  .object({
+    id: z.string().min(1),
+    deliverableId: z.string().min(1),
+    name: z.string().min(1).max(200),
+    kind: itemKind,
+    briefLine: z.number().int().positive().optional(),
+    addedByCreator: z.boolean(),
+    checkedBy: z.enum(["exact_match", "ai_timestamp", "at_live_check"]),
+  })
+  .refine((i) => i.addedByCreator || i.briefLine !== undefined, "An item cites a brief line or is added by the creator");
+
+/** BC-FR-13: the AI's question about an ambiguous brief line. */
+export const questionSchema = z.object({
+  id: z.string().min(1),
+  briefLine: z.number().int().positive(),
+  text: z.string().min(1).max(300),
+  suggestions: z.array(z.string().min(1).max(120)).max(3),
+  answer: z
+    .object({ kind: z.enum(["suggestion", "own_words", "left_out"]), text: z.string().max(200).optional() })
+    .optional(),
+});
+
+/** BC-FR-03 to BC-FR-18: a deal at the brief → checklist step (provisional). The brief is untrusted plain text (BC-BR-03). */
+export const dealDraftSchema = z.object({
+  id: z.string().min(1),
+  brandName: z.string().min(1).max(120),
+  step: z.enum(["checklist", "invite"]),
+  deliverables: z.array(z.object({ id: z.string().min(1), platform })).min(1).max(10),
+  brief: z.object({ lines: z.array(z.object({ number: z.number().int().positive(), text: z.string().max(2000) })) }).optional(),
+  reading: z.enum(["idle", "reading", "done", "failed"]),
+  readUpTo: z.number().int().nonnegative().optional(),
+  items: z.array(draftItemSchema),
+  questions: z.array(questionSchema),
+  ready: z.boolean(),
+});
+

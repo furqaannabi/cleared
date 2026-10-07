@@ -1,4 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
+import { apiBaseUrl } from "@/lib/api";
+import { server } from "@/mocks/node";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { DealRedirect } from "./deal-redirect";
 import { DealsProvider } from "./use-deals";
@@ -26,4 +29,15 @@ describe("DC-FR-37 opening a deal", () => {
     expect(await screen.findByRole("heading", { name: "We couldn’t find this deal" })).toBeVisible();
     expect(replace).not.toHaveBeenCalled();
   });
+
+  test("BC-FR-03: a deal still at the checklist step opens its checklist", async () => {
+    server.use(http.get(`${apiBaseUrl}/deals`, () => HttpResponse.json([{ id: "deal_new", brandName: "Glow Theory", status: "Checklist", step: "checklist", deliverables: [] }])));
+    render(
+      <DealsProvider>
+        <DealRedirect dealId="deal_new" />
+      </DealsProvider>,
+    );
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/deals/deal_new/checklist"));
+  });
 });
+
