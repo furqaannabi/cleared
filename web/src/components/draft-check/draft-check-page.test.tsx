@@ -119,4 +119,10 @@ describe("creator draft check page", () => {
     const dialog = screen.getByRole("dialog", { name: "Glow Theory’s brief" });
     expect(within(dialog).getByText("Say and show the code GLOW20.").closest("li")).toHaveAttribute("aria-current", "true");
   });
+
+  test("DC-FR-45: with mocks off, there is no upload button", async () => {
+    render(<DraftCheckPage deliverableId="del_glow_video" />);
+    await screen.findByText("Fix 2 items, then upload a new draft.");
+    expect(screen.queryByLabelText("Upload new draft")).toBeNull();
+  });
 });

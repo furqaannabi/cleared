@@ -13,6 +13,7 @@ import { NextStepBar } from "@/components/next-step/next-step-bar";
 import { DraftPlayer } from "@/components/player/draft-player";
 import { api } from "@/lib/api";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { MOCKING_ENABLED } from "@/lib/mocking/mocking-enabled";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import type { Deliverable } from "@/lib/deliverable/types";
 import { LoadProblem } from "./load-problem";
@@ -62,6 +63,16 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
     if (result.ok) onUpdated(result.data);
     else setRetryProblem("We couldn’t restart the check. Try again in a moment.");
   };
+  // DC-FR-45: while the upload flow is unspecced, uploading is simulated, and only on mocks.
+  // The literal NODE_ENV check lets the bundler drop the simulation and mock data from production builds.
+  const simulateUpload =
+    process.env.NODE_ENV !== "production" && MOCKING_ENABLED
+      ? async (file: File) => {
+        void file; // never read or sent anywhere
+        const { simulateUpload: simulate } = await import("@/mocks/simulate-upload");
+        simulate(deliverable.id, onUpdated);
+      }
+    : undefined;
   // DC-FR-26: a fresh link for the draft when the current one stops working.
   const refreshDraftUrl = async () => {
     const result = await api.refreshDraftUrl(deliverable.id);
@@ -110,6 +121,7 @@ function Loaded({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdate
               pending={retrying}
               problem={retryProblem}
               secondary={wide ? briefSheet : undefined}
+              onUpload={simulateUpload}
             />
           </div>
         </div>

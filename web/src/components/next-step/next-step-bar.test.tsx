@@ -22,4 +22,12 @@ describe("DC-FR-30 next-step bar", () => {
     render(<NextStepBar step={{ lead: "Upload your draft.", detail: "", action: "upload_draft" }} onTryAgain={() => {}} />);
     expect(screen.queryByRole("button")).toBeNull();
   });
+
+  test("DC-FR-45: with an upload handler, the upload action opens a file picker and hands over the file", async () => {
+    const onUpload = vi.fn();
+    render(<NextStepBar step={{ lead: "Fix 2 items, then upload a new draft.", detail: "", action: "upload_new_draft" }} onTryAgain={() => {}} onUpload={onUpload} />);
+    const file = new File(["x"], "draft_v3.mp4", { type: "video/mp4" });
+    await userEvent.upload(screen.getByLabelText("Upload new draft"), file);
+    expect(onUpload).toHaveBeenCalledWith(file);
+  });
 });

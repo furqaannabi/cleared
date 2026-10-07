@@ -39,3 +39,10 @@ test("DC-FR-14, DC-FR-15: ask the brand to accept the Unsure item, then withdraw
   await page.getByRole("button", { name: "Withdraw" }).click();
   await expect(page.getByRole("button", { name: "Ask Glow Theory to accept" })).toBeVisible();
 });
+
+test("DC-FR-45: on mocks, uploading a new draft runs a simulated check", async ({ page }) => {
+  await page.goto("/deals/deal_glow/deliverables/del_glow_video");
+  await page.getByLabel("Upload new draft").setInputFiles({ name: "draft_v3.mp4", mimeType: "video/mp4", buffer: Buffer.from("x") });
+  await expect(page.getByText(/We’re checking your draft against the 6 items/)).toBeVisible();
+  await expect(page.getByText("Fix 1 item, then upload a new draft.")).toBeVisible({ timeout: 8000 });
+});

@@ -1,0 +1,48 @@
+import type { Deliverable } from "@/lib/deliverable/types";
+import { findDeliverable } from "./store";
+
+/*
+ * DC-FR-45: a mock-only stand-in for uploading a new draft, used while the
+ * upload flow has no spec. Nothing is uploaded and the file is never read; the
+ * in-memory mock store moves to Checking, then to a new run's results.
+ * Loaded on demand by the page only when mocks are on, so it never ships.
+ */
+
+/** The synthetic outcome of a new run: the on-screen code is fixed, the serum is still unsure. */
+const NEXT_RESULT: Record<string, Deliverable["items"][number]["status"]> = {
+  it_5: "passed",
+  it_6: "unsure",
+};
+
+/**
+ * Simulates a new draft check for one mock deliverable.
+ *
+ * @param deliverableId - the mock deliverable
+ * @param onChange - called with the deliverable at Checking, then with the results
+ * @param delayMs - how long the simulated check takes
+ */
+export function simulateUpload(deliverableId: string, onChange: (d: Deliverable) => void, delayMs = 3000): void {
+  const d = findDeliverable(deliverableId);
+  if (!d) return;
+
+  const before = new Map(d.items.map((i) => [i.id, i.status]));
+  d.state = "checking";
+  d.checkFailure = undefined;
+  for (const item of d.items) {
+    if (item.status === "at_live_check") continue;
+    // DC-BR-04: a new draft cancels open asks and acceptances.
+    Object.assign(item, { status: "checking", askedAt: undefined, declined: undefined, brandNote: undefined });
+  }
+  onChange(structuredClone(d));
+
+  setTimeout(() => {
+    d.state = "results";
+    for (const item of d.items) {
+      if (item.status !== "checking") continue;
+      const was = before.get(item.id)!;
+      const now = NEXT_RESULT[item.id] ?? (was === "waiting_for_brand" || was === "accepted_by_brand" ? "unsure" : was);
+      Object.assign(item, { previousStatus: was, status: now, askable: now === "unsure" });
+    }
+    onChange(structuredClone(d));
+  }, delayMs);
+}
