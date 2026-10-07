@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, test, vi } from "vitest";
@@ -249,6 +249,59 @@ describe("creator draft check page", () => {
     expect(banner).toHaveTextContent("Glow Theory logo on screen for 3+ seconds and Says discount code GLOW20 now pass.");
     expect(banner).toHaveTextContent("2 items still need you.");
     expect(screen.getByTestId("run-change-seal")).not.toHaveAttribute("data-stamp");
+  });
+
+  describe("DC-FR-36 selection and tab in the URL", () => {
+    const params = () => new URLSearchParams(window.location.search);
+
+    test("choosing an item or a tab puts it in the URL, and Back steps through them", async () => {
+      render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+      const checklist = await screen.findByRole("region", { name: "Checklist" });
+      await userEvent.click(within(checklist).getByRole("button", { name: /Serum shown in use/ }));
+      expect(params().get("item")).toBe("it_6");
+      await userEvent.click(within(checklist).getByRole("button", { name: /^Passed/ }));
+      expect(params().get("tab")).toBe("passed");
+
+      act(() => window.history.back());
+      await waitFor(() => expect(within(checklist).getByRole("button", { name: /^All/ })).toHaveAttribute("aria-pressed", "true"));
+      expect(within(checklist).getByRole("button", { name: /Serum shown in use/ })).toHaveAttribute("aria-expanded", "true");
+      act(() => window.history.back());
+      await waitFor(() =>
+        expect(within(checklist).getByRole("button", { name: /Code GLOW20 shown on screen/ })).toHaveAttribute("aria-expanded", "true"),
+      );
+    });
+
+    test("a link with an item and a tab opens the page on them", async () => {
+      window.history.replaceState(null, "", "/?item=it_3&tab=passed");
+      render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+      const checklist = await screen.findByRole("region", { name: "Checklist" });
+      expect(within(checklist).getByRole("button", { name: /^Passed/ })).toHaveAttribute("aria-pressed", "true");
+      expect(within(checklist).getByRole("button", { name: /Glow Theory logo on screen/ })).toHaveAttribute("aria-expanded", "true");
+    });
+
+    test("an unknown item or tab in the URL falls back to the defaults", async () => {
+      window.history.replaceState(null, "", "/?item=nope&tab=everything");
+      render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+      const checklist = await screen.findByRole("region", { name: "Checklist" });
+      expect(within(checklist).getByRole("button", { name: /^All/ })).toHaveAttribute("aria-pressed", "true");
+      expect(within(checklist).getByRole("button", { name: /Code GLOW20 shown on screen/ })).toHaveAttribute("aria-expanded", "true");
+    });
+
+    test("changing them does not fetch the deliverable again", async () => {
+      let fetches = 0;
+      server.events.on("request:start", ({ request }) => {
+        if (request.method === "GET" && new URL(request.url).pathname.includes("/deliverables/")) fetches += 1;
+      });
+      render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+      const checklist = await screen.findByRole("region", { name: "Checklist" });
+      const before = fetches;
+      await userEvent.click(within(checklist).getByRole("button", { name: /Serum shown in use/ }));
+      await userEvent.click(within(checklist).getByRole("button", { name: /^Passed/ }));
+      act(() => window.history.back());
+      await waitFor(() => expect(params().get("tab")).toBeNull());
+      expect(fetches).toBe(before);
+      server.events.removeAllListeners();
+    });
   });
 });
 

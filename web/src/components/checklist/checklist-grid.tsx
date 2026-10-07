@@ -157,6 +157,9 @@ export default function ChecklistGrid({
       rowSelection={{ mode: "singleRow", checkboxes: false, enableClickSelection: true }}
       rowClassRules={{ "row-fail": (p) => p.data?.status === "fix_needed" }}
       onRowClicked={(e) => e.data && onSelect(e.data.id)}
+      // One Tab stop: Tab leaves the grid instead of visiting every cell; arrows move inside it.
+      tabToNextCell={() => false}
+      tabToNextHeader={() => false}
       // Keyboard: arrows move between rows, Enter or Space selects (DC-FR-22).
       onCellKeyDown={(e) => {
         const event = e.event as KeyboardEvent | null | undefined;

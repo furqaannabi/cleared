@@ -5,7 +5,7 @@ import { ChecklistFilter } from "@/components/checklist/checklist-filter";
 import { ChecklistItems } from "@/components/checklist/checklist-items";
 import { hasItemActions, ItemActions } from "@/components/checklist/item-actions";
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
-import { byNeed, tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
+import { byNeed, tabsFor } from "@/lib/checklist/item-status";
 import { DealHeader } from "@/components/deal/deal-header";
 import { DeliverableSwitcher } from "@/components/deal/deliverable-switcher";
 import { useOptionalDeals } from "@/components/shell/use-deals";
@@ -31,6 +31,7 @@ import { LoadProblem } from "./load-problem";
 import { PageSkeleton } from "./page-skeleton";
 import { useDeliverable } from "./use-deliverable";
 import { useItemActions } from "./use-item-actions";
+import { useUrlSelection } from "./use-url-selection";
 
 /**
  * The creator's draft check page for one deliverable: loads it and shows
@@ -62,8 +63,13 @@ function Loaded({
 }) {
   // Recomputed per load; `now` is read once so the page doesn't shift while open.
   const view = useMemo(() => deliverableView(deliverable, new Date()), [deliverable]);
-  const [selectedId, setSelectedId] = useState<string | null>(view.defaultItemId);
-  const [filter, setFilter] = useState<ChecklistTab>("all");
+  // DC-FR-36: the selected item and the tab live in the URL.
+  const url = useUrlSelection(
+    view.defaultItemId,
+    view.items.map((i) => i.id),
+    view.tabs.map((t) => t.id),
+  );
+  const { selectedId, filter, select: setSelectedId, setFilter } = url;
   // DC-FR-21, DC-FR-48: when a run lands while the page is open (Checking turns into results),
   // the old selection belonged to the previous run: select again, show All, and let the summary's seal stamp.
   const [seenState, setSeenState] = useState(deliverable.state);
@@ -72,8 +78,7 @@ function Loaded({
     setSeenState(deliverable.state);
     if (seenState === "checking") {
       setLanded(true);
-      setSelectedId(view.defaultItemId);
-      setFilter("all");
+      url.reset(view.defaultItemId);
     }
   }
   const shown = view.items.filter((i) => tabsFor(i.status).includes(filter));
@@ -132,8 +137,7 @@ function Loaded({
       : undefined;
   const showItem = needsYou
     ? () => {
-        setFilter("all");
-        setSelectedId(needsYou.id);
+        url.show(needsYou.id);
         requestAnimationFrame(() => {
           const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
           document.getElementById(`item-${needsYou.id}`)?.scrollIntoView?.({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
@@ -146,7 +150,7 @@ function Loaded({
   const seek = useCallback((itemId: string) => {
     setSelectedId(itemId);
     setSeekKey((k) => k + 1);
-  }, []);
+  }, [setSelectedId]);
 
   // DC-FR-02: before a draft, the player's space says so.
   const playerSlot =

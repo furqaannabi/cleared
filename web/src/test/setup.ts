@@ -9,6 +9,8 @@ beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 
 afterEach(() => {
   cleanup();
+  // DC-FR-36 keeps the selection in the URL; each test starts from a clean one.
+  window.history.replaceState(null, "", "/");
   server.resetHandlers();
   resetMockData();
 });

@@ -70,3 +70,30 @@ test("DC-FR-33: the switcher moves between a deal's deliverables", async ({ page
   await expect(page.getByRole("heading", { level: 1, name: "Glow Theory · Instagram Reel" })).toBeVisible();
   await expect(switcher.getByRole("link", { name: /Instagram Reel/ })).toHaveAttribute("aria-current", "page");
 });
+
+test("the checklist grid is one Tab stop: arrows move inside it, Tab moves past it", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "phone-375", "the grid is tablet and up");
+  await page.goto("/deals/deal_glow/deliverables/del_glow_video");
+  const grid = page.getByRole("grid");
+  const cell = page.getByRole("row", { name: /Code GLOW20 shown on screen/ }).first().getByRole("gridcell").nth(1);
+  await cell.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("row", { name: /Serum shown in use/ }).first().getByRole("gridcell").nth(1)).toBeFocused();
+  await page.keyboard.press("Tab");
+  const inGrid = await grid.evaluate((g) => g.contains(document.activeElement));
+  expect(inGrid).toBe(false);
+});
+
+test("DC-FR-36: the selected item is in the URL, and Back returns to the previous one", async ({ page }, testInfo) => {
+  await page.goto("/deals/deal_glow/deliverables/del_glow_video");
+  const checklist = page.getByRole("region", { name: "Checklist" });
+  if (testInfo.project.name === "phone-375") {
+    await checklist.getByRole("button", { name: /Serum shown in use/ }).click();
+  } else {
+    await page.getByRole("row", { name: /Serum shown in use/ }).first().getByText("Serum shown in use").click();
+  }
+  await expect(page).toHaveURL(/\?item=it_6/);
+  await page.goBack();
+  await expect(page).not.toHaveURL(/item=/);
+  await expect(page.getByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
+});
