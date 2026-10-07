@@ -2,6 +2,7 @@ import { Seal } from "@/components/ui/seal";
 import { formatDay, formatMoney } from "@/lib/deliverable/format";
 import type { Deliverable } from "@/lib/deliverable/types";
 import { LockIcon, ReturnIcon } from "./money-icons";
+import { MoneySummary } from "./money-summary";
 
 const STAGES = [
   { id: "held", label: "Held" },
@@ -23,17 +24,29 @@ const POST_NAME: Record<Deliverable["platform"], string> = {
  *
  * @param deliverable - the deliverable, with its hold
  * @param timeZone - the viewer's timezone for dates
+ * @param compact - phones: a one-row summary that expands to the full card
  * @see docs/specs/creator-draft-check-frd.md DC-FR-27, DC-FR-29; DESIGN.md "Money card"
  */
-export function MoneyCard({ deliverable: d, timeZone }: { deliverable: Deliverable; timeZone?: string }) {
-  return d.state === "released" ? <ReleasedCard d={d} timeZone={timeZone} /> : <HeldCard d={d} timeZone={timeZone} />;
+export function MoneyCard({
+  deliverable: d,
+  timeZone,
+  compact = false,
+}: {
+  deliverable: Deliverable;
+  timeZone?: string;
+  compact?: boolean;
+}) {
+  const card = (region: boolean) =>
+    d.state === "released" ? <ReleasedCard d={d} timeZone={timeZone} region={region} /> : <HeldCard d={d} timeZone={timeZone} region={region} />;
+  // Phones: one row that expands to the full card, so what needs the creator comes first.
+  return compact ? <MoneySummary d={d}>{card(false)}</MoneySummary> : card(true);
 }
 
-function HeldCard({ d, timeZone }: { d: Deliverable; timeZone?: string }) {
+function HeldCard({ d, timeZone, region }: { d: Deliverable; timeZone?: string; region: boolean }) {
   const amount = formatMoney(d.hold.amountMinor, d.hold.currency);
   return (
     <section
-      aria-label="Payment for this deliverable"
+      aria-label={region ? "Payment for this deliverable" : undefined}
       className="relative isolate overflow-hidden rounded-lg bg-marigold px-[18px] pt-[18px] pb-[18px] text-marigold-ink shadow-money-card md:px-[22px] md:pt-5"
     >
       <span aria-hidden="true" className="absolute -top-[110px] -right-[90px] -z-10 size-[300px] rounded-full bg-white/25" />
@@ -69,13 +82,13 @@ function HeldCard({ d, timeZone }: { d: Deliverable; timeZone?: string }) {
 
 // DC-FR-29: the money no longer moves towards the creator, so the card drops
 // its marigold and its lift (DESIGN.md "Money card", Released).
-function ReleasedCard({ d, timeZone }: { d: Deliverable; timeZone?: string }) {
+function ReleasedCard({ d, timeZone, region }: { d: Deliverable; timeZone?: string; region: boolean }) {
   const amount = formatMoney(d.hold.amountMinor, d.hold.currency);
   const reason = d.releaseReason === "deadline" ? "deadline passed" : "deal cancelled";
   const when = d.releasedAt ? `Released ${formatDay(d.releasedAt, timeZone)}` : "Released";
   return (
     <section
-      aria-label="Payment for this deliverable"
+      aria-label={region ? "Payment for this deliverable" : undefined}
       className="relative isolate overflow-hidden rounded-lg border border-latte-line bg-latte px-[18px] pt-[18px] pb-[18px] text-ink md:px-[22px] md:pt-5"
     >
       <span aria-hidden="true" className="absolute -top-[110px] -right-[90px] -z-10 size-[300px] rounded-full bg-white/50" />

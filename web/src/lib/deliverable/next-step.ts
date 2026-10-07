@@ -51,18 +51,35 @@ export function nextStep(d: Deliverable, timeZone?: string): NextStep {
 }
 
 function resultsStep(d: Deliverable, postBy: string): NextStep {
-  const toFix = d.items.filter((i) => i.status === "fix_needed" || i.status === "unsure").length;
+  const toFix = d.items.filter((i) => i.status === "fix_needed").length;
+  // An unsure item is a choice: show it more clearly, or ask the brand to accept it.
+  const unsure = d.items.filter((i) => i.status === "unsure").length;
   const waiting = d.items.filter((i) => i.status === "waiting_for_brand").length;
   const waitingText = `${itemCount(waiting)} ${waiting === 1 ? "is" : "are"} waiting for ${d.brandName}`;
+  const review = `${d.brandName}’s 48-hour review starts once every item passes.`;
+  const unsureText = `${unsure} unsure ${unsure === 1 ? "item" : "items"}`;
 
-  if (toFix === 0) {
+  if (toFix === 0 && unsure === 0) {
     return { lead: `${waitingText}.`, detail: `You can still upload a fix yourself. ${postBy}`, action: "upload_new_draft" };
+  }
+  if (toFix === 0) {
+    const them = unsure === 1 ? "it" : "them";
+    return {
+      lead: `Decide on ${unsureText}.`,
+      detail: `Show ${them} more clearly in a new draft, or ask ${d.brandName} to accept ${them}. ${review}`,
+      action: "upload_new_draft",
+    };
+  }
+  if (unsure > 0) {
+    return {
+      lead: `Fix ${itemCount(toFix)}, and decide on ${unsureText}.`,
+      detail: `For the unsure ${unsure === 1 ? "one" : "ones"}, show ${unsure === 1 ? "it" : "them"} more clearly in a new draft or ask ${d.brandName} to accept ${unsure === 1 ? "it" : "them"}. ${review}`,
+      action: "upload_new_draft",
+    };
   }
   return {
     lead: `Fix ${itemCount(toFix)}, then upload a new draft.`,
-    detail: waiting
-      ? `${waitingText}; you can still fix ${waiting === 1 ? "it" : "them"} yourself. ${postBy}`
-      : `${d.brandName}’s 48-hour review starts once every item passes.`,
+    detail: waiting ? `${waitingText}; you can still fix ${waiting === 1 ? "it" : "them"} yourself. ${postBy}` : review,
     action: "upload_new_draft",
   };
 }
@@ -88,7 +105,7 @@ function checkFailedStep(d: Deliverable): NextStep {
   return { lead, detail: `${why} ${holdSafe}`, action: "upload_again" };
 }
 
-function fileProblem(f: Extract<CheckFailure, { kind: "file" }>): { lead: string; why: string } {
+export function fileProblem(f: Extract<CheckFailure, { kind: "file" }>): { lead: string; why: string } {
   switch (f.reason) {
     case "too_long":
       return {
@@ -125,4 +142,36 @@ function releasedStep(d: Deliverable, timeZone?: string): NextStep {
     why = `The deal was cancelled${on}, so the ${amount} hold went back to ${d.brandName}.`;
   }
   return { lead: `The hold went back to ${d.brandName}.`, detail: `${why} ${end}`, action: null };
+}
+
+/** DC-FR-08, DC-FR-09, DC-FR-28: the check-failed banner: what happened, that the hold is safe, which results show. */
+export interface CheckFailedBanner {
+  kind: "file" | "ours";
+  heading: string;
+  body: string;
+  hold: string;
+  showing: string | null;
+}
+
+/**
+ * The banner for a check that couldn't run, or null in any other state.
+ *
+ * @param d - the deliverable
+ */
+export function checkFailedBanner(d: Deliverable): CheckFailedBanner | null {
+  if (d.state !== "check_failed") return null;
+  const hold = `Your ${formatMoney(d.hold.amountMinor, d.hold.currency)} hold is still in place`;
+  const showing = d.run ? `Below are your results from run ${d.run}.` : null;
+  const f = d.checkFailure;
+  if (!f) return { kind: "ours", heading: "We couldn’t check this draft", body: "", hold, showing };
+  if (f.kind === "ours") {
+    return {
+      kind: "ours",
+      heading: `Something went wrong on our side checking ${f.fileName}`,
+      body: `It isn’t a problem with your video.${f.retrying ? " We’re trying again; you don’t need to do anything." : ""}`,
+      hold,
+      showing,
+    };
+  }
+  return { kind: "file", heading: `We couldn’t check ${f.fileName}`, body: fileProblem(f).why, hold, showing };
 }

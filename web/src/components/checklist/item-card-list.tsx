@@ -1,9 +1,10 @@
+import { byNeed } from "@/lib/checklist/item-status";
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { ItemCard } from "./item-card";
 
 /**
- * The checklist as a stack of item cards (phones). The open card is the
- * selected item; tapping it again closes it.
+ * The checklist as a stack of item cards (phones), what needs the creator
+ * first. The open card is the selected item; tapping it again closes it.
  *
  * @param items - the checklist items to show
  * @param brandName - the deal's brand, for result words
@@ -27,7 +28,7 @@ export function ItemCardList({
 }) {
   return (
     <ul className="flex flex-col gap-2.5">
-      {items.map((item) => (
+      {byNeed(items).map((item) => (
         <ItemCard
           key={item.id}
           item={item}

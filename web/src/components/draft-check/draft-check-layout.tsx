@@ -41,7 +41,7 @@ export function DraftCheckLayout({
         <div
           data-testid="draft-check-layout"
           data-layout="portrait"
-          className="grid items-start gap-5 @min-[640px]:grid-cols-[minmax(260px,320px)_minmax(0,1fr)] @min-[640px]:grid-rows-[auto_auto_1fr] @min-[1060px]:grid-cols-[320px_minmax(0,1fr)_minmax(300px,340px)] @min-[1060px]:grid-rows-[auto_1fr]"
+          className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 @min-[640px]:grid-cols-[minmax(260px,320px)_minmax(0,1fr)] @min-[640px]:grid-rows-[auto_auto_1fr] @min-[1060px]:grid-cols-[320px_minmax(0,1fr)_minmax(300px,340px)] @min-[1060px]:grid-rows-[auto_1fr]"
         >
           <div className="@min-[640px]:[grid-area:1/2] @min-[1060px]:[grid-area:1/3]">{money}</div>
           {player && <div className="@min-[640px]:[grid-area:1/1/4/2] @min-[1060px]:[grid-area:1/1/3/2]">{player}</div>}
@@ -56,7 +56,7 @@ export function DraftCheckLayout({
     <div
       data-testid="draft-check-layout"
       data-layout="landscape"
-      className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]"
+      className="mt-5 grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]"
     >
       <div className="contents lg:flex lg:flex-col lg:gap-5">
         {player && <div className="order-2">{player}</div>}

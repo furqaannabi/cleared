@@ -30,4 +30,11 @@ describe("DC-FR-30 next-step bar", () => {
     await userEvent.upload(screen.getByLabelText("Upload new draft"), file);
     expect(onUpload).toHaveBeenCalledWith(file);
   });
+
+  test("the lead is a button that shows the item needing the creator, when there is one", async () => {
+    const onShowItem = vi.fn();
+    render(<NextStepBar step={{ lead: "Fix 1 item, then upload a new draft.", detail: "", action: "upload_new_draft" }} onTryAgain={() => {}} onShowItem={onShowItem} />);
+    await userEvent.click(screen.getByRole("button", { name: "Fix 1 item, then upload a new draft." }));
+    expect(onShowItem).toHaveBeenCalledOnce();
+  });
 });

@@ -68,3 +68,26 @@ export function tabsFor(status: ItemStatus): ChecklistTab[] {
   const { tab } = STATUS_MAP[status];
   return tab ? ["all", tab] : ["all"];
 }
+
+/** What needs the creator first, then what waits on others, then what is settled. */
+export const NEED_ORDER: ItemStatus[] = [
+  "fix_needed",
+  "unsure",
+  "waiting_for_brand",
+  "checking",
+  "not_checked",
+  "accepted_by_brand",
+  "passed",
+  "at_live_check",
+];
+
+/**
+ * Items sorted so what needs the creator comes first (a stable sort, so brief
+ * order is kept within each status). Used for phone cards and the grid's
+ * Result sort.
+ *
+ * @param items - anything with a status
+ */
+export function byNeed<T extends { status: ItemStatus }>(items: T[]): T[] {
+  return [...items].sort((a, b) => NEED_ORDER.indexOf(a.status) - NEED_ORDER.indexOf(b.status));
+}

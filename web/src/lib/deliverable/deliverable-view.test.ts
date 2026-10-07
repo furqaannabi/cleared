@@ -135,9 +135,24 @@ describe("DC-FR-30 next step", () => {
   });
 
   test("results: fix the items that need it, before the brand's review can start", () => {
-    expect(next({ items: [item("1", "fix_needed"), item("2", "unsure"), item("3", "passed")] })).toEqual({
+    expect(next({ items: [item("1", "fix_needed"), item("2", "fix_needed"), item("3", "passed")] })).toEqual({
       lead: "Fix 2 items, then upload a new draft.",
       detail: "Glow Theory’s 48-hour review starts once every item passes.",
+      action: "upload_new_draft",
+    });
+  });
+
+  test("results: an unsure item is a choice, fix it or ask the brand, not a fix", () => {
+    expect(next({ items: [item("1", "fix_needed"), item("2", "unsure"), item("3", "passed")] })).toEqual({
+      lead: "Fix 1 item, and decide on 1 unsure item.",
+      detail:
+        "For the unsure one, show it more clearly in a new draft or ask Glow Theory to accept it. Glow Theory’s 48-hour review starts once every item passes.",
+      action: "upload_new_draft",
+    });
+    expect(next({ items: [item("1", "unsure"), item("2", "unsure"), item("3", "passed")] })).toEqual({
+      lead: "Decide on 2 unsure items.",
+      detail:
+        "Show them more clearly in a new draft, or ask Glow Theory to accept them. Glow Theory’s 48-hour review starts once every item passes.",
       action: "upload_new_draft",
     });
   });
@@ -389,5 +404,82 @@ describe("DC-FR-34 deal steps", () => {
     const steps = stepsFor("released");
     expect(steps.items.some((s) => s.state === "current")).toBe(false);
     expect(steps.summary).toBe("Ended · hold released");
+  });
+});
+
+describe("DC-FR-08, DC-FR-09, DC-FR-28 check-failed banner", () => {
+  const banner = (d: Partial<Deliverable>) => deliverableView(deliverable({ state: "check_failed", run: 2, ...d }), NOW).checkFailed;
+
+  test("a file problem: what is wrong, the hold is safe, and which results are shown", () => {
+    expect(
+      banner({ checkFailure: { kind: "file", reason: "too_long", fileName: "draft_v3.mp4", lengthSec: 860, lengthCapSec: 720 } }),
+    ).toEqual({
+      kind: "file",
+      heading: "We couldn’t check draft_v3.mp4",
+      body: "draft_v3.mp4 is 14:20 long, and drafts can be up to 12:00.",
+      hold: "Your $1,200.00 hold is still in place",
+      showing: "Below are your results from run 2.",
+    });
+  });
+
+  test("our side: not the creator's fault", () => {
+    expect(banner({ checkFailure: { kind: "ours", retrying: true, fileName: "draft_v3.mp4" } })).toMatchObject({
+      kind: "ours",
+      heading: "Something went wrong on our side checking draft_v3.mp4",
+      body: "It isn’t a problem with your video. We’re trying again; you don’t need to do anything.",
+    });
+  });
+
+  test("no banner outside the check-failed state", () => {
+    expect(deliverableView(deliverable(), NOW).checkFailed).toBeNull();
+  });
+});
+
+describe("DC-FR-04 check stages", () => {
+  test("while checking, the stages and how far along the check is", () => {
+    const view = deliverableView(
+      deliverable({
+        state: "checking",
+        run: 3,
+        checkStartedAt: "2026-10-06T11:58:00Z",
+        stages: [
+          { name: "Reading what’s said", status: "done" },
+          { name: "Watching the video", status: "current" },
+          { name: "Checking each item", status: "waiting" },
+        ],
+        items: [item("1", "passed"), item("2", "checking"), item("3", "at_live_check")],
+      }),
+      NOW,
+    );
+    expect(view.checking).toEqual({
+      meta: "Run 3 · started 2 minutes ago · 1 of 2 items done",
+      stages: [
+        { name: "Reading what’s said", status: "done" },
+        { name: "Watching the video", status: "current" },
+        { name: "Checking each item", status: "waiting" },
+      ],
+    });
+  });
+
+  test("no stages panel when the API sends no stages, or outside a check", () => {
+    expect(deliverableView(deliverable({ state: "checking" }), NOW).checking).toBeNull();
+    expect(deliverableView(deliverable(), NOW).checking).toBeNull();
+  });
+});
+
+describe("fully passing moment", () => {
+  test("counts the items that passed the draft check (live-check items come later)", () => {
+    const view = deliverableView(
+      deliverable({
+        state: "fully_passing",
+        items: [item("1", "passed"), item("2", "accepted_by_brand"), item("3", "passed"), item("4", "at_live_check")],
+      }),
+      NOW,
+    );
+    expect(view.passed).toEqual({ count: 3, statuses: ["passed", "accepted_by_brand", "passed"] });
+  });
+
+  test("only when fully passing", () => {
+    expect(deliverableView(deliverable(), NOW).passed).toBeNull();
   });
 });

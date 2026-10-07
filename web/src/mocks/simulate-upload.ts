@@ -28,6 +28,14 @@ export function simulateUpload(deliverableId: string, onChange: (d: Deliverable)
   const before = new Map(d.items.map((i) => [i.id, i.status]));
   d.state = "checking";
   d.checkFailure = undefined;
+  d.run = (d.run ?? 0) + 1;
+  d.checkStartedAt = new Date().toISOString();
+  d.stages = [
+    { name: "Reading what’s said", status: "done" },
+    { name: "Reading on-screen text", status: "done" },
+    { name: "Watching the video", status: "current" },
+    { name: "Checking each item", status: "waiting" },
+  ];
   for (const item of d.items) {
     if (item.status === "at_live_check") continue;
     // DC-BR-04: a new draft cancels open asks and acceptances.
@@ -37,6 +45,8 @@ export function simulateUpload(deliverableId: string, onChange: (d: Deliverable)
 
   setTimeout(() => {
     d.state = "results";
+    d.stages = undefined;
+    d.checkStartedAt = undefined;
     for (const item of d.items) {
       if (item.status !== "checking") continue;
       const was = before.get(item.id)!;

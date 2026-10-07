@@ -22,6 +22,7 @@ const UPLOAD_LABEL: Partial<Record<NonNullable<NextStep["action"]>, string>> = {
  * @param problem - a plain-language problem from the last retry, or null
  * @param secondary - a secondary action shown beside the main one from `md:` up (View brief)
  * @param onUpload - receives the chosen file for an upload action; no upload button without it
+ * @param onShowItem - opens the first item needing the creator; makes the lead a button
  * @see docs/specs/creator-draft-check-frd.md DC-FR-30, DC-FR-09; DESIGN.md "Next-step bar"
  */
 export function NextStepBar({
@@ -31,6 +32,7 @@ export function NextStepBar({
   problem = null,
   secondary,
   onUpload,
+  onShowItem,
 }: {
   step: NextStep;
   onTryAgain: () => void;
@@ -38,6 +40,7 @@ export function NextStepBar({
   problem?: string | null;
   secondary?: React.ReactNode;
   onUpload?: (file: File) => void;
+  onShowItem?: () => void;
 }) {
   const canTryAgain = step.action === "try_again";
   const uploadLabel = step.action && onUpload ? UPLOAD_LABEL[step.action] : undefined;
@@ -47,7 +50,18 @@ export function NextStepBar({
       className="fixed inset-x-3 bottom-3 z-10 flex flex-col gap-3 rounded-lg bg-surface p-3.5 shadow-floating-bar md:static md:z-auto md:bg-latte-wash md:px-5 md:py-4 md:shadow-none"
     >
       <p className="text-[14px] text-ink-2 md:text-body-strong md:font-normal">
-        <b className="text-ink">{step.lead}</b>
+        {onShowItem ? (
+          // Tapping the lead goes to the item it is about.
+          <button
+            type="button"
+            onClick={onShowItem}
+            className="text-left font-bold text-ink underline decoration-latte-line decoration-2 underline-offset-4 hover:decoration-espresso"
+          >
+            {step.lead}
+          </button>
+        ) : (
+          <b className="text-ink">{step.lead}</b>
+        )}
         {step.detail && <span className="hidden md:inline"> {step.detail}</span>}
       </p>
       {problem && (

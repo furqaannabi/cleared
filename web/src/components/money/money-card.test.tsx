@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import { glowTheoryVideo } from "@/mocks/fixtures/deliverables";
 import type { Deliverable } from "@/lib/deliverable/types";
@@ -48,5 +49,25 @@ describe("DC-FR-27 money card", () => {
     renderCard({ state: "released", releaseReason: "cancelled", releasedAt: "2026-10-12T09:00:00Z" });
     expect(screen.getByText("Released 12 Oct · deal cancelled")).toBeVisible();
     expect(screen.queryByText(/Ref /)).toBeNull();
+  });
+
+  test("compact (phones): one row with the amount and stage, expanding to the full card", async () => {
+    render(<MoneyCard deliverable={glowTheoryVideo} timeZone="UTC" compact />);
+    const card = screen.getByRole("region", { name: "Payment for this deliverable" });
+    expect(card).toHaveTextContent("$1,200.00 held in PayPal");
+    expect(card).toHaveTextContent("Ref 7HK21934LM · Held");
+    expect(within(card).queryByRole("list", { name: "Money stage" })).toBeNull();
+
+    const toggle = within(card).getByRole("button", { name: "Payment details" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(within(card).getByRole("list", { name: "Money stage" })).toBeVisible();
+    expect(within(card).getByText("ada.okafor@example.com")).toBeVisible();
+  });
+
+  test("compact released: where the money went, in one row", () => {
+    render(<MoneyCard deliverable={{ ...glowTheoryVideo, state: "released", releaseReason: "deadline", releasedAt: "2026-10-25T09:00:00Z" }} timeZone="UTC" compact />);
+    expect(screen.getByRole("region", { name: "Payment for this deliverable" })).toHaveTextContent("$1,200.00 releasedWent back to Glow Theory");
   });
 });

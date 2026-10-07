@@ -32,7 +32,8 @@ export function ItemCard({
   const meta = time ? `${kindLabel(item.kind)} · ${time}` : kindLabel(item.kind);
   return (
     <li
-      className={`overflow-hidden rounded-md border ${item.status === "fix_needed" ? "border-fail-line bg-fail-tint" : "border-line bg-surface"}`}
+      id={`item-${item.id}`}
+      className={`scroll-mt-20 scroll-mb-40 overflow-hidden rounded-md border ${item.status === "fix_needed" ? "border-fail-line bg-fail-tint" : "border-line bg-surface"}`}
     >
       <button
         type="button"

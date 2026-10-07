@@ -95,6 +95,9 @@ export const deliverableSchema = z.object({
   payoutEmail: z.email(),
   reviewWindowEndsAt: isoTime.optional(),
   checkFailure: checkFailureSchema.optional(),
+  // DC-FR-03, DC-FR-04: when the running check started, and its stages if the backend reports them.
+  checkStartedAt: isoTime.optional(),
+  stages: z.array(z.object({ name: z.string().max(80), status: z.enum(["done", "current", "waiting"]) })).optional(),
   releasedAt: isoTime.optional(),
   releaseReason: z.enum(["deadline", "cancelled"]).optional(),
   cancelledBy: z.enum(["creator", "brand"]).optional(),

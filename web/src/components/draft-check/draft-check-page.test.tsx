@@ -16,7 +16,7 @@ describe("creator draft check page", () => {
   test("DC-FR-32, DC-FR-30: shows the deliverable's title and what happens next", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     expect(await screen.findByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
-    expect(screen.getByText("Fix 2 items, then upload a new draft.")).toBeVisible();
+    expect(screen.getByText("Fix 1 item, and decide on 1 unsure item.")).toBeVisible();
   });
 
   test("DC-FR-38: an unknown or not-yours deliverable shows the same plain page", async () => {
@@ -123,7 +123,7 @@ describe("creator draft check page", () => {
 
   test("DC-FR-45: with mocks off, there is no upload button", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
-    await screen.findByText("Fix 2 items, then upload a new draft.");
+    await screen.findByText("Fix 1 item, and decide on 1 unsure item.");
     expect(screen.queryByLabelText("Upload new draft")).toBeNull();
   });
 
@@ -147,5 +147,52 @@ describe("creator draft check page", () => {
       "href",
       "/deals/deal_glow/deliverables/del_glow_reel",
     );
+  });
+
+  test("DC-FR-28: after a failed check, a banner says the hold is still in place, on every screen", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
+    const banner = await screen.findByRole("region", { name: "Something went wrong on our side checking draft_v3.mp4" });
+    expect(within(banner).getByText("Your $1,200.00 hold is still in place")).toBeVisible();
+    expect(banner).toHaveTextContent("Below are your results from run 2.");
+  });
+
+  test("DC-FR-02: before a draft, the player's space says No draft yet", async () => {
+    render(<DraftCheckPage dealId="deal_kora" deliverableId="del_kora_reel" />);
+    expect(await screen.findByRole("region", { name: "No draft yet" })).toBeVisible();
+  });
+
+  test("DC-BR-10: with real data (mocks off), there is no demo-data note", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+    await screen.findByText("9 items");
+    expect(screen.queryByText(/Demo data/)).toBeNull();
+  });
+
+  test("a fully passing draft shows the passed seal moment", async () => {
+    render(<DraftCheckPage dealId="deal_nb" deliverableId="del_nb_short" />);
+    expect(await screen.findByRole("region", { name: "Every item passed" })).toHaveTextContent(
+      "2 items checked against Northbound Coffee’s brief.",
+    );
+  });
+
+  test("on a phone, the checklist cards put what needs the creator first", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+    const checklist = await screen.findByRole("region", { name: "Checklist" });
+    const names = Array.from(checklist.querySelectorAll("li b")).map((b) => b.textContent);
+    expect(names.slice(0, 2)).toEqual(["Code GLOW20 shown on screen", "Serum shown in use"]);
+    expect(names.at(-1)).toBe("Public on your channel by 24 Oct");
+  });
+
+  test("tapping the next step opens the first item that needs the creator", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+    const checklist = await screen.findByRole("region", { name: "Checklist" });
+    await userEvent.click(within(checklist).getByRole("button", { name: /Says discount code GLOW20/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Fix 1 item, and decide on 1 unsure item." }));
+    expect(within(checklist).getByRole("button", { name: /Code GLOW20 shown on screen/ })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  test("after a failed check, the next step's lead does not jump to an item from the old run", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
+    await screen.findByRole("button", { name: "Try again" });
+    expect(screen.queryByRole("button", { name: /Something went wrong on our side/ })).toBeNull();
   });
 });

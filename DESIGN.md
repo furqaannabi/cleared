@@ -306,7 +306,7 @@ Cleared has to win two people at once. Creators should feel welcomed: the screen
 
 - **Desktop (1024px and up):** 248px espresso rail, content max 1240px with 36px side padding. Header (breadcrumb, title, meta, deal steps) across the full width. Then two columns (1.35fr / min 340px): left holds the draft player and the next-step bar; right holds the money card and the selected-item evidence panel. The checklist runs full width below.
 - **Tablet (768–1023px):** the rail becomes an espresso top bar; one column in this order: money card, player, next-step bar, evidence panel, checklist. The grid drops its Kind and Brief columns under 1000px so nothing scrolls sideways.
-- **Phone (under 768px):** 16px gutter. Deal steps become a compact dot track ("Step 3 of 7"). The evidence panel folds into expandable item cards. The next-step bar is fixed to the bottom with a full-width primary action (48px tall).
+- **Phone (under 768px):** 16px gutter. What needs the creator comes first: under the header, the money is a compact row (it expands to the full card), then the player, then the checklist with cards in needs-first order (Fix needed, Unsure, Waiting, then settled items). Deal steps become a compact dot track ("Step 3 of 7"). The evidence panel folds into expandable item cards. The next-step bar is fixed to the bottom with a full-width primary action (48px tall); its lead is a link to the first item that needs the creator.
 - **9:16 drafts (Shorts, Reels):** chosen by the room the page has, not the window, because the rail takes 248px on desktop. With 1060px of content width, three columns: the player (320px), the evidence panel, the money card (300–340px), with the next-step bar under the last two. With 640px, two columns: the player (260–320px) on the left, with the money card, evidence panel and next-step bar stacked on the right. On phones a 9:16 player is at most 60% of the viewport height, centred.
 - Rhythm: 20px between major blocks, 24–34px above section headings, 8–14px inside groups.
 
@@ -358,6 +358,12 @@ Espresso rail with a marigold-seal logo, rail section labels, deal rows with ini
 ### Money card (signature)
 Marigold card with a large soft white circle in the top-right corner: an espresso-ink lock seal, "Held in PayPal for this video", the amount, PayPal reference and date, a four-stage track (Held → Confirmed → Captured → Paid) where the current stage is an espresso-ink pill with marigold text, and a "Pays out to" footer. It is the one place money appears, and it sits next to the evidence.
 - **Released:** when a hold goes back to the brand, the card drops to `latte` with a `latte-line` border and no lift (the Edge Or Lift Rule), the seal becomes a `latte-line` seal with an espresso return arrow, the label reads "Released to {brand}", the reference line gives the date and reason, and the four-stage track becomes a single "Released" stage. Marigold leaves the card because the money is no longer moving towards the creator.
+
+### Money row (phones)
+The money card collapsed to one row: a 32px seal (espresso-ink with a marigold lock; latte with a return arrow once released), "$1,200.00 held in PayPal" over "Ref … · Held", and a "Details" toggle that expands the full card beneath. Marigold with the money-card shadow while held; latte with a latte-line border once released.
+
+### Passed banner (signature moment)
+When every draft-check item has passed, a white banner with a pass-wash border sits between the header and the content: a 56px pass seal that stamps in once (scale and a small turn, about 400ms, ease-out-expo), "Every item passed", "N items checked against {brand}'s brief. Nothing left to fix.", and a row of 20px item seals that line up in quick sequence. Still under reduced motion. It is the one celebratory moment in the app and it stays calm: no confetti, no marigold.
 
 ### Seal (signature)
 A 14-scallop SVG badge with a stroke icon inside. Green wash + check = passed, red wash + cross = fix needed, amber wash + question = unsure, grey + clock = waiting, espresso-ink + marigold lock = money held, marigold + dot = current step, grey + spinning arc = checking, amber + clock = waiting for the brand, grey + espresso check-in-circle = accepted by the brand, latte + espresso return arrow = money released. Used on timeline markers, grid rows, item cards, deal steps and the logo.

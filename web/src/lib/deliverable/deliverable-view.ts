@@ -2,7 +2,7 @@ import { describeStatus, tabsFor, type ChecklistTab, type ItemStatus } from "@/l
 import { deadlineView, type DeadlineView } from "./deadline";
 import { dealSteps, type DealStepsView } from "./deal-steps";
 import { formatAgo, formatDay, formatDuration } from "./format";
-import { nextStep, type NextStep } from "./next-step";
+import { checkFailedBanner, nextStep, type CheckFailedBanner, type NextStep } from "./next-step";
 import type { ChecklistItem, Deliverable } from "./types";
 
 export interface TabView {
@@ -29,6 +29,12 @@ export interface DeliverableView {
   meta: string[];
   /** DC-FR-34: the deal steps. */
   steps: DealStepsView;
+  /** DC-FR-08, DC-FR-09: the check-failed banner, or null. */
+  checkFailed: CheckFailedBanner | null;
+  /** Fully passing: the draft-check items that passed (or were accepted), for the seal moment; else null. */
+  passed: { count: number; statuses: ItemStatus[] } | null;
+  /** DC-FR-04: the running check's stages, or null when not checking or the API sends none. */
+  checking: { meta: string; stages: NonNullable<Deliverable["stages"]> } | null;
 }
 
 export interface ItemView extends ChecklistItem {
@@ -122,6 +128,18 @@ function headerMeta(d: Deliverable, deadline: DeadlineView, timeZone?: string): 
   ];
 }
 
+function checkingView(d: Deliverable, now: Date): DeliverableView["checking"] {
+  if (d.state !== "checking" || !d.stages?.length) return null;
+  const draftItems = d.items.filter((i) => i.status !== "at_live_check");
+  const done = draftItems.filter((i) => i.status !== "checking").length;
+  const parts = [
+    ...(d.run ? [`Run ${d.run}`] : []),
+    ...(d.checkStartedAt ? [`started ${formatAgo(d.checkStartedAt, now)}`] : []),
+    `${done} of ${draftItems.length} items done`,
+  ];
+  return { meta: parts.join(" · "), stages: d.stages };
+}
+
 // DC-FR-11: the deadline warning leads the next-step bar.
 function leadWith(warning: string | null, step: NextStep): NextStep {
   return warning ? { ...step, lead: `${warning} ${step.lead}` } : step;
@@ -156,5 +174,14 @@ export function deliverableView(d: Deliverable, now: Date, options: { timeZone?:
     deadline: deadlineView(d, options.timeZone),
     meta: headerMeta(d, deadlineView(d, options.timeZone), options.timeZone),
     steps: dealSteps(d),
+    checkFailed: checkFailedBanner(d),
+    checking: checkingView(d, now),
+    passed:
+      d.state === "fully_passing"
+        ? (() => {
+            const statuses = d.items.filter((i) => i.status !== "at_live_check").map((i) => i.status);
+            return { count: statuses.length, statuses };
+          })()
+        : null,
   };
 }

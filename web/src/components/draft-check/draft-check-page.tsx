@@ -5,7 +5,7 @@ import { ChecklistFilter } from "@/components/checklist/checklist-filter";
 import { ChecklistItems } from "@/components/checklist/checklist-items";
 import { hasItemActions, ItemActions } from "@/components/checklist/item-actions";
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
-import { tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
+import { byNeed, tabsFor, type ChecklistTab } from "@/lib/checklist/item-status";
 import { DealHeader } from "@/components/deal/deal-header";
 import { DeliverableSwitcher } from "@/components/deal/deliverable-switcher";
 import { useOptionalDeals } from "@/components/shell/use-deals";
@@ -13,13 +13,17 @@ import { EvidencePanel } from "@/components/evidence/evidence-panel";
 import { MoneyCard } from "@/components/money/money-card";
 import { BriefSheet } from "@/components/brief/brief-sheet";
 import { NextStepBar } from "@/components/next-step/next-step-bar";
+import { DraftPlaceholder } from "@/components/player/draft-placeholder";
 import { DraftPlayer } from "@/components/player/draft-player";
 import { api } from "@/lib/api";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { MOCKING_ENABLED } from "@/lib/mocking/mocking-enabled";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import type { Deliverable } from "@/lib/deliverable/types";
+import { CheckFailedBanner } from "./check-failed-banner";
+import { CheckStages } from "./check-stages";
 import { DraftCheckLayout } from "./draft-check-layout";
+import { PassedBanner } from "./passed-banner";
 import { LoadProblem } from "./load-problem";
 import { PageSkeleton } from "./page-skeleton";
 import { useDeliverable } from "./use-deliverable";
@@ -105,6 +109,38 @@ function Loaded({
       problem={actions.problemFor(item.id)}
     />
   );
+  // The next step's lead opens the first item that needs the creator.
+  // Only when the results on screen are current (not after a failed check or release).
+  const needsYou =
+    deliverable.state === "results"
+      ? byNeed(view.items).find((i) => ["fix_needed", "unsure", "waiting_for_brand"].includes(i.status))
+      : undefined;
+  const showItem = needsYou
+    ? () => {
+        setFilter("all");
+        setSelectedId(needsYou.id);
+        requestAnimationFrame(() => {
+          const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+          document.getElementById(`item-${needsYou.id}`)?.scrollIntoView?.({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+        });
+      }
+    : undefined;
+
+  // DC-FR-02: before a draft, the player's space says so.
+  const playerSlot =
+    deliverable.state === "no_draft" ? (
+      <DraftPlaceholder platform={deliverable.platform} />
+    ) : deliverable.draft ? (
+      <DraftPlayer
+        draft={deliverable.draft}
+        platform={deliverable.platform}
+        items={view.items}
+        brandName={deliverable.brandName}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        refreshUrl={refreshDraftUrl}
+      />
+    ) : null;
   return (
     <>
       <DealHeader
@@ -114,22 +150,12 @@ function Loaded({
         deliverableName={view.deliverableName}
         switcher={deal && <DeliverableSwitcher dealId={dealId} deliverables={deal.deliverables} currentId={deliverable.id} />}
       />
+      {view.checkFailed && <CheckFailedBanner banner={view.checkFailed} />}
+      {view.passed && <PassedBanner passed={view.passed} brandName={deliverable.brandName} />}
       <DraftCheckLayout
         vertical={deliverable.platform !== "youtube_video"}
-        money={<MoneyCard deliverable={deliverable} />}
-        player={
-          deliverable.draft && (
-            <DraftPlayer
-              draft={deliverable.draft}
-              platform={deliverable.platform}
-              items={view.items}
-              brandName={deliverable.brandName}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              refreshUrl={refreshDraftUrl}
-            />
-          )
-        }
+        money={<MoneyCard deliverable={deliverable} compact={!wide} />}
+        player={playerSlot}
         next={
           <NextStepBar
             step={view.nextStep}
@@ -138,12 +164,18 @@ function Loaded({
             problem={retryProblem}
             secondary={wide ? briefSheet : undefined}
             onUpload={simulateUpload}
+            onShowItem={showItem}
           />
         }
-        // DC-FR-12: tablet and up only; on phones the expanded card shows the evidence.
         evidence={
-          wide && (
-            <EvidencePanel item={selected} brandName={deliverable.brandName} actions={selected ? renderActions(selected) : null} />
+          // DC-FR-04: while checking, the stages take the evidence panel's place, at every width.
+          view.checking ? (
+            <CheckStages checking={view.checking} />
+          ) : (
+            // DC-FR-12: tablet and up only; on phones the expanded card shows the evidence.
+            wide && (
+              <EvidencePanel item={selected} brandName={deliverable.brandName} actions={selected ? renderActions(selected) : null} />
+            )
           )
         }
       />
@@ -169,6 +201,12 @@ function Loaded({
           )}
         </div>
       </section>
+      {/* DC-BR-10: mock data is labelled as synthetic on screen. Never shown with real data. */}
+      {MOCKING_ENABLED && (
+        <p className="mt-7 text-chip text-ink-4">
+          Demo data. Glow Theory, Northbound Coffee, Kora Audio and Ada Okafor are made up, and no money moves.
+        </p>
+      )}
     </>
   );
 }

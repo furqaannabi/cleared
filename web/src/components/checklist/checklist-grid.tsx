@@ -13,7 +13,7 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ItemStatus } from "@/lib/checklist/item-status";
+import { NEED_ORDER, type ItemStatus } from "@/lib/checklist/item-status";
 import { itemTime, kindLabel } from "@/lib/checklist/item-labels";
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { StatusChip } from "./status-chip";
@@ -54,17 +54,6 @@ const theme = themeQuartz.withParams({
   headerColumnBorder: false,
 });
 
-/** Sorting by Result puts what needs the creator first, then what waits, then what is settled. */
-const RESULT_ORDER: ItemStatus[] = [
-  "fix_needed",
-  "unsure",
-  "waiting_for_brand",
-  "checking",
-  "not_checked",
-  "accepted_by_brand",
-  "passed",
-  "at_live_check",
-];
 
 /** Grid width below which Kind and Brief drop out (DC-FR-40). */
 const WIDE_MIN_PX = 1000;
@@ -128,7 +117,7 @@ export default function ChecklistGrid({
   const gridRef = useRef<AgGridReact<ItemView>>(null);
 
   const columnDefs = useMemo<ColDef<ItemView>[]>(() => {
-    const order = (s: ItemStatus) => RESULT_ORDER.indexOf(s);
+    const order = (s: ItemStatus) => NEED_ORDER.indexOf(s);
     const cols: (ColDef<ItemView> & { wideOnly?: boolean })[] = [
       { colId: "seal", headerName: "", width: 64, sortable: false, cellRenderer: SealCell },
       { colId: "item", headerName: "Item", field: "name", flex: 3, minWidth: 280, cellRenderer: ItemCell },

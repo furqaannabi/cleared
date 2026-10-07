@@ -39,3 +39,18 @@ describe("DC-FR-13 item status map", () => {
     expect(tabsFor("not_checked")).toEqual(["all"]);
   });
 });
+
+describe("needs-first order", () => {
+  test("puts what needs the creator first, then what waits, then what is settled, keeping brief order within each", async () => {
+    const { byNeed } = await import("./item-status");
+    const items = [
+      { id: "a", status: "passed" as const },
+      { id: "b", status: "unsure" as const },
+      { id: "c", status: "at_live_check" as const },
+      { id: "d", status: "fix_needed" as const },
+      { id: "e", status: "waiting_for_brand" as const },
+      { id: "f", status: "passed" as const },
+    ];
+    expect(byNeed(items).map((i) => i.id)).toEqual(["d", "b", "e", "a", "f", "c"]);
+  });
+});
