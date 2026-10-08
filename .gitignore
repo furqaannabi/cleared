@@ -20,3 +20,6 @@ coverage/
 
 # Desktop app output sync
 Claude outputs/
+
+# Mockup screenshots (design/): kept locally, never committed
+design/**/*.png

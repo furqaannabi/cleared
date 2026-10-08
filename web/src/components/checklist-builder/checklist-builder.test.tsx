@@ -142,3 +142,22 @@ describe("BC-FR-16, BC-FR-17 checklist ready", () => {
     expect(screen.getByRole("link", { name: "Set amounts and invite Glow Theory" })).toHaveAttribute("href", expect.stringMatching(/^\/deals\/[^/]+\/invite$/));
   });
 });
+
+describe("BC-FR-22, BC-FR-23 going back from the checklist page", () => {
+  test("before the brief is sent, Posts links to the posts page", async () => {
+    const r = await api.createDeal({ brandName: "Glow Theory", deliverables: [{ platform: "youtube_video" }] });
+    if (!r.ok) throw new Error(r.error);
+    render(<ChecklistPage dealId={r.data.id} />);
+    const steps = await screen.findByRole("list", { name: "New deal steps" });
+    expect(within(steps).getByRole("link", { name: /Posts/ })).toHaveAttribute("href", `/deals/${r.data.id}/posts`);
+  });
+
+  test("once the brief is read, Posts is set and says so; Brief links to the brief", async () => {
+    await openChecklist();
+    const steps = screen.getByRole("list", { name: "New deal steps" });
+    expect(within(steps).queryByRole("link", { name: /Posts/ })).toBeNull();
+    expect(within(steps).getByRole("link", { name: /Brief/ })).toHaveAttribute("href", expect.stringMatching(/\/checklist#brief$/));
+    expect(screen.getByText("Posts are set once the brief is read.")).toBeVisible();
+    expect(document.getElementById("brief")).not.toBeNull();
+  });
+});

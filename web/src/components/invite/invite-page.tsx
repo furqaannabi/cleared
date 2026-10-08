@@ -5,6 +5,7 @@ import { LoadProblem } from "@/components/draft-check/load-problem";
 import { PageSkeleton } from "@/components/draft-check/page-skeleton";
 import { DealStepHeader } from "@/components/new-deal/deal-step-header";
 import { useRefreshDeals } from "@/components/shell/use-deals";
+import { stepLinks } from "@/lib/checklist-builder/step-links";
 import { inviteView } from "@/lib/invite/invite-view";
 import { BeforeYouSend } from "./before-you-send";
 import { CreateLinkBar } from "./create-link-bar";
@@ -44,7 +45,13 @@ export function InvitePage({ dealId }: { dealId: string }) {
       {!view && !error && <PageSkeleton />}
       {invite && profile && view && (
         <>
-          <DealStepHeader brand={invite.brandName} title="Invite" stage="invite" />
+          <DealStepHeader
+            brand={invite.brandName}
+            dealId={invite.dealId}
+            title="Invite"
+            stage="invite"
+            links={stepLinks({ id: invite.dealId, step: invite.step, reading: "done" })}
+          />
           <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
             <TermsSheet invite={invite} profile={profile} view={view} save={save} problems={problems} onInvite={takeInvite} onProfile={setProfile} />
             <div className={`grid gap-4 lg:sticky lg:top-6 ${invite.link ? "order-first lg:order-none" : ""}`}>

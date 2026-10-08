@@ -32,3 +32,19 @@ test("BC: new deal → brief → reading → answer the questions → checklist 
   await page.getByRole("button", { name: "Checklist ready" }).click();
   await expect(page.getByText("Your checklist is ready. Next you’ll set the amount and deadline for each post and invite Glow Theory.")).toBeVisible();
 });
+
+test("BC-FR-22, BC-FR-23: back to Posts from the brief, change them, and on to the checklist", async ({ page }) => {
+  await page.goto("/deals/new");
+  await page.getByLabel("Brand", { exact: true }).fill("Glow Theory");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page).toHaveURL(/\/checklist$/);
+  await page.getByRole("list", { name: "New deal steps" }).getByRole("link", { name: /Posts/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Glow Theory · Posts" })).toBeVisible();
+  await page.getByRole("button", { name: "Add another post" }).click();
+  await page.getByLabel("Post 2", { exact: true }).selectOption("instagram_reel");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page).toHaveURL(/\/checklist$/);
+  await expect(page.getByLabel("Paste the brief Glow Theory sent")).toBeVisible();
+  await page.getByRole("link", { name: "Deals", exact: true }).click();
+  await expect(page).toHaveURL(/\/deals\/deal_glow\//);
+});

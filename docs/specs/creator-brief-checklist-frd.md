@@ -1,6 +1,6 @@
 # Creator brief → checklist: FRD
 
-**Status:** Signed by William (revision 1.1).
+**Status:** Signed by William (revision 1.2).
 
 **Surface:** Creator app. Step 1 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): the creator starts a deal, names its posts, gives the brand's brief, and gets a checklist per post that cites the brief, with the AI's questions answered. Step 2 (amounts, deadlines, PayPal email, connecting accounts, inviting the brand) is the next surface.
 
@@ -47,6 +47,8 @@ A short "New deal" flow. The creator names the brand and the posts (deliverables
 | BC-FR-01 | **New deal.** A "New deal" button at the top of the rail (desktop) and in the Deals sheet (phones) opens `/deals/new`. |
 | BC-FR-02 | **The deal and its posts.** `/deals/new` asks for the brand's name and one or more deliverables, each with a platform: YouTube video, YouTube Short or Instagram Reel (PRODUCT.md "Platforms"). Up to 10 deliverables. Each can be removed until the deal is created. |
 | BC-FR-21 | **The new deal page.** `/deals/new` has the crumb "Deals › New deal" and the four steps (Posts, Brief, Checklist, Invite) with Posts current, like the pages after it, and the form sits in a card. From `lg:` up, beside the form: a faded preview of the terms sheet the brand will see (design/invite), headed "Taking shape: the terms {brand} will see", filling in as the creator types (the brand's name, then a line per post, and "Amounts and deadlines come at the Invite step."), and under it "How setting up a deal works", the four steps in a line each, ending "Nothing is held or paid until the brand approves." On phones only the steps show, under the form. Design C in design/new-deal/option-c.html. |
+| BC-FR-22 | **The crumb and steps go back.** On every set-up page (new deal, brief, checklist, invite) the crumb's "Deals" links to `/deals` and the brand's name to `/deals/{id}`. In the step row, every step already reached links to its page, except the current one (marked as current, not a link): Posts to the posts page while posts can still change (BC-FR-23), Brief and Checklist to `/deals/{id}/checklist` (Brief to the brief on it), Invite to `/deals/{id}/invite` once the deal is at the invite step or later (IN-FR-02). A step not yet reached stays grey and unlinked. Following a step never changes the deal: from the invite page, Checklist shows the checklist read-only, and only "Edit checklist" (IN-FR-03) reopens it. |
+| BC-FR-23 | **Changing the posts.** Until the brief is sent (and again if it couldn't be read), "Posts" opens `/deals/{id}/posts`: the new deal form filled with the deal's brand and posts, titled "{brand} · Posts", with "Save" in place of "Continue". Saving changes the deal through the API and returns to its checklist page; a failed save says so with Try again. Once the brief is sent, the posts are set (every item belongs to a post): "Posts" shows as done, not a link, and the checklist page says once, plainly, "Posts are set once the brief is read." |
 | BC-FR-03 | **Saved at once.** "Continue" creates the deal through the API and opens `/deals/{id}/checklist`. From then on the deal is in the rail as "{brand} · Checklist", and `/deals/{id}` opens the checklist page while the deal is at this step. |
 
 ### The brief
@@ -142,6 +144,7 @@ interface Question {
 | BC-FR-11 | The AI assigns each item to deliverables by platform mentions; general lines go to all |
 | BC-FR-13 | Questions with 2 or 3 suggested answers; `PUT /deals/{id}/questions/{qid}` with the answer, returning the new or updated item |
 | BC-FR-14, BC-FR-15 | Item edit, remove, move/copy and add endpoints |
+| BC-FR-23 | `PATCH /deals/{id}` with the brand name and deliverables, allowed only before the brief is sent or after it failed to read; refused once reading starts |
 | BC-FR-16 | `POST /deals/{id}/checklist/ready`; the deal's `step` becomes `invite` |
 | DC-FR-37 | Each deal summary carries its `step`, so `/deals/{id}` can open the right page |
 | BC-BR-04 | Model output schema-validated; malformed output becomes a question |
@@ -173,3 +176,5 @@ interface Question {
 | 1.0 | Signed by William | none |
 | 1.1 | BC-FR-21: the new deal page gets the crumb and step header of the pages after it, the form in a card, and from `lg:` a live preview of the terms sheet with the four steps beneath (design C, William's mix of A and B). BC-FR-17 and the routes now point on to the invite step, built under the invite FRD | none |
 | 1.1 | Signed by William | none |
+| 1.2 | BC-FR-22: the crumb and the step row link back to steps already reached, on every set-up page. BC-FR-23: the posts can be changed until the brief is sent (William chose this over a read-only summary or no link) | none |
+| 1.2 | Signed by William | none |

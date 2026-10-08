@@ -5,6 +5,7 @@ import { PageSkeleton } from "@/components/draft-check/page-skeleton";
 import { BriefForm } from "@/components/brief/brief-form";
 import { DealStepHeader } from "@/components/new-deal/deal-step-header";
 import { useRefreshDeals } from "@/components/shell/use-deals";
+import { stepLinks } from "@/lib/checklist-builder/step-links";
 import type { DealDraft } from "@/lib/checklist-builder/types";
 import { ReadingView } from "@/components/brief/reading-view";
 import { ChecklistBuilder } from "./checklist-builder";
@@ -33,10 +34,13 @@ export function ChecklistPage({ dealId }: { dealId: string }) {
         <>
           <DealStepHeader
             brand={draft.brandName}
+            dealId={draft.id}
+            links={stepLinks(draft)}
             title={draft.reading === "done" ? "Checklist" : "Brief"}
             stage={draft.ready ? "invite" : draft.reading === "done" ? "checklist" : "brief"}
           />
-          <div className="mt-6">
+          {draft.reading !== "idle" && draft.reading !== "failed" && <p className="mt-2 text-meta text-ink-3">Posts are set once the brief is read.</p>}
+          <div id="brief" className="mt-6 scroll-mt-6">
             {draft.reading === "idle" && <BriefForm draft={draft} onSent={replace} />}
             {draft.reading === "reading" && <ReadingView draft={draft} />}
             {draft.reading === "failed" && (

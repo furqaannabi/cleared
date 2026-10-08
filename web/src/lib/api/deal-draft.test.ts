@@ -123,3 +123,20 @@ describe("BC-FR-14 to BC-FR-16 changing items and marking ready", () => {
     expect(deals.ok && deals.data.find((x) => x.id === d.id)).toMatchObject({ step: "invite", status: "Invite" });
   });
 });
+
+describe("BC-FR-23 changing the posts", () => {
+  test("the brand and posts can change before the brief is sent; existing posts keep their ids", async () => {
+    const d = await newDeal();
+    const r = await api.updateDeal(d.id, { brandName: "Glow Theory Ltd", deliverables: [{ id: d.deliverables[1].id, platform: "instagram_reel" }, { platform: "youtube_short" }] });
+    expect(r.ok && r.data.brandName).toBe("Glow Theory Ltd");
+    expect(r.ok && r.data.deliverables.map((x) => x.platform)).toEqual(["instagram_reel", "youtube_short"]);
+    expect(r.ok && r.data.deliverables[0].id).toBe(d.deliverables[1].id);
+  });
+
+  test("refused once the brief is sent", async () => {
+    setReadingSpeed(60_000);
+    const d = await newDeal();
+    await api.submitBrief(d.id, BRIEF);
+    expect(await api.updateDeal(d.id, { brandName: "X", deliverables: [{ platform: "youtube_video" }] })).toEqual({ ok: false, error: "rejected" });
+  });
+});

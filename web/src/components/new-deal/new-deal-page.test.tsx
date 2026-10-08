@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 describe("BC-FR-21 the new deal page", () => {
   test("has the crumb and the four steps with Posts current", () => {
     render(<NewDealPage />);
-    expect(screen.getByText("Deals › New deal")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Deals" }).closest("p")).toHaveTextContent("Deals › New deal");
     expect(screen.getByRole("heading", { level: 1, name: "New deal" })).toBeVisible();
     const steps = screen.getByRole("list", { name: "New deal steps" });
     expect(within(steps).getByText("Posts").closest("li")).toHaveAttribute("aria-current", "step");

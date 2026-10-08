@@ -130,6 +130,20 @@ export const dealDraftHandlers: RequestHandler[] = [
     return d ? json(d) : notFound();
   }),
 
+  // BC-FR-23: only before the brief is sent, or after it couldn't be read.
+  http.patch(`${apiBaseUrl}/deals/:dealId`, async ({ params, request }) => {
+    const d = drafts.get(String(params.dealId));
+    if (!d) return notFound();
+    const body = (await request.json()) as { brandName?: string; deliverables?: { id?: string; platform: Draft["deliverables"][number]["platform"] }[] };
+    const brandName = body.brandName?.trim();
+    const known = new Set(d.deliverables.map((x) => x.id));
+    const bad = !brandName || !body.deliverables?.length || body.deliverables.length > 10 || body.deliverables.some((x) => x.id && !known.has(x.id));
+    if ((d.reading !== "idle" && d.reading !== "failed") || bad) return refused();
+    d.brandName = brandName!;
+    d.deliverables = body.deliverables!.map((x) => ({ id: x.id ?? nextId("del"), platform: x.platform }));
+    return json(d);
+  }),
+
   // BC-FR-04, BC-FR-05, BC-FR-07
   http.post(`${apiBaseUrl}/deals/:dealId/brief`, async ({ params, request }) => {
     const d = drafts.get(String(params.dealId));

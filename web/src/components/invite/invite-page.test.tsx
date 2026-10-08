@@ -297,3 +297,14 @@ describe("IN-FR-03 the checklist from the invite page", () => {
     expect(r.ok && r.data.step).toBe("checklist");
   });
 });
+
+describe("BC-FR-22 going back from the invite page", () => {
+  test("Brief and Checklist link back; Posts is set", async () => {
+    const deal = await openInvite();
+    const steps = screen.getByRole("list", { name: "New deal steps" });
+    expect(within(steps).getByRole("link", { name: /Checklist/ })).toHaveAttribute("href", `/deals/${deal.id}/checklist`);
+    expect(within(steps).getByRole("link", { name: /Brief/ })).toHaveAttribute("href", `/deals/${deal.id}/checklist#brief`);
+    expect(within(steps).queryByRole("link", { name: /Posts/ })).toBeNull();
+    expect(screen.getByRole("link", { name: "Glow Theory" })).toHaveAttribute("href", `/deals/${deal.id}`);
+  });
+});

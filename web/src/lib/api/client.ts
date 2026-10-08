@@ -81,6 +81,9 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** BC-FR-03: start a deal with its brand and deliverables. */
     createDeal: (input: { brandName: string; deliverables: { platform: DraftPlatform }[] }) =>
       request("POST", "/deals", dealDraftSchema, input),
+    /** BC-FR-23: change the brand and posts before the brief is sent; a post with an id keeps it. */
+    updateDeal: (dealId: string, input: { brandName: string; deliverables: { id?: string; platform: DraftPlatform }[] }) =>
+      request("PATCH", dealPath(dealId), dealDraftSchema, input),
     /** BC-FR-07: the deal draft, with the reading's progress, items and questions. */
     getDealDraft: (dealId: string) => request("GET", dealPath(dealId), dealDraftSchema),
     /** BC-FR-04: send the pasted brief; reading starts. */

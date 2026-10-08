@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
+import { useRefreshDeals } from "@/components/shell/use-deals";
 import { Select } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { PLATFORM_LABEL } from "@/lib/checklist-builder/checklist-view";
@@ -14,15 +15,24 @@ const MAX_POSTS = 10;
 /**
  * Stage 1 of a new deal: the brand's name and its posts (deliverables), each
  * with a platform. "Continue" creates the deal and opens its checklist page.
+ * Given an existing deal, the form is filled with it and "Save" changes it
+ * instead (BC-FR-23).
  *
  * @param onChange - told the brand and platforms as they change, for the preview (BC-FR-21)
- * @see docs/specs/creator-brief-checklist-frd.md BC-FR-02, BC-FR-03
+ * @param existing - a deal whose posts can still change, to edit rather than create
+ * @see docs/specs/creator-brief-checklist-frd.md BC-FR-02, BC-FR-03, BC-FR-23
  */
-export function NewDealForm({ onChange }: { onChange?: (deal: { brand: string; platforms: Platform[] }) => void } = {}) {
+export function NewDealForm({
+  onChange,
+  existing,
+}: { onChange?: (deal: { brand: string; platforms: Platform[] }) => void; existing?: DealDraft } = {}) {
   const router = useRouter();
+  const refreshDeals = useRefreshDeals();
   const brandId = useId();
-  const [brand, setBrandState] = useState("");
-  const [posts, setPostsState] = useState<{ key: number; platform: Platform }[]>([{ key: 0, platform: "youtube_video" }]);
+  const [brand, setBrandState] = useState(existing?.brandName ?? "");
+  const [posts, setPostsState] = useState<{ key: number; platform: Platform; id?: string }[]>(
+    existing ? existing.deliverables.map((d, i) => ({ key: i, platform: d.platform, id: d.id })) : [{ key: 0, platform: "youtube_video" }],
+  );
   const setBrand = (next: string) => {
     setBrandState(next);
     onChange?.({ brand: next, platforms: posts.map((p) => p.platform) });
@@ -43,11 +53,16 @@ export function NewDealForm({ onChange }: { onChange?: (deal: { brand: string; p
     }
     setSending(true);
     setProblem(null);
-    const r = await api.createDeal({ brandName: brand.trim(), deliverables: posts.map((p) => ({ platform: p.platform })) });
-    if (r.ok) router.push(`/deals/${encodeURIComponent(r.data.id)}/checklist`);
+    const r = existing
+      ? await api.updateDeal(existing.id, { brandName: brand.trim(), deliverables: posts.map((p) => ({ id: p.id, platform: p.platform })) })
+      : await api.createDeal({ brandName: brand.trim(), deliverables: posts.map((p) => ({ platform: p.platform })) });
+    if (r.ok) {
+      refreshDeals();
+      router.push(`/deals/${encodeURIComponent(r.data.id)}/checklist`);
+    }
     else {
       setSending(false);
-      setProblem("We couldn’t create the deal. Try again.");
+      setProblem(existing ? "We couldn’t save the posts. Try again." : "We couldn’t create the deal. Try again.");
     }
   }
 
@@ -140,7 +155,7 @@ export function NewDealForm({ onChange }: { onChange?: (deal: { brand: string; p
         disabled={sending}
         className="inline-flex min-h-12 items-center justify-center justify-self-start rounded-pill bg-espresso px-6 text-body-strong font-bold text-surface hover:bg-espresso-hover disabled:opacity-70"
       >
-        Continue
+        {existing ? "Save" : "Continue"}
       </button>
     </form>
   );
