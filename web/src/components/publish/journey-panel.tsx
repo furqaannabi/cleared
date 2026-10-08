@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { LockIcon } from "@/components/money/money-icons";
 import { Seal } from "@/components/ui/seal";
 import type { Deliverable } from "@/lib/deliverable/types";
 import type { Journey, JourneyStep } from "@/lib/publish/journey";
@@ -12,7 +13,8 @@ const OUTLINE = "inline-flex min-h-11 items-center justify-center rounded-pill b
 const FIELD = "block w-full rounded-sm border border-latte-line bg-surface px-3 py-2.5 text-[16px] focus-visible:border-espresso";
 
 /**
- * "From approved to paid" (design B): the amount, then each step from the
+ * "From approved to paid" (design B): the money header (the money card
+ * carried through to Paid), then each step from the
  * approved draft to the payout, done, current or still to come, the current
  * one with its words, countdown and action. Every figure is the API's.
  *
@@ -23,12 +25,13 @@ const FIELD = "block w-full rounded-sm border border-latte-line bg-surface px-3 
  */
 export function JourneyPanel({ d, view, actions }: { d: Deliverable; view: Journey; actions: JourneyActions }) {
   return (
-    <section id="journey" aria-label="From approved to paid" className="grid scroll-mt-4 rounded-[20px] border border-line bg-surface p-[18px]">
-      <div className="flex items-baseline justify-between gap-3 border-b border-line pb-3">
-        <span className="text-[13.5px] text-ink-2">{view.heading}</span>
-        <b className="font-head text-[30px] font-extrabold tracking-[-0.01em] tabular-nums">{view.amount}</b>
-      </div>
-      <ol className="grid">
+    <section
+      id="journey"
+      aria-label="From approved to paid"
+      className={`grid scroll-mt-4 overflow-hidden rounded-[20px] border border-line bg-surface ${view.tone === "money" ? "shadow-money-card" : ""}`}
+    >
+      <MoneyHeader view={view} />
+      <ol className="grid px-[18px] pt-1.5 pb-3.5">
         {view.steps.map((step, i) => (
           <Step key={step.key} step={step} last={i === view.steps.length - 1}>
             {(step.state === "now" || step.state === "problem") && <Act key={d.payout?.email ?? d.payoutEmail} d={d} view={view} actions={actions} />}
@@ -42,6 +45,34 @@ export function JourneyPanel({ d, view, actions }: { d: Deliverable; view: Journ
         })()}
       </p>
     </section>
+  );
+}
+
+const HEADER: Record<Journey["tone"], { box: string; ink: string; circle: string; seal: string; icon: string }> = {
+  money: { box: "bg-marigold text-marigold-ink", ink: "text-marigold-ink-2", circle: "bg-white/25", seal: "fill-marigold-ink", icon: "text-marigold" },
+  cleared: { box: "border-b border-line bg-surface text-ink", ink: "text-ink-3", circle: "bg-latte", seal: "fill-marigold", icon: "text-espresso" },
+  stopped: { box: "border-b border-latte-line bg-latte text-ink", ink: "text-ink-3", circle: "bg-white/40", seal: "fill-latte-line", icon: "text-espresso" },
+};
+
+// DESIGN.md "Money card", carried through to Paid: marigold while the money moves towards the creator, white with the Cleared seal once paid.
+function MoneyHeader({ view }: { view: Journey }) {
+  const t = HEADER[view.tone];
+  return (
+    <div className={`relative isolate overflow-hidden pt-[18px] pr-[84px] pb-4 pl-[18px] ${t.box}`}>
+      <span aria-hidden="true" className={`absolute -top-[46px] -right-[46px] -z-10 size-[150px] rounded-full ${t.circle}`} />
+      <Seal fillClassName={t.seal} className="absolute top-4 right-[18px] size-[44px]">
+        {view.tone === "cleared" ? (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`size-full ${t.icon}`}>
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        ) : (
+          <LockIcon className={`size-full ${t.icon}`} />
+        )}
+      </Seal>
+      <p className={`text-chip font-bold ${t.ink}`}>{view.heading}</p>
+      <p className="mt-1 font-head text-amount-phone font-extrabold tracking-[-0.01em] tabular-nums">{view.amount}</p>
+      <p className={`mt-1 text-chip font-semibold ${t.ink}`}>{view.reference}</p>
+    </div>
   );
 }
 

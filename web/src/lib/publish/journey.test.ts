@@ -23,7 +23,7 @@ const now = (o: Partial<Deliverable>) => j(o).steps.find((s) => s.state === "now
 describe("PP-FR-01 to PP-FR-05 the go-ahead", () => {
   test("approved: the amount held, the draft approved, and Get the go-ahead", () => {
     const v = j({});
-    expect(v).toMatchObject({ heading: "Held for this Short", amount: "$350.00" });
+    expect(v).toMatchObject({ heading: "Held in PayPal for this Short", amount: "$350.00" });
     expect(v.steps.map((s) => [s.title, s.state])).toEqual([
       ["Draft approved", "done"],
       ["Ready to post?", "now"],
@@ -129,3 +129,22 @@ describe("PP-FR-16 to PP-FR-23 money", () => {
     );
   });
 });
+
+describe("PP-FR-16 the money header (DESIGN.md \"Money card\" carried to Paid)", () => {
+  const cap = { reference: "DEMO-CAP", at: "2026-10-09T10:00:00Z", amount: "350.00", fee: "17.50", payout: "332.50" };
+  test("held: marigold, the hold's reference and date", () => {
+    expect(j({})).toMatchObject({ tone: "money", heading: "Held in PayPal for this Short", reference: "Ref DEMO-H · held 5 Oct" });
+  });
+  test("captured: marigold, the capture's reference and date", () => {
+    const v = j({ state: "captured", capture: cap, payout: { state: "sending", email: "ada@example.com", canSendAgain: false } });
+    expect(v).toMatchObject({ tone: "money", reference: "PayPal ref DEMO-CAP · 9 Oct" });
+  });
+  test("paid: cleared, where it was paid and when", () => {
+    const v = j({ state: "paid", capture: cap, payout: { state: "paid", email: "ada@example.com", reference: "DEMO-PAY", at: "2026-10-10T09:00:00Z", canSendAgain: false } });
+    expect(v).toMatchObject({ tone: "cleared", heading: "Cleared", reference: "Paid to ada@example.com · 10 Oct" });
+  });
+  test("approved, not paid: the money stopped moving towards the creator", () => {
+    expect(j({ state: "approved_not_paid" }).tone).toBe("stopped");
+  });
+});
+

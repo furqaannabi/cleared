@@ -26,8 +26,12 @@ export interface JourneyStep {
 
 /** "From approved to paid", worked out once from the API's data (design B). */
 export interface Journey {
+  /** The money header: marigold while the money moves towards the creator, white once paid, latte if it stopped. */
+  tone: "money" | "cleared" | "stopped";
   heading: string;
   amount: string;
+  /** The line under the amount: the latest PayPal reference and its date. */
+  reference: string;
   steps: JourneyStep[];
   action: JourneyAction | null;
 }
@@ -181,7 +185,15 @@ export function journey(d: Deliverable, now: Date, { timeZone }: { timeZone?: st
     if (firstOpen >= 0 && i > firstOpen && st.state === "done" && st.key !== "posted") st.state = "todo";
   });
 
-  const heading = s === "paid" ? "Cleared" : s === "approved_not_paid" ? "Approved, not paid" : c ? `Captured from ${b}` : `Held for this ${NOUN[d.platform]}`;
+  // PP-FR-16: the money card (DESIGN.md "Money card") carried through to Paid.
+  const tone = s === "paid" ? "cleared" : s === "approved_not_paid" ? "stopped" : "money";
+  const heading = s === "paid" ? "Cleared" : s === "approved_not_paid" ? "Approved, not paid" : c ? `Captured from ${b}` : `Held in PayPal for this ${NOUN[d.platform]}`;
   const amount = s === "paid" && c ? formatAmount(c.payout) : c ? formatAmount(c.amount) : formatMoney(d.hold.amountMinor, d.hold.currency);
-  return { heading, amount, steps, action: s === "paid" ? null : action };
+  const reference =
+    s === "paid" && p
+      ? `Paid to ${p.email}${p.at ? ` · ${day(p.at)}` : ""}`
+      : c
+        ? `PayPal ref ${c.reference} · ${day(c.at)}`
+        : `Ref ${d.hold.reference} · held ${day(d.hold.heldAt)}`;
+  return { tone, heading, amount, reference, steps, action: s === "paid" ? null : action };
 }

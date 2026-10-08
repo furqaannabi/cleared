@@ -15,7 +15,8 @@ describe("PP-FR-01, PP-FR-02 the go-ahead, in the journey", () => {
   test("past Approved the journey replaces the money card; Get the go-ahead gives a countdown and I've posted it", async () => {
     const user = userEvent.setup();
     const panel = await open("del_juniper_short");
-    expect(panel).toHaveTextContent("Held for this Short");
+    expect(panel).toHaveTextContent("Held in PayPal for this Short");
+    expect(within(panel).getByText(/^Ref DEMO-\w+ · held \d+ \w+$/)).toBeVisible();
     expect(within(panel).getByText("$350.00")).toBeVisible();
     expect(screen.queryByRole("region", { name: /Held in PayPal/ })).toBeNull();
     await user.click(within(panel).getAllByRole("button", { name: "Get the go-ahead" })[0]);
@@ -61,6 +62,7 @@ describe("PP-FR-18 to PP-FR-20 money", () => {
     expect(panel).toHaveTextContent("Cleared");
     expect(within(panel).getByText("$760.00")).toBeVisible();
     expect(panel).toHaveTextContent("Payout ref DEMO-PAY7Q15");
+    expect(within(panel).getByText("Paid to ada@example.com · 4 Oct")).toBeVisible();
     expect(panel).toHaveTextContent("PayPal ref DEMO-CAP4W92");
     expect(within(panel).queryByRole("button")).toBeNull();
   });

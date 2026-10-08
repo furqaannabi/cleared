@@ -1,0 +1,83 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Publish and pay B: the money header</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../landing/landing.css"><link rel="stylesheet" href="../invite/invite.css"><link rel="stylesheet" href="../brand-deal/brand.css"><link rel="stylesheet" href="../brand-review/review.css"><link rel="stylesheet" href="pp.css"><style>
+/* Design B's journey, with its header as the marigold money card (DESIGN.md "Money card"). The money stays one object from Held to Paid: marigold while it moves towards the creator, white with the Cleared seal once paid. The four-stage track is gone; the step list below is the track. */
+.journey{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;display:grid;box-shadow:var(--card-shadow)}
+.mh{position:relative;overflow:hidden;background:var(--marigold);color:var(--marigold-ink);padding:18px 18px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;align-items:start}
+.mh::after{content:"";position:absolute;right:-46px;top:-46px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.35)}
+.mh>*{position:relative;z-index:1}
+.mh .lab{font-size:13px;font-weight:700;color:var(--marigold-ink-2)}
+.mh .amt{grid-column:1;font-family:var(--head);font-size:34px;font-weight:800;letter-spacing:-.01em;line-height:1.05;font-variant-numeric:tabular-nums}
+.mh .ref{grid-column:1;font-size:13px;color:var(--marigold-ink-2);margin-top:4px}
+.mh .mseal{grid-column:2;grid-row:1/4;width:44px;height:44px}
+.mh.paid{background:var(--surface);color:var(--ink);border-bottom:1px solid var(--line)}
+.mh.paid::after{background:var(--latte)}
+.mh.paid .lab,.mh.paid .ref{color:var(--ink-3)}
+.jsteps{padding:6px 18px 14px}
+.jstep{display:grid;grid-template-columns:24px minmax(0,1fr);gap:2px 12px;padding:12px 0;position:relative}
+.jstep::before{content:"";position:absolute;left:11px;top:34px;bottom:-12px;width:2px;background:var(--line)}
+.jstep:last-child::before{display:none}
+.jstep.done::before{background:var(--latte-line)}
+.jstep .seal{width:24px;height:24px;z-index:1}
+.jstep b{font-size:15px}
+.jstep .t{grid-column:2;font-size:13px;color:var(--ink-3)}
+.jstep.now{background:var(--latte-wash);margin:4px -10px;padding:12px 10px;border-radius:14px}
+.jstep.now::before{display:none}
+.jstep .body{grid-column:2;font-size:14px;color:var(--ink-2);display:grid;gap:8px;margin-top:4px}
+.jstep.todo b{color:var(--ink-3);font-weight:700}
+.note{font-size:14px;color:var(--ink-2);max-width:68ch;margin-top:6px}
+</style></head><body><main>
+<p class="crumbs"><a href="#">Deals</a> › <a href="#">Juniper &amp; Salt</a> › YouTube Short</p>
+<h1 style="margin-top:4px">Juniper &amp; Salt · YouTube Short</h1>
+
+<div class="cols">
+<aside class="stack" style="order:-1">
+  <section class="journey" aria-label="From approved to paid">
+    <div class="mh"><span class="lab">Held in PayPal for this Short</span><i class="mseal" data-k="held"></i><span class="amt">$350.00</span><span class="ref">Ref DEMO-JS2B6W3N · held 5 Oct</span></div>
+    <div class="jsteps">
+    <div class="jstep done"><i class="sl done"></i><b>Draft approved</b><span class="t">By Juniper &amp; Salt · 7 Oct</span></div>
+    <div class="jstep now"><i class="sl now"></i><b>You can post now</b><span class="t">Go-ahead · PayPal confirmed the hold</span>
+      <div class="body"><p><span class="count" style="font-size:26px">47h 12m</span> left · post before <b>Sat 10 Oct, 14:00</b> your time.</p><p>If you forget to tap, we check your channel when your go-ahead ends.</p><a class="btn sm" href="#" style="justify-self:start">I’ve posted it</a></div></div>
+    <div class="jstep todo"><i class="sl todo"></i><b>Live check</b><span class="t">The paid promotion label, once it’s public</span></div>
+    <div class="jstep todo"><i class="sl todo"></i><b>Captured</b><span class="t">$350.00 from Juniper &amp; Salt</span></div>
+    <div class="jstep todo"><i class="sl todo"></i><b>Paid</b><span class="t">$332.50 to ada@example.com, after Cleared’s 5% fee</span></div>
+    </div>
+  </section>
+</aside>
+<div class="stack">
+  <div class="player"><div class="screen" style="aspect-ratio:16/9"><span class="time">Approved draft · 0:45</span></div></div>
+  <section class="list"><h2>Checklist · 3 items</h2>
+    <div class="row"><i class="st pass"></i><div class="nm"><b>Code TIDE15 shown on screen</b><span class="stw pass">Passed</span></div><p class="evl"><a class="ts" href="#">0:06</a> Reads “TIDE15”.</p></div>
+    <div class="row"><i class="st pass"></i><div class="nm"><b>Bath salts shown dissolving in water</b><span class="stw pass">Passed</span></div><p class="evl"><a class="ts" href="#">0:11–0:15</a> Salts dissolve in a glass of water.</p></div>
+    <div class="row"><i class="st live"></i><div class="nm"><b>Marked as a paid promotion</b><span class="stw">At live check</span></div><p class="evl">Checked once you post.</p></div>
+  </section>
+</div>
+</div>
+<div class="phonebar"><a class="btn" href="#">I’ve posted it</a></div>
+
+<p class="state">The same card later on</p>
+<div class="mini">
+  <section class="journey"><div class="mh"><span class="lab">Captured from Juniper &amp; Salt</span><i class="mseal" data-k="held"></i><span class="amt">$350.00</span><span class="ref">PayPal ref DEMO-CAP7781 · 10 Oct</span></div>
+    <div class="jsteps">
+    <div class="jstep done"><i class="sl done"></i><b>Live check passed</b><span class="t">9 Oct, 11:24</span></div>
+    <div class="jstep done"><i class="sl done"></i><b>Captured</b><span class="t">10 Oct · less Cleared’s 5% fee, $17.50</span></div>
+    <div class="jstep now"><i class="sl now"></i><b>Sending $332.50 to ada@example.com</b>
+      <div class="body"><p>PayPal usually takes a few minutes.</p></div></div></div></section>
+  <section class="journey"><div class="mh paid"><span class="lab">Cleared</span><i class="mseal" data-k="cleared"></i><span class="amt">$332.50</span><span class="ref">Paid to ada@example.com · 11 Oct</span></div>
+    <div class="jsteps">
+    <div class="jstep done"><i class="sl done"></i><b>Posted</b><span class="t">9 Oct, 11:20</span></div>
+    <div class="jstep done"><i class="sl done"></i><b>Live check passed</b><span class="t">9 Oct, 11:24</span></div>
+    <div class="jstep done"><i class="sl done"></i><b>Captured $350.00</b><span class="t">10 Oct · PayPal ref DEMO-CAP7781</span></div>
+    <div class="jstep done"><i class="sl done"></i><b>Paid $332.50 to ada@example.com</b><span class="t">11 Oct · Payout ref DEMO-PAY4410 · after Cleared’s 5% fee</span></div></div></section>
+</div>
+<p class="note">Before Approved the yellow card stays as it is today (with its Held → Confirmed → Captured → Paid strip). From Approved the strip becomes the step list, under the same yellow header.</p>
+</main><script src="../brand-review/review.js"></script><script src="pp.js"></script><script>
+// The header seal: espresso-ink scalloped seal with a marigold lock while the money moves; the marigold Cleared seal once paid.
+document.querySelectorAll(".mseal").forEach((el) => {
+  const paid = el.dataset.k === "cleared";
+  el.outerHTML = `<svg class="mseal" viewBox="0 0 24 24" aria-hidden="true"><path d="${PSEAL}" fill="${paid ? "var(--marigold)" : "var(--espresso-ink)"}"/>${paid
+    ? '<path d="M8 12.5l3 3 5-6" fill="none" stroke="var(--espresso-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<g fill="none" stroke="var(--marigold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="11" width="8" height="6.5" rx="1.4"/><path d="M10 11V9.2a2 2 0 0 1 4 0V11"/></g>'}</svg>`;
+});
+</script></body></html>
