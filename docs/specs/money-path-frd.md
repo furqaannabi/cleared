@@ -1,6 +1,6 @@
 # Money path: FRD
 
-**Status:** Signed by Furqaan (revision 1.1). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
+**Status:** Signed by Furqaan (revision 1.1). Revision 1.2, a change to MP-FR-24, is a draft awaiting Furqaan's sign-off. The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
 
 **Surface:** Backend. Everything that happens to one deliverable's money, from the brand approving a hold to the deliverable being cleared or its hold being released: steps 3, 6 and 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and the money side of every row in [When something does not go to plan](../PRODUCT.md#when-something-does-not-go-to-plan).
 
@@ -114,7 +114,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 
 | ID | Requirement |
 | --- | --- |
-| MP-FR-24 | **Capture.** With an approval on record (MP-FR-17, 18, 19 or 21), the module captures the hold in full to Cleared's PayPal account and records the PayPal reference. |
+| MP-FR-24 | **Capture.** With an approval on record (MP-FR-17, 18, 19 or 21), the module captures the hold in full to Cleared's PayPal account and records the PayPal reference. **If the hold's guarantee has ended, the hold is re-confirmed first,** as it is before a retry (MP-FR-25). |
 | MP-FR-25 | **Capture refused.** If PayPal refuses the capture, the module tries again every 6 hours until day 28, re-confirming the hold first when PayPal allows it. A notice is recorded for each side: for the creator, that the post is approved but PayPal could not collect from the brand; for the brand, that its payment failed and to check its PayPal funding. If no attempt succeeds by day 28, the hold is released and the deliverable ends as approved, not paid. |
 | MP-FR-26 | **Capture not answered.** If PayPal gives no clear answer to a capture, the same request is checked or resent with the same request id until it is settled. A second capture is never started. |
 | MP-FR-27 | **The fee.** Cleared's fee is 5% of the deliverable's amount, set in configuration, worked out in whole cents and rounded down. The creator's payout is the amount less the fee. Both figures are recorded at capture. PayPal's own charges come out of the fee and are not passed on. |
@@ -263,3 +263,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.0 | Signed by Furqaan, with the seven items added while drafting accepted as written | none |
 | 1.1 | MP-FR-13: when the deadline falls before the guarantee ends, the go-ahead runs to the deadline with no 24-hour margin. Found while building: with a 2-day deadline, a creator asking in the last hours before it was told to wait until after the deadline, and could never publish | [Go-ahead to a deadline inside the guarantee](../decisions/2026-10-08-go-ahead-runs-to-a-deadline-inside-the-guarantee.md) |
 | 1.1 | Signed by Furqaan | none |
+| 1.2 | Draft, awaiting Furqaan's sign-off. MP-FR-24: the first capture re-confirms the hold when its guarantee has ended, as retries already do. Found while building: after a fix window or a brand's 48 hours the guarantee has usually lapsed, and a refused first capture costs the creator a 6-hour wait | to be written at sign-off |
