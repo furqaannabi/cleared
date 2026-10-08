@@ -15,4 +15,4 @@ A spec is signed only when William or Furqaan says so after reading it. No code 
 | [Confirm and hold](confirm-and-hold-frd.md) | CH | The brand's deal page from the invite link (terms, checklist, changes, agree, one hold per post) and the creator's side of it | William | Signed by William (1.1) |
 | [Money path](money-path-frd.md) | MP | Backend: one deliverable's money, from the hold to cleared or released (hold, go-ahead, capture, payout, release, PayPal webhooks) | Furqaan | Signed by Furqaan (1.4) |
 | [Brand review](brand-review-frd.md) | RW | The brand's review of each post's draft (answering asks, the 48-hour review window, approve or object) and the creator's side of it | William | Signed by William (1.1) |
-| [Publish and pay](publish-and-pay-frd.md) | PP | Both sides of steps 6 to 8: the go-ahead, posting, the live check, capture and payout, the brand's decisions after publishing | William | Signed by William (1.0) |
+| [Publish and pay](publish-and-pay-frd.md) | PP | Both sides of steps 6 to 8: the go-ahead, posting, the live check, capture and payout, the brand's decisions after publishing | William | Signed by William (1.1) |

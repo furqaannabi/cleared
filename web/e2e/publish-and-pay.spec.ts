@@ -48,3 +48,17 @@ test("PP-FR-12: something to fix on the live post, fixed and checked again, then
   await journey(page).getByRole("button", { name: "Check again" }).click();
   await expect(journey(page).getByText("Paid $332.50 to ada@example.com", { exact: true })).toBeVisible({ timeout: 15_000 });
 });
+
+test("PP-FR-35: a payout PayPal won't send is delayed on Cleared's side; tried again, it's paid", async ({ page }, testInfo) => {
+  await page.goto("/deals/deal_juniper/deliverables/del_juniper_short");
+  await journey(page).getByRole("button", { name: "Get the go-ahead" }).click();
+  await page.getByRole("combobox", { name: /the payout is/ }).selectOption("wont_send");
+  await journey(page).getByRole("button", { name: "I’ve posted it" }).click();
+  await journey(page).getByRole("button", { name: "Yes, it’s public" }).click();
+  await expect(journey(page).getByText("Sending $332.50 to ada@example.com is delayed", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(journey(page)).toContainText("There’s nothing you need to do.");
+  await noSidewaysScroll(page);
+  await page.screenshot({ path: testInfo.outputPath("delayed.png"), fullPage: true });
+  await page.getByRole("button", { name: "Try the payout again now" }).click();
+  await expect(journey(page).getByText("Paid $332.50 to ada@example.com", { exact: true })).toBeVisible({ timeout: 15_000 });
+});

@@ -135,10 +135,11 @@ export const deliverableSchema = z.object({
   // PP-FR-17, PP-FR-21: the capture, with the fee and payout as the API works them out (PP-BR-07).
   capture: z.object({ reference: z.string().min(1).max(64), at: isoTime, amount: money, fee: money, payout: money }).optional(),
   captureRefused: z.object({ retryUntil: isoTime }).optional(),
-  // PP-FR-17 to PP-FR-20: the payout to the creator; only ever shown to the creator (PP-BR-04).
+  // PP-FR-17 to PP-FR-20, PP-FR-35, PP-FR-36: the payout to the creator; only ever shown to the creator (PP-BR-04).
+  // "delayed" is a payout PayPal won't send (MP-FR-45); "cancelling" an unclaimed one being cancelled before it's sent again (MP-FR-30).
   payout: z
     .object({
-      state: z.enum(["sending", "unclaimed", "failed", "paid"]),
+      state: z.enum(["sending", "cancelling", "delayed", "unclaimed", "failed", "paid"]),
       email: z.email(),
       reason: z.string().max(200).optional(),
       reference: z.string().min(1).max(64).optional(),

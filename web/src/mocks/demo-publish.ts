@@ -16,3 +16,5 @@ export const setDemoLiveCheck = async (outcome: LiveOutcome) => void (await post
 export const setDemoPayout = async (outcome: PayoutOutcome) => void (await post("payout/next", { outcome }));
 /** Ends the brand's 48 hours on a post now; false when it isn't waiting on the brand. */
 export const endBrandWait = async (deliverableId: string) => (await post(`brand/${encodeURIComponent(deliverableId)}/end-48h`)).ok;
+/** Tries a delayed payout again now rather than in 6 hours; false when none is delayed. */
+export const tryPayoutNow = async (deliverableId: string) => (await post(`payout/${encodeURIComponent(deliverableId)}/try-again`)).ok;

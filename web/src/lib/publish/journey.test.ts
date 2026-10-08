@@ -91,6 +91,26 @@ describe("PP-FR-16 to PP-FR-23 money", () => {
     expect(j({ state: "captured", capture: cap, payout: { state: "failed", email: "a@b.co", canSendAgain: false } }).action).toBeNull();
   });
 
+  test("PP-FR-35: a payout PayPal won't send is delayed on Cleared's side, current, with nothing to do", () => {
+    const v = j({ state: "captured", capture: cap, payout: { state: "delayed", email: "ada@example.com", canSendAgain: false } });
+    expect(v).toMatchObject({ heading: "Captured from Juniper & Salt", action: null });
+    expect(v.steps.find((s) => s.key === "paid")).toMatchObject({
+      state: "now",
+      title: "Sending $332.50 to ada@example.com is delayed",
+      body: "The delay is on Cleared’s side, with our PayPal account. Your money is safe with Cleared, and we keep trying until it’s sent. There’s nothing you need to do.",
+    });
+  });
+
+  test("PP-FR-36: an unclaimed payout being cancelled reads as sending again, with nothing to do", () => {
+    const v = j({ state: "captured", capture: cap, payout: { state: "cancelling", email: "ada@example.com", canSendAgain: false } });
+    expect(v.action).toBeNull();
+    expect(v.steps.find((s) => s.key === "paid")).toMatchObject({
+      state: "now",
+      title: "Sending $332.50 again",
+      body: "PayPal is cancelling the unclaimed payment first, then we send it to ada@example.com.",
+    });
+  });
+
   test("paid: Cleared, every step done, the payout reference", () => {
     const v = j({ state: "paid", capture: cap, payout: { state: "paid", email: "ada@example.com", reference: "DEMO-PAY", at: "2026-10-10T09:00:00Z", canSendAgain: false } });
     expect(v).toMatchObject({ heading: "Cleared", amount: "$332.50", action: null });

@@ -209,7 +209,7 @@ function Loaded({
       {deliverable.state === "approved" && <ApprovedBanner deliverable={deliverable} />}
       <CopyReviewLink deliverable={deliverable} />
       {simulateUpload && view.nextStep.action?.startsWith("upload") && <DemoDraftOutcome value={demoOutcome} onChange={setDemoOutcome} />}
-      {MOCKING_ENABLED && inJourney && <DemoPublishControls d={deliverable} />}
+      {MOCKING_ENABLED && inJourney && <DemoPublishControls d={deliverable} onUpdated={onUpdated} />}
       {/* DC-FR-47: on phones the work comes first: this panel, the player, the checklist, then the money. */}
       {!wide && !view.checkFailed && !inJourney && (
         <div className="mt-5">

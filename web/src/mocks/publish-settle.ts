@@ -8,8 +8,20 @@ import type { Deliverable } from "@/lib/deliverable/types";
  */
 
 export type LiveOutcome = "passed" | "fixable" | "not_fixable" | "undecided";
-export type PayoutOutcome = "paid" | "unclaimed" | "failed";
+export type PayoutOutcome = "paid" | "unclaimed" | "failed" | "wont_send";
 export type Mocked = Deliverable & { _live?: LiveOutcome; _checkAt?: number; _payout?: PayoutOutcome };
+
+let chosenPayout: PayoutOutcome = "paid";
+/** The demo's choice for the next payout PayPal is asked to send (PP-FR-32). */
+export function choosePayout(outcome: PayoutOutcome) {
+  chosenPayout = outcome;
+}
+/** The chosen outcome, used once; later payouts are paid unless chosen again. */
+export function takePayoutOutcome(): PayoutOutcome {
+  const outcome = chosenPayout;
+  chosenPayout = "paid";
+  return outcome;
+}
 
 /** How long the mock's live check and payout take. */
 export const SETTLE_MS = 3000;
@@ -87,12 +99,24 @@ export function settle(d: Mocked, now: number) {
   if (d.state === "published" && lc?.state === "undecided" && Date.parse(lc.brandBy) <= now) capture(d, now); // silence pays
   if (d.state === "published" && lc?.state === "not_fixable" && Date.parse(lc.brandBy) <= now) release(d, now, "not_accepted");
   if (d.state === "published" && lc?.state === "fixable" && Date.parse(lc.fixBy) <= now) release(d, now, "fix_window_ended");
+  // PP-FR-36: cancelling the unclaimed payout takes the mock a few seconds, then it's sent.
+  if (d.state === "captured" && d.payout?.state === "cancelling" && Date.parse(d.payout.at!) + SETTLE_MS <= now) {
+    d.payout = { ...d.payout, state: "sending", at: iso(now) };
+  }
+  // PP-FR-32, MP-FR-45: a delayed payout is sent again every 6 hours.
+  if (d.state === "captured" && d.payout?.state === "delayed" && Date.parse(d.payout.at!) + 6 * HOUR <= now) {
+    d.payout = { ...d.payout, state: "sending", at: iso(now) };
+    d._payout = takePayoutOutcome();
+  }
   if (d.state === "captured" && d.payout?.state === "sending" && Date.parse(d.payout.at!) + SETTLE_MS <= now) {
     const outcome = d._payout ?? "paid";
     if (outcome === "paid") {
       d.state = "paid";
       d.payout = { ...d.payout, state: "paid", reference: ref("PAY"), at: iso(now), canSendAgain: false };
       d.hold = { ...d.hold, stage: "paid" };
+    } else if (outcome === "wont_send") {
+      // PP-FR-35, MP-FR-45: refused on Cleared's side; nothing for the creator to do.
+      d.payout = { ...d.payout, state: "delayed", at: iso(now), canSendAgain: false };
     } else {
       d.payout = {
         ...d.payout,

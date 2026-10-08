@@ -2,25 +2,34 @@
 
 import { useState } from "react";
 import type { Deliverable } from "@/lib/deliverable/types";
-import { setDemoGoAhead, setDemoLiveCheck, setDemoPayout } from "@/mocks/demo-publish";
+import { api } from "@/lib/api";
+import { setDemoGoAhead, setDemoLiveCheck, setDemoPayout, tryPayoutNow } from "@/mocks/demo-publish";
 
 const SELECT = "min-h-11 rounded-sm border border-latte-line bg-surface px-2 text-[14px] text-ink";
 
 /**
  * Mock builds only: what the demo's next go-ahead, live check and payout
- * answer, so every state of the journey can be shown. Never in a real build;
- * nothing reaches PayPal or a platform.
+ * answer, so every state of the journey can be shown, and a delayed payout
+ * tried again now rather than in 6 hours. Never in a real build; nothing
+ * reaches PayPal or a platform.
  *
  * @param d - the deliverable, past Approved
+ * @param onUpdated - takes the deliverable after a payout is tried again
  * @see docs/specs/publish-and-pay-frd.md PP-FR-32
  */
-export function DemoPublishControls({ d }: { d: Deliverable }) {
+export function DemoPublishControls({ d, onUpdated }: { d: Deliverable; onUpdated: (d: Deliverable) => void }) {
   const [goAhead, setGoAhead] = useState("go");
   const [live, setLive] = useState("passed");
   const [payout, setPayout] = useState("paid");
   const beforePosting = d.state === "approved" || d.state === "posting";
   const checking = beforePosting || (d.state === "published" && d.liveCheck?.state === "fixable");
-  const paying = beforePosting || (d.state === "captured" && d.payout?.canSendAgain);
+  const delayed = d.state === "captured" && d.payout?.state === "delayed";
+  const paying = beforePosting || delayed || (d.state === "captured" && d.payout?.canSendAgain);
+  const tryNow = async () => {
+    await tryPayoutNow(d.id);
+    const r = await api.getDeliverable(d.id);
+    if (r.ok) onUpdated(r.data);
+  };
   if (!d.state || (!beforePosting && !checking && !paying)) return null;
   return (
     <div className="mt-4 grid gap-2 rounded-md border border-dashed border-latte-line bg-latte-wash px-3 py-2 text-meta text-ink-2 sm:flex sm:flex-wrap sm:items-center">
@@ -53,8 +62,14 @@ export function DemoPublishControls({ d }: { d: Deliverable }) {
             <option value="paid">paid</option>
             <option value="unclaimed">unclaimed</option>
             <option value="failed">bounced</option>
+            <option value="wont_send">not sent by PayPal</option>
           </select>
         </label>
+      )}
+      {delayed && (
+        <button type="button" onClick={() => void tryNow()} className="min-h-11 justify-self-start rounded-pill border border-latte-line bg-surface px-4 font-bold text-ink">
+          Try the payout again now
+        </button>
       )}
     </div>
   );

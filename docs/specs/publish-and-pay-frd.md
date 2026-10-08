@@ -1,6 +1,6 @@
 # Publish and pay: FRD
 
-**Status:** Signed by William (revision 1.0). The money rules are the money path FRD's (Furqaan's).
+**Status:** Signed by William (revision 1.1). The money rules are the money path FRD's (Furqaan's).
 
 **Surface:** Both sides of steps 6 to 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The creator's side:** the draft check page past "Approved" (DC-FR-51): the go-ahead, "I've posted it", the live check in the checklist, and the money card through captured and paid, including every "not paid yet". **The brand's side:** the Drafts panel and the review page past "Approved" (RW-FR-22): confirming or objecting to a post the live check couldn't decide, accepting a post that failed, and paid.
 
@@ -109,7 +109,9 @@ Cancelling is not in this spec; it gets its own.
 | PP-FR-21 | **Capture refused.** "Approved. PayPal couldn't take {brand}'s payment yet. We try again until {date} and have told {brand}." No action. At the end without success: "Approved, not paid" (PP-FR-23). |
 | PP-FR-22 | **Released, every reason.** The released state (DC-FR-10, DC-FR-29) names the reason in plain words: the deadline passed with no approved post; cancelled (and by whom); day 28; the fix window ended with {items} still failing; {brand} didn't accept the post within 48 hours; a person at Cleared ruled not to pay; {brand}'s hold couldn't be confirmed before the deadline. With the date, and that nothing more can happen. |
 | PP-FR-23 | **Approved, not paid.** "This post was approved, but PayPal never let Cleared collect {brand}'s payment, so you weren't paid through Cleared." Final; no action. |
-| PP-FR-24 | **Steps and the rail.** The deal steps mark Publish, Live check and Paid from the API's state (DC-FR-34). Rail lines: "Post before {time}", "Live check", "{brand} to confirm", "Paid", "Payout needs you", among others. |
+| PP-FR-35 | **Payout delayed on Cleared's side** (MP-FR-45). The Paid step is current, not a problem: "Sending {payout} to {email} is delayed", then "The delay is on Cleared's side, with our PayPal account. Your money is safe with Cleared, and we keep trying until it's sent. There's nothing you need to do." No action (MP-FR-30) and no time for the next try. The heading stays "Captured from {brand}". |
+| PP-FR-36 | **Sending again after an unclaimed payout** (MP-FR-30). While PayPal cancels the unclaimed payout: the Paid step is current, "Sending {payout} again", then "PayPal is cancelling the unclaimed payment first, then we send it to {email}." No action; the page keeps checking as it does while sending. |
+| PP-FR-24 | **Steps and the rail.** The deal steps mark Publish, Live check and Paid from the API's state (DC-FR-34). Rail lines: "Post before {time}", "Live check", "{brand} to confirm", "Paid", "Payout needs you", among others. "Payout needs you" only for an unclaimed or failed payout; a delayed or cancelling one keeps the captured line (PP-FR-35, PP-FR-36). |
 
 ### The brand
 
@@ -120,14 +122,14 @@ Cancelling is not in this spec; it gets its own.
 | PP-FR-27 | **Confirm or object.** When the check couldn't decide: why ("We couldn't check {what} automatically"), "If you say nothing by {time}, {creator} is paid.", "Confirm the post" (inline confirmation: "Confirm? Your {amount} is taken and {creator} is paid.") and "Object" (a reason, required, plain text up to 500 characters; "A person at Cleared will decide. Your money stays held until then."). |
 | PP-FR-28 | **Accept anyway.** When the post failed and can't be fixed: what failed, "If you don't accept it by {time}, the hold comes back to you.", and "Accept the post anyway" (inline confirmation: "Accept? Your {amount} is taken and {creator} is paid."). |
 | PP-FR-29 | **With Cleared.** "You objected: “{reason}”. A person at Cleared decides by {date}. Your money stays held until then." |
-| PP-FR-30 | **Taken and paid.** "Your {amount} was taken on {date} · PayPal ref {ref}", then "{creator} was paid." The brand never sees the creator's payout email or the payout's own problems; while a payout is unsettled the brand reads "Your {amount} was taken. {creator}'s payment is on its way." |
+| PP-FR-30 | **Taken and paid.** "Your {amount} was taken on {date} · PayPal ref {ref}", then "{creator} was paid." The brand never sees the creator's payout email or the payout's own problems; while a payout is unsettled the brand reads "Your {amount} was taken. {creator}'s payment is on its way.", including while it is delayed or being sent again (PP-FR-35, PP-FR-36). |
 | PP-FR-31 | **Released, for the brand.** "Your {amount} came back to you on {date}" and the reason from the brand's side. A capture PayPal refused: "Your payment for this post failed at PayPal. Check your PayPal funding; we try again until {date}." |
 
 ### Mocks, responsive and accessibility
 
 | ID | Requirement |
 | --- | --- |
-| PP-FR-32 | **Demo controls (mock builds only),** each a dashed "Demo (mocks only)" box supplied only by the mock gate, never in a real build: the go-ahead's answer (go-ahead, wait until, not confirmed); the live check's result (passed, fixable, not fixable, couldn't decide); the payout's result (paid, unclaimed, failed); "End the 48 hours now" on the brand's decisions. The seed gains a paid post with every reference. |
+| PP-FR-32 | **Demo controls (mock builds only),** each a dashed "Demo (mocks only)" box supplied only by the mock gate, never in a real build: the go-ahead's answer (go-ahead, wait until, not confirmed); the live check's result (passed, fixable, not fixable, couldn't decide); the payout's result (paid, unclaimed, failed, won't send), with "Try the payout again now" while one is delayed; the mock tries a delayed payout again every 6 hours with the outcome selected then, and shows an unclaimed payout being cancelled for about 3 seconds after "Send it again"; "End the 48 hours now" on the brand's decisions. The seed gains a paid post with every reference. |
 | PP-FR-33 | Mobile-first at 375 px: banners and the money card in the DC-FR-47 order, every target at least 44 px, the creator's action in the phone bar (DC-FR-30), the brand's in its dock (RW-FR-29), no sideways scroll. |
 | PP-FR-34 | Every control named ("Confirm the post", "Check my Reel"); state changes announced politely; a countdown announced only when it crosses the last hour; reduced motion respected (the paid seal stamps only with motion allowed). |
 
@@ -171,7 +173,8 @@ liveCheck?:
   | { state: "objected"; reason: string; ruleBy: string };
 capture?: { reference: string; at: string; amount: string; fee: string; payout: string }
   | { refused: true; retryUntil: string };
-payout?: { state: "sending" | "unclaimed" | "failed" | "paid"; email: string; reason?: string; reference?: string; at?: string; canSendAgain: boolean };
+// "delayed" is the money view's not_sent (MP-FR-45), "cancelling" its cancelling (MP-FR-30); both with canSendAgain: false.
+payout?: { state: "sending" | "cancelling" | "delayed" | "unclaimed" | "failed" | "paid"; email: string; reason?: string; reference?: string; at?: string; canSendAgain: boolean };
 releaseReason: "deadline" | "cancelled" | "day_28" | "fix_window_ended" | "not_accepted" | "ruled_not_to_pay" | "hold_not_confirmed";
 
 // The brand's review (RW) gains:
@@ -194,16 +197,17 @@ Each maps to a function his money module already has (MP "Implementation Decisio
 | PP-FR-10 to PP-FR-15 | The live check's result per item and overall, with evidence from the live post and the fix-window, brand and ruling end times (MP-FR-17 to MP-FR-21) |
 | PP-FR-12 | `POST /deliverables/{id}/live-check/again`, within the fix window |
 | PP-FR-16 to PP-FR-23 | Capture and payout fields as above, the fee and payout as decimal strings (MP-FR-24 to MP-FR-31) |
+| PP-FR-35, PP-FR-36 | The payout's `delayed` and `cancelling` states, from the money view's `not_sent` (reason `payout_delayed`) and `cancelling` (reason `payout_being_cancelled`) |
 | PP-FR-19, PP-FR-20 | `POST /deliverables/{id}/payout/again` (MP-FR-30); `PUT /me/paypal-email` (IN-FR-12) |
 | PP-FR-22, PP-FR-31 | `releaseReason` with every reason in MP-FR-32, and `cancelledBy` |
 | PP-FR-25 to PP-FR-31 | `GET /brand/deals/{id}/deliverables/{id}` and the Drafts summary gain the states above, never the creator's payout email; `POST …/post/confirm`, `POST …/post/object` with `{ reason }` (≤ 500, plain text), `POST …/post/accept` |
-| Mocks only | `POST /__demo/go-ahead/next`, `/__demo/live-check/next`, `/__demo/payout/next` with `{ outcome }`, and `/__demo/brand/{deliverableId}/end-48h`. MSW only, never part of the real API |
+| Mocks only | `POST /__demo/go-ahead/next`, `/__demo/live-check/next`, `/__demo/payout/next` with `{ outcome }` (now also `wont_send`), `/__demo/payout/{deliverableId}/try-again`, and `/__demo/brand/{deliverableId}/end-48h`. MSW only, never part of the real API |
 | Security | Every changing request protected from cross-site requests, as DC's |
 
 ## Testing Decisions
 
 - Tests check what each side sees and can do, named after the PP-FR they prove.
-- **Views (pure):** every later state's banner, next step and action; the countdown and its last hour; every release reason on each side; the money lines for captured, paid, unclaimed, failed, capture refused, approved not paid; never "post now" without a go-ahead; the brand never sees the payout email.
+- **Views (pure):** every later state's banner, next step and action; the countdown and its last hour; every release reason on each side; the money lines for captured, paid, delayed, cancelling, unclaimed, failed, capture refused, approved not paid; never "post now" without a go-ahead; the brand never sees the payout email.
 - **Components:** the go-ahead's three answers and the run-out; "I've posted it" for YouTube and a Reel (link shape, refusal); fixable with Check again; the brand's confirm and object (reason required) and accept, each with its confirmation and silence line; the money card's problems with Send it again and the email fix; the demo controls only in mock builds.
 - **End to end (Playwright, on MSW):** an approved post → go-ahead → I've posted it → couldn't decide → the brand confirms → captured → paid, on both sides; and fixable → check again → passed; at 375 px and 1280 px.
 
@@ -225,3 +229,4 @@ Each maps to a function his money module already has (MP "Implementation Decisio
 | --- | --- | --- |
 | 0.1 | First draft, from the grill-me session with William: one spec for both sides; "I've posted it" with a Reel's link, and a check at the go-ahead's end; the go-ahead asked for when ready; live results in the same checklist with a summary banner; every money stage and payout problem on the money card; the brand's decisions after publishing on the review page, with both silence rules stated; every release reason; demo controls for each outcome. Follows the money path FRD's rules | [Go-ahead and cancel](../decisions/2026-10-08-go-ahead-cancel-and-unheld-posts.md), [After publishing](../decisions/2026-10-08-what-ends-a-hold-after-publishing.md), [Fee and limits](../decisions/2026-10-08-cleared-fee-and-amount-limits.md) |
 | 1.0 | Signed by William | none |
+| 1.1 | PP-FR-35 and PP-FR-36 added, from a grill-me session with William: a payout PayPal won't send shows as delayed on Cleared's side with nothing for the creator to do, and an unclaimed payout being cancelled shows as sending again. Neither changes the deals list or the brand's view. PP-FR-24, PP-FR-30 and PP-FR-32 and the contract follow. Shows MP-FR-45 and MP-FR-30 (money path 1.3). Signed by William | none |

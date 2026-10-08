@@ -4,7 +4,7 @@ import { hasBrandSession } from "./brand-deals";
 import { brandDeliverableFor, creatorView } from "./brand-review";
 import { dealOfDeliverable } from "./deal-drafts";
 import { payoutEmail } from "./invites";
-import { capture, type LiveOutcome, type Mocked, type PayoutOutcome } from "./publish-settle";
+import { capture, choosePayout, takePayoutOutcome, type LiveOutcome, type Mocked, type PayoutOutcome } from "./publish-settle";
 import { findDeliverable } from "./store";
 
 /*
@@ -15,11 +15,12 @@ import { findDeliverable } from "./store";
  */
 
 type GoAheadOutcome = "go" | "wait" | "not_confirmed";
-let next: { goAhead: GoAheadOutcome; live: LiveOutcome; payout: PayoutOutcome } = { goAhead: "go", live: "passed", payout: "paid" };
+let next: { goAhead: GoAheadOutcome; live: LiveOutcome } = { goAhead: "go", live: "passed" };
 
 /** Back to the demo's usual outcomes. */
 export function resetPublish() {
-  next = { goAhead: "go", live: "passed", payout: "paid" };
+  next = { goAhead: "go", live: "passed" };
+  choosePayout("paid");
 }
 
 const HOUR = 3_600_000;
@@ -61,9 +62,8 @@ export const publishHandlers: RequestHandler[] = [
     if (reel && (typeof url !== "string" || !INSTAGRAM_POST.test(url))) return refused();
     const now = Date.now();
     const link = reel ? (url as string) : `https://www.youtube.com/watch?v=${d.id.replace(/\W/g, "").slice(-11)}`;
-    Object.assign(d, { state: "published", post: { url: link, publishedAt: iso(now) }, liveCheck: { state: "checking" }, _checkAt: now, _live: next.live, _payout: next.payout });
+    Object.assign(d, { state: "published", post: { url: link, publishedAt: iso(now) }, liveCheck: { state: "checking" }, _checkAt: now, _live: next.live, _payout: takePayoutOutcome() });
     next.live = "passed";
-    next.payout = "paid";
     for (const item of d.items) if (item.status === "at_live_check") item.status = "checking";
     return HttpResponse.json(creatorView(d));
   }),
@@ -79,15 +79,16 @@ export const publishHandlers: RequestHandler[] = [
     return HttpResponse.json(creatorView(d));
   }),
 
-  // PP-FR-19, PP-FR-20, MP-FR-30: only once the last payout finished without paying.
+  // PP-FR-19, PP-FR-20, PP-FR-36, MP-FR-30: only once the last payout finished without paying.
   http.post(`${apiBaseUrl}/deliverables/:id/payout/again`, ({ params }) => {
     const d = mocked(String(params.id));
     if (!d) return notFound();
     if (d.state !== "captured" || !d.payout?.canSendAgain) return refused();
     // MP-FR-28: to the creator's PayPal email as it stands now.
     const email = payoutEmail() ?? d.payoutEmail;
-    Object.assign(d, { payoutEmail: email, payout: { state: "sending", email, at: iso(Date.now()), canSendAgain: false }, _payout: next.payout });
-    next.payout = "paid";
+    // PP-FR-36: an unclaimed payout is cancelled with PayPal first.
+    const state = d.payout.state === "unclaimed" ? "cancelling" : "sending";
+    Object.assign(d, { payoutEmail: email, payout: { state, email, at: iso(Date.now()), canSendAgain: false }, _payout: takePayoutOutcome() });
     return HttpResponse.json(creatorView(d));
   }),
 
@@ -129,12 +130,19 @@ export const publishHandlers: RequestHandler[] = [
     // Other demo controls (Demo PayPal) have their own route.
     if (!["go-ahead", "live-check", "payout"].includes(what)) return undefined;
     const { outcome } = (await request.json()) as { outcome?: string };
-    const allowed: Record<string, string[]> = { "go-ahead": ["go", "wait", "not_confirmed"], "live-check": ["passed", "fixable", "not_fixable", "undecided"], payout: ["paid", "unclaimed", "failed"] };
+    const allowed: Record<string, string[]> = { "go-ahead": ["go", "wait", "not_confirmed"], "live-check": ["passed", "fixable", "not_fixable", "undecided"], payout: ["paid", "unclaimed", "failed", "wont_send"] };
     if (!allowed[what].includes(outcome ?? "")) return refused();
     if (what === "go-ahead") next.goAhead = outcome as GoAheadOutcome;
     if (what === "live-check") next.live = outcome as LiveOutcome;
-    if (what === "payout") next.payout = outcome as PayoutOutcome;
+    if (what === "payout") choosePayout(outcome as PayoutOutcome);
     return HttpResponse.json({ outcome });
+  }),
+  http.post(`${apiBaseUrl}/__demo/payout/:id/try-again`, ({ params }) => {
+    const d = mocked(String(params.id));
+    if (!d || d.state !== "captured" || d.payout?.state !== "delayed") return refused();
+    d.payout = { ...d.payout, at: iso(Date.now() - 6 * HOUR) };
+    findDeliverable(d.id);
+    return HttpResponse.json({ tried: true });
   }),
   http.post(`${apiBaseUrl}/__demo/brand/:id/end-48h`, ({ params }) => {
     const d = mocked(String(params.id));

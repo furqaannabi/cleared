@@ -15,7 +15,7 @@ import { useJourneyActions } from "./use-journey-actions";
  * @param d - the deliverable, past Approved
  * @param onUpdated - takes the deliverable the API returned
  * @param timeZone - the viewer's timezone (tests)
- * @see docs/specs/publish-and-pay-frd.md PP-FR-01 to PP-FR-23, PP-FR-33
+ * @see docs/specs/publish-and-pay-frd.md PP-FR-01 to PP-FR-23, PP-FR-33, PP-FR-36
  */
 export function JourneySlot({ d, onUpdated, timeZone }: { d: Deliverable; onUpdated: (d: Deliverable) => void; timeZone?: string }) {
   const [now, setNow] = useState(() => new Date());
@@ -24,7 +24,7 @@ export function JourneySlot({ d, onUpdated, timeZone }: { d: Deliverable; onUpda
     return () => clearInterval(t);
   }, []);
   // The API owns the timing; while a check or payout is on its way, ask it again.
-  const waiting = d.liveCheck?.state === "checking" || d.payout?.state === "sending";
+  const waiting = d.liveCheck?.state === "checking" || d.payout?.state === "sending" || d.payout?.state === "cancelling";
   useEffect(() => {
     if (!waiting) return;
     const t = setInterval(async () => {

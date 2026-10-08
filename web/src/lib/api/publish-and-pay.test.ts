@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { api } from "@/lib/api";
-import { endBrandWait, setDemoGoAhead, setDemoLiveCheck, setDemoPayout } from "@/mocks/demo-publish";
+import { endBrandWait, setDemoGoAhead, setDemoLiveCheck, setDemoPayout, tryPayoutNow } from "@/mocks/demo-publish";
 
 const DEAL = "deal_juniper";
 const SHORT = "del_juniper_short"; // approved, a YouTube Short
@@ -155,6 +155,73 @@ describe("PP-FR-19, PP-FR-20, PP-BR-04 payout problems", () => {
     await setDemoPayout("paid");
     expect((await api.sendPayoutAgain(SHORT)).ok).toBe(true);
     expect((await api.sendPayoutAgain(SHORT)).ok).toBe(false);
+  });
+
+  test("PP-FR-35: a payout PayPal won't send is delayed; the creator can't send it again", async () => {
+    await setDemoPayout("wont_send");
+    await postAndCheck("passed");
+    await creator();
+    vi.setSystemTime(Date.now() + SETTLE_MS);
+    expect(await creator()).toMatchObject({ state: "captured", payout: { state: "delayed", canSendAgain: false } });
+    vi.useRealTimers();
+    expect(await api.sendPayoutAgain(SHORT)).toEqual({ ok: false, error: "rejected" });
+  });
+
+  test("PP-FR-32: a delayed payout is tried again every 6 hours with the outcome selected then", async () => {
+    await setDemoPayout("wont_send");
+    await postAndCheck("passed");
+    await creator();
+    vi.setSystemTime(Date.now() + SETTLE_MS);
+    await creator();
+    vi.setSystemTime(Date.now() + 5 * 3_600_000);
+    expect((await creator()).payout?.state).toBe("delayed");
+    vi.useRealTimers();
+    await setDemoPayout("paid");
+    vi.useFakeTimers({ now: Date.now() + 7 * 3_600_000, toFake: ["Date"] });
+    expect((await creator()).payout?.state).toBe("sending");
+    vi.setSystemTime(Date.now() + SETTLE_MS);
+    expect(await creator()).toMatchObject({ state: "paid", payout: { state: "paid" } });
+  });
+
+  test("PP-FR-32: Try the payout again now sends a delayed payout at once, and only a delayed one", async () => {
+    await setDemoPayout("wont_send");
+    await postAndCheck("passed");
+    await creator();
+    vi.setSystemTime(Date.now() + SETTLE_MS);
+    await creator();
+    vi.useRealTimers();
+    expect(await tryPayoutNow(SHORT)).toBe(true);
+    expect((await creator()).payout?.state).toBe("sending");
+    expect(await tryPayoutNow(SHORT)).toBe(false);
+  });
+
+  test("PP-FR-36: Send it again first cancels the unclaimed payout, then sends it", async () => {
+    await setDemoPayout("unclaimed");
+    await postAndCheck("passed");
+    await creator();
+    vi.setSystemTime(Date.now() + SETTLE_MS);
+    await creator();
+    vi.useRealTimers();
+    const again = await api.sendPayoutAgain(SHORT);
+    expect(again.ok && again.data.payout).toMatchObject({ state: "cancelling", canSendAgain: false });
+    vi.useFakeTimers({ now: Date.now() + SETTLE_MS, toFake: ["Date"] });
+    expect((await creator()).payout?.state).toBe("sending");
+    vi.setSystemTime(Date.now() + SETTLE_MS);
+    expect((await creator()).state).toBe("paid");
+  });
+
+  test("PP-FR-24, PP-FR-30: a delayed payout doesn't need the creator, and the brand reads it as on its way", async () => {
+    await setDemoPayout("wont_send");
+    await postAndCheck("passed");
+    await creator();
+    vi.setSystemTime(Date.now() + SETTLE_MS);
+    expect((await creator()).payout?.state).toBe("delayed");
+    const deals = await api.getDeals();
+    expect(deals.ok && deals.data.find((x) => x.id === DEAL)?.status).not.toBe("Payout needs you");
+    await api.openBrandLink("demo_juniper");
+    const b = await brand();
+    expect(b.review).toMatchObject({ state: "taken", creatorPaid: false });
+    expect(JSON.stringify(b)).not.toContain("delayed");
   });
 
   test("the brand sees what was taken, never the payout email or its problems", async () => {

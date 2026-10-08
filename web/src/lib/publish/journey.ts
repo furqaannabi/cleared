@@ -138,7 +138,7 @@ export function journey(d: Deliverable, now: Date, { timeZone }: { timeZone?: st
       Object.assign(live, { state: "now", title: "A person at Cleared is deciding", body: `${b} objected: “${lc.reason}”. We decide by ${day(lc.ruleBy)}.` });
   }
 
-  // PP-FR-16 to PP-FR-23
+  // PP-FR-16 to PP-FR-23, PP-FR-35, PP-FR-36
   const c = d.capture;
   const captured: JourneyStep = c
     ? { key: "captured", title: "Captured", state: "done", meta: `${day(c.at)} · PayPal ref ${c.reference} · less Cleared’s 5% fee, ${formatAmount(c.fee)}` }
@@ -156,6 +156,15 @@ export function journey(d: Deliverable, now: Date, { timeZone }: { timeZone?: st
     const amount = formatAmount(c.payout);
     if (p.state === "paid") Object.assign(paid, { state: "done", title: `Paid ${amount} to ${p.email}`, meta: `${p.at ? `${day(p.at)} · ` : ""}Payout ref ${p.reference} · after Cleared’s 5% fee` });
     else if (p.state === "sending") Object.assign(paid, { state: "now", title: `Sending ${amount} to ${p.email}`, meta: undefined, body: "PayPal usually takes a few minutes." });
+    else if (p.state === "cancelling")
+      Object.assign(paid, { state: "now", title: `Sending ${amount} again`, meta: undefined, body: `PayPal is cancelling the unclaimed payment first, then we send it to ${p.email}.` });
+    else if (p.state === "delayed")
+      Object.assign(paid, {
+        state: "now",
+        title: `Sending ${amount} to ${p.email} is delayed`,
+        meta: undefined,
+        body: "The delay is on Cleared’s side, with our PayPal account. Your money is safe with Cleared, and we keep trying until it’s sent. There’s nothing you need to do.",
+      });
     else if (p.state === "unclaimed") {
       Object.assign(paid, { state: "problem", title: `PayPal is holding ${amount} for ${p.email}`, meta: "Payout unclaimed", body: "Accept it in PayPal with that email, or have it sent again." });
       if (p.canSendAgain) action = { kind: "send_again", label: "Send it again", disabled: false };

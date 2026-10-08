@@ -80,3 +80,28 @@ describe("PP-FR-18 to PP-FR-20 money", () => {
     expect(await within(journey()).findByText("Sending $760.00 to ada@example.com")).toBeVisible();
   });
 });
+
+describe("PP-FR-35, PP-FR-36 a payout on Cleared's side", () => {
+  test("delayed: on Cleared's side, nothing for the creator to do", async () => {
+    Object.assign(findDeliverable("del_wren_video")!, {
+      state: "captured",
+      payout: { state: "delayed", email: "ada@example.com", at: new Date().toISOString(), canSendAgain: false },
+    });
+    const panel = await open("del_wren_video", "deal_wren");
+    expect(panel).toHaveTextContent("Sending $760.00 to ada@example.com is delayed");
+    expect(panel).toHaveTextContent("There’s nothing you need to do.");
+    expect(within(panel).queryByRole("button")).toBeNull();
+  });
+
+  test("Send it again on an unclaimed payout: sending again while PayPal cancels it, then sending", async () => {
+    const user = userEvent.setup();
+    Object.assign(findDeliverable("del_wren_video")!, {
+      state: "captured",
+      payout: { state: "unclaimed", email: "ada@example.com", canSendAgain: true },
+    });
+    const panel = await open("del_wren_video", "deal_wren");
+    await user.click(within(panel).getAllByRole("button", { name: "Send it again" })[0]);
+    expect(await within(journey()).findByText("Sending $760.00 again")).toBeVisible();
+    expect(await within(journey()).findByText("Sending $760.00 to ada@example.com", undefined, { timeout: 8000 })).toBeVisible();
+  }, 10_000);
+});
