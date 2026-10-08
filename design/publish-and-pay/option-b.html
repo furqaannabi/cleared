@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Publish and pay B: the journey</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../landing/landing.css"><link rel="stylesheet" href="../invite/invite.css"><link rel="stylesheet" href="../brand-deal/brand.css"><link rel="stylesheet" href="../brand-review/review.css"><link rel="stylesheet" href="pp.css"><style>
+/* B: one journey from Approved to Paid replaces the next-step bar and the money card's track. Each step is a line with its time and PayPal reference; the current step opens with its words and action. The work (player, checklist) stays beside it. */
+.journey{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;gap:0}
+.journey .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.journey .top b{font-family:var(--head);font-size:30px;font-weight:800;letter-spacing:-.01em}
+.jstep{display:grid;grid-template-columns:24px minmax(0,1fr);gap:2px 12px;padding:12px 0;position:relative}
+.jstep::before{content:"";position:absolute;left:11px;top:34px;bottom:-12px;width:2px;background:var(--line)}
+.jstep:last-child::before{display:none}
+.jstep.done::before{background:var(--latte-line)}
+.jstep .seal{width:24px;height:24px;z-index:1}
+.jstep b{font-size:15px}
+.jstep .t{grid-column:2;font-size:13px;color:var(--ink-3)}
+.jstep.now{background:var(--latte-wash);margin:4px -10px;padding:12px 10px;border-radius:14px}
+.jstep.now::before{display:none}
+.jstep .body{grid-column:2;font-size:14px;color:var(--ink-2);display:grid;gap:8px;margin-top:4px}
+.jstep.todo b{color:var(--ink-3);font-weight:700}
+</style></head><body><main>
+<p class="crumbs"><a href="#">Deals</a> › <a href="#">Juniper &amp; Salt</a> › YouTube Short</p>
+<h1 style="margin-top:4px">Juniper &amp; Salt · YouTube Short</h1>
+
+<div class="cols">
+<aside class="stack" style="order:-1">
+  <section class="journey" aria-label="From approved to paid">
+    <div class="top"><span class="evl">Held for this Short</span><b>$350.00</b></div>
+    <div class="jstep done"><i class="sl done"></i><b>Draft approved</b><span class="t">By Juniper &amp; Salt · 7 Oct</span></div>
+    <div class="jstep now"><i class="sl now"></i><b>You can post now</b><span class="t">Go-ahead · PayPal confirmed the hold</span>
+      <div class="body"><p><span class="count" style="font-size:26px">47h 12m</span> left · post before <b>Sat 10 Oct, 14:00</b> your time.</p><p>If you forget to tap, we check your channel when your go-ahead ends.</p><a class="btn sm" href="#" style="justify-self:start">I’ve posted it</a></div></div>
+    <div class="jstep todo"><i class="sl todo"></i><b>Live check</b><span class="t">The paid promotion label, once it’s public</span></div>
+    <div class="jstep todo"><i class="sl todo"></i><b>Captured</b><span class="t">$350.00 from Juniper &amp; Salt</span></div>
+    <div class="jstep todo"><i class="sl todo"></i><b>Paid</b><span class="t">$332.50 to ada@example.com, after Cleared’s 5% fee</span></div>
+  </section>
+  <p class="demo"><b>Demo</b> (mocks only): the go-ahead answers <u>go-ahead</u> · wait until · not confirmed</p>
+</aside>
+<div class="stack">
+  <div class="player"><div class="screen" style="aspect-ratio:16/9"><span class="time">Approved draft · 0:45</span></div></div>
+  <section class="list"><h2>Checklist · 3 items</h2>
+    <div class="row"><i class="st pass"></i><div class="nm"><b>Code TIDE15 shown on screen</b><span class="stw pass">Passed</span></div><p class="evl"><a class="ts" href="#">0:06</a> Reads “TIDE15”.</p></div>
+    <div class="row"><i class="st pass"></i><div class="nm"><b>Bath salts shown dissolving in water</b><span class="stw pass">Passed</span></div><p class="evl"><a class="ts" href="#">0:11–0:15</a> Salts dissolve in a glass of water.</p></div>
+    <div class="row"><i class="st live"></i><div class="nm"><b>Marked as a paid promotion</b><span class="stw">At live check</span></div><p class="evl">Checked once you post.</p></div>
+  </section>
+</div>
+</div>
+<div class="phonebar"><a class="btn" href="#">I’ve posted it</a></div>
+
+<p class="state">The journey in other states</p>
+<div class="mini">
+  <section class="journey"><div class="top"><span class="evl">Held for this Short</span><b>$350.00</b></div>
+    <div class="jstep done"><i class="sl done"></i><b>Posted</b><span class="t">9 Oct, 11:20 · <a class="link" href="#">View your post</a></span></div>
+    <div class="jstep now" style="background:var(--fail-tint)"><i class="sl flag"></i><b>1 item to fix on your live post</b><span class="t">Live check · 9 Oct, 11:24</span>
+      <div class="body"><p>The paid promotion label is off. Turn it on in YouTube Studio and check again before <b>Sat 10 Oct, 14:00</b>.</p><a class="btn sm" href="#" style="justify-self:start">Check again</a></div></div>
+    <div class="jstep todo"><i class="sl todo"></i><b>Captured</b></div><div class="jstep todo"><i class="sl todo"></i><b>Paid</b></div></section>
+  <section class="journey"><div class="top"><span class="evl">Held for this Short</span><b>$350.00</b></div>
+    <div class="jstep done"><i class="sl done"></i><b>Posted</b><span class="t">9 Oct, 11:20</span></div>
+    <div class="jstep now"><i class="sl clock"></i><b>Juniper &amp; Salt to confirm</b><span class="t">Until Sat 10 Oct, 14:00</span>
+      <div class="body"><p>We couldn’t check the paid-partnership label automatically. If Juniper &amp; Salt says nothing, you’re paid. If they object, a person at Cleared decides.</p></div></div>
+    <div class="jstep todo"><i class="sl todo"></i><b>Captured</b></div><div class="jstep todo"><i class="sl todo"></i><b>Paid</b></div></section>
+  <section class="journey"><div class="top"><span class="evl">Captured from Juniper &amp; Salt</span><b>$350.00</b></div>
+    <div class="jstep done"><i class="sl done"></i><b>Captured</b><span class="t">10 Oct · PayPal ref DEMO-CAP7781 · less Cleared’s 5% fee, $17.50</span></div>
+    <div class="jstep now"><i class="sl clock"></i><b>PayPal is holding $332.50 for ada@example.com</b><span class="t">Payout unclaimed</span>
+      <div class="body"><p>Accept it in PayPal with that email, or have it sent again.</p><a class="btn2" href="#" style="justify-self:start">Send it again</a></div></div></section>
+  <section class="journey"><div class="top"><span class="evl">Cleared</span><b>$332.50</b></div>
+    <div class="jstep done"><i class="sl done"></i><b>Posted</b><span class="t">9 Oct, 11:20</span></div>
+    <div class="jstep done"><i class="sl done"></i><b>Live check passed</b><span class="t">9 Oct, 11:24</span></div>
+    <div class="jstep done"><i class="sl done"></i><b>Captured $350.00</b><span class="t">10 Oct · PayPal ref DEMO-CAP7781</span></div>
+    <div class="jstep done"><i class="sl done"></i><b>Paid $332.50 to ada@example.com</b><span class="t">11 Oct · Payout ref DEMO-PAY4410 · after Cleared’s 5% fee</span></div></section>
+</div>
+</main><script src="../brand-review/review.js"></script><script src="pp.js"></script></body></html>

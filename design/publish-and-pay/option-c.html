@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Publish and pay C: the ticket and the statement</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../landing/landing.css"><link rel="stylesheet" href="../invite/invite.css"><link rel="stylesheet" href="../brand-deal/brand.css"><link rel="stylesheet" href="../brand-review/review.css"><link rel="stylesheet" href="pp.css"><style>
+/* C: before posting, the go-ahead is a ticket that leads the page (the money card's marigold, a big countdown, one action). After posting, the page leads with a statement on the terms-sheet paper: the live check, what was taken, the fee, what was paid, each line with its reference, and a problem line where something needs the creator. */
+.ticket{position:relative;overflow:hidden;background:var(--marigold);color:var(--marigold-ink);border-radius:22px;padding:20px;box-shadow:var(--card-shadow);display:grid;gap:10px}
+@media(min-width:768px){.ticket{grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:24px 28px}}
+.ticket::after{content:"";position:absolute;right:-50px;top:-50px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.35)}
+.ticket h2{font-size:24px}
+.ticket .big{font-family:var(--head);font-size:52px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.ticket p{font-size:14.5px;color:var(--marigold-ink-2)}
+.ticket .btn{position:relative;z-index:1}
+.stmt h2{font-size:24px}
+.sline{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:2px 12px;padding:13px 0;border-top:1px solid var(--line-soft);align-items:start}
+.sline .seal{width:22px;height:22px}
+.sline b{font-size:15px}
+.sline .r{font-size:13px;color:var(--ink-3);grid-column:2}
+.sline .v{font-weight:800;font-variant-numeric:tabular-nums;grid-row:1;grid-column:3}
+.sline.problem{background:var(--fail-tint);border-radius:12px;padding:13px 12px;margin:4px -12px;border-top-color:transparent}
+.sline .do{grid-column:2/4;margin-top:6px;display:flex;gap:8px;flex-wrap:wrap}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--ink);padding-top:14px;margin-top:6px}
+.total b{font-family:var(--head);font-size:30px;font-weight:800}
+</style></head><body><main>
+<p class="crumbs"><a href="#">Deals</a> › <a href="#">Juniper &amp; Salt</a> › YouTube Short</p>
+<h1 style="margin-top:4px">Juniper &amp; Salt · YouTube Short</h1>
+
+<section class="ticket" style="margin-top:18px" aria-label="Your go-ahead">
+  <div style="position:relative;z-index:1"><h2>You can post now</h2>
+    <p class="big" style="margin:8px 0 6px">47h 12m</p>
+    <p>Post before <b>Sat 10 Oct, 14:00</b> your time. Juniper &amp; Salt’s $350.00 is confirmed with PayPal until then. If you forget to tap, we check your channel when the go-ahead ends.</p></div>
+  <a class="btn" href="#">I’ve posted it</a>
+</section>
+<div class="cols">
+  <div class="player"><div class="screen" style="aspect-ratio:16/9"><span class="time">Approved draft · 0:45</span></div></div>
+  <section class="list"><h2>Checklist · 3 items</h2>
+    <div class="row"><i class="st pass"></i><div class="nm"><b>Code TIDE15 shown on screen</b><span class="stw pass">Passed</span></div></div>
+    <div class="row"><i class="st pass"></i><div class="nm"><b>Bath salts shown dissolving in water</b><span class="stw pass">Passed</span></div></div>
+    <div class="row"><i class="st live"></i><div class="nm"><b>Marked as a paid promotion</b><span class="stw">At live check</span></div><p class="evl">Checked once you post.</p></div>
+  </section>
+</div>
+<p class="demo" style="margin-top:12px"><b>Demo</b> (mocks only): the go-ahead answers <u>go-ahead</u> · wait until · not confirmed</p>
+<div class="phonebar"><a class="btn" href="#">I’ve posted it</a></div>
+
+<p class="state">After posting: the statement leads the page</p>
+<div class="mini">
+  <article class="sheet stmt"><h2>Statement for this Short</h2><p class="meta" style="margin-bottom:10px">Juniper &amp; Salt × Ada Okafor · <a class="link" href="#">View your post</a></p>
+    <div class="sline"><i class="sl done"></i><b>Posted</b><span class="v">9 Oct</span><span class="r">Public on your channel, 11:20</span></div>
+    <div class="sline problem"><i class="sl flag"></i><b>Paid promotion label is off</b><span class="v" style="color:var(--fail)">Fix by 10 Oct, 14:00</span><span class="r">Turn it on in YouTube Studio, then check again.</span><div class="do"><a class="btn sm" href="#">Check again</a></div></div>
+    <div class="sline"><i class="sl todo"></i><b>Captured from Juniper &amp; Salt</b><span class="v" style="color:var(--ink-4)">$350.00</span><span class="r">Once the live post checks out</span></div>
+    <div class="sline"><i class="sl todo"></i><b>Cleared’s 5% fee</b><span class="v" style="color:var(--ink-4)">−$17.50</span></div>
+    <div class="total"><span>You receive</span><b style="color:var(--ink-4)">$332.50</b></div></article>
+  <article class="sheet stmt"><h2>Statement for this Short</h2><p class="meta" style="margin-bottom:10px">Cleared · 11 Oct</p>
+    <div class="sline"><i class="sl done"></i><b>Posted</b><span class="v">9 Oct</span><span class="r">Public on your channel, 11:20</span></div>
+    <div class="sline"><i class="sl done"></i><b>Live check passed</b><span class="v">9 Oct</span><span class="r">Paid promotion label on</span></div>
+    <div class="sline"><i class="sl done"></i><b>Captured from Juniper &amp; Salt</b><span class="v">$350.00</span><span class="r">10 Oct · PayPal ref DEMO-CAP7781</span></div>
+    <div class="sline"><i class="sl done"></i><b>Cleared’s 5% fee</b><span class="v">−$17.50</span></div>
+    <div class="sline"><i class="sl done"></i><b>Paid to ada@example.com</b><span class="v">$332.50</span><span class="r">11 Oct · Payout ref DEMO-PAY4410</span></div>
+    <div class="total"><span>You received</span><b>$332.50</b></div></article>
+  <article class="sheet stmt"><h2>Statement for this Short</h2>
+    <div class="sline"><i class="sl done"></i><b>Captured from Juniper &amp; Salt</b><span class="v">$350.00</span><span class="r">10 Oct · PayPal ref DEMO-CAP7781</span></div>
+    <div class="sline problem"><i class="sl flag"></i><b>$332.50 couldn’t be paid to ada@exmaple.com</b><span class="r">PayPal says there’s no account at that email.</span>
+      <div class="do" style="display:grid"><div class="linkfield" style="margin:0"><label style="font-weight:700;font-size:13.5px">Your PayPal email</label><div class="in">ada@example.com</div></div><a class="btn sm" href="#" style="justify-self:start">Save and send it again</a></div></div></article>
+  <section class="ticket"><div style="position:relative;z-index:1"><h2>Don’t post yet</h2><p style="margin-top:6px">PayPal couldn’t confirm Juniper &amp; Salt’s hold. We’ve told them to check their PayPal. You can ask again.</p></div><a class="btn" href="#">Ask again</a></section>
+</div>
+</main><script src="../brand-review/review.js"></script><script src="pp.js"></script></body></html>
