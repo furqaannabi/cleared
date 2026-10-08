@@ -1,6 +1,6 @@
 # Money path: FRD
 
-**Status:** Signed by Furqaan (revision 1.3). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
+**Status:** Signed by Furqaan (revision 1.4). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
 
 **Surface:** Backend. Everything that happens to one deliverable's money, from the brand approving a hold to the deliverable being cleared or its hold being released: steps 3, 6 and 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and the money side of every row in [When something does not go to plan](../PRODUCT.md#when-something-does-not-go-to-plan).
 
@@ -190,7 +190,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 - **A published-post port:** one interface that answers whether an approved post has been published and when. The live check implements it later; tests use a fake.
 - **A jobs runner** over the jobs table, with handlers registered by name ([decision](../decisions/2026-10-08-jobs-table-in-postgres.md)). It is general: the draft check pipeline will use it too.
 - **Stages.** A deliverable's money is in one of: not held, held, captured, paid, released, approved not paid, closed as not held. "Confirmed" is not a stage: it is a held deliverable with a go-ahead that has not run out. Waiting on the brand, on Cleared, on a fix or on a capture retry are recorded on the held stage with their own end times.
-- **Schema.** New models for: a deliverable's money (stage, amounts, the three moments, the go-ahead's end, what it is waiting on); hold attempts; PayPal calls (purpose, request id, started or settled, PayPal reference); payouts; the money record; PayPal events (for MP-FR-36); and jobs. A minimal deliverable model (amount, deadline in days, creator's timezone, payout email, when the brand agreed) is added so the module has something to read; the next backend spec extends it.
+- **Schema.** One row per deliverable holds its money: the whole state the transition function produces, saved as one document, beside typed columns for what is searched (the stage and the amount) and a version number that goes up with every change. Hold attempts, the capture and the payout live inside that document, not in tables of their own, so the rules and the database cannot drift apart and locking a deliverable is locking one row. Separate tables hold: PayPal calls (purpose, request id, started or settled, PayPal reference), which is also how a webhook's reference finds its deliverable; the money record; PayPal events (for MP-FR-36); and jobs. The row carries the creator's payout email beside the document, never inside it. The terms the document starts from (amount, deadline in days, creator's timezone, when the brand agreed) are supplied when the row is made; the next backend spec decides where they come from.
 - **Order of work around a PayPal call:** lock and check the state and record the call as started in one transaction; call PayPal with no transaction open; record the answer, the transition and the next job in a second transaction. A crash between the two leaves a started call for the checker.
 - **Configuration:** the fee rate, the amount limits, the go-ahead length, the windows (48 hours, 24 hours, 7 days), the capture retry interval and the job retry limit are named settings with the values in this spec as defaults.
 - **Webhook events subscribed:** authorization created and voided; capture completed, denied, pending, refunded and reversed; and the payout item results.
@@ -250,10 +250,16 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 
 **To verify in the sandbox.**
 
-- That PayPal's server SDK runs on Bun.
 - From which moment a hold can be renewed, whether it can be renewed more than once, and whether renewing returns a new reference.
-- That the sandbox business account has Payouts turned on, and how quickly a payout's result arrives.
 - **The $20.00 minimum.** By rough numbers a 5% fee does not cover PayPal's charges below about $50. No real money moves in the sandbox; the limit is a setting.
+
+**Shown by the sandbox.**
+
+- PayPal's server SDK runs on Bun: real calls were made from Bun 1.4.
+- Payouts need a United States sandbox business account. An account elsewhere is refused outright, which is what MP-FR-45 now covers.
+- A payout to an email with no PayPal account is unclaimed about 15 seconds after it is sent.
+- A payout sent again under the same id is refused, and the refusal points at the first one. The port reads that pointer, so a request whose answer was lost finds its payout.
+- An unclaimed payout can be cancelled only once PayPal has finished processing it, about 20 seconds after sending, and it then reads as returned.
 
 **Waiting on William.** The fee, the cancel rule, closing unheld posts after 7 days, who decides a payment the live check cannot, and the fix window are shared product behaviour. Furqaan decided them; William can supersede.
 
@@ -269,3 +275,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.2 | Signed by Furqaan | none |
 | 1.3 | MP-FR-45 added: a payout PayPal will not send stays captured, is sent again every 6 hours under the same request id, and is put in front of a person at Cleared. Found against the sandbox: a business account not allowed to send payouts was refused outright, and the rules had no outcome for it, so it would have been checked forever with nobody told | [A payout PayPal will not send](../decisions/2026-10-08-a-payout-paypal-will-not-send.md) |
 | 1.3 | Signed by Furqaan | none |
+| 1.4 | Schema: a deliverable's money state is stored as one document per deliverable, with PayPal calls, the money record, PayPal events and jobs as tables; hold attempts and payouts no longer have tables of their own. Open items: what the sandbox has shown is recorded, and the two items it settled are removed from "To verify". No requirement changes | [Money state as one document](../decisions/2026-10-08-money-state-as-one-document.md) |
+| 1.4 | Signed by Furqaan | none |

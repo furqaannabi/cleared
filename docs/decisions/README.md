@@ -62,5 +62,6 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-08 | [A go-ahead runs to the deadline when the deadline falls inside PayPal's guarantee](2026-10-08-go-ahead-runs-to-a-deadline-inside-the-guarantee.md) | Accepted |
 | 2026-10-08 | [The first capture re-confirms a hold whose guarantee has ended](2026-10-08-first-capture-re-confirms-a-lapsed-hold.md) | Accepted |
 | 2026-10-08 | [A payout PayPal will not send is retried and put in front of Cleared](2026-10-08-a-payout-paypal-will-not-send.md) | Accepted |
+| 2026-10-08 | [A deliverable's money state is stored as one document](2026-10-08-money-state-as-one-document.md) | Accepted |
 | 2026-10-08 | [A brand objection is settled by the creator and the brand](2026-10-08-objection-settled-by-the-two-sides.md) | Accepted |
 | 2026-10-08 | [The brand gets a fresh link each time a draft needs it](2026-10-08-fresh-brand-link-per-review.md) | Accepted |
