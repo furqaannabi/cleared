@@ -643,3 +643,403 @@ describe("MP-FR-13 a deadline inside the guarantee (revision 1.1)", () => {
     ).toMatchObject({ ok: true, state: { goAhead: { status: "running", until: at("2026-10-11T22:59:00Z") } } });
   });
 });
+
+/** A held deliverable whose approved post went live at 09:30 UTC on 17 October, a week before the deadline. */
+function published(): MoneyState {
+  return after(readyToPublish(), {
+    type: "post_published",
+    publishedAt: at("2026-10-17T09:30:00Z"),
+    at: at("2026-10-17T09:35:00Z"),
+  });
+}
+
+const liveCheck = (
+  result: "passed" | "cannot_decide" | "failed_fixable" | "failed_not_fixable",
+  time = "2026-10-17T09:40:00Z",
+): MoneyEvent => ({ type: "live_check_result", result, at: at(time) });
+
+describe("MP-FR-16 published", () => {
+  test("records when the approved post was published", () => {
+    expect(published()).toMatchObject({ stage: "held", publishedAt: at("2026-10-17T09:30:00Z") });
+  });
+
+  test("a second report does not move the publish time", () => {
+    const before = published();
+
+    expect(
+      transition(before, { type: "post_published", publishedAt: at("2026-10-18T00:00:00Z"), at: at("2026-10-18T00:05:00Z") }),
+    ).toEqual({ ok: true, state: before, effects: [] });
+  });
+
+  test("is refused for a deliverable that is not held", () => {
+    expect(
+      transition(agreedDeliverable(), { type: "post_published", publishedAt: at("2026-10-17T09:30:00Z"), at: at("2026-10-17T09:35:00Z") }),
+    ).toEqual({ ok: false, reason: "not_held" });
+  });
+});
+
+describe("MP-FR-17 live check passed", () => {
+  test("the approval is put on record and the capture is started", () => {
+    expect(transition(published(), liveCheck("passed"))).toMatchObject({
+      ok: true,
+      state: { stage: "held", approval: { by: "live_check", at: at("2026-10-17T09:40:00Z") } },
+      effects: [{ type: "start_capture" }],
+    });
+  });
+
+  test("a result for a post that was never reported published is refused", () => {
+    expect(transition(readyToPublish(), liveCheck("passed"))).toEqual({ ok: false, reason: "not_published" });
+  });
+
+  test("a second passing result does not start a second capture (MP-BR-03)", () => {
+    const approved = after(published(), liveCheck("passed"));
+
+    expect(transition(approved, liveCheck("passed", "2026-10-17T10:00:00Z"))).toEqual({
+      ok: true,
+      state: approved,
+      effects: [],
+    });
+  });
+});
+
+describe("MP-FR-18 live check cannot decide", () => {
+  const undecided = () => after(published(), liveCheck("cannot_decide"));
+  const silence = (time: string): MoneyEvent => ({ type: "brand_confirm_ends_due", at: at(time) });
+
+  test("the brand gets 48 hours to confirm or object, and is told", () => {
+    expect(transition(published(), liveCheck("cannot_decide"))).toMatchObject({
+      ok: true,
+      state: { approval: null, waitingOn: { for: "brand_to_confirm", until: at("2026-10-19T09:40:00Z") } },
+      effects: [
+        { type: "schedule_job", job: "brand_confirm_ends", at: at("2026-10-19T09:40:00Z") },
+        { type: "notify", to: "brand", about: "confirm_live_post" },
+      ],
+    });
+  });
+
+  test("confirming captures the hold", () => {
+    expect(transition(undecided(), { type: "brand_confirmed", at: at("2026-10-18T08:00:00Z") })).toMatchObject({
+      ok: true,
+      state: { waitingOn: null, approval: { by: "brand_confirmed", at: at("2026-10-18T08:00:00Z") } },
+      effects: [{ type: "start_capture" }],
+    });
+  });
+
+  test("48 hours of silence captures the hold", () => {
+    expect(transition(undecided(), silence("2026-10-19T09:40:00Z"))).toMatchObject({
+      ok: true,
+      state: { waitingOn: null, approval: { by: "brand_silence", at: at("2026-10-19T09:40:00Z") } },
+      effects: [{ type: "start_capture" }],
+    });
+  });
+
+  test("the silence timer does nothing early, or once the brand has answered", () => {
+    const waiting = undecided();
+    const confirmed = after(waiting, { type: "brand_confirmed", at: at("2026-10-18T08:00:00Z") });
+
+    expect(transition(waiting, silence("2026-10-19T09:00:00Z"))).toEqual({ ok: true, state: waiting, effects: [] });
+    expect(transition(confirmed, silence("2026-10-19T09:40:00Z"))).toEqual({ ok: true, state: confirmed, effects: [] });
+  });
+
+  test("an objection goes to a person at Cleared, and silence no longer pays", () => {
+    const objection: MoneyEvent = { type: "brand_objected", reason: "The link goes to the wrong page.", at: at("2026-10-18T08:00:00Z") };
+    const objected = after(undecided(), objection);
+
+    expect(transition(undecided(), objection)).toMatchObject({
+      ok: true,
+      state: { approval: null, waitingOn: { for: "cleared_to_rule", objection: "The link goes to the wrong page." } },
+      effects: [{ type: "notify", to: "cleared", about: "brand_objected" }],
+    });
+    expect(transition(objected, silence("2026-10-19T09:40:00Z"))).toEqual({ ok: true, state: objected, effects: [] });
+  });
+
+  test("confirming or objecting is refused when the brand has not been asked", () => {
+    expect(transition(published(), { type: "brand_confirmed", at: at("2026-10-18T08:00:00Z") })).toEqual({
+      ok: false,
+      reason: "nothing_to_confirm",
+    });
+    expect(
+      transition(published(), { type: "brand_objected", reason: "No.", at: at("2026-10-18T08:00:00Z") }),
+    ).toEqual({ ok: false, reason: "nothing_to_confirm" });
+  });
+});
+
+describe("MP-FR-19 Cleared's ruling", () => {
+  const objected = () =>
+    after(published(), liveCheck("cannot_decide"), {
+      type: "brand_objected",
+      reason: "The link goes to the wrong page.",
+      at: at("2026-10-18T08:00:00Z"),
+    });
+
+  test("a ruling to pay captures the hold", () => {
+    expect(transition(objected(), { type: "cleared_ruled", decision: "pay", at: at("2026-10-20T10:00:00Z") })).toMatchObject({
+      ok: true,
+      state: { stage: "held", waitingOn: null, approval: { by: "cleared", at: at("2026-10-20T10:00:00Z") } },
+      effects: [{ type: "start_capture" }],
+    });
+  });
+
+  test("a ruling not to pay releases the hold", () => {
+    expect(
+      transition(objected(), { type: "cleared_ruled", decision: "release", at: at("2026-10-20T10:00:00Z") }),
+    ).toMatchObject({
+      ok: true,
+      state: {
+        stage: "released",
+        waitingOn: null,
+        approval: null,
+        release: { reason: "cleared_ruled", at: at("2026-10-20T10:00:00Z") },
+      },
+      effects: [{ type: "cancel_hold", reference: "AUTH-1" }],
+    });
+  });
+
+  test("a ruling is refused when nothing is waiting on Cleared", () => {
+    expect(transition(published(), { type: "cleared_ruled", decision: "pay", at: at("2026-10-20T10:00:00Z") })).toEqual({
+      ok: false,
+      reason: "nothing_to_rule_on",
+    });
+  });
+});
+
+describe("MP-FR-20 live check failed, fixable", () => {
+  const windowEnds = (time: string): MoneyEvent => ({ type: "fix_window_ends_due", at: at(time) });
+
+  test("the creator has until the deadline to fix it, and is told", () => {
+    // Failed on the 17th; the deadline is 22:59 UTC on the 24th, which is later than 24 hours on.
+    expect(transition(published(), liveCheck("failed_fixable"))).toMatchObject({
+      ok: true,
+      state: { stage: "held", approval: null, waitingOn: { for: "creator_to_fix", until: at("2026-10-24T22:59:00Z") } },
+      effects: [
+        { type: "schedule_job", job: "fix_window_ends", at: at("2026-10-24T22:59:00Z") },
+        { type: "notify", to: "creator", about: "fix_live_post" },
+      ],
+    });
+  });
+
+  test("a failure reported near the deadline still leaves 24 hours", () => {
+    expect(transition(published(), liveCheck("failed_fixable", "2026-10-24T20:00:00Z"))).toMatchObject({
+      ok: true,
+      state: { waitingOn: { for: "creator_to_fix", until: at("2026-10-25T20:00:00Z") } },
+    });
+  });
+
+  test("failing again inside the window does not extend it", () => {
+    const fixing = after(published(), liveCheck("failed_fixable", "2026-10-24T20:00:00Z"));
+
+    expect(transition(fixing, liveCheck("failed_fixable", "2026-10-25T10:00:00Z"))).toEqual({
+      ok: true,
+      state: fixing,
+      effects: [],
+    });
+  });
+
+  test("a pass inside the window captures the hold", () => {
+    const fixing = after(published(), liveCheck("failed_fixable"));
+
+    expect(transition(fixing, liveCheck("passed", "2026-10-18T09:00:00Z"))).toMatchObject({
+      ok: true,
+      state: { waitingOn: null, approval: { by: "live_check" } },
+      effects: [{ type: "start_capture" }],
+    });
+  });
+
+  test("a check that then cannot decide goes to the brand", () => {
+    const fixing = after(published(), liveCheck("failed_fixable"));
+
+    expect(transition(fixing, liveCheck("cannot_decide", "2026-10-18T09:00:00Z"))).toMatchObject({
+      ok: true,
+      state: { waitingOn: { for: "brand_to_confirm", until: at("2026-10-20T09:00:00Z") } },
+    });
+  });
+
+  test("still failing when the window ends, the hold is released", () => {
+    const fixing = after(published(), liveCheck("failed_fixable"));
+
+    expect(transition(fixing, windowEnds("2026-10-24T22:59:00Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "released", release: { reason: "fix_window_ended", at: at("2026-10-24T22:59:00Z") } },
+      effects: [{ type: "cancel_hold", reference: "AUTH-1" }],
+    });
+  });
+
+  test("the window's end does nothing early, or once the post has passed", () => {
+    const fixing = after(published(), liveCheck("failed_fixable"));
+    const passed = after(fixing, liveCheck("passed", "2026-10-18T09:00:00Z"));
+
+    expect(transition(fixing, windowEnds("2026-10-24T22:00:00Z"))).toEqual({ ok: true, state: fixing, effects: [] });
+    expect(transition(passed, windowEnds("2026-10-24T22:59:00Z"))).toEqual({ ok: true, state: passed, effects: [] });
+  });
+});
+
+describe("MP-FR-21 live check failed, not fixable", () => {
+  const failed = () => after(published(), liveCheck("failed_not_fixable"));
+
+  test("the brand gets 48 hours to accept the post anyway, and is told", () => {
+    expect(transition(published(), liveCheck("failed_not_fixable"))).toMatchObject({
+      ok: true,
+      state: { approval: null, waitingOn: { for: "brand_to_accept", until: at("2026-10-19T09:40:00Z") } },
+      effects: [
+        { type: "schedule_job", job: "brand_accept_ends", at: at("2026-10-19T09:40:00Z") },
+        { type: "notify", to: "brand", about: "accept_failed_post" },
+      ],
+    });
+  });
+
+  test("accepting captures the hold", () => {
+    expect(transition(failed(), { type: "brand_accepted", at: at("2026-10-18T08:00:00Z") })).toMatchObject({
+      ok: true,
+      state: { waitingOn: null, approval: { by: "brand_accepted", at: at("2026-10-18T08:00:00Z") } },
+      effects: [{ type: "start_capture" }],
+    });
+  });
+
+  test("silence does not pay: after 48 hours the hold is released", () => {
+    expect(transition(failed(), { type: "brand_accept_ends_due", at: at("2026-10-19T09:40:00Z") })).toMatchObject({
+      ok: true,
+      state: { stage: "released", approval: null, release: { reason: "not_accepted" } },
+      effects: [{ type: "cancel_hold", reference: "AUTH-1" }],
+    });
+  });
+
+  test("accepting is refused when the brand has not been asked", () => {
+    expect(transition(published(), { type: "brand_accepted", at: at("2026-10-18T08:00:00Z") })).toEqual({
+      ok: false,
+      reason: "nothing_to_accept",
+    });
+  });
+
+  test("the brand cannot confirm its way past a failed post", () => {
+    expect(transition(failed(), { type: "brand_confirmed", at: at("2026-10-18T08:00:00Z") })).toEqual({
+      ok: false,
+      reason: "nothing_to_confirm",
+    });
+  });
+});
+
+describe("MP-FR-22 the deadline", () => {
+  // The deadline is 22:59 UTC on 24 October.
+  const deadlineDue = (publishedAt: string | null, time = "2026-10-24T22:59:00Z"): MoneyEvent => ({
+    type: "deadline_due",
+    publishedAt: publishedAt ? at(publishedAt) : null,
+    at: at(time),
+  });
+
+  test("with no approved post published in time, the hold is released", () => {
+    expect(transition(readyToPublish(), deadlineDue(null))).toMatchObject({
+      ok: true,
+      state: { stage: "released", release: { reason: "deadline", at: at("2026-10-24T22:59:00Z") } },
+      effects: [{ type: "cancel_hold", reference: "AUTH-1" }],
+    });
+  });
+
+  test("a post already recorded as published in time keeps its hold", () => {
+    const before = published();
+
+    expect(transition(before, deadlineDue(null))).toEqual({ ok: true, state: before, effects: [] });
+  });
+
+  test("a post the live check finds was published in time keeps its hold, and is recorded", () => {
+    const before = readyToPublish();
+
+    expect(transition(before, deadlineDue("2026-10-24T22:50:00Z"))).toEqual({
+      ok: true,
+      state: { ...before, publishedAt: at("2026-10-24T22:50:00Z") },
+      effects: [],
+    });
+  });
+
+  test("a post published after the deadline does not keep the hold", () => {
+    expect(transition(readyToPublish(), deadlineDue("2026-10-24T23:10:00Z", "2026-10-24T23:15:00Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "released", release: { reason: "deadline" } },
+    });
+  });
+
+  test("when the last go-ahead request was not confirmed, the reason says so", () => {
+    const notConfirmed = after(readyToPublish(), askGoAhead("2026-10-23T10:00:00Z"), {
+      type: "hold_not_confirmed",
+      confirmId: "conf_1",
+      at: at("2026-10-23T10:00:05Z"),
+    });
+
+    expect(transition(notConfirmed, deadlineDue(null))).toMatchObject({
+      ok: true,
+      state: { stage: "released", release: { reason: "hold_not_confirmed" } },
+    });
+  });
+
+  test("it does nothing before the deadline, or for a deliverable that is not held", () => {
+    const held = readyToPublish();
+    const notHeld = agreedDeliverable();
+
+    expect(transition(held, deadlineDue(null, "2026-10-24T22:00:00Z"))).toEqual({ ok: true, state: held, effects: [] });
+    expect(transition(notHeld, deadlineDue(null))).toEqual({ ok: true, state: notHeld, effects: [] });
+  });
+});
+
+describe("MP-FR-23 day 28", () => {
+  // Day 28 is 09:05:10 UTC on 7 November.
+  const day28Due = (time = "2026-11-07T09:05:10Z"): MoneyEvent => ({ type: "day_28_due", at: at(time) });
+  const withCleared = () =>
+    after(published(), liveCheck("cannot_decide"), {
+      type: "brand_objected",
+      reason: "The link goes to the wrong page.",
+      at: at("2026-10-18T08:00:00Z"),
+    });
+
+  test("a hold still undecided is released", () => {
+    expect(transition(withCleared(), day28Due())).toMatchObject({
+      ok: true,
+      state: { stage: "released", waitingOn: null, release: { reason: "day_28", at: at("2026-11-07T09:05:10Z") } },
+      effects: [{ type: "cancel_hold", reference: "AUTH-1" }],
+    });
+  });
+
+  test("a hold approved to pay but never captured ends as approved, not paid", () => {
+    const approved = after(published(), liveCheck("passed"));
+
+    expect(transition(approved, day28Due())).toMatchObject({
+      ok: true,
+      state: { stage: "approved_not_paid", approval: { by: "live_check" }, release: { reason: "day_28" } },
+      effects: [{ type: "cancel_hold", reference: "AUTH-1" }],
+    });
+  });
+
+  test("it does nothing early", () => {
+    const before = withCleared();
+
+    expect(transition(before, day28Due("2026-11-07T09:00:00Z"))).toEqual({ ok: true, state: before, effects: [] });
+  });
+});
+
+describe("MP-BR-08 a finished deliverable", () => {
+  const released = () =>
+    after(readyToPublish(), askGoAhead("2026-10-23T10:00:00Z"), {
+      type: "deadline_due",
+      publishedAt: null,
+      at: at("2026-10-24T22:59:00Z"),
+    });
+
+  test.each<[string, MoneyEvent]>([
+    ["starting a new hold", startAgain],
+    ["asking for the go-ahead", askGoAhead("2026-10-25T10:00:00Z", "conf_2")],
+    ["reporting a post published", { type: "post_published", publishedAt: at("2026-10-25T10:00:00Z"), at: at("2026-10-25T10:05:00Z") }],
+    ["a live check result", liveCheck("passed", "2026-10-25T10:10:00Z")],
+    ["the brand confirming", { type: "brand_confirmed", at: at("2026-10-25T10:10:00Z") }],
+    ["Cleared ruling", { type: "cleared_ruled", decision: "pay", at: at("2026-10-25T10:10:00Z") }],
+  ])("refuses %s after release", (_, event) => {
+    expect(transition(released(), event)).toEqual({ ok: false, reason: "finished" });
+  });
+
+  test.each<[string, MoneyEvent]>([
+    ["a late answer from PayPal", { type: "hold_confirmed", confirmId: "conf_1", at: at("2026-10-24T23:05:00Z") }],
+    ["day 28", { type: "day_28_due", at: at("2026-11-07T09:05:10Z") }],
+    ["a second deadline job", { type: "deadline_due", publishedAt: null, at: at("2026-10-24T23:30:00Z") }],
+  ])("%s changes nothing after release", (_, event) => {
+    const before = released();
+
+    expect(transition(before, event)).toEqual({ ok: true, state: before, effects: [] });
+  });
+});

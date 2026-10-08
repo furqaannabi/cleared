@@ -16,8 +16,12 @@ export interface MoneyTerms {
 
 /** One deliverable's money. */
 export interface MoneyState extends MoneyTerms {
-  /** closed_not_held is final: the brand never held it within the time allowed (MP-FR-08). */
-  stage: "not_held" | "held" | "closed_not_held";
+  /**
+   * closed_not_held is final: the brand never held it within the time allowed (MP-FR-08).
+   * released is final: the hold went back to the brand (MP-FR-32).
+   * approved_not_paid is final: paying was approved, but the hold ended before it could be captured (MP-FR-23).
+   */
+  stage: "not_held" | "held" | "closed_not_held" | "released" | "approved_not_paid";
   agreedAt: Date | null;
   attempt: HoldAttempt | null;
   hold: Hold | null;
@@ -26,6 +30,33 @@ export interface MoneyState extends MoneyTerms {
   goAhead: GoAhead;
   /** When an approved post was published, as the live check reports it (MP-FR-16). */
   publishedAt: Date | null;
+  /** The approval to pay, once there is one. No capture happens without it (MP-BR-04). */
+  approval: Approval | null;
+  /** Whose move it is after publishing, when the live check alone did not settle it. */
+  waitingOn: WaitingOn | null;
+  /** Why and when the hold was released. */
+  release: Release | null;
+}
+
+/** Who or what approved paying for the live post (MP-FR-17 to MP-FR-21). */
+export interface Approval {
+  by: "live_check" | "brand_confirmed" | "brand_silence" | "cleared" | "brand_accepted";
+  at: Date;
+}
+
+export type WaitingOn =
+  /** The live check could not decide. The brand confirms or objects; silence pays (MP-FR-18). */
+  | { for: "brand_to_confirm"; until: Date }
+  /** The brand objected. A person at Cleared rules. The reason is untrusted text, never acted on (MP-BR-13). */
+  | { for: "cleared_to_rule"; objection: string }
+  /** The live check failed on something fixable. The creator fixes it and it is checked again (MP-FR-20). */
+  | { for: "creator_to_fix"; until: Date }
+  /** The live check failed on something that cannot be fixed. The brand may accept; silence does not pay (MP-FR-21). */
+  | { for: "brand_to_accept"; until: Date };
+
+export interface Release {
+  reason: "deadline" | "hold_not_confirmed" | "day_28" | "cleared_ruled" | "fix_window_ended" | "not_accepted";
+  at: Date;
 }
 
 /**
@@ -84,6 +115,19 @@ export type MoneyEvent =
   | { type: "hold_not_confirmed"; confirmId: string; at: Date }
   /** The go-ahead's end time has come. `publishedAt` is what the live check answered just before (MP-FR-15). */
   | { type: "go_ahead_ends_due"; publishedAt: Date | null; at: Date }
+  | { type: "post_published"; publishedAt: Date; at: Date }
+  /** The live check's result, decided by fixed code outside this module (MP-BR-01). */
+  | { type: "live_check_result"; result: "passed" | "cannot_decide" | "failed_fixable" | "failed_not_fixable"; at: Date }
+  | { type: "brand_confirmed"; at: Date }
+  | { type: "brand_objected"; reason: string; at: Date }
+  | { type: "brand_confirm_ends_due"; at: Date }
+  | { type: "cleared_ruled"; decision: "pay" | "release"; at: Date }
+  | { type: "fix_window_ends_due"; at: Date }
+  | { type: "brand_accepted"; at: Date }
+  | { type: "brand_accept_ends_due"; at: Date }
+  /** The deadline has come. `publishedAt` is what the live check answered just before (MP-FR-22). */
+  | { type: "deadline_due"; publishedAt: Date | null; at: Date }
+  | { type: "day_28_due"; at: Date }
   | { type: "authorize_answered"; attemptId: string; outcome: "held"; reference: string; at: Date }
   | { type: "authorize_answered"; attemptId: string; outcome: "declined" | "pending" | "unknown"; at: Date };
 
@@ -96,9 +140,32 @@ export type MoneyEffect =
   | { type: "check_hold"; confirmId: string; reference: string }
   | { type: "renew_hold"; confirmId: string; reference: string }
   /** A notice recorded for one side. Showing or sending it is the job of the pages built later. */
-  | { type: "notify"; to: "brand" | "creator"; about: "hold_not_confirmed" }
+  | { type: "notify"; to: "brand" | "creator" | "cleared"; about: Notice }
+  /** Give the hold back to the brand. The call to PayPal is MP-FR-32. */
+  | { type: "cancel_hold"; reference: string }
+  /** Capture the hold in full. The capture itself is MP-FR-24. */
+  | { type: "start_capture" }
   | { type: "schedule_job"; job: "attempt_stuck"; attemptId: string; at: Date }
-  | { type: "schedule_job"; job: "never_held" | "deadline" | "day_28" | "go_ahead_ends"; at: Date };
+  | {
+      type: "schedule_job";
+      job:
+        | "never_held"
+        | "deadline"
+        | "day_28"
+        | "go_ahead_ends"
+        | "brand_confirm_ends"
+        | "fix_window_ends"
+        | "brand_accept_ends";
+      at: Date;
+    };
+
+/** What a notice is about. Each becomes a message with a reason and a next step (MP-BR-15). */
+export type Notice =
+  | "hold_not_confirmed"
+  | "confirm_live_post"
+  | "brand_objected"
+  | "fix_live_post"
+  | "accept_failed_post";
 
 /** Why an event was refused. The routes built later turn each into its own message (MP-FR-02). */
 export type Refusal =
@@ -113,7 +180,12 @@ export type Refusal =
   | "not_held"
   | "draft_not_cleared"
   | "deadline_passed"
-  | "unknown_confirmation";
+  | "unknown_confirmation"
+  | "not_published"
+  | "nothing_to_confirm"
+  | "nothing_to_rule_on"
+  | "nothing_to_accept"
+  | "finished";
 
 export type TransitionResult =
   | { ok: true; state: MoneyState; effects: MoneyEffect[] }
@@ -131,6 +203,10 @@ export interface MoneySettings {
   /** How long a go-ahead lasts at most, and how long before the guarantee ends it must stop (MP-FR-13). */
   goAheadHours: number;
   guaranteeMarginHours: number;
+  /** How long the brand has to answer about a live post (MP-FR-18, MP-FR-21). */
+  brandWindowHours: number;
+  /** The least time a creator gets to fix a failed live post, when the deadline is nearer (MP-FR-20). */
+  fixWindowHours: number;
 }
 
 /** The values in the signed spec. */
@@ -141,11 +217,25 @@ export const defaultSettings: MoneySettings = {
   neverHeldDays: 7,
   goAheadHours: 48,
   guaranteeMarginHours: 24,
+  brandWindowHours: 48,
+  fixWindowHours: 24,
 };
 
 /** A deliverable's money before the brand has agreed anything. */
 export function newMoney(terms: MoneyTerms): MoneyState {
-  return { ...terms, stage: "not_held", agreedAt: null, attempt: null, hold: null, draftClearedAt: null, goAhead: { status: "none" }, publishedAt: null };
+  return {
+    ...terms,
+    stage: "not_held",
+    agreedAt: null,
+    attempt: null,
+    hold: null,
+    draftClearedAt: null,
+    goAhead: { status: "none" },
+    publishedAt: null,
+    approval: null,
+    waitingOn: null,
+    release: null,
+  };
 }
 
 const refuse = (reason: Refusal): TransitionResult => ({ ok: false, reason });
@@ -163,6 +253,8 @@ const daysAfter = (from: Date, days: number) => hoursAfter(from, days * 24);
 
 const earliest = (...moments: Date[]) => new Date(Math.min(...moments.map((moment) => moment.getTime())));
 
+const latest = (...moments: Date[]) => new Date(Math.max(...moments.map((moment) => moment.getTime())));
+
 /**
  * The last moment a go-ahead may cover under the current guarantee (MP-FR-13). Normally that is the margin
  * before the guarantee ends. A deadline that falls inside the guarantee has no margin: the funds are
@@ -176,6 +268,47 @@ const guaranteeCovers = (hold: Hold, settings: MoneySettings) =>
 /** True when too little of the guarantee is left for a go-ahead and PayPal cannot renew it yet. */
 const mustWaitForRenewal = (hold: Hold, now: Date, settings: MoneySettings) =>
   hold.deadlineAt >= hold.guaranteeEndsAt && now >= guaranteeCovers(hold, settings);
+
+/** Puts the approval to pay on record and starts the capture. */
+const approve = (state: MoneyState, by: Approval["by"], at: Date): TransitionResult => ({
+  ok: true,
+  state: { ...state, approval: { by, at }, waitingOn: null },
+  effects: [{ type: "start_capture" }],
+});
+
+/**
+ * Gives the hold back to the brand. A deliverable that was approved to pay ends as approved, not paid,
+ * so its pages can say the post was accepted and why no money arrived (MP-FR-23).
+ */
+function release(state: MoneyState, reason: Release["reason"], at: Date): TransitionResult {
+  if (!state.hold) return refuse("not_held");
+  return {
+    ok: true,
+    state: {
+      ...state,
+      stage: state.approval ? "approved_not_paid" : "released",
+      waitingOn: null,
+      release: { reason, at },
+    },
+    effects: [{ type: "cancel_hold", reference: state.hold.reference }],
+  };
+}
+
+/** The events that ask for something, as opposed to jobs falling due and PayPal's answers. */
+const REQUESTS: ReadonlySet<MoneyEvent["type"]> = new Set([
+  "brand_agreed",
+  "start_hold",
+  "hold_approved",
+  "hold_closed",
+  "draft_cleared",
+  "go_ahead_requested",
+  "post_published",
+  "live_check_result",
+  "brand_confirmed",
+  "brand_objected",
+  "cleared_ruled",
+  "brand_accepted",
+]);
 
 /** Tells the creator to come back when PayPal can renew the hold. */
 const waitForRenewal = (state: MoneyState, hold: Hold): TransitionResult => ({
@@ -227,6 +360,10 @@ export function transition(
   event: MoneyEvent,
   settings: MoneySettings = defaultSettings,
 ): TransitionResult {
+  // Nothing changes a deliverable's money once it is released or ended unpaid (MP-BR-08).
+  if (state.stage === "released" || state.stage === "approved_not_paid") {
+    return REQUESTS.has(event.type) ? refuse("finished") : unchanged(state);
+  }
   switch (event.type) {
     case "brand_agreed":
       return {
@@ -350,6 +487,91 @@ export function transition(
       if (event.publishedAt) return { ok: true, state: { ...state, publishedAt: event.publishedAt }, effects: [] };
       return { ok: true, state: { ...state, goAhead: { status: "none" } }, effects: [] };
     }
+    case "post_published":
+      if (state.stage !== "held") return refuse("not_held");
+      if (state.publishedAt) return unchanged(state);
+      return { ok: true, state: { ...state, publishedAt: event.publishedAt }, effects: [] };
+    case "live_check_result": {
+      if (state.stage !== "held" || !state.hold) return refuse("not_held");
+      if (!state.publishedAt) return refuse("not_published");
+      // Once paying is approved, or a person at Cleared is ruling, a new result changes nothing.
+      if (state.approval || state.waitingOn?.for === "cleared_to_rule") return unchanged(state);
+      const brandWindowEnds = hoursAfter(event.at, settings.brandWindowHours);
+      switch (event.result) {
+        case "passed":
+          return approve(state, "live_check", event.at);
+        case "cannot_decide":
+          if (state.waitingOn?.for === "brand_to_confirm") return unchanged(state);
+          return {
+            ok: true,
+            state: { ...state, waitingOn: { for: "brand_to_confirm", until: brandWindowEnds } },
+            effects: [
+              { type: "schedule_job", job: "brand_confirm_ends", at: brandWindowEnds },
+              { type: "notify", to: "brand", about: "confirm_live_post" },
+            ],
+          };
+        case "failed_fixable": {
+          // The window is set by the first failure. Failing again inside it does not extend it.
+          if (state.waitingOn?.for === "creator_to_fix") return unchanged(state);
+          const until = latest(state.hold.deadlineAt, hoursAfter(event.at, settings.fixWindowHours));
+          return {
+            ok: true,
+            state: { ...state, waitingOn: { for: "creator_to_fix", until } },
+            effects: [
+              { type: "schedule_job", job: "fix_window_ends", at: until },
+              { type: "notify", to: "creator", about: "fix_live_post" },
+            ],
+          };
+        }
+        case "failed_not_fixable":
+          if (state.waitingOn?.for === "brand_to_accept") return unchanged(state);
+          return {
+            ok: true,
+            state: { ...state, waitingOn: { for: "brand_to_accept", until: brandWindowEnds } },
+            effects: [
+              { type: "schedule_job", job: "brand_accept_ends", at: brandWindowEnds },
+              { type: "notify", to: "brand", about: "accept_failed_post" },
+            ],
+          };
+      }
+    }
+    case "deadline_due": {
+      if (state.stage !== "held" || !state.hold || event.at < state.hold.deadlineAt) return unchanged(state);
+      const publishedAt = state.publishedAt ?? event.publishedAt;
+      if (publishedAt && publishedAt <= state.hold.deadlineAt) {
+        return { ok: true, state: { ...state, publishedAt }, effects: [] };
+      }
+      // A creator who was told not to publish did not miss the deadline by choice; the reason says so.
+      return release(state, state.goAhead.status === "not_confirmed" ? "hold_not_confirmed" : "deadline", event.at);
+    }
+    case "day_28_due":
+      if (state.stage !== "held" || !state.hold || event.at < state.hold.day28At) return unchanged(state);
+      return release(state, "day_28", event.at);
+    case "fix_window_ends_due":
+      if (state.waitingOn?.for !== "creator_to_fix" || event.at < state.waitingOn.until) return unchanged(state);
+      return release(state, "fix_window_ended", event.at);
+    case "brand_accepted":
+      if (state.waitingOn?.for !== "brand_to_accept") return refuse("nothing_to_accept");
+      return approve(state, "brand_accepted", event.at);
+    case "brand_accept_ends_due":
+      if (state.waitingOn?.for !== "brand_to_accept" || event.at < state.waitingOn.until) return unchanged(state);
+      return release(state, "not_accepted", event.at);
+    case "brand_confirmed":
+      if (state.waitingOn?.for !== "brand_to_confirm") return refuse("nothing_to_confirm");
+      return approve(state, "brand_confirmed", event.at);
+    case "brand_objected":
+      if (state.waitingOn?.for !== "brand_to_confirm") return refuse("nothing_to_confirm");
+      return {
+        ok: true,
+        state: { ...state, waitingOn: { for: "cleared_to_rule", objection: event.reason } },
+        effects: [{ type: "notify", to: "cleared", about: "brand_objected" }],
+      };
+    case "brand_confirm_ends_due":
+      if (state.waitingOn?.for !== "brand_to_confirm" || event.at < state.waitingOn.until) return unchanged(state);
+      return approve(state, "brand_silence", event.at);
+    case "cleared_ruled":
+      if (state.waitingOn?.for !== "cleared_to_rule") return refuse("nothing_to_rule_on");
+      return event.decision === "pay" ? approve(state, "cleared", event.at) : release(state, "cleared_ruled", event.at);
     case "authorize_answered": {
       const attempt = state.attempt;
       if (!attempt || attempt.id !== event.attemptId) return refuse("unknown_attempt");
