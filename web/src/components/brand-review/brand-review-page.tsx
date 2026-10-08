@@ -20,6 +20,8 @@ import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { ItemReviewActions } from "./item-review-actions";
 import { ReviewPanel } from "./review-panel";
 import { ReviewDock } from "./review-dock";
+import { CancelPost } from "@/components/cancel/cancel-post";
+import { brandCancelInfo } from "@/lib/cancel/cancel-view";
 import { useBrandDeliverable } from "./use-brand-deliverable";
 import { useReviewActions } from "./use-review-actions";
 
@@ -154,13 +156,34 @@ function Review({ post, setPost, reload }: { post: BrandDeliverable; setPost: (p
                 </>
               )}
             </div>
-            <section aria-label="The hold" className="grid gap-1 rounded-[18px] border border-line bg-surface p-[18px] text-[13.5px] text-ink-2 lg:col-start-2 lg:row-start-2">
-              <p className="font-bold text-ink">Held · {formatAmount(post.hold.amount)}</p>
-              <p>PayPal ref {post.hold.reference}</p>
-              <p>
-                {post.creatorName} posts by <b className="text-ink">{formatDay(post.hold.deadline, post.creatorTimeZone)}</b>. Your money is taken only once the live post checks out.
-              </p>
-            </section>
+            {/* CN-FR-01: "Cancel this post" under the hold; the hold turns over to confirm (design B). */}
+            <div className="lg:col-start-2 lg:row-start-2">
+              <CancelPost
+                post={brandCancelInfo(post)}
+                side="brand"
+                creatorName={post.creatorName}
+                send={(note) => api.cancelBrandDeliverable(post.dealId, post.deliverableId, note)}
+                reload={async () => {
+                  const r = await api.getBrandDeliverable(post.dealId, post.deliverableId);
+                  return r.ok ? r.data : null;
+                }}
+                onUpdated={setPost}
+              >
+                <section aria-label="The hold" className="grid gap-1 rounded-[18px] border border-line bg-surface p-[18px] text-[13.5px] text-ink-2">
+                  {post.review.state === "released" ? (
+                    <p className="font-bold text-ink">Released · {formatAmount(post.hold.amount)}</p>
+                  ) : (
+                    <>
+                      <p className="font-bold text-ink">Held · {formatAmount(post.hold.amount)}</p>
+                      <p>PayPal ref {post.hold.reference}</p>
+                      <p>
+                        {post.creatorName} posts by <b className="text-ink">{formatDay(post.hold.deadline, post.creatorTimeZone)}</b>. Your money is taken only once the live post checks out.
+                      </p>
+                    </>
+                  )}
+                </section>
+              </CancelPost>
+            </div>
           </div>
           <ReviewDock view={view} actions={actions} creator={post.creatorName} />
         </SeekProvider>

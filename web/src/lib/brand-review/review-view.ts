@@ -99,7 +99,10 @@ export function brandReviewView(d: BrandDeliverable, now: Date, { timeZone }: { 
       // PP-FR-31: each reason from the brand's side.
       const why: Record<typeof r.reason, string> = {
         deadline: `${c} didn’t post by the deadline, so your ${amount} was released on ${on}.`,
-        cancelled: `The deal was cancelled, so your ${amount} was released on ${on}.`,
+        // CN-FR-10: who cancelled this post, and the creator's note in quotes (the brand's own note isn't repeated back).
+        cancelled: d.cancelled
+          ? `Your ${amount} came back to you on ${on}. ${d.cancelled.by === "brand" ? "You" : c} cancelled this post${d.cancelled.by === "creator" && d.cancelled.note ? `: “${d.cancelled.note}”` : "."}`
+          : `The deal was cancelled, so your ${amount} was released on ${on}.`,
         day_28: `Nothing was decided by the hold’s 28th day, so your ${amount} came back to you on ${on}.`,
         fix_window_ended: `${c} didn’t fix the live post in time, so your ${amount} came back to you on ${on}.`,
         not_accepted: `You didn’t accept the post within 48 hours, so your ${amount} came back to you on ${on}.`,

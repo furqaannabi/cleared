@@ -163,10 +163,13 @@ function releasedStep(d: Deliverable, timeZone?: string): NextStep {
     why = `A person at Cleared decided not to pay for this post, so the ${amount} hold went back to ${d.brandName}${on}.`;
   } else if (d.releaseReason === "hold_not_confirmed") {
     why = `PayPal couldn’t confirm ${d.brandName}’s hold before the deadline, so the ${amount} hold was released${on}.`;
-  } else if (d.cancelledBy === "brand") {
-    why = `${d.brandName} cancelled the deal${on}, so the ${amount} hold went back to them.`;
-  } else if (d.cancelledBy === "creator") {
-    why = `You cancelled the deal${on}, so the ${amount} hold went back to ${d.brandName}.`;
+  } else if (d.cancelled) {
+    // CN-FR-10: who cancelled this post, when, and their note in quotes.
+    const who = d.cancelled.by === "brand" ? d.brandName : "You";
+    // The other side's note in quotes; your own isn't repeated back.
+    const said = d.cancelled.by === "brand" && d.cancelled.note ? `: “${d.cancelled.note}”` : "";
+    const back = d.cancelled.by === "brand" ? "them" : d.brandName;
+    why = `${who} cancelled this post${on}${said || "."} The ${amount} hold went back to ${back}.`;
   } else {
     why = `The deal was cancelled${on}, so the ${amount} hold went back to ${d.brandName}.`;
   }

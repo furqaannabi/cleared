@@ -175,4 +175,12 @@ describe("PP-FR-25 to PP-FR-31 after the draft is approved", () => {
     expect(why("fix_window_ended")).toBe("Ada Okafor didn’t fix the live post in time, so your $1,500.00 came back to you on 24 Oct.");
     expect(why("ruled_not_to_pay")).toBe("A person at Cleared decided not to pay, so your $1,500.00 came back to you on 24 Oct.");
   });
+
+  test("CN-FR-10: a cancelled post says who cancelled it, and the creator's note", () => {
+    const released = { state: "released", releasedAt: "2026-10-09T10:00:00Z", reason: "cancelled" } as const;
+    const byBrand = { ...deliverable(released), cancelled: { by: "brand", at: "2026-10-09T10:00:00Z" } } as BrandDeliverable;
+    expect(view(byBrand).next.detail).toBe("Your $1,500.00 came back to you on 9 Oct. You cancelled this post.");
+    const byCreator = { ...deliverable(released), cancelled: { by: "creator", at: "2026-10-09T10:00:00Z", note: "The timing doesn’t work." } } as BrandDeliverable;
+    expect(view(byCreator).next.detail).toBe("Your $1,500.00 came back to you on 9 Oct. Ada Okafor cancelled this post: “The timing doesn’t work.”");
+  });
 });

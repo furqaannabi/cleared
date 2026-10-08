@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import { glowTheoryVideo } from "@/mocks/fixtures/deliverables";
@@ -47,8 +47,31 @@ describe("DC-FR-27 money card", () => {
 
   test("DC-FR-29: shows a release reference only when the API gives one", () => {
     renderCard({ state: "released", releaseReason: "cancelled", releasedAt: "2026-10-12T09:00:00Z" });
-    expect(screen.getByText("Released 12 Oct · deal cancelled")).toBeVisible();
+    expect(screen.getByText("Released 12 Oct · cancelled")).toBeVisible();
     expect(screen.queryByText(/Ref /)).toBeNull();
+  });
+
+  test("PP-FR-22: the released card names every release reason, not only a deadline or a cancel", () => {
+    const reasons = [
+      ["day_28", "day 28"],
+      ["fix_window_ended", "fix window ended"],
+      ["not_accepted", "not accepted by Glow Theory"],
+      ["ruled_not_to_pay", "decided by Cleared"],
+      ["hold_not_confirmed", "hold not confirmed"],
+    ] as const;
+    for (const [releaseReason, words] of reasons) {
+      renderCard({ state: "released", releaseReason, releasedAt: "2026-10-12T09:00:00Z" });
+      expect(screen.getByText(`Released 12 Oct · ${words}`)).toBeVisible();
+      cleanup();
+    }
+  });
+
+  test("CN-FR-10: a cancelled post's card says who cancelled it", () => {
+    renderCard({ state: "released", releaseReason: "cancelled", releasedAt: "2026-10-12T09:00:00Z", cancelled: { by: "brand", at: "2026-10-12T09:00:00Z" } });
+    expect(screen.getByText("Released 12 Oct · cancelled by Glow Theory")).toBeVisible();
+    cleanup();
+    renderCard({ state: "released", releaseReason: "cancelled", releasedAt: "2026-10-12T09:00:00Z", cancelled: { by: "creator", at: "2026-10-12T09:00:00Z" } });
+    expect(screen.getByText("Released 12 Oct · cancelled by you")).toBeVisible();
   });
 
   test("compact (phones): one row with the amount and stage, expanding to the full card", async () => {

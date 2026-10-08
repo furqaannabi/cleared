@@ -167,6 +167,18 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** PP-FR-27: object to a live post, with a plain-text reason; a person at Cleared decides. */
     objectToPost: (dealId: string, deliverableId: string, reason: string) =>
       request("POST", `${brandDeliverablePath(dealId, deliverableId)}/post/object`, brandDeliverableSchema, { reason }),
+    /** CN-FR-04 to CN-FR-10: the creator cancels one post, with an optional plain-text note for the brand. */
+    cancelDeliverable: (deliverableId: string, note?: string) =>
+      request("POST", `/deliverables/${encodeURIComponent(deliverableId)}/cancel`, deliverableSchema, note?.trim() ? { note } : {}),
+    /** CN-FR-04 to CN-FR-10: the brand cancels one post in its deal, with an optional plain-text note for the creator. */
+    cancelBrandDeliverable: (dealId: string, deliverableId: string, note?: string) =>
+      request("POST", `${brandDeliverablePath(dealId, deliverableId)}/cancel`, brandDeliverableSchema, note?.trim() ? { note } : {}),
+    /** CN-FR-01, CN-FR-02, CN-FR-14: the creator cancels a post from the invite page, held or not; answers with the invite. */
+    cancelInvitePost: (dealId: string, deliverableId: string, note?: string) =>
+      request("POST", `${invitePath(dealId)}/posts/${encodeURIComponent(deliverableId)}/cancel`, dealInviteSchema, note?.trim() ? { note } : {}),
+    /** CN-FR-01, CN-FR-02, CN-FR-15: the brand cancels a post from its deal page, held or not; answers with the deal. */
+    cancelBrandDealPost: (dealId: string, deliverableId: string, note?: string) =>
+      request("POST", `/brand${dealPath(dealId)}/posts/${encodeURIComponent(deliverableId)}/cancel`, brandDealSchema, note?.trim() ? { note } : {}),
     /** PP-FR-28: accept a post that failed the live check anyway; the money is taken. */
     acceptPost: (dealId: string, deliverableId: string) =>
       request("POST", `${brandDeliverablePath(dealId, deliverableId)}/post/accept`, brandDeliverableSchema),

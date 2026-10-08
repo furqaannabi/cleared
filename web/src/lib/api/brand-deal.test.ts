@@ -39,7 +39,7 @@ describe("CH-FR-01 to CH-FR-03 opening the link", () => {
     expect(await api.openBrandLink(tokenOf(invite.data.link.url))).toEqual({ ok: true, data: { dealId: id } });
     const deal = await api.getBrandDeal(id);
     if (!deal.ok) throw new Error(deal.error);
-    expect(deal.data.posts).toEqual([{ deliverableId: created.data.deliverables[0].id, platform: "youtube_video", amount: "800.00", deadlineDays: 9, hold: { state: "not_started" } }]);
+    expect(deal.data.posts).toEqual([{ deliverableId: created.data.deliverables[0].id, platform: "youtube_video", amount: "800.00", deadlineDays: 9, hold: { state: "not_started" }, cancel: { allowed: true } }]);
     expect(deal.data.items.length).toBeGreaterThan(0);
     expect(deal.data.brief.map((l) => l.text)).toEqual(["Say and show the code FERN5.", "Keep it fun!"]);
     expect(deal.data.answers).toEqual([{ briefLine: 2, kind: "left_out" }]);

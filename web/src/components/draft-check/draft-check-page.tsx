@@ -10,6 +10,8 @@ import { DealHeader } from "@/components/deal/deal-header";
 import { DeliverableSwitcher } from "@/components/deal/deliverable-switcher";
 import { useOptionalDeals } from "@/components/shell/use-deals";
 import { EvidencePanel } from "@/components/evidence/evidence-panel";
+import { CancelPost } from "@/components/cancel/cancel-post";
+import { creatorCancelInfo } from "@/lib/cancel/cancel-view";
 import { MoneyCard } from "@/components/money/money-card";
 import { BriefSheet } from "@/components/brief/brief-sheet";
 import { NextStepBar } from "@/components/next-step/next-step-bar";
@@ -147,6 +149,11 @@ function Loaded({
   const barHasAction =
     view.nextStep.action === "try_again" || (view.nextStep.action !== null && simulateUpload !== undefined);
   // DC-FR-26: a fresh link for the draft when the current one stops working.
+  const cancelSend = useCallback((note?: string) => api.cancelDeliverable(deliverable.id, note), [deliverable.id]);
+  const reloadPost = useCallback(async () => {
+    const r = await api.getDeliverable(deliverable.id);
+    return r.ok ? r.data : null;
+  }, [deliverable.id]);
   const refreshDraftUrl = async () => {
     const result = await api.refreshDraftUrl(deliverable.id);
     return result.ok ? result.data.url : null;
@@ -201,6 +208,13 @@ function Loaded({
         seekKey={seekKey}
       />
     ) : null;
+  const sideMoney = inJourney ? <JourneySlot d={deliverable} onUpdated={onUpdated} /> : wide ? <MoneyCard deliverable={deliverable} /> : null;
+  // CN-FR-01: "Cancel this post" sits under the money card, wherever the page shows it.
+  const withCancel = (money: React.ReactNode) => (
+    <CancelPost post={creatorCancelInfo(deliverable)} side="creator" creatorName="" send={cancelSend} reload={reloadPost} onUpdated={onUpdated}>
+      {money}
+    </CancelPost>
+  );
   return (
     // Timestamps can play the draft only when there is one (DC-FR-23).
     <SeekProvider seek={playerSlot && deliverable.draft ? seek : null}>
@@ -231,7 +245,7 @@ function Loaded({
       )}
       <DraftCheckLayout
         vertical={deliverable.platform !== "youtube_video"}
-        money={inJourney ? <JourneySlot d={deliverable} onUpdated={onUpdated} /> : wide && <MoneyCard deliverable={deliverable} />}
+        money={sideMoney && withCancel(sideMoney)}
         player={playerSlot}
         next={
           // DC-FR-30: phones show the bar only when it has an action (or a problem to report).
@@ -286,7 +300,7 @@ function Loaded({
       {/* DC-FR-47: phones keep the money row, after the work. */}
       {!wide && !inJourney && (
         <div className="mt-8">
-          <MoneyCard deliverable={deliverable} compact />
+          {withCancel(<MoneyCard deliverable={deliverable} compact />)}
         </div>
       )}
       {/* DC-BR-10: mock data is labelled as synthetic on screen. Never shown with real data. */}

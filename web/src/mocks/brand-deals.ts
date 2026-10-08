@@ -1,4 +1,5 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
+import { postCancel } from "./cancel";
 import type { z } from "zod";
 import { apiBaseUrl } from "@/lib/api";
 import type { brandDealSchema } from "@/lib/api/schemas";
@@ -88,7 +89,7 @@ const BRAND_STEPS = ["waiting_for_brand", "changes_requested", "agreed"] as cons
 const isBrandStep = (step: string): step is BrandDeal["step"] => (BRAND_STEPS as readonly string[]).includes(step);
 
 /** The deal as the brand sees it, built from the creator's draft and invite terms; never the PayPal email (CH-BR-08). */
-function brandDealFor(dealId: string): BrandDeal | undefined {
+export function brandDealFor(dealId: string): BrandDeal | undefined {
   const d = findDraft(dealId);
   const s = state.get(dealId) ?? { version: 1, notes: [], holds: {}, revising: false };
   // While the creator revises, the brand sees changes requested, whichever page the creator is on.
@@ -112,6 +113,8 @@ function brandDealFor(dealId: string): BrandDeal | undefined {
       ...(changedPosts[x.id]?.length ? { changed: changedPosts[x.id] } : {}),
       // RW-FR-01: once the post's draft check exists.
       ...(postReview(x.id) ? { review: postReview(x.id) } : {}),
+      // CN-FR-03, CN-FR-10, CN-FR-11
+      ...postCancel(x.id),
     })),
     items: d.items.map(({ id, deliverableId, name, briefLine, addedByCreator }) => ({
       id,
@@ -175,6 +178,15 @@ export function creatorExtras(dealId: string) {
 export const isRevising = (dealId: string) => !!state.get(dealId)?.revising;
 
 /** How many of the deal's posts are held (CH-FR-21). */
+/** One post's hold as the brand-deal mock has it (CN-FR-05); `stop` records an attempt cancelled with PayPal (MP-FR-34). */
+export const postHold = {
+  get: (dealId: string, deliverableId: string) => state.get(dealId)?.holds[deliverableId],
+  stop: (dealId: string, deliverableId: string) => {
+    const s = state.get(dealId);
+    if (s) s.holds[deliverableId] = { state: "closed" };
+  },
+};
+
 export function heldCount(dealId: string): { held: number; posts: number } {
   const posts = findDraft(dealId)?.deliverables ?? [];
   const holds = state.get(dealId)?.holds ?? {};

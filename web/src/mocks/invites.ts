@@ -1,4 +1,5 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
+import { dealCancelled, postCancel } from "./cancel";
 import type { z } from "zod";
 import { apiBaseUrl } from "@/lib/api";
 import type { creatorProfileSchema, dealInviteSchema } from "@/lib/api/schemas";
@@ -62,6 +63,8 @@ seedSentDeal();
 /** The deal a live link's token opens, or undefined for an unknown, turned-off or expired one (CH-FR-02). */
 export function dealForToken(token: string): string | undefined {
   for (const [dealId, t] of terms) {
+    // CN-FR-14: a cancelled deal's link answers as any link that doesn't work (CH-FR-02).
+    if (dealCancelled(dealId)) continue;
     if (t.link && !t.link.expired && Date.parse(t.link.expiresAt) > Date.now() && t.link.url.endsWith(`/b/${token}`)) return dealId;
   }
   return undefined;
@@ -98,6 +101,8 @@ export function inviteFor(dealId: string): Invite | undefined {
       ...t.posts[x.id],
       // CH-FR-25: each post's hold, once the brand has agreed.
       ...(d.step === "agreed" ? { hold: extras.holds[x.id] ?? { state: "not_started" as const } } : {}),
+      // CN-FR-03, CN-FR-10, CN-FR-11
+      ...postCancel(x.id),
     })),
     brandEmail: t.brandEmail,
     link: t.link,

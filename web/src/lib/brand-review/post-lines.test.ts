@@ -71,4 +71,10 @@ describe("PP-FR-25 each post's line after Approved", () => {
       ["g", "Approved, not paid", null],
     ]);
   });
+
+  test("CN-FR-12: a cancelled post reads Cancelled, with who cancelled it", () => {
+    const by = (who: "brand" | "creator") => deal([{ ...post("a", { state: "released" }), cancelled: { by: who, at: "2026-10-09T10:00:00Z" } }]);
+    expect(postLines(by("brand"), new Date("2026-10-09T12:00:00Z"))[0].text).toBe("Cancelled by you");
+    expect(postLines(by("creator"), new Date("2026-10-09T12:00:00Z"))[0].text).toBe("Cancelled by Ada Okafor");
+  });
 });

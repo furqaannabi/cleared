@@ -36,6 +36,7 @@ export function PostLine({
   problems,
   onInvite,
   locked,
+  cancel,
 }: {
   dealId: string;
   brand: string;
@@ -45,6 +46,8 @@ export function PostLine({
   problems: SaveProblems;
   onInvite: (invite: DealInvite) => void;
   locked: boolean;
+  /** CN-FR-01: the post's cancel, or how it was cancelled. */
+  cancel?: React.ReactNode;
 }) {
   const key = `post:${post.deliverableId}`;
   const saveTerms = (terms: { amount?: string; deadlineDays?: number }) =>
@@ -73,6 +76,7 @@ export function PostLine({
         </p>
       ))}
       {post.hold && <HoldLine dealId={dealId} brand={brand} post={post} />}
+      {cancel && <div className="md:col-span-3">{cancel}</div>}
       <div className="md:col-span-3">
         <SaveProblem retry={problems[key]} />
       </div>

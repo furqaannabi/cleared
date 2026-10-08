@@ -2,6 +2,7 @@ import { http, HttpResponse, type RequestHandler } from "msw";
 import { apiBaseUrl } from "@/lib/api";
 import { brandDealHandlers } from "./brand-deals";
 import { brandReviewHandlers, creatorView } from "./brand-review";
+import { cancelHandlers, dealCancelled } from "./cancel";
 import { publishHandlers } from "./publish";
 import { dealDraftHandlers, draftSummaries } from "./deal-drafts";
 import { deals } from "./fixtures/deals";
@@ -17,7 +18,11 @@ import { findDeliverable } from "./store";
  */
 export const handlers: RequestHandler[] = [
   // DC-FR-31, DC-FR-37
-  http.get(`${apiBaseUrl}/deals`, () => HttpResponse.json([...deals, ...draftSummaries()])),
+  // CN-FR-12: a fully cancelled deal reads Cancelled and sits at the bottom.
+  http.get(`${apiBaseUrl}/deals`, () => {
+    const all = [...deals, ...draftSummaries()].map((d) => (dealCancelled(d.id) ? { ...d, status: "Cancelled" } : d));
+    return HttpResponse.json([...all.filter((d) => d.status !== "Cancelled"), ...all.filter((d) => d.status === "Cancelled")]);
+  }),
   // BC FRD: deals at the brief → checklist step.
   ...dealDraftHandlers,
   // IN FRD: the invite step and the creator's profile.
@@ -26,6 +31,7 @@ export const handlers: RequestHandler[] = [
   ...brandReviewHandlers,
   // PP FRD: the go-ahead, posting, the live check, the brand's decisions after posting, the payout.
   ...publishHandlers,
+  ...cancelHandlers,
   // CH FRD: the brand's side of confirm and hold.
   ...brandDealHandlers,
 

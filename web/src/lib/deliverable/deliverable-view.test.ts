@@ -267,11 +267,15 @@ describe("DC-FR-30 next step", () => {
         "The deadline of 24 Oct passed before a passing draft was published, so the $1,200.00 hold was released on 25 Oct. Nothing more can happen on this deliverable.",
       action: null,
     });
-    expect(released({ releaseReason: "cancelled", cancelledBy: "brand" }).detail).toBe(
-      "Glow Theory cancelled the deal on 12 Oct, so the $1,200.00 hold went back to them. Nothing more can happen on this deliverable.",
+    expect(released({ releaseReason: "cancelled", cancelled: { by: "brand", at: "2026-10-12T09:00:00Z" } }).detail).toBe(
+      "Glow Theory cancelled this post on 12 Oct. The $1,200.00 hold went back to them. Nothing more can happen on this deliverable.",
     );
-    expect(released({ releaseReason: "cancelled", cancelledBy: "creator" }).detail).toBe(
-      "You cancelled the deal on 12 Oct, so the $1,200.00 hold went back to Glow Theory. Nothing more can happen on this deliverable.",
+    expect(released({ releaseReason: "cancelled", cancelled: { by: "creator", at: "2026-10-12T09:00:00Z" } }).detail).toBe(
+      "You cancelled this post on 12 Oct. The $1,200.00 hold went back to Glow Theory. Nothing more can happen on this deliverable.",
+    );
+    // CN-FR-10: the brand's note, in quotes.
+    expect(released({ releaseReason: "cancelled", cancelled: { by: "brand", at: "2026-10-12T09:00:00Z", note: "Pausing the campaign." } }).detail).toBe(
+      "Glow Theory cancelled this post on 12 Oct: “Pausing the campaign.” The $1,200.00 hold went back to them. Nothing more can happen on this deliverable.",
     );
     expect(released({ releaseReason: "cancelled" }).detail).toBe(
       "The deal was cancelled on 12 Oct, so the $1,200.00 hold went back to Glow Theory. Nothing more can happen on this deliverable.",

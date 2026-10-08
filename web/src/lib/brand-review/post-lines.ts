@@ -57,6 +57,8 @@ export function postLines(deal: Pick<BrandDeal, "dealId" | "creatorName" | "post
         case "approved":
           return { ...base, text: `Approved${postBy}`, action: null };
         case "released":
+          // CN-FR-12: a cancelled post says so, and who cancelled it.
+          if (p.cancelled) return { ...base, text: `Cancelled by ${p.cancelled.by === "brand" ? "you" : c}`, action: null };
           return { ...base, text: "The hold came back to you", action: null };
         // PP-FR-25: after Approved; the brand's two decisions come first, the soonest at the top.
         case "confirm":

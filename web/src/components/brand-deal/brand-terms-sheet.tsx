@@ -15,7 +15,7 @@ import { NotOnChecklist } from "./not-on-checklist";
  * @param view - the brand terms view
  * @see docs/specs/confirm-and-hold-frd.md CH-FR-05 to CH-FR-09, CH-BR-08
  */
-export function BrandTermsSheet({ deal, view }: { deal: BrandDeal; view: BrandTermsView }) {
+export function BrandTermsSheet({ deal, view, renderCancel }: { deal: BrandDeal; view: BrandTermsView; renderCancel?: (deliverableId: string) => React.ReactNode }) {
   const creator = deal.creatorName;
   return (
     <section
@@ -44,7 +44,7 @@ export function BrandTermsSheet({ deal, view }: { deal: BrandDeal; view: BrandTe
       </dl>
       <div className="border-t border-ink">
         {view.posts.map((post) => (
-          <BrandPostLine key={post.deliverableId} post={post} creator={creator} />
+          <BrandPostLine key={post.deliverableId} post={post} creator={creator} cancel={renderCancel?.(post.deliverableId)} />
         ))}
       </div>
       <p className="flex items-baseline justify-between gap-3 border-t border-line pt-4 pb-1">

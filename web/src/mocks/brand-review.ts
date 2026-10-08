@@ -1,4 +1,5 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
+import { cancelOf } from "./cancel";
 import type { z } from "zod";
 import { apiBaseUrl } from "@/lib/api";
 import type { brandDeliverableSchema } from "@/lib/api/schemas";
@@ -101,6 +102,8 @@ export function brandDeliverableFor(dealId: string, d: Deliverable): BrandDelive
     hold: { amount: terms.amount, reference: d.hold.reference, deadline: d.deadline },
     review,
     ...(d.post?.url ? { post: { url: d.post.url } } : {}),
+    cancel: cancelOf(d),
+    ...(d.cancelled ? { cancelled: d.cancelled } : {}),
     ...(showDraft
       ? {
           draft: {
@@ -136,6 +139,7 @@ const REVIEW_TOKEN = "review_";
  */
 export function creatorView(d: Deliverable): Deliverable {
   const out = structuredClone(d);
+  out.cancel = cancelOf(d);
   const dealId = dealOfDeliverable(d.id);
   if (dealId && brandHasWork(d)) {
     const emailedTo = brandEmailFor(dealId);

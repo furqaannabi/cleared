@@ -173,3 +173,25 @@ describe("PP-FR-26 to PP-FR-30 after posting", () => {
     expect(await within(review()).findByText("Paid")).toBeVisible();
   });
 });
+
+describe("CN-FR-01, CN-FR-04, CN-FR-10 the brand cancels a post (design B)", () => {
+  test("the hold turns over to confirm; cancelling brings the money back and says so", async () => {
+    const user = userEvent.setup();
+    await openPost("del_juniper_reel", "Instagram Reel");
+    await user.click(screen.getAllByRole("button", { name: "Cancel this post" })[0]);
+    const card = screen.getByRole("region", { name: "Cancel this post?" });
+    expect(card).toHaveTextContent("Would come back to you");
+    expect(card).toHaveTextContent("$600.00");
+    await user.type(within(card).getByRole("textbox", { name: "Add a note for Ada Okafor (optional)" }), "Pausing the campaign.");
+    await user.click(within(card).getByRole("button", { name: "Cancel the post" }));
+    expect((await screen.findAllByText(/Your \$600\.00 came back to you on \d+ \w+\. You cancelled this post\./)).length).toBeGreaterThan(0);
+    expect(screen.getByRole("region", { name: "The hold" })).toHaveTextContent("Released · $600.00");
+    expect(screen.queryByRole("button", { name: "Cancel this post" })).toBeNull();
+  });
+
+  test("CN-FR-03: with the creator's go-ahead running, the line says why", async () => {
+    await api.getGoAhead("del_juniper_short");
+    await openPost("del_juniper_short", "YouTube Short");
+    expect((await screen.findAllByText("You can’t cancel now: Ada Okafor has the go-ahead to post.")).length).toBeGreaterThan(0);
+  });
+});

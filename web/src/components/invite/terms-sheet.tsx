@@ -36,7 +36,10 @@ export function TermsSheet({
   problems,
   onInvite,
   onProfile,
+  renderCancel,
 }: {
+  /** CN-FR-01: each post's cancel slot. */
+  renderCancel?: (deliverableId: string) => React.ReactNode;
   invite: DealInvite;
   profile: CreatorProfile;
   view: InviteView;
@@ -131,6 +134,7 @@ export function TermsSheet({
             problems={problems}
             onInvite={onInvite}
             locked={locked}
+            cancel={renderCancel?.(post.deliverableId)}
           />
         ))}
       </div>

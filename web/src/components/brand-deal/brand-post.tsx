@@ -19,7 +19,7 @@ import { PlatformMark } from "./platform-mark";
  * @param creator - the creator's name
  * @see docs/specs/confirm-and-hold-frd.md CH-FR-05 to CH-FR-08
  */
-export function BrandPostLine({ post, creator }: { post: BrandTermsView["posts"][number]; creator: string }) {
+export function BrandPostLine({ post, creator, cancel }: { post: BrandTermsView["posts"][number]; creator: string; cancel?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const notes = useNotes();
   // CH-FR-06: folded on phones, but what the brand should look at stays in view.
@@ -59,6 +59,8 @@ export function BrandPostLine({ post, creator }: { post: BrandTermsView["posts"]
           />
         ))}
       </div>
+      {/* CN-FR-01: the post's cancel, or how it was cancelled. */}
+      {cancel && <div className="md:ml-[46px]">{cancel}</div>}
       <ul className="mt-2.5 md:ml-[46px]">
         {post.items.map((item) => (
           <li

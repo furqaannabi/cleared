@@ -5,6 +5,10 @@ import { api } from "@/lib/api";
 import { holdsSummary } from "@/lib/brand-deal/hold-view";
 import { brandTermsView } from "@/lib/brand-deal/terms-view";
 import type { BrandDeal } from "@/lib/brand-deal/types";
+import { CancelDeal } from "@/components/cancel/cancel-deal";
+import { CancelledDeal } from "@/components/cancel/cancelled-deal";
+import { PostCancelSlot } from "@/components/cancel/post-cancel-slot";
+import type { DealCancelPost } from "@/lib/cancel/deal-cancel-view";
 import { AgreePanel } from "./agree-panel";
 import { BrandFrame, BrandMessage } from "./brand-frame";
 import { BrandTermsSheet } from "./brand-terms-sheet";
@@ -126,14 +130,53 @@ function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal)
     onDeal(r.data);
   }
 
+  // CN-FR-01, CN-FR-02, CN-FR-15: cancelling from the deal page, one post or the deal.
+  const cancelPosts: DealCancelPost[] = deal.posts.map((p) => ({
+    deliverableId: p.deliverableId,
+    platform: p.platform,
+    amount: p.amount,
+    held: p.hold.state === "held",
+    cancel: p.cancel,
+  }));
+  const cancelOne = (deliverableId: string, note?: string) => api.cancelBrandDealPost(deal.dealId, deliverableId, note);
+  if (deal.posts.every((p) => p.cancelled)) {
+    return (
+      <CancelledDeal
+        cancels={deal.posts.map((p) => ({ cancelled: p.cancelled!, held: p.hold.state === "held" }))}
+        side="brand"
+        brandName={deal.brandName}
+        creatorName={deal.creatorName}
+      />
+    );
+  }
+
   return (
     <div className="mt-[22px] grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_330px] lg:gap-8">
-      <BrandTermsSheet deal={deal} view={view} />
+      <BrandTermsSheet
+        deal={deal}
+        view={view}
+        renderCancel={(id) => {
+          const p = deal.posts.find((x) => x.deliverableId === id)!;
+          return (
+            <PostCancelSlot
+              post={cancelPosts.find((x) => x.deliverableId === id)!}
+              cancelled={p.cancelled}
+              side="brand"
+              brandName={deal.brandName}
+              creatorName={deal.creatorName}
+              sendOne={cancelOne}
+              onUpdated={onDeal}
+            />
+          );
+        }}
+      />
       <div className={`grid gap-4 lg:sticky lg:top-6 ${deal.step === "agreed" ? "order-first lg:order-none" : ""}`}>
         <DraftsPanel deal={deal} />
         {deal.step === "agreed" && <HoldsPanel deal={deal} onDeal={onDeal} />}
         <NotesPanel deal={deal} sending={sending} failed={failed} onSend={send} />
         {deal.step === "waiting_for_brand" && <AgreePanel summary={view.summary} agreeing={agreeing} problem={agreeProblem} onAgree={agree} />}
+        {/* CN-FR-02: the deal's cancel, under the side panel. */}
+        <CancelDeal posts={cancelPosts} side="brand" brandName={deal.brandName} creatorName={deal.creatorName} sendOne={cancelOne} onUpdated={onDeal} />
       </div>
     </div>
   );

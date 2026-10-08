@@ -84,7 +84,18 @@ function HeldCard({ d, timeZone, region }: { d: Deliverable; timeZone?: string; 
 // its marigold and its lift (DESIGN.md "Money card", Released).
 function ReleasedCard({ d, timeZone, region }: { d: Deliverable; timeZone?: string; region: boolean }) {
   const amount = formatMoney(d.hold.amountMinor, d.hold.currency);
-  const reason = d.releaseReason === "deadline" ? "deadline passed" : "deal cancelled";
+  // CN-FR-10: a cancelled post says who cancelled it.
+  const by = d.cancelled ? ` by ${d.cancelled.by === "brand" ? d.brandName : "you"}` : "";
+  const REASON: Record<NonNullable<Deliverable["releaseReason"]>, string> = {
+    deadline: "deadline passed",
+    cancelled: `cancelled${by}`,
+    day_28: "day 28",
+    fix_window_ended: "fix window ended",
+    not_accepted: `not accepted by ${d.brandName}`,
+    ruled_not_to_pay: "decided by Cleared",
+    hold_not_confirmed: "hold not confirmed",
+  };
+  const reason = d.releaseReason ? REASON[d.releaseReason] : "released";
   const when = d.releasedAt ? `Released ${formatDay(d.releasedAt, timeZone)}` : "Released";
   return (
     <section

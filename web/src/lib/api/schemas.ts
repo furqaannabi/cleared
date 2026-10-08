@@ -29,6 +29,13 @@ function isTimeZone(tz: string): boolean {
   }
 }
 const isoTime = z.iso.datetime({ offset: true });
+/** CN-FR-03: whether a post can be cancelled now, and if not, why (MP-FR-33). */
+const cancelSchema = z.discriminatedUnion("allowed", [
+  z.object({ allowed: z.literal(true), holdAttemptWaiting: z.boolean().optional() }),
+  z.object({ allowed: z.literal(false), reason: z.enum(["go_ahead_running", "published", "finished"]) }),
+]);
+/** CN-FR-10, CN-FR-11: who cancelled a post, when, and their note (plain text, CN-BR-04). */
+const cancelledSchema = z.object({ by: z.enum(["creator", "brand"]), at: isoTime, note: z.string().max(300).optional() });
 
 export const checklistItemSchema = z.object({
   id: z.string().min(1),
@@ -155,7 +162,10 @@ export const deliverableSchema = z.object({
   stages: z.array(z.object({ name: z.string().max(80), status: z.enum(["done", "current", "waiting"]) })).optional(),
   releasedAt: isoTime.optional(),
   releaseReason: releaseReason.optional(),
-  cancelledBy: z.enum(["creator", "brand"]).optional(),
+  // CN-FR-03: whether this post can be cancelled now, and if not, why (MP-FR-33).
+  cancel: cancelSchema.optional(),
+  // CN-FR-10, CN-FR-11: who cancelled, when, and their note (plain text, CN-BR-04).
+  cancelled: cancelledSchema.optional(),
   releaseReference: z.string().min(1).optional(),
 });
 
@@ -271,6 +281,9 @@ export const dealInviteSchema = z.object({
         amountProblem: z.string().min(1).max(200).optional(),
         // CH-FR-25: the post's hold, once the brand has agreed.
         hold: holdSchema.optional(),
+        // CN-FR-03, CN-FR-10, CN-FR-11
+        cancel: cancelSchema.optional(),
+        cancelled: cancelledSchema.optional(),
       }),
     )
     .min(1)
@@ -318,6 +331,9 @@ export const brandDealSchema = z.object({
         deadlineDays: z.number().int().min(1).max(21),
         changed: z.array(z.enum(["amount", "deadline"])).optional(),
         hold: holdSchema,
+        // CN-FR-03, CN-FR-10, CN-FR-11
+        cancel: cancelSchema.optional(),
+        cancelled: cancelledSchema.optional(),
         // RW-FR-01: where the post's draft stands, once its draft check exists.
         review: z
           .discriminatedUnion("state", [
@@ -399,6 +415,9 @@ export const brandDeliverableSchema = z.object({
   ]),
   // PP-FR-26: the live post, once there is one.
   post: z.object({ url: postUrl }).optional(),
+  // CN-FR-03, CN-FR-10: as on the creator's side.
+  cancel: cancelSchema.optional(),
+  cancelled: cancelledSchema.optional(),
   draft: z
     .object({
       url: videoUrl,
