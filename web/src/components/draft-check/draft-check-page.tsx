@@ -26,6 +26,8 @@ import { CheckFailedBanner } from "./check-failed-banner";
 import { CheckStages } from "./check-stages";
 import { DraftCheckLayout } from "./draft-check-layout";
 import { PassedBanner } from "./passed-banner";
+import { ApprovedBanner, CopyReviewLink } from "./review-status";
+import { DemoDraftOutcome, type DemoChoice } from "@/components/mocking/demo-draft-outcome";
 import { RunChangeBanner } from "./run-change-banner";
 import { runChangeRecap } from "@/lib/deliverable/run-change";
 import { LoadProblem } from "./load-problem";
@@ -109,12 +111,23 @@ function Loaded({
   };
   // DC-FR-45: while the upload flow is unspecced, uploading is simulated, and only on mocks.
   // The literal NODE_ENV check lets the bundler drop the simulation and mock data from production builds.
+  // RW-FR-28: on mocks, what the next simulated draft finds; a first draft passes unless told otherwise.
+  const [demoOutcome, setDemoOutcome] = useState<DemoChoice>(deliverable.draft ? "usual" : "passes");
   const simulateUpload =
     process.env.NODE_ENV !== "production" && MOCKING_ENABLED
       ? async (file: File) => {
         void file; // never read or sent anywhere
         const { simulateUpload: simulate } = await import("@/mocks/simulate-upload");
-        simulate(deliverable.id, onUpdated);
+        simulate(
+          deliverable.id,
+          (d) => {
+            onUpdated(d);
+            // Once the run lands, read it back through the API: the mocks keep (save) what a response returns.
+            if (d.state !== "checking") void api.getDeliverable(d.id).then((r) => r.ok && onUpdated(r.data));
+          },
+          undefined,
+          demoOutcome === "usual" ? undefined : demoOutcome,
+        );
       }
     : undefined;
   const barHasAction =
@@ -188,6 +201,9 @@ function Loaded({
       {/* DC-FR-48: a banner from md: up; on phones it is the first line of What happens next. */}
       {view.runChange && wide && <RunChangeBanner change={view.runChange} landed={landed} />}
       {view.passed && <PassedBanner passed={view.passed} brandName={deliverable.brandName} />}
+      {deliverable.state === "approved" && <ApprovedBanner deliverable={deliverable} />}
+      <CopyReviewLink deliverable={deliverable} />
+      {simulateUpload && view.nextStep.action?.startsWith("upload") && <DemoDraftOutcome value={demoOutcome} onChange={setDemoOutcome} />}
       {/* DC-FR-47: on phones the work comes first: this panel, the player, the checklist, then the money. */}
       {!wide && !view.checkFailed && (
         <div className="mt-5">
@@ -257,7 +273,7 @@ function Loaded({
       {/* DC-BR-10: mock data is labelled as synthetic on screen. Never shown with real data. */}
       {MOCKING_ENABLED && (
         <p className="mt-7 max-w-[72ch] text-chip text-ink-4">
-          Demo data. Glow Theory, Northbound Coffee, Kora Audio and Ada Okafor are made up, and no money moves.
+          Demo data. Glow Theory, Northbound Coffee, Kora Audio, Juniper & Salt, Maple & Moss and Ada Okafor are made up, and no money moves.
         </p>
       )}
       {/* Says what Ask and Withdraw did, for screen readers (DC-FR-14, DC-FR-15). */}

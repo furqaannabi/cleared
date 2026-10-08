@@ -16,6 +16,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NEED_ORDER, type ItemStatus } from "@/lib/checklist/item-status";
 import { itemTime, kindLabel } from "@/lib/checklist/item-labels";
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
+import { useChecklistWords, type ChecklistWords } from "./checklist-words";
 import { StatusChip } from "./status-chip";
 import { StatusSeal } from "./status-seal";
 
@@ -86,11 +87,11 @@ const TimeCell = ({ data }: ICellRendererParams<ItemView>) => {
   );
 };
 
-function resultCell(brandName: string) {
+function resultCell(brandName: string, words: ChecklistWords) {
   const ResultCell = ({ data }: ICellRendererParams<ItemView>) =>
     data ? (
       <div className="flex h-full flex-col items-start justify-center gap-0.5">
-        <StatusChip status={data.status} brandName={brandName} />
+        <StatusChip status={data.status} brandName={brandName} label={words.status(data)} />
         {data.change && <span className="text-label font-semibold text-ink-3">{data.change}</span>}
       </div>
     ) : null;
@@ -123,6 +124,7 @@ export default function ChecklistGrid({
   onSelect: (id: string) => void;
   wide?: boolean;
 }) {
+  const words = useChecklistWords(brandName);
   const [measuredWide, setMeasuredWide] = useState(true);
   const wide = wideOverride ?? measuredWide;
   const gridRef = useRef<AgGridReact<ItemView>>(null);
@@ -134,18 +136,28 @@ export default function ChecklistGrid({
       { colId: "item", headerName: "Item", field: "name", flex: 3, minWidth: 280, cellRenderer: ItemCell },
       { colId: "kind", headerName: "Kind", field: "kind", width: 140, valueFormatter: (p) => kindLabel(p.value), wideOnly: true },
       { colId: "time", headerName: "Time", width: 128, valueGetter: (p) => p.data?.evidence?.startSec ?? Infinity, cellRenderer: TimeCell },
-      { colId: "brief", headerName: "Brief", width: 96, valueGetter: (p) => p.data?.briefLine?.number, valueFormatter: (p) => (p.value ? `Line ${p.value}` : "Added by you"), wideOnly: true },
+      { colId: "brief", headerName: "Brief", width: 96, valueGetter: (p) => p.data?.briefLine?.number, valueFormatter: (p) => (p.value ? `Line ${p.value}` : words.addedBy), wideOnly: true },
       {
         colId: "result",
         headerName: "Result",
         field: "status",
         width: 240,
-        cellRenderer: resultCell(brandName),
+        cellRenderer: resultCell(brandName, words),
         comparator: (a: ItemStatus, b: ItemStatus) => order(a) - order(b),
       },
     ];
     return cols.filter((c) => wide || !c.wideOnly).map(({ wideOnly, ...c }) => (void wideOnly, c));
-  }, [brandName, wide]);
+  }, [brandName, wide, words]);
+
+  // DC-FR-40: measure the grid's own width from the start (it can sit in a column, as on the brand's review).
+  const boxRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => setMeasuredWide(entry.contentRect.width >= WIDE_MIN_PX));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Keep the grid's selected row in step with the page's selection (DC-FR-22).
   useEffect(() => {
@@ -153,6 +165,7 @@ export default function ChecklistGrid({
   }, [selectedId, items]);
 
   return (
+    <div ref={boxRef}>
     <AgGridReact<ItemView>
       ref={gridRef}
       theme={theme}
@@ -178,5 +191,6 @@ export default function ChecklistGrid({
       onFirstDataRendered={(e) => e.api.forEachNode((node) => node.setSelected(node.data?.id === selectedId))}
       onGridSizeChanged={(e) => setMeasuredWide(e.clientWidth >= WIDE_MIN_PX)}
     />
+    </div>
   );
 }

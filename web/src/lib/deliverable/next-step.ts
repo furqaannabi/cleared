@@ -43,6 +43,22 @@ export function nextStep(d: Deliverable, timeZone?: string): NextStep {
         detail: "If they say nothing by then, you’re cleared to publish.",
         action: null,
       };
+    case "objected": {
+      // DC-FR-50: the brand's objections, settled by the two sides (docs/decisions/2026-10-08-objection-settled-by-the-two-sides.md).
+      const n = d.items.filter((i) => i.status === "objected_by_brand").length;
+      return {
+        lead: `${d.brandName} asked you to fix ${itemCount(n)}. Upload a new draft by ${deadlineView(d, timeZone).date}.`,
+        detail: `If ${d.brandName} approves this draft instead, you’re cleared to publish.`,
+        action: "upload_new_draft",
+      };
+    }
+    case "approved":
+      // DC-FR-51: never "publish now"; the hold is re-confirmed first (step 6).
+      return {
+        lead: d.approvedBy === "window" ? `No objection from ${d.brandName} in 48 hours, so this draft is approved.` : `${d.brandName} approved this draft.`,
+        detail: `Don’t publish yet. Cleared confirms ${d.brandName}’s hold with PayPal first.`,
+        action: null,
+      };
     case "check_failed":
       return checkFailedStep(d);
     case "released":

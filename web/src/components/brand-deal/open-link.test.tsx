@@ -17,6 +17,13 @@ describe("CH-FR-01 opening the link", () => {
   });
 });
 
+describe("RW-FR-03 a review link", () => {
+  test("lands on its post", async () => {
+    render(<OpenLink token="review_del_juniper_video" />);
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/brand/deals/deal_juniper/deliverables/del_juniper_video"));
+  });
+});
+
 describe("CH-FR-02 a link that doesn't work", () => {
   test("shows one message that names no one and gives no reason", async () => {
     render(<OpenLink token="nope" />);

@@ -21,7 +21,11 @@ export function OpenLink({ token }: { token: string }) {
 
   const open = useCallback(async () => {
     const r = await api.openBrandLink(token);
-    if (r.ok) router.replace(`/brand/deals/${encodeURIComponent(r.data.dealId)}`);
+    // RW-FR-03: a review link lands on its post.
+    if (r.ok)
+      router.replace(
+        `/brand/deals/${encodeURIComponent(r.data.dealId)}${r.data.deliverableId ? `/deliverables/${encodeURIComponent(r.data.deliverableId)}` : ""}`,
+      );
     // CH-FR-02: expired, turned off and unknown all look the same; only a network failure differs.
     else setProblem(r.error === "not_found" ? "dead" : "unreachable");
   }, [token, router]);

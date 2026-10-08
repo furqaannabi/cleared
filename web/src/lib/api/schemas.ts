@@ -9,6 +9,8 @@ import { ITEM_STATUSES } from "@/lib/checklist/item-status";
  */
 
 const itemStatus = z.enum(ITEM_STATUSES);
+// DC-FR-01: the page states the API reports; objected and approved come from the brand's review (DC-FR-50, DC-FR-51).
+const deliverableState = z.enum(["no_draft", "checking", "results", "fully_passing", "objected", "approved", "check_failed", "released"]);
 
 function isTimeZone(tz: string): boolean {
   try {
@@ -74,7 +76,7 @@ export const deliverableSchema = z.object({
   brandName: z.string().min(1),
   // DC-FR-25, DC-FR-32: sets the title and the player's aspect ratio.
   platform: z.enum(["youtube_video", "youtube_short", "instagram_reel"]),
-  state: z.enum(["no_draft", "checking", "results", "fully_passing", "check_failed", "released"]),
+  state: deliverableState,
   deadline: isoTime,
   // DC-FR-44: the deadline is 23:59 on its day here; must be a timezone the browser knows.
   creatorTimeZone: z.string().refine(isTimeZone, "Unknown timezone"),
@@ -96,6 +98,12 @@ export const deliverableSchema = z.object({
   }),
   payoutEmail: z.email(),
   reviewWindowEndsAt: isoTime.optional(),
+  // DC-FR-50, DC-FR-51: the brand's review of the latest draft.
+  objectedAt: isoTime.optional(),
+  approvedAt: isoTime.optional(),
+  approvedBy: z.enum(["brand", "window"]).optional(),
+  // DC-FR-52: a fresh link for the brand while it has something to do; only ever from the API, never stored.
+  reviewLink: z.object({ url: z.url({ protocol: /^https$/ }), emailedTo: z.email().max(254).optional() }).optional(),
   checkFailure: checkFailureSchema.optional(),
   // DC-FR-03, DC-FR-04: when the running check started, and its stages if the backend reports them.
   checkStartedAt: isoTime.optional(),
@@ -120,7 +128,7 @@ export const dealSummarySchema = z.object({
     z.object({
       id: z.string().min(1),
       platform: z.enum(["youtube_video", "youtube_short", "instagram_reel"]),
-      state: z.enum(["no_draft", "checking", "results", "fully_passing", "check_failed", "released"]),
+      state: deliverableState,
     }),
   ),
 });
@@ -265,6 +273,17 @@ export const brandDealSchema = z.object({
         deadlineDays: z.number().int().min(1).max(21),
         changed: z.array(z.enum(["amount", "deadline"])).optional(),
         hold: holdSchema,
+        // RW-FR-01: where the post's draft stands, once its draft check exists.
+        review: z
+          .discriminatedUnion("state", [
+            z.object({ state: z.literal("nothing_yet") }),
+            z.object({ state: z.literal("asked"), count: z.number().int().nonnegative() }),
+            z.object({ state: z.literal("window"), endsAt: isoTime }),
+            z.object({ state: z.literal("objected"), count: z.number().int().positive() }),
+            z.object({ state: z.literal("approved") }),
+            z.object({ state: z.literal("released") }),
+          ])
+          .optional(),
       }),
     )
     .min(1)
@@ -288,7 +307,56 @@ export const brandDealSchema = z.object({
 });
 
 /** CH-FR-01: what swapping a link's token returns. The session itself is an HttpOnly cookie the page never sees. */
-export const brandSessionSchema = z.object({ dealId: z.string().min(1) });
+// RW-FR-03: a review link also says which post to land on.
+export const brandSessionSchema = z.object({ dealId: z.string().min(1), deliverableId: z.string().min(1).optional() });
+
+/** RW-FR-07, RW-FR-08: an item's status as the brand reads it. */
+export const BRAND_ITEM_STATUSES = ["passed", "fix_needed", "unsure", "at_live_check", "asked", "accepted", "fix_requested", "objected"] as const;
+
+/**
+ * RW-FR-05 to RW-FR-24: one post's review as the brand sees it (provisional;
+ * brand review FRD). Only the latest draft's facts: never a fix hint, an
+ * earlier run or the run number (RW-BR-06), nor the creator's PayPal email.
+ */
+export const brandDeliverableSchema = z.object({
+  dealId: z.string().min(1),
+  deliverableId: z.string().min(1),
+  creatorName: z.string().min(1).max(120),
+  brandName: z.string().min(1).max(120),
+  platform,
+  // DC-FR-44: the shared deadline date is the creator's.
+  creatorTimeZone: z.string().refine(isTimeZone, "Unknown timezone"),
+  hold: z.object({ amount, reference: z.string().min(1).max(64), deadline: isoTime }),
+  review: z.discriminatedUnion("state", [
+    z.object({ state: z.literal("nothing_yet") }),
+    z.object({ state: z.literal("asked") }),
+    z.object({ state: z.literal("window"), endsAt: isoTime }),
+    z.object({ state: z.literal("objected"), objectedAt: isoTime }),
+    z.object({ state: z.literal("approved"), approvedAt: isoTime, by: z.enum(["brand", "window"]) }),
+    z.object({ state: z.literal("released"), releasedAt: isoTime, reason: z.enum(["deadline", "cancelled"]) }),
+  ]),
+  draft: z
+    .object({
+      url: videoUrl,
+      urlExpiresAt: isoTime,
+      durationSec: z.number().positive(),
+      items: z.array(
+        z.object({
+          id: z.string().min(1),
+          name: z.string(),
+          kind: itemKind,
+          checkedBy: checklistItemSchema.shape.checkedBy,
+          status: z.enum(BRAND_ITEM_STATUSES),
+          // Absent when the creator added the item (DC 1.13).
+          briefLine: z.object({ number: z.number().int().positive(), text: z.string() }).optional(),
+          evidence: checklistItemSchema.shape.evidence,
+          // The brand's own note, on an item it asked to be fixed or objected to; plain text (RW-BR-09).
+          note: z.string().max(500).optional(),
+        }),
+      ),
+    })
+    .optional(),
+});
 
 /** CH-FR-17: a started hold: the PayPal order the approval step needs (provisional). */
 export const holdStartSchema = z.object({ orderId: z.string().min(1).max(64) });

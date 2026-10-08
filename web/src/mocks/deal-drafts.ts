@@ -4,6 +4,8 @@ import { apiBaseUrl } from "@/lib/api";
 import type { dealDraftSchema } from "@/lib/api/schemas";
 import { allHeld, brandNotes, heldCount, isRevising } from "./brand-deals";
 import { checkedByFor, nextId, readBrief } from "./brief-reader";
+import { juniperDraft } from "./fixtures/juniper";
+import { findDeliverable } from "./store";
 
 type Draft = z.infer<typeof dealDraftSchema>;
 type Stored = Draft & { readStartedAt?: number; pending?: Pick<Draft, "items" | "questions"> };
@@ -90,6 +92,10 @@ function seedDemoDrafts() {
   for (const q of d.questions) applyAnswer(d, q, q.suggestions.length ? { kind: "suggestion", text: q.suggestions[0] } : { kind: "left_out" });
   d.items.push({ id: "it_maple_link", deliverableId: "del_maple_video", name: "maplemoss.com/ada in the description", kind: "written", addedByCreator: true, checkedBy: "at_live_check" });
   drafts.set(d.id, d);
+
+  // RW 1.0: a demo deal with every post held, in the brand's review states.
+  const juniper = juniperDraft();
+  drafts.set(juniper.id, juniper);
 }
 seedDemoDrafts();
 
@@ -124,18 +130,42 @@ export function resetDealDrafts() {
 export function draftSummaries() {
   return [...drafts.values()].map((d) => {
     // CH-FR-21: once every post is held the deal leaves set-up, for its first post's draft check.
-    if (allHeld(d.id))
-      return {
-        id: d.id,
-        brandName: d.brandName,
-        status: "Waiting for your draft",
-        openDeliverableId: d.deliverables[0].id,
-        deliverables: d.deliverables.map((x) => ({ id: x.id, platform: x.platform, state: "no_draft" as const })),
-      };
+    if (allHeld(d.id)) return heldSummary(d);
     const { held, posts } = heldCount(d.id);
     const status = isRevising(d.id) ? STATUS.changes_requested : d.step === "agreed" ? `Agreed · ${held} of ${posts} held` : STATUS[d.step];
     return { id: d.id, brandName: d.brandName, status, step: d.step, deliverables: [] };
   });
+}
+
+/** The deal a post belongs to, if any. */
+export function dealOfDeliverable(deliverableId: string): string | undefined {
+  for (const d of drafts.values()) if (d.deliverables.some((x) => x.id === deliverableId)) return d.id;
+  return undefined;
+}
+
+/**
+ * A deal past set-up: each post's own state, and the post whose next step is
+ * the creator's (DC-FR-37), else the first. RW: a brand objection leads.
+ */
+function heldSummary(d: Draft) {
+  const posts = d.deliverables.map((x) => ({ id: x.id, platform: x.platform, state: findDeliverable(x.id)?.state ?? ("no_draft" as const) }));
+  const needsCreator = (id: string) => {
+    const x = findDeliverable(id);
+    if (!x) return true;
+    if (["no_draft", "objected", "check_failed"].includes(x.state)) return true;
+    return x.state === "results" && x.items.some((i) => i.status === "fix_needed" || i.status === "unsure");
+  };
+  const states = posts.map((p) => p.state);
+  const status = states.includes("objected")
+    ? `${d.brandName} objected`
+    : states.every((s) => s === "no_draft")
+      ? "Waiting for your draft"
+      : posts.some((p) => needsCreator(p.id))
+        ? "Draft check"
+        : states.every((s) => s === "approved")
+          ? "Approved"
+          : "Brand review";
+  return { id: d.id, brandName: d.brandName, status, openDeliverableId: (posts.find((p) => needsCreator(p.id)) ?? posts[0]).id, deliverables: posts };
 }
 
 /** One stored deal draft, for the invite mocks (IN FRD); undefined if there is none. */

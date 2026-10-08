@@ -48,7 +48,7 @@ describe("DC-FR-01 getDeliverable", () => {
   test("rejects a response that breaks the schema, never showing part of it", async () => {
     const broken = [
       { ...VALID, hold: { ...VALID.hold, amountMinor: 1200.5 } }, // money must be whole minor units
-      { ...VALID, state: "approved" }, // not one of the six states
+      { ...VALID, state: "cleared" }, // not one of the page states
       { ...VALID, items: [{ ...VALID.items[0], status: "probably_fine" }] }, // unknown status
       { ...VALID, deadline: "next Friday" },
       { ...VALID, creatorTimeZone: "Mars/Olympus_Mons" }, // DC-FR-44: must be a real timezone

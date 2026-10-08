@@ -90,7 +90,8 @@ function checklistTabs(d: Deliverable): TabView[] {
 
 function defaultItemId(d: Deliverable): string | null {
   const first =
-    d.items.find((i) => i.status === "fix_needed") ?? d.items.find((i) => i.status === "unsure") ?? d.items[0];
+    // DC-FR-50: an item the brand objected to comes first.
+    d.items.find((i) => i.status === "objected_by_brand") ?? d.items.find((i) => i.status === "fix_needed") ?? d.items.find((i) => i.status === "unsure") ?? d.items[0];
   return first?.id ?? null;
 }
 

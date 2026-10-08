@@ -8,6 +8,7 @@ import type { BrandDeal } from "@/lib/brand-deal/types";
 import { AgreePanel } from "./agree-panel";
 import { BrandFrame, BrandMessage } from "./brand-frame";
 import { BrandTermsSheet } from "./brand-terms-sheet";
+import { DraftsPanel } from "./drafts-panel";
 import { HoldsPanel } from "./holds-panel";
 import { NotesPanel } from "./notes-panel";
 import { NotesProvider, useNotes } from "./notes";
@@ -57,7 +58,10 @@ export function BrandDealPage({ dealId }: { dealId: string }) {
     <BrandFrame invited={{ creator: deal.creatorName, brand: deal.brandName }}>
       <title>{`${deal.brandName} × ${deal.creatorName} · Cleared`}</title>
       <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">Your deal with {deal.creatorName}</h1>
-      <p className="mt-2 max-w-[60ch] text-[15.5px] text-ink-2">{LEDE[deal.step](deal.creatorName)}</p>
+      <p className="mt-2 max-w-[60ch] text-[15.5px] text-ink-2">
+        {/* RW-FR-01: once the drafts start coming, the page is where they're reviewed. */}
+        {deal.posts.some((p) => p.review) ? "Each post’s draft comes here for your review. Each has its own hold and its own 48 hours." : LEDE[deal.step](deal.creatorName)}
+      </p>
       <NotesProvider editable={deal.step === "waiting_for_brand"}>
         <DealBody deal={deal} onDeal={setDeal} />
       </NotesProvider>
@@ -126,6 +130,7 @@ function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal)
     <div className="mt-[22px] grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_330px] lg:gap-8">
       <BrandTermsSheet deal={deal} view={view} />
       <div className={`grid gap-4 lg:sticky lg:top-6 ${deal.step === "agreed" ? "order-first lg:order-none" : ""}`}>
+        <DraftsPanel deal={deal} />
         {deal.step === "agreed" && <HoldsPanel deal={deal} onDeal={onDeal} />}
         <NotesPanel deal={deal} sending={sending} failed={failed} onSend={send} />
         {deal.step === "waiting_for_brand" && <AgreePanel summary={view.summary} agreeing={agreeing} problem={agreeProblem} onAgree={agree} />}

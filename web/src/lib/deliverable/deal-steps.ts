@@ -8,13 +8,15 @@ export interface DealStepsView {
   summary: string;
 }
 
-/** Which deal step each page state is at (the page states in this FRD only reach Brand review). */
+/** Which deal step each page state is at (the page states in this FRD reach Publish once approved, DC-FR-51). */
 const CURRENT: Record<Exclude<Deliverable["state"], "released">, number> = {
   no_draft: 2,
   checking: 2,
   results: 2,
   check_failed: 2,
   fully_passing: 3,
+  objected: 3,
+  approved: 4,
 };
 
 /**

@@ -8,10 +8,12 @@ import { TONE_CLASSES } from "./tone";
  *
  * @param status - the item's status
  * @param brandName - the deal's brand, named in "Waiting for …" and "Accepted by …"
+ * @param label - the word to show instead of the creator's (the brand's review, RW-FR-08)
  * @see docs/specs/creator-draft-check-frd.md DC-FR-13
  */
-export function StatusChip({ status, brandName }: { status: ItemStatus; brandName: string }) {
-  const { label, icon, tone } = describeStatus(status, brandName);
+export function StatusChip({ status, brandName, label: word }: { status: ItemStatus; brandName: string; label?: string }) {
+  const { label: own, icon, tone } = describeStatus(status, brandName);
+  const label = word ?? own;
   const { wash, ink } = TONE_CLASSES[tone];
   return (
     <span

@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { brandDealSchema, brandSessionSchema, holdStartSchema, creatorProfileSchema, dealDraftSchema, dealInviteSchema, dealsSchema, deliverableSchema, draftSchema } from "./schemas";
+import { brandDealSchema, brandDeliverableSchema, brandSessionSchema, holdStartSchema, creatorProfileSchema, dealDraftSchema, dealInviteSchema, dealsSchema, deliverableSchema, draftSchema } from "./schemas";
 
 /** `rejected`: the API refused a change (the item changed, say); the others are as for reads. */
 export type ApiError = "not_found" | "invalid_response" | "unavailable" | "rejected";
@@ -58,6 +58,7 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
   const itemPath = (dealId: string, itemId: string) => `${dealPath(dealId)}/items/${encodeURIComponent(itemId)}`;
   const invitePath = (id: string) => `${dealPath(id)}/invite`;
   const holdPath = (dealId: string, deliverableId: string) => `/brand${dealPath(dealId)}/posts/${encodeURIComponent(deliverableId)}/hold`;
+  const brandDeliverablePath = (dealId: string, deliverableId: string) => `/brand${dealPath(dealId)}/deliverables/${encodeURIComponent(deliverableId)}`;
   const askPath = (deliverableId: string, itemId: string) =>
     `${deliverablePath(deliverableId)}/items/${encodeURIComponent(itemId)}/ask`;
 
@@ -145,6 +146,21 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     openBrandLink: (token: string) => request("POST", `/b/${encodeURIComponent(token)}/session`, brandSessionSchema),
     /** CH-FR-04 to CH-FR-09: the deal as the brand sees it. */
     getBrandDeal: (dealId: string) => request("GET", `/brand${dealPath(dealId)}`, brandDealSchema),
+    /** RW-FR-05 to RW-FR-10: one post's review, as the brand sees it. */
+    getBrandDeliverable: (dealId: string, deliverableId: string) =>
+      request("GET", brandDeliverablePath(dealId, deliverableId), brandDeliverableSchema),
+    /** RW-FR-13: accept an item the creator asked about. */
+    acceptItem: (dealId: string, deliverableId: string, itemId: string) =>
+      request("POST", `${brandDeliverablePath(dealId, deliverableId)}/items/${encodeURIComponent(itemId)}/accept`, brandDeliverableSchema),
+    /** RW-FR-16, RW-FR-21: approve the draft, in the window or after objecting. */
+    approveDraft: (dealId: string, deliverableId: string) =>
+      request("POST", `${brandDeliverablePath(dealId, deliverableId)}/approve`, brandDeliverableSchema),
+    /** RW-FR-17, RW-FR-18: send the brand's objections together, each naming one passed item with a plain-text note. */
+    sendObjections: (dealId: string, deliverableId: string, objections: { itemId: string; note: string }[]) =>
+      request("POST", `${brandDeliverablePath(dealId, deliverableId)}/objections`, brandDeliverableSchema, { objections }),
+    /** RW-FR-14: ask the creator to fix an item they asked about, with an optional plain-text note. */
+    askToFix: (dealId: string, deliverableId: string, itemId: string, note?: string) =>
+      request("POST", `${brandDeliverablePath(dealId, deliverableId)}/items/${encodeURIComponent(itemId)}/fix`, brandDeliverableSchema, note ? { note } : {}),
     /** CH-FR-11, CH-FR-12: send the brand's notes together; the deal moves to `changes_requested`. Notes are plain text (CH-BR-07). */
     sendChanges: (dealId: string, notes: { about: BrandNoteAbout; text: string }[]) =>
       request("POST", `/brand${dealPath(dealId)}/notes`, brandDealSchema, { notes }),

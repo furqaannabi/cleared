@@ -11,11 +11,13 @@ export const ITEM_STATUSES = [
   "at_live_check",
   "waiting_for_brand",
   "accepted_by_brand",
+  // DC-FR-49: the check passed it; the brand objected in the review window.
+  "objected_by_brand",
 ] as const;
 
 export type ItemStatus = (typeof ITEM_STATUSES)[number];
 
-export type StatusIcon = "check" | "cross" | "question" | "clock" | "spinner" | "check-circle" | "dot";
+export type StatusIcon = "check" | "cross" | "question" | "clock" | "spinner" | "check-circle" | "dot" | "flag";
 
 /** Names a DESIGN.md colour pair; components map it to tokens. */
 export type StatusTone = "pass" | "fail" | "unsure" | "waiting" | "accepted" | "none";
@@ -41,6 +43,7 @@ const STATUS_MAP: Record<
   at_live_check: { label: () => "At live check", icon: "clock", tone: "waiting", tab: "at_live_check" },
   waiting_for_brand: { label: (b) => `Waiting for ${b}`, icon: "clock", tone: "unsure", tab: "waiting_for_brand" },
   accepted_by_brand: { label: (b) => `Accepted by ${b}`, icon: "check-circle", tone: "accepted", tab: "passed" },
+  objected_by_brand: { label: (b) => `${b} objected`, icon: "flag", tone: "fail", tab: "needs_you" },
 };
 
 /**
@@ -71,6 +74,7 @@ export function tabsFor(status: ItemStatus): ChecklistTab[] {
 
 /** What needs the creator first, then what waits on others, then what is settled. */
 export const NEED_ORDER: ItemStatus[] = [
+  "objected_by_brand",
   "fix_needed",
   "unsure",
   "waiting_for_brand",

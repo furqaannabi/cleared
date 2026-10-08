@@ -7,6 +7,8 @@ import type { Deliverable } from "@/lib/deliverable/types";
 import { findDraft } from "./deal-drafts";
 import { canCreate, dealForToken, inviteFor, payoutEmail, postTerms, restartLink } from "./invites";
 import { addDeliverable } from "./store";
+import { JUNIPER, juniperHolds } from "./fixtures/juniper";
+import { postReview } from "./brand-review";
 
 type BrandDeal = z.infer<typeof brandDealSchema>;
 type Note = BrandDeal["notes"][number];
@@ -44,7 +46,21 @@ export function resetBrandDeals() {
   state = new Map();
   orders = new Map();
   nextOutcome = "held";
+  seedHeldDeal();
 }
+
+/** RW 1.0: the demo deal the brand agreed to, every post held three days ago. */
+function seedHeldDeal() {
+  const now = Date.now();
+  state.set(JUNIPER, { version: 1, notes: [], agreedAt: new Date(now - 3 * 86_400_000).toISOString(), holds: juniperHolds(now), revising: false });
+}
+seedHeldDeal();
+
+/** Opens the brand's session for a deal, as swapping a review link does (RW-FR-03). */
+export const startBrandSession = (dealId: string) => void sessions.add(dealId);
+
+/** Whether this browser opened the deal's link: the mock's stand-in for the HttpOnly session (CH-FR-03). */
+export const hasBrandSession = (dealId: string) => sessions.has(dealId);
 
 /** The brand's side, for keeping the mock data in the browser. The "sessions" are the mock's stand-in, never a real session. */
 export const brandData = {
@@ -94,6 +110,8 @@ function brandDealFor(dealId: string): BrandDeal | undefined {
       deadlineDays: terms[x.id]?.deadlineDays ?? 1,
       hold: s.holds[x.id] ?? { state: "not_started" as const },
       ...(changedPosts[x.id]?.length ? { changed: changedPosts[x.id] } : {}),
+      // RW-FR-01: once the post's draft check exists.
+      ...(postReview(x.id) ? { review: postReview(x.id) } : {}),
     })),
     items: d.items.map(({ id, deliverableId, name, briefLine, addedByCreator }) => ({
       id,

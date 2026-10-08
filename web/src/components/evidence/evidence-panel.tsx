@@ -1,5 +1,6 @@
 import { BrandNote } from "@/components/checklist/brand-note";
 import { PlayFrom } from "@/components/player/seek";
+import { useChecklistWords } from "@/components/checklist/checklist-words";
 import { StatusChip } from "@/components/checklist/status-chip";
 import { StatusSeal } from "@/components/checklist/status-seal";
 import { checkedByLabel, itemTime, kindLabel } from "@/lib/checklist/item-labels";
@@ -24,6 +25,7 @@ export function EvidencePanel({
   brandName: string;
   actions?: React.ReactNode;
 }) {
+  const words = useChecklistWords(brandName);
   if (!item) {
     return (
       <section aria-label="Evidence" className="rounded-lg border border-line bg-surface px-[22px] py-5 text-ink-3 shadow-panel">
@@ -51,7 +53,7 @@ export function EvidencePanel({
       <dl className="mt-4 grid gap-3.5">
         <Field label="Result">
           <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-            <StatusChip status={item.status} brandName={brandName} />
+            <StatusChip status={item.status} brandName={brandName} label={words.status(item)} />
             {item.change && <span className="text-label font-semibold text-ink-3">{item.change}</span>}
           </span>
         </Field>
@@ -68,7 +70,7 @@ export function EvidencePanel({
         <Field label="From the brief">
           <span className="flex items-start gap-2 text-ink-2">
             <BriefIcon />
-            <span>{item.briefLine ? `Line ${item.briefLine.number}: “${item.briefLine.text}”` : "Added by you"}</span>
+            <span>{item.briefLine ? `Line ${item.briefLine.number}: “${item.briefLine.text}”` : words.addedBy}</span>
           </span>
         </Field>
         <Field label="Checked by">{checkedByLabel(item.checkedBy)}</Field>

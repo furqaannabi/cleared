@@ -11,7 +11,8 @@ import { deliverablesData } from "./store";
  * before each request. Never used by Vitest or a production build.
  */
 
-const VERSION = 1;
+// 2: the held demo deal (RW 1.0) joined the seed.
+const VERSION = 2;
 
 /** Every mock module's data, as plain JSON-safe values. */
 export function snapshotMockData() {

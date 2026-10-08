@@ -1,6 +1,7 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
 import { apiBaseUrl } from "@/lib/api";
 import { brandDealHandlers } from "./brand-deals";
+import { brandReviewHandlers, creatorView } from "./brand-review";
 import { dealDraftHandlers, draftSummaries } from "./deal-drafts";
 import { deals } from "./fixtures/deals";
 import { inviteHandlers } from "./invites";
@@ -20,13 +21,15 @@ export const handlers: RequestHandler[] = [
   ...dealDraftHandlers,
   // IN FRD: the invite step and the creator's profile.
   ...inviteHandlers,
+  // RW FRD: the brand's review of each post (first: a review link's swap falls through to the invite link's).
+  ...brandReviewHandlers,
   // CH FRD: the brand's side of confirm and hold.
   ...brandDealHandlers,
 
   // DC-FR-01, DC-FR-38
   http.get(`${apiBaseUrl}/deliverables/:deliverableId`, ({ params }) => {
     const found = findDeliverable(String(params.deliverableId));
-    return found ? HttpResponse.json(found) : notFound();
+    return found ? HttpResponse.json(creatorView(found)) : notFound();
   }),
 
   // DC-FR-26: the mock's link never really expires, so it hands back the same one.
@@ -45,7 +48,7 @@ export const handlers: RequestHandler[] = [
     for (const item of d.items) {
       if (item.status !== "at_live_check") Object.assign(item, { previousStatus: item.status, status: "checking" });
     }
-    return HttpResponse.json(d);
+    return HttpResponse.json(creatorView(d));
   }),
 
   // DC-FR-14: only an askable Unsure item that wasn't declined can be asked about.
@@ -55,7 +58,7 @@ export const handlers: RequestHandler[] = [
     if (!d || !item) return notFound();
     if (d.state === "released" || item.status !== "unsure" || !item.askable || item.declined) return refused();
     Object.assign(item, { status: "waiting_for_brand", askedAt: new Date().toISOString(), askable: false });
-    return HttpResponse.json(d);
+    return HttpResponse.json(creatorView(d));
   }),
 
   // DC-FR-15: withdrawing returns a waiting item to Unsure.
@@ -65,7 +68,7 @@ export const handlers: RequestHandler[] = [
     if (!d || !item) return notFound();
     if (item.status !== "waiting_for_brand") return refused();
     Object.assign(item, { status: "unsure", askedAt: undefined, askable: true });
-    return HttpResponse.json(d);
+    return HttpResponse.json(creatorView(d));
   }),
 ];
 

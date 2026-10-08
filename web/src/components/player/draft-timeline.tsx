@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useChecklistWords } from "@/components/checklist/checklist-words";
 import { StatusSeal } from "@/components/checklist/status-seal";
-import { describeStatus } from "@/lib/checklist/item-status";
 import { itemTime } from "@/lib/checklist/item-labels";
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { formatDuration } from "@/lib/deliverable/format";
@@ -63,7 +63,8 @@ export function DraftTimeline({
     ).map((lane, k) => [pointMarkers[k].id, width > 0 ? lane : 0]),
   );
   const lifted = [...lanes.values()].includes(1);
-  const label = (i: ItemView) => `${i.name}, ${describeStatus(i.status, brandName).label}, at ${itemTime(i)}`;
+  const words = useChecklistWords(brandName);
+  const label = (i: ItemView) => `${i.name}, ${words.status(i)}, at ${itemTime(i)}`;
 
   const band = (i: ItemView) => {
     const selected = i.id === selectedId;

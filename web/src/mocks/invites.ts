@@ -5,6 +5,7 @@ import type { creatorProfileSchema, dealInviteSchema } from "@/lib/api/schemas";
 import { nextId } from "./brief-reader";
 import { brandNotes, creatorExtras } from "./brand-deals";
 import { findDraft } from "./deal-drafts";
+import { JUNIPER, JUNIPER_TERMS, JUNIPER_TOKEN } from "./fixtures/juniper";
 
 type Invite = z.infer<typeof dealInviteSchema>;
 type Profile = z.infer<typeof creatorProfileSchema>;
@@ -50,6 +51,11 @@ function seedSentDeal() {
     },
     link: { url: "https://cleared.example/b/demo_maple", expiresAt: new Date(Date.now() + LINK_DAYS * 86_400_000).toISOString(), expired: false },
   });
+  // RW 1.0: the held demo deal, its link still on so the brand can open it.
+  terms.set(JUNIPER, {
+    posts: structuredClone(JUNIPER_TERMS),
+    link: { url: `https://cleared.example/b/${JUNIPER_TOKEN}`, expiresAt: new Date(Date.now() + LINK_DAYS * 86_400_000).toISOString(), expired: false },
+  });
 }
 seedSentDeal();
 
@@ -60,6 +66,9 @@ export function dealForToken(token: string): string | undefined {
   }
   return undefined;
 }
+
+/** The brand's email, if the creator gave one (IN-FR-13). */
+export const brandEmailFor = (dealId: string) => terms.get(dealId)?.brandEmail;
 
 /** A deal's amount and deadline per post, for the brand's view. */
 export function postTerms(dealId: string): Record<string, Terms> {

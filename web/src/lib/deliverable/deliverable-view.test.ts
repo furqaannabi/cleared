@@ -187,6 +187,29 @@ describe("DC-FR-30 next step", () => {
     });
   });
 
+  test("DC-FR-50 objected: names the brand, how many items, and the deadline; the action is a new draft", () => {
+    expect(
+      next({
+        state: "objected",
+        deadline: "2026-10-23T23:59:00Z",
+        items: [item("1", "objected_by_brand", { brandNote: "Out of focus." }), item("2", "objected_by_brand"), item("3", "passed")],
+      }),
+    ).toEqual({
+      lead: "Glow Theory asked you to fix 2 items. Upload a new draft by 23 Oct.",
+      detail: "If Glow Theory approves this draft instead, you’re cleared to publish.",
+      action: "upload_new_draft",
+    });
+  });
+
+  test("DC-FR-51 approved: by the brand, or by the window ending; never says to publish yet", () => {
+    expect(next({ state: "approved", approvedBy: "brand", approvedAt: "2026-10-08T10:00:00Z" })).toEqual({
+      lead: "Glow Theory approved this draft.",
+      detail: "Don’t publish yet. Cleared confirms Glow Theory’s hold with PayPal first.",
+      action: null,
+    });
+    expect(next({ state: "approved", approvedBy: "window" }).lead).toBe("No objection from Glow Theory in 48 hours, so this draft is approved.");
+  });
+
   test("DC-FR-08, DC-FR-30 check failed on the file: the bar says what to do (the banner says why and that the hold is safe)", () => {
     expect(
       next({
@@ -388,6 +411,16 @@ describe("DC-FR-34 deal steps", () => {
 
   test("a fully passing draft is at Brand review", () => {
     expect(stepsFor("fully_passing").summary).toBe("Step 4 of 7 · Brand review");
+  });
+
+  test("DC-FR-50: an objected draft is still at Brand review", () => {
+    expect(stepsFor("objected").summary).toBe("Step 4 of 7 · Brand review");
+  });
+
+  test("DC-FR-51: an approved draft has done Brand review; Publish is current", () => {
+    const steps = stepsFor("approved");
+    expect(steps.items.map((s) => s.state)).toEqual(["done", "done", "done", "done", "current", "upcoming", "upcoming"]);
+    expect(steps.summary).toBe("Step 5 of 7 · Publish");
   });
 
   test("a released deliverable has ended, with no current step", () => {

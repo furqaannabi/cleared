@@ -20,7 +20,7 @@ test("DC-FR-45: with mocks on, uploading a new draft shows Checking, then the ne
 
 test("DC-BR-10: on mocks, the page says its data is synthetic", async () => {
   render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
-  expect(await screen.findByText(/Demo data\. Glow Theory, Northbound Coffee, Kora Audio and Ada Okafor are made up/)).toBeVisible();
+  expect(await screen.findByText(/Demo data\. Glow Theory, Northbound Coffee, Kora Audio, Juniper & Salt, Maple & Moss and Ada Okafor are made up/)).toBeVisible();
 });
 
 test("DC-FR-48, DC-FR-21: when the new run lands, the page says what the fix changed and selects what still needs you", async () => {
@@ -48,3 +48,12 @@ test("DC-FR-30: on a phone the fixed bar holds only the action", async () => {
   expect(within(bar).getByText("Upload new draft")).toBeVisible();
   expect(within(bar).queryByText("Fix 1 item, and decide on 1 unsure item.")).toBeNull();
 });
+
+test("RW-FR-28: on mocks, the next draft can be told to pass every item, which opens the brand's window", async () => {
+  render(<DraftCheckPage dealId="deal_juniper" deliverableId="del_juniper_reel" />);
+  await userEvent.selectOptions(await screen.findByRole("combobox", { name: /the next draft/ }), "passes");
+  await userEvent.upload(screen.getByLabelText("Upload new draft"), new File(["x"], "reel_v2.mp4", { type: "video/mp4" }));
+  expect(
+    await within(screen.getByRole("region", { name: "What happens next" })).findByText(/^Every item passed\. Juniper & Salt has until /, {}, { timeout: 6000 }),
+  ).toBeVisible();
+}, 10_000);

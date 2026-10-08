@@ -23,6 +23,7 @@ const PATHS: Record<StatusIconName, React.ReactNode> = {
     </>
   ),
   dot: <circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" />,
+  flag: <path d="M6 21V4M6 4h11l-2 4 2 4H6" />,
 };
 
 /**

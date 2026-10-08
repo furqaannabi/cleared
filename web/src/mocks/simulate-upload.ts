@@ -1,4 +1,5 @@
 import type { Deliverable } from "@/lib/deliverable/types";
+import { creatorView } from "./brand-review";
 import { findDeliverable } from "./store";
 
 /*
@@ -19,20 +20,43 @@ const NEXT_EVIDENCE: Record<string, Partial<NonNullable<Deliverable["items"][num
   it_5: { text: "Reads “GLOW20”, with a zero." },
 };
 
+/** RW-FR-28: what the demo's next run finds. */
+export type DemoOutcome = "passes" | "one_unsure";
+
+const WINDOW_MS = 48 * 3_600_000;
+const EVIDENCE: Record<Deliverable["items"][number]["kind"], { label: string; text: string }> = {
+  said: { label: "Transcript", text: "Said clearly in the draft." },
+  shown_as_text: { label: "On-screen text", text: "Readable on screen." },
+  shown: { label: "In frame", text: "Shown in frame." },
+  timing: { label: "Segment", text: "Within the time asked for." },
+  written: { label: "When", text: "Checked once the post is public." },
+  disclosure: { label: "When", text: "Checked once the post is public." },
+  publication: { label: "When", text: "Checked once the post is public." },
+};
+
 /**
  * Simulates a new draft check for one mock deliverable.
  *
  * @param deliverableId - the mock deliverable
  * @param onChange - called with the deliverable at Checking, then with the results
  * @param delayMs - how long the simulated check takes
+ * @param outcome - mocks only (RW-FR-28): every item passes, or one is unsure; omitted, the fixed DC-FR-45 run
  */
-export function simulateUpload(deliverableId: string, onChange: (d: Deliverable) => void, delayMs = 3000): void {
+export function simulateUpload(deliverableId: string, onChange: (d: Deliverable) => void, delayMs = 3000, outcome?: DemoOutcome): void {
   const d = findDeliverable(deliverableId);
   if (!d) return;
 
   const before = new Map(d.items.map((i) => [i.id, i.status]));
   d.state = "checking";
   d.checkFailure = undefined;
+  // RW-FR-23, DC-BR-04: a new draft gets a new review; the last one's objections and approval go.
+  Object.assign(d, { reviewWindowEndsAt: undefined, objectedAt: undefined, approvedAt: undefined, approvedBy: undefined });
+  d.draft ??= {
+    fileName: "draft_v1.mp4",
+    durationSec: d.platform === "youtube_video" ? 408 : 45,
+    url: d.platform === "youtube_video" ? "/mock-media/synthetic-draft-16x9.mp4" : "/mock-media/synthetic-draft-9x16.mp4",
+    urlExpiresAt: "2099-01-01T00:00:00Z",
+  };
   d.run = (d.run ?? 0) + 1;
   d.checkStartedAt = new Date().toISOString();
   d.stages = [
@@ -44,11 +68,12 @@ export function simulateUpload(deliverableId: string, onChange: (d: Deliverable)
   for (const item of d.items) {
     if (item.status === "at_live_check") continue;
     // DC-BR-04: a new draft cancels open asks and acceptances.
-    Object.assign(item, { status: "checking", askedAt: undefined, declined: undefined, brandNote: undefined });
+    Object.assign(item, { status: "checking", askedAt: undefined, declined: undefined, brandNote: undefined, askable: undefined });
   }
-  onChange(structuredClone(d));
+  onChange(creatorView(d));
 
   setTimeout(() => {
+    if (outcome) return finishDemoRun(d, before, outcome, onChange);
     d.state = "results";
     d.stages = undefined;
     d.checkStartedAt = undefined;
@@ -60,6 +85,26 @@ export function simulateUpload(deliverableId: string, onChange: (d: Deliverable)
       // Evidence always belongs to the latest run.
       if (NEXT_EVIDENCE[item.id] && item.evidence) item.evidence = { ...item.evidence, ...NEXT_EVIDENCE[item.id] };
     }
-    onChange(structuredClone(d));
+    onChange(creatorView(d));
   }, delayMs);
+}
+
+/** RW-FR-28: the demo run's results, with synthetic evidence for every item checked. */
+function finishDemoRun(d: Deliverable, before: Map<string, Deliverable["items"][number]["status"]>, outcome: DemoOutcome, onChange: (d: Deliverable) => void) {
+  d.state = "results";
+  d.stages = undefined;
+  d.checkStartedAt = undefined;
+  const checked = d.items.filter((i) => i.status === "checking");
+  const unsure = outcome === "one_unsure" ? (checked.find((i) => i.kind === "shown") ?? checked[0]) : undefined;
+  checked.forEach((item, n) => {
+    const now = item === unsure ? "unsure" : "passed";
+    const evidence = item.evidence ?? { ...EVIDENCE[item.kind], startSec: 8 + n * 20 };
+    Object.assign(item, { previousStatus: before.get(item.id), status: now, askable: now === "unsure", evidence });
+  });
+  for (const item of d.items) if (item.status === "at_live_check") item.evidence ??= EVIDENCE[item.kind];
+  if (!unsure) {
+    d.state = "fully_passing";
+    d.reviewWindowEndsAt = new Date(Date.now() + WINDOW_MS).toISOString();
+  }
+  onChange(creatorView(d));
 }

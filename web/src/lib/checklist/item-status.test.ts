@@ -38,6 +38,11 @@ describe("DC-FR-13 item status map", () => {
     expect(tabsFor("checking")).toEqual(["all"]);
     expect(tabsFor("not_checked")).toEqual(["all"]);
   });
+
+  test("DC-FR-49: an item the brand objected to names the brand, uses the fail tone and needs the creator", () => {
+    expect(describeStatus("objected_by_brand", BRAND)).toEqual({ label: "Glow Theory objected", icon: "flag", tone: "fail" });
+    expect(tabsFor("objected_by_brand")).toEqual(["all", "needs_you"]);
+  });
 });
 
 describe("needs-first order", () => {

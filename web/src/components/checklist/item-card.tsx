@@ -2,6 +2,7 @@ import { checkedByLabel, itemTime, kindLabel } from "@/lib/checklist/item-labels
 import type { ItemView } from "@/lib/deliverable/deliverable-view";
 import { PlayFrom } from "@/components/player/seek";
 import { BrandNote } from "./brand-note";
+import { useChecklistWords } from "./checklist-words";
 import { StatusChip } from "./status-chip";
 import { StatusSeal } from "./status-seal";
 
@@ -30,6 +31,7 @@ export function ItemCard({
   onToggle: () => void;
   actions?: React.ReactNode;
 }) {
+  const words = useChecklistWords(brandName);
   const time = itemTime(item);
   const meta = time ? `${kindLabel(item.kind)} · ${time}` : kindLabel(item.kind);
   return (
@@ -48,7 +50,7 @@ export function ItemCard({
           <b className="text-body-strong font-bold">{item.name}</b>
           <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
             <span className="text-chip text-ink-3">{meta}</span>
-            <StatusChip status={item.status} brandName={brandName} />
+            <StatusChip status={item.status} brandName={brandName} label={words.status(item)} />
           </span>
         </span>
       </button>
@@ -74,7 +76,7 @@ export function ItemCard({
               <p className="mt-0.5">{item.suggestedFix}</p>
             </div>
           )}
-          <p>{item.briefLine ? `Brief line ${item.briefLine.number}: “${item.briefLine.text}”` : "Added by you"}</p>
+          <p>{item.briefLine ? `Brief line ${item.briefLine.number}: “${item.briefLine.text}”` : words.addedBy}</p>
           <p className="text-meta text-ink-3">Checked by: {checkedByLabel(item.checkedBy)}</p>
           {actions && <div className="mt-1">{actions}</div>}
         </div>
