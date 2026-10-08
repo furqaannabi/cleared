@@ -50,13 +50,18 @@ export interface SandboxPayPalConfig {
 }
 
 /** Reads the sandbox credentials from the environment. They are never logged. */
-export function sandboxPayPalFromEnv(): PayPalPort {
+export function sandboxPayPalFromEnv(options: Pick<SandboxPayPalConfig, "log"> = {}): PayPalPort {
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
     throw new Error("Missing PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET. See backend/.env.example.");
   }
-  return createSandboxPayPal({ clientId, clientSecret, webhookId: process.env.PAYPAL_WEBHOOK_ID || undefined });
+  return createSandboxPayPal({
+    clientId,
+    clientSecret,
+    webhookId: process.env.PAYPAL_WEBHOOK_ID || undefined,
+    log: options.log,
+  });
 }
 
 /** The headers PayPal signs a webhook with. All five are needed to verify one. */
