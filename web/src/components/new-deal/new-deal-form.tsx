@@ -15,13 +15,22 @@ const MAX_POSTS = 10;
  * Stage 1 of a new deal: the brand's name and its posts (deliverables), each
  * with a platform. "Continue" creates the deal and opens its checklist page.
  *
+ * @param onChange - told the brand and platforms as they change, for the preview (BC-FR-21)
  * @see docs/specs/creator-brief-checklist-frd.md BC-FR-02, BC-FR-03
  */
-export function NewDealForm() {
+export function NewDealForm({ onChange }: { onChange?: (deal: { brand: string; platforms: Platform[] }) => void } = {}) {
   const router = useRouter();
   const brandId = useId();
-  const [brand, setBrand] = useState("");
-  const [posts, setPosts] = useState<{ key: number; platform: Platform }[]>([{ key: 0, platform: "youtube_video" }]);
+  const [brand, setBrandState] = useState("");
+  const [posts, setPostsState] = useState<{ key: number; platform: Platform }[]>([{ key: 0, platform: "youtube_video" }]);
+  const setBrand = (next: string) => {
+    setBrandState(next);
+    onChange?.({ brand: next, platforms: posts.map((p) => p.platform) });
+  };
+  const setPosts = (next: typeof posts) => {
+    setPostsState(next);
+    onChange?.({ brand, platforms: next.map((p) => p.platform) });
+  };
   const [missingBrand, setMissingBrand] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -43,7 +52,7 @@ export function NewDealForm() {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="mt-6 grid max-w-xl gap-6">
+    <form onSubmit={submit} noValidate className="grid gap-6">
       <div className="grid gap-2">
         <label htmlFor={brandId} className="text-body-strong font-bold">
           Brand

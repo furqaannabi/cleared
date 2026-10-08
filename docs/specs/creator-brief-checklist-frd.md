@@ -1,6 +1,6 @@
 # Creator brief → checklist: FRD
 
-**Status:** Signed by William (revision 1.0).
+**Status:** Signed by William (revision 1.1).
 
 **Surface:** Creator app. Step 1 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): the creator starts a deal, names its posts, gives the brand's brief, and gets a checklist per post that cites the brief, with the AI's questions answered. Step 2 (amounts, deadlines, PayPal email, connecting accounts, inviting the brand) is the next surface.
 
@@ -46,6 +46,7 @@ A short "New deal" flow. The creator names the brand and the posts (deliverables
 | --- | --- |
 | BC-FR-01 | **New deal.** A "New deal" button at the top of the rail (desktop) and in the Deals sheet (phones) opens `/deals/new`. |
 | BC-FR-02 | **The deal and its posts.** `/deals/new` asks for the brand's name and one or more deliverables, each with a platform: YouTube video, YouTube Short or Instagram Reel (PRODUCT.md "Platforms"). Up to 10 deliverables. Each can be removed until the deal is created. |
+| BC-FR-21 | **The new deal page.** `/deals/new` has the crumb "Deals › New deal" and the four steps (Posts, Brief, Checklist, Invite) with Posts current, like the pages after it, and the form sits in a card. From `lg:` up, beside the form: a faded preview of the terms sheet the brand will see (design/invite), headed "Taking shape: the terms {brand} will see", filling in as the creator types (the brand's name, then a line per post, and "Amounts and deadlines come at the Invite step."), and under it "How setting up a deal works", the four steps in a line each, ending "Nothing is held or paid until the brand approves." On phones only the steps show, under the form. Design C in design/new-deal/option-c.html. |
 | BC-FR-03 | **Saved at once.** "Continue" creates the deal through the API and opens `/deals/{id}/checklist`. From then on the deal is in the rail as "{brand} · Checklist", and `/deals/{id}` opens the checklist page while the deal is at this step. |
 
 ### The brief
@@ -70,7 +71,7 @@ A short "New deal" flow. The creator names the brand and the posts (deliverables
 | BC-FR-14 | **Edit.** The creator can change an item's wording (its citation stays), remove it (its line then shows "Not checked" unless another item cites it), and move or copy it to another deliverable. |
 | BC-FR-15 | **Add.** "Add an item" asks for the wording and the kind (the seven kinds in plain words) and adds it marked "Added by you, not in the brief". |
 | BC-FR-16 | **Checklist ready.** "Checklist ready" is available once every question is answered or left out and every deliverable has at least one item. Until then it says what is left ("Answer 2 questions first"). Taking it saves the creator's agreement through the API. |
-| BC-FR-17 | **After ready.** The page says "Your checklist is ready. Next you'll set the amount and deadline for each post and invite {brand}." The rail shows the deal at "Invite". The checklist stays visible, read-only, until the invite surface is built. |
+| BC-FR-17 | **After ready.** The page says "Your checklist is ready. Next you'll set the amount and deadline for each post and invite {brand}." The rail shows the deal at "Invite". The checklist stays visible, read-only, with the way on to the invite step (IN-FR-01). |
 | BC-FR-18 | **Saving.** Every answer and edit is saved through the API as it is made; a failed save says so beside the item with Try again, and is never shown as saved. |
 
 ### Responsive and accessibility
@@ -92,7 +93,7 @@ A short "New deal" flow. The creator names the brand and the posts (deliverables
 
 ## Implementation Decisions
 
-- **Routes:** `/deals/new` (stage 1) and `/deals/{id}/checklist` (brief, reading, checklist), inside the app shell. `/deals/{id}` sends a deal at this step to its checklist page (DC-FR-37 is extended with the deal's step).
+- **Routes:** `/deals/new` (stage 1) and `/deals/{id}/checklist` (brief, reading, checklist), inside the app shell. `/deals/{id}` sends a deal at this step to its checklist page (DC-FR-37 is extended with the deal's step); from the invite step on, the invite FRD (IN-FR-02) routes it.
 - **Modules:** a pure **checklist view model** (tabs and counts, lines with their items, unanswered questions, "not checked" lines, whether Ready is allowed and what is left) tested on its own; components per feature folder (`new-deal/`, `brief/`, `checklist-builder/`), each under ~200 lines.
 - **Data:** Zod schemas for the provisional API; one typed client; MSW handlers with a synthetic Glow Theory brief whose reading is simulated (lines marked over a few seconds, two questions).
 - **Visual:** inherits DESIGN.md (seals, chips, the brief line style, the switcher). `/impeccable` shapes the screens before build; William picks.
@@ -103,7 +104,7 @@ A short "New deal" flow. The creator names the brand and the posts (deliverables
 interface DealDraft {
   id: string;
   brandName: string;
-  step: "checklist" | "invite";
+  step: "checklist" | "invite" | "waiting_for_brand"; // the last two: invite FRD
   deliverables: { id: string; platform: "youtube_video" | "youtube_short" | "instagram_reel" }[];
   brief?: { lines: { number: number; text: string }[] };
   reading: "idle" | "reading" | "done" | "failed";
@@ -170,3 +171,5 @@ interface Question {
 | --- | --- | --- |
 | 0.1 | First draft, from the grill-me session with William: one "New deal" flow for step 1 (posts, brief, checklist); paste now, upload depends on backend; visible reading; questions with suggested answers; per-deliverable tabs and editing; "Checklist ready" saves the creator's agreement | none |
 | 1.0 | Signed by William | none |
+| 1.1 | BC-FR-21: the new deal page gets the crumb and step header of the pages after it, the form in a card, and from `lg:` a live preview of the terms sheet with the four steps beneath (design C, William's mix of A and B). BC-FR-17 and the routes now point on to the invite step, built under the invite FRD | none |
+| 1.1 | Signed by William | none |

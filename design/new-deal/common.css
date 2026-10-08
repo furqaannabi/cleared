@@ -1,0 +1,13 @@
+/* New deal mockups (design/ prototypes: never shipped, never imported by web/). */
+@import url("../invite/invite.css");
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px 18px;box-shadow:0 1px 2px rgba(28,21,10,.05)}
+@media(min-width:768px){.card{padding:28px 30px}}
+.f2{display:grid;gap:8px}
+.lbl{font-weight:700;font-size:14.5px}
+.sel{display:flex;align-items:center;justify-content:space-between;min-height:48px;border:1px solid var(--latte-line);border-radius:12px;background:var(--surface);padding:0 14px;font-weight:600;flex:1}
+.prow{display:flex;gap:10px;align-items:center}
+.prow .n{width:56px;flex:none;font-size:13px;font-weight:700;color:var(--ink-3)}
+.x{width:44px;height:44px;display:grid;place-items:center;color:var(--ink-3);flex:none}
+.addp{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:700;color:var(--espresso)}
+.form{display:grid;gap:24px}
+.sub{font-size:13px;color:var(--ink-3);margin-top:-4px}
