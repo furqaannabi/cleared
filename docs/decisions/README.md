@@ -59,3 +59,4 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-08 | [Timers and retries run from our own jobs table in Postgres](2026-10-08-jobs-table-in-postgres.md) | Accepted |
 | 2026-10-08 | [The backend calls PayPal through its server SDK, behind our own interface](2026-10-08-paypal-client-sdk-behind-port.md) | Accepted |
 | 2026-10-08 | [Backend tests: Bun's test runner, a real Postgres and a fake PayPal](2026-10-08-backend-test-tooling.md) | Accepted |
+| 2026-10-08 | [A go-ahead runs to the deadline when the deadline falls inside PayPal's guarantee](2026-10-08-go-ahead-runs-to-a-deadline-inside-the-guarantee.md) | Accepted |
