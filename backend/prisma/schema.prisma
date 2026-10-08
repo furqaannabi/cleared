@@ -44,3 +44,79 @@ enum JobStatus {
   /// Gave up after the retry limit. Stays in the table so a person can see it.
   failed
 }
+
+// One deliverable's money (money path spec, "Schema";
+// docs/decisions/2026-10-08-money-state-as-one-document.md).
+model DeliverableMoney {
+  deliverableId String @id
+  /// The whole state the transition rules produce. Read and written only by the money module.
+  state         Json
+  /// Copied out of the state so they can be searched.
+  stage         String
+  amountCents   Int
+  /// Goes up by one with every change.
+  version       Int    @default(0)
+  /// The creator's PayPal email, read at the moment a payout is sent. Never inside the state.
+  payoutEmail   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  calls  PayPalCall[]
+  record MoneyRecord[]
+
+  @@index([stage])
+}
+
+// One thing asked of PayPal (MP-BR-06, MP-BR-07). It is written as started before PayPal is
+// called, and settled when PayPal has given a final answer. A started call is followed up.
+model PayPalCall {
+  id            String @id @default(uuid())
+  deliverableId String
+  /// What the call is for, and which attempt, capture, payout or confirmation it belongs to.
+  purpose       String
+  subjectId     String
+  /// Sent to PayPal as its request id. The same call sent again uses the same id.
+  requestId     String @unique @default(uuid())
+
+  status    PayPalCallStatus @default(started)
+  /// PayPal's id for what the call made: an order, a hold, a capture or a payout.
+  reference String?
+  startedAt DateTime
+  settledAt DateTime?
+
+  money DeliverableMoney @relation(fields: [deliverableId], references: [deliverableId])
+
+  @@unique([deliverableId, purpose, subjectId])
+  @@index([reference])
+  @@index([status])
+}
+
+enum PayPalCallStatus {
+  started
+  settled
+}
+
+// The money record (MP-FR-41): every change, PayPal call and notice, with its cause.
+// Entries are only ever added.
+model MoneyRecord {
+  id            Int    @id @default(autoincrement())
+  deliverableId String
+  at            DateTime
+  /// event: a change to the money state. paypal_call: something asked of PayPal. notice: something to tell someone.
+  kind          String
+  /// The event's type, the call's purpose, or what the notice is about.
+  name          String
+  /// What caused it: a function call, a job, a webhook, or PayPal's answer to a call.
+  cause         String
+  /// The stage after it.
+  stage         String
+  /// A PayPal reference, when there is one.
+  reference     String?
+  /// Ids and outcomes only: no emails, tokens or PayPal payloads (MP-BR-11).
+  details       Json?
+
+  money DeliverableMoney @relation(fields: [deliverableId], references: [deliverableId])
+
+  @@index([deliverableId, id])
+}
