@@ -1,6 +1,6 @@
 # Cancel: FRD
 
-**Status:** Signed by William (revision 1.0). The cancel rules are the money path FRD's (Furqaan's).
+**Status:** Signed by William (revision 1.1). The cancel rules are the money path FRD's (Furqaan's).
 
 **Surface:** Both sides, from the invite until the go-ahead. **The creator's side:** "Cancel this post" on the draft check page (`/deals/{id}/deliverables/{id}`) and on each post's line on the invite page (`/deals/{id}/invite`), and "Cancel the deal" on the invite page. **The brand's side:** "Cancel this post" on the review page (`/brand/deals/{id}/deliverables/{id}`) and on each post's line on the deal page (`/brand/deals/{id}`), and "Cancel the deal" on the deal page. After a cancel, both sides see the post as cancelled: released, or closed if nothing was held.
 
@@ -116,6 +116,9 @@ cancelled?: { by: "creator" | "brand"; at: string; note?: string }; // CN-FR-10,
 // Requests
 POST /deliverables/{id}/cancel                     { note?: string }   // creator
 POST /brand/deals/{dealId}/deliverables/{id}/cancel { note?: string }  // brand
+// 1.1: from the pages that list a deal's posts, held or not (a post not held has no draft check page):
+POST /deals/{dealId}/invite/posts/{id}/cancel     { note?: string }   // creator; answers with the invite
+POST /brand/deals/{dealId}/posts/{id}/cancel      { note?: string }   // brand; answers with the deal
 // Refusals: 409 with { reason: "go_ahead_running" | "published" | "already_cancelled", by? }
 ```
 
@@ -125,6 +128,7 @@ POST /brand/deals/{dealId}/deliverables/{id}/cancel { note?: string }  // brand
 | --- | --- |
 | CN-FR-01, CN-FR-03 | `cancel` on each deliverable from the money view: allowed now, or why not (`go_ahead_running`, `published`, `finished`), and whether a hold attempt is waiting at PayPal (MP-FR-33, MP-FR-34) |
 | CN-FR-04, CN-FR-09 | The two cancel routes above, each checking the caller is a party to the deal; refusals with the reason and, for an earlier cancel, who |
+| CN-FR-01, CN-FR-02, CN-FR-14, CN-FR-15 | **1.1:** the invite page's and the brand deal page's cancel routes above, for any post of the deal, held or not, each answering with that page's data; each post in the invite and the brand's deal carries `cancel` and `cancelled` |
 | CN-FR-07 | **New:** an optional `note` on the cancel (≤ 300 characters, plain text), stored with the cancel and returned to both sides. The money module records who cancels but not a note today |
 | CN-FR-10, CN-FR-11 | `cancelled: { by, at, note? }` on both sides' deliverable; a `closed` state for a post cancelled before it was held (the money view's `closed_not_held` with reason `cancelled`) |
 | CN-FR-12 | The deals list and the brand's deal summary showing cancelled posts and a fully cancelled deal |
@@ -156,3 +160,5 @@ POST /brand/deals/{dealId}/deliverables/{id}/cancel { note?: string }  // brand
 | --- | --- | --- |
 | 0.1 | First draft, from the grill-me session with William: each post can be cancelled, with "Cancel the deal" cancelling every post it can; an optional note for the other side; a quiet button with an inline confirmation (a sheet on phones) and a why-line when it can't be cancelled; a cancelled held post shows as released with who, when and the note, and a post not held as closed; cancelled lines in both lists; cancelling before the brand agrees, with the invite link then showing CH-FR-02's page; lost races explained; the existing seeds, no demo control. Follows the money path FRD's MP-FR-32 to MP-FR-34 | [Go-ahead and cancel](../decisions/2026-10-08-go-ahead-cancel-and-unheld-posts.md) |
 | 1.0 | Signed by William | none |
+| 1.1 | Contract, found while building: a post not yet held has no draft check page, so the invite page and the brand's deal page cancel through their own routes (`POST /deals/{id}/invite/posts/{id}/cancel`, `POST /brand/deals/{id}/posts/{id}/cancel`), each answering with that page's data, and their posts carry `cancel` and `cancelled`. A side's own note isn't repeated back to it. No other requirement changes | none |
+| 1.1 signed | Revision 1.1 signed by William | none |
