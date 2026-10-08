@@ -8,12 +8,15 @@
     "start": "bun src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
+    "test:sandbox": "bun test ./sandbox/paypal.sandbox.ts",
+    "sandbox:hold": "bun sandbox/make-hold.ts",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:generate": "bun --env-file=.env --bun prisma generate",
     "db:migrate": "bun --env-file=.env --bun prisma migrate dev"
   },
   "dependencies": {
+    "@paypal/paypal-server-sdk": "2.5.0",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "hono": "^4.13.13"

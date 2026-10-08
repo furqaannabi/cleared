@@ -1,2 +1,5 @@
 # Prisma's generated client. Rebuilt by `pnpm db:generate`.
 /src/generated/
+
+# Sandbox holds made by `pnpm sandbox:hold`, kept so an aged one can be found later. Local only.
+/sandbox/*.local.json
