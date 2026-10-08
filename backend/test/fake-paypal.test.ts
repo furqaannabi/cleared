@@ -250,7 +250,8 @@ describe("the fake PayPal: paying out", () => {
 
     paypal.payoutEnds(sent.payoutReference, "unclaimed");
     expect(await paypal.cancelPayout(sent.payoutReference)).toEqual({ outcome: "cancelled" });
-    expect(await paypal.readPayout(sent.payoutReference)).toEqual({ outcome: "cancelled" });
+    // As the sandbox does: a cancelled payout then reads as returned to the sender.
+    expect(await paypal.readPayout(sent.payoutReference)).toEqual({ outcome: "returned" });
   });
 });
 

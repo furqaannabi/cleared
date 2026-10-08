@@ -46,3 +46,56 @@ describe("the PayPal sandbox: starting a hold", () => {
     expect(await paypal.readHold("NO-SUCH-HOLD")).toBe("unknown");
   });
 });
+
+describe("the PayPal sandbox: paying out", () => {
+  /** Reads a payout until `done` says so, or about two minutes pass. */
+  async function waitFor<Result>(read: () => Promise<Result>, done: (result: Result) => boolean): Promise<Result> {
+    let result = await read();
+    for (let tries = 0; tries < 24 && !done(result); tries++) {
+      await Bun.sleep(5_000);
+      result = await read();
+    }
+    return result;
+  }
+
+  test(
+    "a payout to an email with no PayPal account is sent once, sits unclaimed, and can be cancelled (MP-BR-06, MP-FR-29, MP-FR-30)",
+    async () => {
+      const requestId = newRequestId();
+      // example.com is reserved, so nobody can ever claim it.
+      const input = { requestId, email: `cleared-sandbox-${requestId.slice(0, 8)}@example.com`, amountCents: 100 };
+
+      const sent = await paypal.sendPayout(input);
+      expect(sent).toEqual({ outcome: "accepted", payoutReference: expect.any(String) });
+      if (sent.outcome !== "accepted") return;
+
+      // The same request again finds the first payout and sends nothing new.
+      expect(await paypal.sendPayout(input)).toEqual(sent);
+
+      const settled = await waitFor(
+        () => paypal.readPayout(sent.payoutReference),
+        (status) => status.outcome !== "pending",
+      );
+      expect(settled).toEqual({ outcome: "unclaimed" });
+
+      // PayPal allows the cancel only once it has finished processing; until then the port says unknown.
+      const cancelled = await waitFor(
+        () => paypal.cancelPayout(sent.payoutReference),
+        (result) => result.outcome !== "unknown",
+      );
+      expect(cancelled).toEqual({ outcome: "cancelled" });
+
+      const after = await waitFor(
+        () => paypal.readPayout(sent.payoutReference),
+        (status) => status.outcome !== "unclaimed",
+      );
+      expect(after).toEqual({ outcome: "returned" });
+      expect(await paypal.cancelPayout(sent.payoutReference)).toEqual({ outcome: "not_cancellable" });
+    },
+    300_000,
+  );
+
+  test("a payout PayPal has never heard of is unknown", async () => {
+    expect(await paypal.readPayout("NO-SUCH-PAYOUT")).toEqual({ outcome: "unknown" });
+  });
+});

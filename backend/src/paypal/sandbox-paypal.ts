@@ -18,6 +18,7 @@ import {
   dollars,
   holdStatus,
   orderOutcome,
+  payoutAlreadySent,
   payoutStatus,
   refusedClearly,
   renewOutcome,
@@ -271,9 +272,12 @@ export function createSandboxPayPal(config: SandboxPayPalConfig): PayPalPort {
       const { status, json } = await http("sendPayout", "POST", "/v1/payments/payouts", { body, requestId });
       const payoutReference = (json as { batch_header?: { payout_batch_id?: unknown } } | undefined)?.batch_header
         ?.payout_batch_id;
-      // Anything but a clear yes is unknown. A refusal is never assumed here: acting on one sends a second payout.
-      if (!ok(status) || typeof payoutReference !== "string") return { outcome: "unknown" };
-      return { outcome: "accepted", payoutReference };
+      if (ok(status) && typeof payoutReference === "string") return { outcome: "accepted", payoutReference };
+      // PayPal does not repeat a payout sent again under the same id: it refuses and points at the first one.
+      const alreadySent = status === 400 ? payoutAlreadySent(json) : undefined;
+      if (alreadySent) return { outcome: "accepted", payoutReference: alreadySent };
+      // Anything else is unknown. A refusal is never assumed here: acting on one sends a second payout.
+      return { outcome: "unknown" };
     },
 
     async readPayout(payoutReference) {
@@ -287,8 +291,17 @@ export function createSandboxPayPal(config: SandboxPayPalConfig): PayPalPort {
       const batch = (read.json ?? {}) as PayoutAnswer;
       const itemId = batch.items?.[0]?.payout_item_id;
       if (payoutStatus(batch).outcome !== "unclaimed" || !itemId) return { outcome: "not_cancellable" };
-      const { status } = await http("cancelPayout", "POST", `/v1/payments/payouts-item/${encodeURIComponent(itemId)}/cancel`);
+      // PayPal refuses to cancel until it has finished processing the batch, so it is not asked before then.
+      if (batch.batch_header?.batch_status !== "SUCCESS") return { outcome: "unknown" };
+      const { status, json } = await http(
+        "cancelPayout",
+        "POST",
+        `/v1/payments/payouts-item/${encodeURIComponent(itemId)}/cancel`,
+      );
       if (ok(status)) return { outcome: "cancelled" };
+      const name = (json as { name?: unknown } | undefined)?.name;
+      if (name === "ITEM_ALREADY_CANCELLED") return { outcome: "cancelled" };
+      if (name === "BATCH_NOT_COMPLETED") return { outcome: "unknown" };
       return { outcome: status === 400 || status === 422 ? "not_cancellable" : "unknown" };
     },
 

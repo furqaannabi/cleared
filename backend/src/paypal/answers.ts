@@ -121,6 +121,28 @@ export function payoutStatus(batch: PayoutAnswer): PayoutStatus {
   }
 }
 
+/** The sandbox hosts PayPal's own links point at. */
+const PAYPAL_HOSTS = new Set(["api.sandbox.paypal.com", "api-m.sandbox.paypal.com"]);
+
+/**
+ * PayPal refuses a payout sent again under the same id and points at the first one. This reads that
+ * pointer, so a request whose first answer was lost finds its payout instead of leaving it unknown
+ * (MP-BR-06). Undefined for any other answer.
+ */
+export function payoutAlreadySent(answer: unknown): string | undefined {
+  const details = (answer as { details?: { field?: unknown; link?: { href?: unknown }[] }[] } | undefined)?.details;
+  for (const detail of details ?? []) {
+    if (detail.field !== "SENDER_BATCH_ID") continue;
+    for (const link of detail.link ?? []) {
+      if (typeof link.href !== "string" || !URL.canParse(link.href)) continue;
+      const url = new URL(link.href);
+      const reference = /^\/v1\/payments\/payouts\/([A-Za-z0-9-]+)$/.exec(url.pathname)?.[1];
+      if (PAYPAL_HOSTS.has(url.hostname) && reference) return reference;
+    }
+  }
+  return undefined;
+}
+
 /**
  * True only when PayPal understood the request and said it will not do it. Anything else (no answer, a
  * server error, a rejected login, a rate limit) is not a refusal, and nothing may be retried as new on it.

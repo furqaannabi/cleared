@@ -28,10 +28,17 @@ export interface PayPalPort {
   /** Gives the hold back to the brand (MP-FR-32). */
   cancelHold(reference: string): Promise<CancelHoldResult>;
 
-  /** Sends money to the creator's PayPal email. The result arrives later, through readPayout or a webhook. */
+  /**
+   * Sends money to the creator's PayPal email. The result arrives later, through readPayout or a webhook.
+   * Sent again under the same request id, it returns the first payout's reference and sends nothing.
+   */
   sendPayout(input: { requestId: string; email: string; amountCents: number }): Promise<SendPayoutResult>;
   readPayout(payoutReference: string): Promise<PayoutStatus>;
-  /** Withdraws a payout the creator has not claimed (MP-FR-30). */
+  /**
+   * Withdraws a payout the creator has not claimed (MP-FR-30). It then reads as "returned". PayPal allows
+   * it only once it has finished processing the payout, some seconds after sending; before that, and for
+   * any unclear answer, this is "unknown" and is tried again.
+   */
   cancelPayout(payoutReference: string): Promise<{ outcome: "cancelled" | "not_cancellable" | "unknown" }>;
 
   /** True only if PayPal confirms it sent this event (MP-FR-35). */
@@ -61,4 +68,4 @@ export type SendPayoutResult = { outcome: "accepted"; payoutReference: string } 
 
 export type PayoutStatus =
   | { outcome: "succeeded"; reference: string }
-  | { outcome: "pending" | "unclaimed" | "failed" | "returned" | "blocked" | "denied" | "cancelled" | "unknown" };
+  | { outcome: "pending" | "unclaimed" | "failed" | "returned" | "blocked" | "denied" | "unknown" };

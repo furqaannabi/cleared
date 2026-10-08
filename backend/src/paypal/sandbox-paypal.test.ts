@@ -74,6 +74,38 @@ describe("MP-FR-28 sending a payout", () => {
     expect(await paypal.sendPayout(payout)).toEqual({ outcome: "unknown" });
   });
 
+  test("a payout already sent under this request id is found again, not sent again (MP-BR-06)", async () => {
+    // What the sandbox answers to a second send: a refusal that points at the first batch.
+    const { paypal } = standIn(() => ({
+      status: 400,
+      json: {
+        name: "USER_BUSINESS_ERROR",
+        details: [
+          {
+            field: "SENDER_BATCH_ID",
+            issue: "Batch with given sender_batch_id already exists",
+            link: [{ href: "https://api.sandbox.paypal.com/v1/payments/payouts/BATCH-1", rel: "self", method: "GET" }],
+          },
+        ],
+      },
+    }));
+
+    expect(await paypal.sendPayout(payout)).toEqual({ outcome: "accepted", payoutReference: "BATCH-1" });
+  });
+
+  test.each<[string, unknown]>([
+    ["another business error", { name: "USER_BUSINESS_ERROR", details: [{ field: "AMOUNT", issue: "Insufficient funds" }] }],
+    ["a duplicate that names no batch", { name: "USER_BUSINESS_ERROR", details: [{ field: "SENDER_BATCH_ID", link: [] }] }],
+    [
+      "a duplicate whose link is not a PayPal payout",
+      { name: "USER_BUSINESS_ERROR", details: [{ field: "SENDER_BATCH_ID", link: [{ href: "https://evil.example/v1/payments/payouts/BATCH-9" }] }] },
+    ],
+  ])("a 400 that is %s stays unknown", async (_, json) => {
+    const { paypal } = standIn(() => ({ status: 400, json }));
+
+    expect(await paypal.sendPayout(payout)).toEqual({ outcome: "unknown" });
+  });
+
   test("a failure is logged with PayPal's ids, and never the creator's email (MP-BR-11)", async () => {
     const { paypal, logged } = standIn(() => ({
       status: 500,
@@ -129,6 +161,28 @@ describe("MP-FR-30 cancelling an unclaimed payout", () => {
 
     expect(await paypal.cancelPayout("BATCH-1")).toEqual({ outcome: "not_cancellable" });
     expect(calls()).toHaveLength(1);
+  });
+
+  test("an unclaimed payout whose batch PayPal is still processing cannot be cancelled yet: unknown, and not asked", async () => {
+    const { paypal, calls } = standIn(() => ({
+      status: 200,
+      json: { batch_header: { batch_status: "PROCESSING" }, items: [{ payout_item_id: "ITEM-1", transaction_status: "UNCLAIMED" }] },
+    }));
+
+    expect(await paypal.cancelPayout("BATCH-1")).toEqual({ outcome: "unknown" });
+    expect(calls()).toHaveLength(1);
+  });
+
+  test("PayPal saying the batch is not completed is unknown; saying it is already cancelled is cancelled", async () => {
+    const early = standIn((request) =>
+      request.method === "GET" ? batch("UNCLAIMED") : { status: 400, json: { name: "BATCH_NOT_COMPLETED" } },
+    );
+    expect(await early.paypal.cancelPayout("BATCH-1")).toEqual({ outcome: "unknown" });
+
+    const twice = standIn((request) =>
+      request.method === "GET" ? batch("UNCLAIMED") : { status: 400, json: { name: "ITEM_ALREADY_CANCELLED" } },
+    );
+    expect(await twice.paypal.cancelPayout("BATCH-1")).toEqual({ outcome: "cancelled" });
   });
 
   test("PayPal refusing the cancellation is not cancellable; no answer is unknown", async () => {

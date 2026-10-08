@@ -170,7 +170,8 @@ export class FakePayPal implements PayPalPort {
     this.calls.push({ method: "cancelPayout", reference: payoutReference });
     const payout = this.payoutsByReference.get(payoutReference);
     if (payout?.status.outcome !== "unclaimed") return { outcome: "not_cancellable" };
-    payout.status = { outcome: "cancelled" };
+    // As the sandbox does: a cancelled payout reads as returned to the sender from then on.
+    payout.status = { outcome: "returned" };
     return { outcome: "cancelled" };
   }
 
