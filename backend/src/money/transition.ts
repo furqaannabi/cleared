@@ -163,9 +163,19 @@ const daysAfter = (from: Date, days: number) => hoursAfter(from, days * 24);
 
 const earliest = (...moments: Date[]) => new Date(Math.min(...moments.map((moment) => moment.getTime())));
 
-/** The last moment a go-ahead may cover under the current guarantee: the margin before it ends (MP-FR-13). */
+/**
+ * The last moment a go-ahead may cover under the current guarantee (MP-FR-13). Normally that is the margin
+ * before the guarantee ends. A deadline that falls inside the guarantee has no margin: the funds are
+ * guaranteed past it, and waiting for a renewal would leave the creator no time to publish.
+ */
 const guaranteeCovers = (hold: Hold, settings: MoneySettings) =>
-  hoursAfter(hold.guaranteeEndsAt, -settings.guaranteeMarginHours);
+  hold.deadlineAt < hold.guaranteeEndsAt
+    ? hold.deadlineAt
+    : hoursAfter(hold.guaranteeEndsAt, -settings.guaranteeMarginHours);
+
+/** True when too little of the guarantee is left for a go-ahead and PayPal cannot renew it yet. */
+const mustWaitForRenewal = (hold: Hold, now: Date, settings: MoneySettings) =>
+  hold.deadlineAt >= hold.guaranteeEndsAt && now >= guaranteeCovers(hold, settings);
 
 /** Tells the creator to come back when PayPal can renew the hold. */
 const waitForRenewal = (state: MoneyState, hold: Hold): TransitionResult => ({
@@ -296,7 +306,7 @@ export function transition(
       if (state.goAhead.status === "confirming" || state.goAhead.status === "running") return unchanged(state);
       // PayPal can only renew a hold once its guarantee has ended; until then we ask whether it still stands.
       const insideGuarantee = event.at < state.hold.guaranteeEndsAt;
-      if (insideGuarantee && event.at >= guaranteeCovers(state.hold, settings)) {
+      if (insideGuarantee && mustWaitForRenewal(state.hold, event.at, settings)) {
         return waitForRenewal(state, state.hold);
       }
       const ask = insideGuarantee ? "check_hold" : "renew_hold";
@@ -313,7 +323,7 @@ export function transition(
       const hold: Hold = event.renewedReference
         ? { ...state.hold, reference: event.renewedReference, guaranteeEndsAt: daysAfter(event.at, GUARANTEE_DAYS) }
         : state.hold;
-      if (event.at >= guaranteeCovers(hold, settings)) return waitForRenewal(state, hold);
+      if (mustWaitForRenewal(hold, event.at, settings)) return waitForRenewal(state, hold);
       const until = earliest(
         hoursAfter(event.at, settings.goAheadHours),
         guaranteeCovers(hold, settings),

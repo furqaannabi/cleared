@@ -589,3 +589,57 @@ describe("MP-FR-15 when a go-ahead runs out", () => {
     expect(transition(before, endsDue(null))).toEqual({ ok: true, state: before, effects: [] });
   });
 });
+
+describe("MP-FR-13 a deadline inside the guarantee (revision 1.1)", () => {
+  // A 2-day deadline: held at 09:05:10 on the 10th, deadline 22:59 UTC on the 12th, guaranteed to 09:05:10 on the 13th.
+  const shortDeadline = () =>
+    after(authorizing({ deadlineDays: 2 }), answered("held"), { type: "draft_cleared", at: at("2026-10-10T12:00:00Z") });
+
+  test("asking in the last hours before the deadline checks the hold, and is not told to wait", () => {
+    expect(transition(shortDeadline(), askGoAhead("2026-10-12T10:00:00Z"))).toMatchObject({
+      ok: true,
+      state: { goAhead: { status: "confirming" } },
+      effects: [{ type: "check_hold", confirmId: "conf_1", reference: "AUTH-1" }],
+    });
+  });
+
+  test("the go-ahead runs to the deadline, with no 24-hour margin", () => {
+    const asked = after(shortDeadline(), askGoAhead("2026-10-12T10:00:00Z"));
+
+    expect(
+      transition(asked, { type: "hold_confirmed", confirmId: "conf_1", at: at("2026-10-12T10:00:05Z") }),
+    ).toMatchObject({
+      ok: true,
+      state: { goAhead: { status: "running", until: at("2026-10-12T22:59:00Z") } },
+      effects: [{ type: "schedule_job", job: "go_ahead_ends", at: at("2026-10-12T22:59:00Z") }],
+    });
+  });
+
+  test("asked early, it still lasts no more than 48 hours", () => {
+    // A 3-day deadline for a creator in Los Angeles: held 09:05:10 UTC on the 10th, guaranteed to 09:05:10 on the
+    // 13th, deadline 06:59 UTC on the 14th. That deadline is outside the guarantee, so the margin applies as before.
+    const asked = after(
+      authorizing({ deadlineDays: 3, creatorTimeZone: "America/Los_Angeles" }),
+      answered("held"),
+      { type: "draft_cleared", at: at("2026-10-10T09:10:00Z") },
+      askGoAhead("2026-10-10T09:10:00Z"),
+    );
+
+    expect(
+      transition(asked, { type: "hold_confirmed", confirmId: "conf_1", at: at("2026-10-10T09:10:05Z") }),
+    ).toMatchObject({ ok: true, state: { goAhead: { status: "running", until: at("2026-10-12T09:05:10Z") } } });
+  });
+
+  test("with a 1-day deadline it runs to the deadline, well inside 48 hours", () => {
+    const asked = after(
+      authorizing({ deadlineDays: 1 }),
+      answered("held"),
+      { type: "draft_cleared", at: at("2026-10-10T12:00:00Z") },
+      askGoAhead("2026-10-10T12:00:00Z"),
+    );
+
+    expect(
+      transition(asked, { type: "hold_confirmed", confirmId: "conf_1", at: at("2026-10-10T12:00:05Z") }),
+    ).toMatchObject({ ok: true, state: { goAhead: { status: "running", until: at("2026-10-11T22:59:00Z") } } });
+  });
+});
