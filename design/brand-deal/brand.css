@@ -1,0 +1,70 @@
+/* Brand deal mockups (design/ prototypes: never shipped, never imported by web/). Builds on ../landing/landing.css and ../invite/invite.css. */
+body{background:var(--ground)}
+.bhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--espresso-deep);color:rgba(255,255,255,.82);padding:12px 16px;font-size:14px}
+.bhead b{color:#fff}
+@media(min-width:768px){.bhead{padding:14px 32px}}
+main{margin:0 auto;padding:22px 16px 140px;max-width:1120px}
+@media(min-width:768px){main{padding:32px 32px 72px}}
+.seal{position:relative;display:inline-grid;place-items:center;width:20px;height:20px;flex:none;color:var(--espresso)}
+.seal svg{position:absolute;inset:0;width:100%;height:100%}
+.seal .i{inset:22%;width:56%;height:56%;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.pl{width:34px;height:34px}
+.lede{font-size:15.5px;color:var(--ink-2);max-width:60ch;margin-top:8px}
+.meta{font-size:13px;color:var(--ink-3)}
+/* the sheet (from invite option B) */
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:6px 6px 20px 20px;box-shadow:0 1px 2px rgba(28,21,10,.05),0 18px 40px rgba(120,80,0,.08);padding:24px 18px;position:relative}
+@media(min-width:768px){.sheet{padding:36px 40px 34px}}
+.sheet::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--marigold);border-radius:6px 6px 0 0}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;font-size:14px}
+.parties small{display:block;font-size:12.5px;color:var(--ink-4);font-weight:700}
+.parties b{font-size:15px}
+.tot{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:16px 0 4px}
+.tot b{font-family:var(--head);font-size:30px;font-weight:800;letter-spacing:-.02em}
+.amtx{font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
+.fine{margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
+.fine h3{font-size:14.5px;font-weight:800;margin-bottom:10px}
+.fine .rule{font-size:13.5px}
+/* checklist items with where they came from */
+.items{list-style:none;padding:0;margin:0;background:none;border:0;border-radius:0;box-shadow:none}
+.it{display:grid;grid-template-columns:20px minmax(0,1fr);gap:4px 12px;padding:13px 0;border-top:1px solid var(--line-soft)}
+.it:first-child{border-top:0}
+.it .seal{margin-top:2px}
+.it b{font-size:15px;font-weight:700}
+.it>.src,.it>.read,.it>.ask,.it>.bnote,.it>.saved-note{grid-column:2}
+.src{font-size:13px;color:var(--ink-3)}
+.src q{color:var(--ink-2)}
+.read{margin-top:4px;background:var(--latte-wash);border:1px solid var(--latte-line);border-radius:10px;padding:9px 12px;font-size:13.5px;color:var(--ink-2)}
+.read b{font-size:13.5px;color:var(--espresso-ink)}
+.ask{justify-self:start;display:inline-flex;align-items:center;min-height:44px;margin:-6px 0 -10px;font-size:13.5px;font-weight:700;color:var(--espresso);text-decoration:underline;text-underline-offset:3px}
+.bnote{margin-top:6px;background:var(--surface);border:1px solid var(--latte-line);border-radius:12px;padding:12px}
+.bnote label{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px}
+.bnote .ta{min-height:76px;border:1px solid var(--espresso);box-shadow:0 0 0 1px var(--espresso);border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.45}
+.bnote .row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.saved-note{margin-top:6px;background:var(--latte-wash);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--ink-2)}
+.saved-note b{color:var(--ink);font-size:13.5px}
+.saved-note .acts{display:flex;gap:16px;margin-top:2px}
+.saved-note .acts a{display:inline-flex;align-items:center;min-height:36px;font-weight:700;color:var(--espresso);text-decoration:underline;text-underline-offset:3px}
+.left{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.left h3{font-size:15.5px;font-weight:800}
+.left p.meta{margin-top:2px}
+.lline{display:grid;gap:2px;padding:12px 0;border-top:1px solid var(--line-soft)}
+.lline:first-of-type{border-top:0}
+.lline q{font-size:14.5px;color:var(--ink)}
+/* agree and holds */
+.agree{display:grid;gap:12px}
+.agree p{font-size:14.5px;color:var(--ink-2)}
+.agree .btn{width:100%}
+.hold{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 12px;padding:14px 0;border-top:1px solid var(--line-soft);align-items:start}
+.hold:first-of-type{border-top:0}
+.hold .what b{font-size:15px}
+.hold .st{grid-column:2;font-size:13.5px;color:var(--ink-2)}
+.hold .st.bad b{color:var(--fail)}
+.hold .act{grid-column:2;margin-top:6px}
+.held{display:flex;gap:8px;align-items:center;font-weight:700;color:var(--ink)}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--latte-line);border-top-color:var(--espresso);display:inline-block;vertical-align:-2px;margin-right:6px}
+.btn.pp{width:100%;max-width:320px}
+.btn[aria-disabled]{opacity:.45;box-shadow:none}
+.count{font-weight:800}
+.agreed{display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:700;color:var(--ink-2)}
+.state{margin:56px 0 18px;padding-top:18px;border-top:2px dashed var(--latte-line);font-size:13px;font-weight:800;color:var(--ink-4)}
+@media(max-width:1023px){.dock{position:fixed;left:12px;right:12px;bottom:12px;background:var(--surface);border-radius:16px;padding:12px 14px;box-shadow:0 10px 30px rgba(28,21,10,.18);display:grid;gap:8px;z-index:5}.dock p{font-size:13.5px}}
