@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brand review: the deal page's post lines</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../landing/landing.css"><link rel="stylesheet" href="../invite/invite.css"><link rel="stylesheet" href="../brand-deal/brand.css"><link rel="stylesheet" href="review.css"><style>
+/* RW-FR-01, shared by every option: the brand's deal page after the holds. Posts that need the brand come first. */
+.post{border-top:1px solid var(--line);padding:16px 0}
+.lines{border-top:1px solid var(--ink);margin-top:18px}
+.lines .post:first-child{border-top:0}
+.phead{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:4px 12px;align-items:start}
+.phead b{font-size:16px}.phead .amtx{grid-column:3;grid-row:1}
+.phead .what{grid-column:2;font-size:14px;color:var(--ink-2)}
+.phead .what strong{color:var(--ink)}
+.phead .go{grid-column:2/4;margin-top:6px}
+@media(min-width:768px){.phead .go{grid-column:3;grid-row:2;margin-top:0;justify-self:end}}
+.sheet{max-width:760px}
+</style></head><body><main>
+<h1>Your deal with Ada Okafor</h1>
+<p class="lede">Ada’s drafts come here for your review. Each post has its own hold and its own 48 hours.</p>
+<article class="sheet" style="margin-top:22px" aria-labelledby="t">
+  <p class="agreed"><i class="sl done"></i>Agreed · version 2 · 9 Oct · 3 of 3 held</p>
+  <h2 id="t" style="font-size:26px;margin-top:10px">Sponsorship terms</h2>
+  <div class="lines">
+    <section class="post"><div class="phead"><i class="pl yt"></i><b>YouTube video</b><span class="amtx">$1,200.00</span>
+      <p class="what"><strong>Draft ready for your review · 31h left</strong><br>Held · PayPal ref 8AB12345CD678901X · Ada posts by 23 Oct</p><a class="btn sm go" href="#">Review draft</a></div></section>
+    <section class="post"><div class="phead"><i class="pl ig"></i><b>Instagram Reel</b><span class="amtx">$450.00</span>
+      <p class="what"><strong>Ada asked you about 1 item</strong><br>Held · PayPal ref 5KD99812AB443210Y · Ada posts by 19 Oct</p><a class="btn2 go" href="#">Review draft</a></div></section>
+    <section class="post"><div class="phead"><i class="pl yt"></i><b>YouTube Short</b><span class="amtx">$300.00</span>
+      <p class="what">You asked Ada to fix 2 items · Waiting for a new draft<br>Held · PayPal ref 2ZT45678QW112233K · Ada posts by 16 Oct</p><a class="link go" href="#">View draft</a></div></section>
+  </div>
+  <p class="state" style="margin-top:28px">The other lines a post can show</p>
+  <div class="lines" style="margin-top:0">
+    <section class="post"><div class="phead"><i class="pl yt"></i><b>YouTube video</b><span class="amtx">$1,200.00</span><p class="what">Ada is working on the draft · Ada posts by 23 Oct</p></div></section>
+    <section class="post"><div class="phead"><i class="pl yt"></i><b>YouTube video</b><span class="amtx">$1,200.00</span><p class="what"><strong>Approved</strong> · Ada posts by 23 Oct</p></div></section>
+    <section class="post"><div class="phead"><i class="pl yt"></i><b>YouTube video</b><span class="amtx">$1,200.00</span><p class="what">The hold came back to you on 24 Oct: Ada didn’t post by the deadline.</p></div></section>
+  </div>
+</article>
+</main><script src="review.js"></script><script src="../brand-deal/brand.js"></script></body></html>

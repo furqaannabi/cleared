@@ -1,0 +1,82 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brand review C: one item at a time</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../landing/landing.css"><link rel="stylesheet" href="../invite/invite.css"><link rel="stylesheet" href="../brand-deal/brand.css"><link rel="stylesheet" href="review.css"><style>
+/* C: a guided walk. The video seeks to one item at a time; the brand says "Looks right" or objects, then moves on. The answer comes after the last item. Approve stays reachable throughout. */
+.ctop{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:6px}
+.ctop .clock b{font-size:22px}
+.grid{display:grid;gap:16px;margin-top:16px}
+@media(min-width:1024px){.grid{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:start;gap:28px}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:10px}
+.card .pos{font-size:13px;font-weight:700;color:var(--ink-3)}
+.card h2{font-size:22px;line-height:1.2}
+.card .ev{font-size:15px}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.walk{list-style:none;display:grid;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px 16px}
+.walk li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:48px;border-top:1px solid var(--line-soft);font-size:14.5px}
+.walk li:first-child{border-top:0}
+.walk li.cur b{text-decoration:underline;text-decoration-color:var(--marigold);text-decoration-thickness:3px;text-underline-offset:4px}
+.walk li .m{font-size:13px;color:var(--ink-3);font-weight:700}
+.walk .seal.dot{width:20px;height:20px}
+@media(max-width:1023px){.pdock{position:fixed;left:12px;right:12px;bottom:12px;background:var(--surface);border-radius:16px;padding:12px 14px;box-shadow:0 10px 30px rgba(28,21,10,.18);display:grid;gap:8px;z-index:5}.pdock .pp{display:flex;gap:8px}.pdock .pp>*{flex:1}.card .acts2{display:none}}
+@media(min-width:1024px){.pdock{display:none}}
+.mini{display:grid;gap:16px}
+@media(min-width:900px){.mini{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
+</style></head><body><main>
+<p class="crumb"><a href="#">Glow Theory × Ada Okafor</a></p>
+<div class="title-row"><i class="pl yt"></i><h1>YouTube video</h1></div>
+<div class="ctop"><div class="clock"><b>31h 12m</b><span>left to review · until Thu 10 Oct, 14:00 your time</span></div><a class="link" href="#">Approve without going through each item</a></div>
+
+<div class="grid">
+<div class="player">
+  <div class="screen"><span class="time">1:10 / 4:32</span></div>
+  <div class="scrub"><span class="rl"></span>
+    <span class="mk" style="left:4%"><i class="st pass"></i></span>
+    <span class="mk on" style="left:26%"><i class="st pass"></i></span>
+    <span class="mk" style="left:39%"><i class="st acc"></i></span>
+    <span class="mk" style="left:70%"><i class="st obj"></i></span>
+    <span class="mk" style="left:77%"><i class="st pass"></i></span>
+    <span class="head" style="left:26%"></span></div>
+  <div class="ticks"><span>0:00</span><span>2:16</span><span>4:32</span></div>
+</div>
+
+<div style="display:grid;gap:16px">
+  <section class="card" aria-labelledby="ct">
+    <p class="pos">Item 2 of 5 · plays from 1:10</p>
+    <h2 id="ct">Glow Theory logo on screen for 3+ seconds</h2>
+    <span class="stw pass"><i class="st pass"></i>Passed</span>
+    <p class="ev"><a class="ts" href="#">1:10</a> Logo on the box is visible for 4.2 seconds.</p>
+    <p class="src">From your brief: <q>Show our logo for at least 3 seconds.</q></p>
+    <div class="objn"><label for="o1">What’s wrong with this item?</label><div class="ta" id="o1">The logo is out of focus at 1:10. Please show the box in focus.</div><div class="r"><span class="meta">60 of 500 · required</span><span style="display:flex;gap:8px"><a class="btn2 ghost" href="#">Cancel</a><a class="btn2" href="#">Save and next</a></span></div></div>
+    <div class="nav"><a class="btn2 ghost" href="#">← Previous</a><a class="btn2" href="#">Looks right, next →</a></div>
+  </section>
+  <ol class="walk" aria-label="Items to review">
+    <li><i class="st pass"></i><b>Say “Glow Theory” in the first 60 seconds</b><span class="m">Looks right</span></li>
+    <li class="cur"><i class="st pass"></i><b>Logo on screen for 3+ seconds</b><span class="m">Now</span></li>
+    <li><i class="st acc"></i><b>Serum shown in use</b><span class="m">You accepted</span></li>
+    <li><i class="st obj"></i><b>Say the code GLOW20</b><span class="m" style="color:var(--fail)">Objection saved</span></li>
+    <li><i class="st pass"></i><b>Show the code GLOW20 on screen</b><span class="m">Not looked at</span></li>
+    <li><i class="st live"></i><b>Paid promotion, link in description</b><span class="m">Once Ada posts</span></li>
+  </ol>
+  <p class="holdl"><span class="held"><i class="sl held"></i>Held · $1,200.00</span>PayPal ref 8AB12345CD678901X · Ada posts by <b>23 Oct</b></p>
+</div>
+</div>
+<div class="pdock"><p class="meta">Item 2 of 5 · 31h 12m left</p><div class="pp"><a class="btn2" href="#">Object</a><a class="btn sm" href="#">Looks right, next</a></div></div>
+
+<p class="state">Other states (the item card)</p>
+<div class="mini">
+  <section class="card"><p class="pos">All 5 items looked at · 42m left</p><h2>Your answer</h2><p class="warn">Less than an hour left to object.</p>
+    <p class="holdl">You objected to 2 items: <b>Logo on screen</b> and <b>Say the code GLOW20</b>.</p>
+    <div class="confirm"><p><b>Send 2 objections?</b> The clock stops and Ada makes a new draft. You can still approve this draft until Ada sends one.</p><div class="two"><a class="btn sm" href="#">Yes, send</a><a class="btn2 ghost" href="#">Not yet</a></div></div></section>
+  <section class="card"><p class="pos">Ada asked you about 1 item</p><h2>Serum shown in use</h2><span class="stw unsure"><i class="st asked"></i>Ada asked you</span>
+    <p class="ev"><a class="ts" href="#">1:42–1:58</a> The serum is applied to a cheek.</p><div class="why">Why the check was unsure: the bottle’s label isn’t readable in the shot.</div>
+    <div class="two"><a class="btn sm" href="#">Accept</a><a class="btn2" href="#">Ask Ada to fix it</a></div></section>
+  <section class="card"><p class="pos">Waiting for a new draft</p><h2>You asked Ada to fix 2 items</h2>
+    <p class="holdl">The clock has stopped. Ada makes a new draft by <b>23 Oct</b>; if Ada doesn’t, the hold comes back to you.</p>
+    <div class="saved"><b>Logo on screen:</b> The logo is out of focus at 1:10. Please show the box in focus.</div>
+    <div class="saved"><b>Say the code GLOW20:</b> Say it slower, it runs into the next sentence.</div>
+    <a class="btn2" href="#">Approve this draft anyway</a></section>
+  <section class="card"><p class="agreed"><i class="sl done"></i>Approved by you · 9 Oct</p><h2>Ada posts next</h2>
+    <p class="holdl">Ada posts by <b>23 Oct</b>. Your $1,200.00 is taken only once the live post checks out.</p></section>
+</div>
+</main><script src="review.js"></script><script src="../brand-deal/brand.js"></script></body></html>

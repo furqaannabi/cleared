@@ -1,0 +1,74 @@
+/* Brand review mockups (design/ prototypes: never shipped, never imported by web/). Builds on ../landing/landing.css, ../invite/invite.css and ../brand-deal/brand.css. */
+.crumb{font-size:13.5px;color:var(--ink-3)}
+.crumb a{color:var(--espresso);font-weight:700;text-decoration:underline;text-underline-offset:3px;display:inline-flex;min-height:44px;align-items:center}
+.title-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.title-row .pl{color:var(--ink-2)}
+.sub{font-size:14px;color:var(--ink-3);margin-top:4px}
+.sub b{color:var(--ink);font-weight:700}
+
+/* player */
+.player{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px}
+.screen{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#2b2419;
+  background-image:radial-gradient(120% 90% at 30% 35%,#7b6447 0,#4a3c2a 45%,#231c12 100%)}
+.screen .bottle{position:absolute;left:58%;top:22%;width:13%;height:58%;border-radius:12px 12px 8px 8px;background:#e9dfcd;box-shadow:inset -8px 0 0 rgba(0,0,0,.08)}
+.screen .bottle::before{content:"";position:absolute;left:30%;right:30%;top:-16%;height:18%;border-radius:4px;background:#3F3322}
+.screen .tag{position:absolute;left:12px;top:10px;font-size:12px;font-weight:700;color:#fff;background:rgba(28,21,10,.6);padding:4px 10px;border-radius:999px}
+.screen .tag.r{left:auto;right:12px}
+.screen .play{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;box-shadow:0 6px 18px rgba(28,21,10,.3)}
+.screen .play svg{width:22px;height:22px;fill:var(--espresso);margin-left:3px}
+.screen .time{position:absolute;left:12px;bottom:10px;font-size:13px;font-weight:700;color:#fff;background:rgba(28,21,10,.6);padding:4px 10px;border-radius:999px}
+.scrub{position:relative;margin:14px 4px 2px;height:50px}
+.scrub .rl{position:absolute;left:0;right:0;top:32px;height:6px;border-radius:999px;background:var(--line)}
+.scrub .head{position:absolute;top:26px;width:3px;height:18px;margin-left:-1.5px;border-radius:2px;background:var(--ink)}
+.mk{position:absolute;top:0;width:44px;height:44px;margin-left:-22px;display:grid;place-items:center}
+.mk .seal{width:22px;height:22px}
+.mk.on .seal{transform:scale(1.2)}
+.mk.on::after{content:"";position:absolute;inset:6px;border-radius:50%;box-shadow:0 0 0 2px var(--espresso)}
+.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3);margin:0 4px}
+
+/* statuses: icon + word, colour only on the icon (green only for Passed) */
+.stw{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.stw.pass{color:var(--pass)}
+.stw.obj{color:var(--fail)}
+.stw.unsure{color:var(--unsure)}
+.seal.st{width:20px;height:20px}
+
+/* items */
+.row{display:grid;grid-template-columns:20px minmax(0,1fr);gap:4px 12px;padding:14px 0;border-top:1px solid var(--line-soft)}
+.row:first-child{border-top:0}
+.row .seal{margin-top:2px}
+.row>*:not(.seal){grid-column:2}
+.row .nm{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.row .nm b{font-size:15px}
+.ev{font-size:14px;color:var(--ink-2)}
+.ev .ts{font-weight:800;color:var(--espresso);text-decoration:underline;text-underline-offset:3px;font-variant-numeric:tabular-nums}
+.src{font-size:13px;color:var(--ink-3)}
+.src q{color:var(--ink-2)}
+.why{font-size:13.5px;background:var(--latte-wash);border:1px solid var(--latte-line);border-radius:10px;padding:9px 12px;color:var(--ink-2)}
+.tlink{justify-self:start;display:inline-flex;align-items:center;min-height:44px;margin:-6px 0 -10px;font-size:13.5px;font-weight:700;color:var(--espresso);text-decoration:underline;text-underline-offset:3px}
+.row.sel{background:var(--latte-wash);margin:0 -12px;padding:14px 12px;border-radius:12px;border-top-color:transparent}
+.row.sel+.row{border-top-color:transparent}
+.objn{background:var(--surface);border:1px solid var(--latte-line);border-radius:12px;padding:12px}
+.objn label{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px}
+.objn .ta{min-height:72px;border:1px solid var(--espresso);box-shadow:0 0 0 1px var(--espresso);border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.45}
+.objn .r{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.saved{background:var(--latte-wash);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--ink-2)}
+.saved b{color:var(--ink)}
+.saved .acts{display:flex;gap:16px}
+.saved .acts a{display:inline-flex;align-items:center;min-height:36px;font-weight:700;color:var(--espresso);text-decoration:underline;text-underline-offset:3px}
+.two{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+
+/* the clock */
+.clock{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.clock b{font-family:var(--head);font-size:28px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.clock span{font-size:14px;color:var(--ink-2)}
+.warn{font-size:14px;font-weight:800;color:var(--fail)}
+.confirm{background:var(--latte-wash);border:1px solid var(--latte-line);border-radius:14px;padding:14px;display:grid;gap:10px}
+.confirm p{font-size:14.5px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:12px;align-content:start}
+.panel h2{font-size:18px}
+.holdl{font-size:13.5px;color:var(--ink-2)}
+.holdl b{color:var(--ink)}
+.state{margin:56px 0 18px;padding-top:18px;border-top:2px dashed var(--latte-line);font-size:13px;font-weight:800;color:var(--ink-4)}
+.btn.w{width:100%}
+.demo{font-size:12px;color:var(--ink-4);font-weight:700}
