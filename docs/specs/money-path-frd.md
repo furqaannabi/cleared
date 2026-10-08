@@ -1,6 +1,6 @@
 # Money path: FRD
 
-**Status:** Signed by Furqaan (revision 1.1). Revision 1.2, a change to MP-FR-24, is a draft awaiting Furqaan's sign-off. The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
+**Status:** Signed by Furqaan (revision 1.2). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
 
 **Surface:** Backend. Everything that happens to one deliverable's money, from the brand approving a hold to the deliverable being cleared or its hold being released: steps 3, 6 and 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and the money side of every row in [When something does not go to plan](../PRODUCT.md#when-something-does-not-go-to-plan).
 
@@ -263,4 +263,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.0 | Signed by Furqaan, with the seven items added while drafting accepted as written | none |
 | 1.1 | MP-FR-13: when the deadline falls before the guarantee ends, the go-ahead runs to the deadline with no 24-hour margin. Found while building: with a 2-day deadline, a creator asking in the last hours before it was told to wait until after the deadline, and could never publish | [Go-ahead to a deadline inside the guarantee](../decisions/2026-10-08-go-ahead-runs-to-a-deadline-inside-the-guarantee.md) |
 | 1.1 | Signed by Furqaan | none |
-| 1.2 | Draft, awaiting Furqaan's sign-off. MP-FR-24: the first capture re-confirms the hold when its guarantee has ended, as retries already do. Found while building: after a fix window or a brand's 48 hours the guarantee has usually lapsed, and a refused first capture costs the creator a 6-hour wait | to be written at sign-off |
+| 1.2 | MP-FR-24: the first capture re-confirms the hold when its guarantee has ended, as retries already do. Found while building: after a fix window or a brand's 48 hours the guarantee has usually lapsed, and a refused first capture costs the creator a 6-hour wait | [First capture re-confirms a lapsed hold](../decisions/2026-10-08-first-capture-re-confirms-a-lapsed-hold.md) |
+| 1.2 | Signed by Furqaan | none |
