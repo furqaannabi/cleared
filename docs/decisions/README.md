@@ -50,3 +50,6 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-06 | [A deadline is the end of its day in the creator's timezone](2026-10-06-deadline-end-of-day-creator-timezone.md) | Superseded by [2026-10-06-deadline-shared-date-with-local-time.md](2026-10-06-deadline-shared-date-with-local-time.md) |
 | 2026-10-06 | [A deadline is one shared date, with the viewer's own time added](2026-10-06-deadline-shared-date-with-local-time.md) | Accepted |
 | 2026-10-07 | [Backend is one Hono service on Bun, with Prisma and Postgres, not Lambda](2026-10-07-backend-hono-bun-prisma-postgres.md) | Accepted |
+| 2026-10-08 | [The brand asks for changes; the creator makes them](2026-10-08-brand-asks-for-changes-not-edits.md) | Accepted |
+| 2026-10-08 | [The brand gets in by its link, swapped for a deal-scoped session](2026-10-08-brand-access-by-link-session.md) | Accepted |
+| 2026-10-08 | [Mock data is kept in the browser in a mock build](2026-10-08-mock-data-kept-in-the-browser.md) | Accepted |

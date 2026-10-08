@@ -1,6 +1,6 @@
 # Creator brief → checklist: FRD
 
-**Status:** Signed by William (revision 1.2).
+**Status:** Signed by William (revision 1.3).
 
 **Surface:** Creator app. Step 1 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): the creator starts a deal, names its posts, gives the brand's brief, and gets a checklist per post that cites the brief, with the AI's questions answered. Step 2 (amounts, deadlines, PayPal email, connecting accounts, inviting the brand) is the next surface.
 
@@ -178,3 +178,5 @@ interface Question {
 | 1.1 | Signed by William | none |
 | 1.2 | BC-FR-22: the crumb and the step row link back to steps already reached, on every set-up page. BC-FR-23: the posts can be changed until the brief is sent (William chose this over a read-only summary or no link) | none |
 | 1.2 | Signed by William | none |
+| 1.3 | At `changes_requested` the checklist page shows each of the brand's notes beside its item or brief line (CH-FR-22). Specified in [Confirm and hold](confirm-and-hold-frd.md) | [Brand asks for changes](../decisions/2026-10-08-brand-asks-for-changes-not-edits.md) |
+| 1.3 | Signed by William, with Confirm and hold 1.0 | none |

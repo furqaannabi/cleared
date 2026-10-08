@@ -62,7 +62,7 @@ Each deliverable is checked twice: as a draft, while a mistake can still be fixe
 | --- | --- | --- |
 | 1. Brief | The creator pastes or uploads the brief the brand sent. AI turns it into a checklist, cites the line of the brief each item came from, and asks about anything ambiguous. | Claude on Amazon Bedrock, S3 |
 | 2. Invite | The creator sets the amount and deadline for each deliverable, connects their YouTube or Instagram account, gives the PayPal email they want to be paid at, and sends the brand a link. | Cognito, Google and Instagram sign-in |
-| 3. Confirm and hold | The brand reviews the checklist and can edit it. Once both sides accept the same checklist, amounts and release rule, the brand approves one PayPal hold per deliverable. | PayPal Orders |
+| 3. Confirm and hold | The brand reviews the checklist and can ask the creator for changes ([decision](decisions/2026-10-08-brand-asks-for-changes-not-edits.md)). Once both sides accept the same checklist, amounts and release rule, the brand approves one PayPal hold per deliverable. | PayPal Orders |
 | 4. Draft check | The creator uploads the video file. AI checks every item and shows timestamped evidence. The creator fixes any failures and resubmits. | S3, a backend job, Amazon Bedrock |
 | 5. Brand review | From a fully passing draft, the brand has 48 hours to approve it or to object to a specific item. Silence clears it. | A backend timer, AG Grid |
 | 6. Publish | The creator says they are ready. Cleared re-confirms the hold with PayPal, and then the creator publishes. | PayPal Payments |

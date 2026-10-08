@@ -1,6 +1,6 @@
 # Creator invite: FRD
 
-**Status:** Signed by William (revision 1.1).
+**Status:** Signed by William (revision 1.2).
 
 **Surface:** Creator app. Step 2 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): once the checklist is ready, the creator sets the amount and deadline for each post, connects the YouTube or Instagram account the posts go on, gives the PayPal email to be paid at, and sends the brand a link. The brand's side of the link (confirm the checklist, approve the hold) is the next surface.
 
@@ -185,3 +185,5 @@ interface CreatorProfile {
 | 1.0 | Signed by William | none |
 | 1.1 | A seeded demo deal at the invite step in the mocks ("Pine & Co"), so the page can be reached without redoing the brief after a reload | none |
 | 1.1 | Signed by William | none |
+| 1.2 | A brand's change request keeps the link on and the terms are versioned; the invite page shows the brand's notes and "Send updated terms", and each post's hold once the brand agrees (CH-FR-21 to CH-FR-25, CH-BR-04). The creator's own Change terms and Make a new link still turn the link off. Specified in [Confirm and hold](confirm-and-hold-frd.md) | [Brand asks for changes](../decisions/2026-10-08-brand-asks-for-changes-not-edits.md) |
+| 1.2 | Signed by William, with Confirm and hold 1.0 | none |

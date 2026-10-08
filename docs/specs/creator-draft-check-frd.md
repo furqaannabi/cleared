@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.12). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.13). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
 
@@ -101,7 +101,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 
 | ID | Requirement |
 | --- | --- |
-| DC-FR-12 | Every item shows: its status as a seal and a chip (icon and word), its name, its kind, its timestamp or time range where it has one, the brief line it came from (line number and text), its evidence, and how it was checked. |
+| DC-FR-12 | Every item shows: its status as a seal and a chip (icon and word), its name, its kind, its timestamp or time range where it has one, the brief line it came from (line number and text), its evidence, and how it was checked. An item the creator added (BC-FR-15) has no brief line: it says "Added by you" in that place, in the card, the evidence panel and the grid's Brief column. |
 | DC-FR-13 | Item statuses and how each is shown (seal, icon, word, colour) come from one mapping, used by every rendering: |
 
 | Status | Icon and word | Colour |
@@ -275,6 +275,7 @@ Fields:
 | DC-FR-30 | `brief`: the deal's brief as numbered lines `{ number, text }[]`, matching each item's `briefLine.number` |
 | Security | Every changing request (ask, withdraw, check retry, draft link, and upload when built) sends the session cookie, so it must be protected from cross-site requests: SameSite cookies and/or a CSRF token |
 | DC-FR-44 | `deadline` stored as 23:59 in the creator's timezone, and `creatorTimeZone` (IANA name, e.g. "Africa/Lagos") |
+| DC-FR-12 | `briefLine` optional on an item the creator added; every other item still cites its line |
 | DC-FR-12 | `checkedBy: "person"` for items a person checks, such as Instagram's paid-partnership label (PRODUCT.md "Platforms") |
 | DC-FR-31 | Deals list: deal id, brand name, current step and one-line status per deal |
 | DC-FR-37 | Which deliverable's next step is the creator's |
@@ -341,3 +342,5 @@ Fields:
 | 1.11 signed | Revision 1.11 signed by William | none |
 | 1.12 | Phones put the work first (William's original choice from the first critique): banner, one "What happens next" panel (with the run summary as its first line), player, checklist, then the money row. The phone bar holds only the action, and is not shown when there is none. DC-FR-30, DC-FR-47 and DC-FR-48 amended. Final pass on this page from the critiques | none |
 | 1.12 signed | Revision 1.12 signed by William | none |
+| 1.13 | DC-FR-12: an item the creator added has no brief line and says "Added by you" in its place (William's choice over a synthetic line or leaving added items out), so a deal reaches the draft check once every hold is in (CH-FR-21). Requests for Furqaan: `briefLine` optional for added items | none |
+| 1.13 signed | Revision 1.13 signed by William | none |
