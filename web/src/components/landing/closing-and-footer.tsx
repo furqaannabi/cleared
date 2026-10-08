@@ -7,15 +7,17 @@ import { DemoButton, DemoNote } from "./demo-button";
  */
 export function Closing() {
   return (
-    <section aria-labelledby="close-heading" className="lp-close mx-auto mt-14 max-w-[1116px] rounded-[28px] bg-espresso px-6 py-9 text-center text-white md:mx-8 lg:mx-auto">
-      <h2 id="close-heading" className="font-head text-[28px] leading-[1.1] font-extrabold tracking-[-0.015em] md:text-[38px]">
-        See a whole deal clear.
-      </h2>
-      <div className="mt-[18px]">
-        <DemoButton tone="marigold" />
-      </div>
-      <DemoNote onDark />
-    </section>
+    <div className="mx-auto mt-14 max-w-[1180px] px-4 md:px-8">
+      <section aria-labelledby="close-heading" className="lp-close rounded-[28px] bg-espresso px-6 py-9 text-center text-white">
+        <h2 id="close-heading" className="font-head text-[28px] leading-[1.1] font-extrabold tracking-[-0.015em] md:text-[38px]">
+          See a whole deal clear.
+        </h2>
+        <div className="mt-[18px]">
+          <DemoButton tone="marigold" />
+        </div>
+        <DemoNote onDark />
+      </section>
+    </div>
   );
 }
 

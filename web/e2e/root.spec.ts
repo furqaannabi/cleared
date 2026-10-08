@@ -16,3 +16,16 @@ test("LP-FR-03, LP-FR-15: See a deal in action opens the demo deal", async ({ pa
   await expect(page).toHaveURL(/\/deals\/deal_glow\/deliverables\/del_glow_video/);
   await expect(page.getByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
 });
+
+for (const width of [375, 1100]) {
+  test(`LP-FR-07: the problem and closing cards keep a gutter from the screen edge at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    for (const id of ["problem-heading", "close-heading"]) {
+      const card = page.locator(`section[aria-labelledby="${id}"]`);
+      const box = (await card.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(16);
+      expect(width - (box.x + box.width)).toBeGreaterThanOrEqual(16);
+    }
+  });
+}
