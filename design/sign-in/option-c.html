@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../landing/landing.css"><link rel="stylesheet" href="../invite/invite.css"><link rel="stylesheet" href="si.css">
+<title>Welcome C: the deal ahead</title><style>
+/* C: the promise drawn as the deal ahead, three steps on the landing's marigold thread (held, checked, paid), each with what it means for you; the setup is a short checklist with how much is done. */
+.w-thread{position:relative;display:grid;gap:22px;margin-top:30px;padding-left:4px}
+.w-thread::before{content:"";position:absolute;left:23px;top:30px;bottom:30px;border-left:3px dashed var(--marigold)}
+@media(min-width:900px){.w-thread{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;padding-left:0}.w-thread::before{left:30px;right:30px;top:23px;bottom:auto;border-left:0;border-top:3px dashed var(--marigold)}}
+.w-step{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);gap:4px 14px}
+@media(min-width:900px){.w-step{grid-template-columns:1fr}}
+.w-step .w-seal{width:44px;height:44px;grid-row:1/4;background:var(--ground);border-radius:50%}
+@media(min-width:900px){.w-step .w-seal{grid-row:auto}}
+.w-step small{font-size:12.5px;font-weight:800;color:var(--marigold-ink-2);letter-spacing:.02em}
+.w-step b{font-size:17px}
+.w-step span{font-size:15px;color:var(--ink-2)}
+.w-c2{display:grid;gap:18px;margin-top:40px}
+@media(min-width:900px){.w-c2{grid-template-columns:minmax(0,1fr) 300px;align-items:start}}
+.w-count{font-family:var(--head);font-weight:800;font-size:15px;color:var(--ink-2)}
+.w-bar{height:6px;border-radius:999px;background:var(--line-soft);overflow:hidden}.w-bar i{display:block;height:100%;width:33%;background:var(--marigold)}
+.w-aside{display:grid;gap:10px}
+</style></head><body><header class="w-top"><i class="w-logo"></i><span class="w-who">Ada Okafor</span></header>
+<main class="w-main">
+<p class="w-hi">Welcome, Ada</p>
+<h1 class="w-h1" style="max-width:20ch">Get paid for every brand deal, <em>on time</em>.</h1>
+<div class="w-thread">
+<div class="w-step"><i class="w-seal" data-k="lock"></i><small>BEFORE YOU START</small><b>The money is held before you start.</b><span>Your brand’s payment is held in PayPal before you make anything.</span></div>
+<div class="w-step"><i class="w-seal" data-k="doc"></i><small>BEFORE YOU PUBLISH</small><b>No surprises at review.</b><span>We check your draft against the brief, and the brand has 48 hours to object.</span></div>
+<div class="w-step"><i class="w-seal" data-k="check"></i><small>WHEN IT’S LIVE</small><b>Paid when your post goes live.</b><span>Once the live check passes, the money comes to your PayPal. No chasing invoices.</span></div>
+</div>
+<div class="w-c2"><section class="w-card"><div style="display:grid;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2>Set up in a minute</h2><span class="w-count">1 of 3 done</span></div><div class="w-bar"><i></i></div><p class="w-sub">All optional. Anything you skip, we ask for when you send your first invite.</p></div>
+<div class="w-row"><div class="w-l"><span class="pl yt"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10 15.5v-7l6 3.5z"/></svg></span><span><b>YouTube</b><small>Read-only. For your videos and Shorts.</small></span></div><span class="w-done">Connected as Ada Okafor</span></div>
+<div class="w-row"><div class="w-l"><span class="pl ig"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.5"/></svg></span><span><b>Instagram</b><small>Professional accounts only. For your Reels.</small></span></div><a class="btn2" href="#">Connect Instagram</a></div>
+<div class="w-row"><div class="w-field"><label>Your PayPal email</label><div class="in">ada@example.com</div><p>We send your payment here. Check it: a payment to the wrong email can’t be pulled back.</p></div></div>
+</section><div class="w-aside"><div class="w-acts"><a class="btn" href="#">Start your first deal</a><a class="w-skip" href="#">Skip for now</a></div></div></div>
+</main><script src="si.js"></script></body></html>
