@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.14). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them. Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.15). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them. Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them. Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus its side of step 5 (the brand's review: objections and approval, with the brand's side in the [brand review FRD](brand-review-frd.md)) and the released state.
 
@@ -317,7 +317,7 @@ Fields:
 - The upload flow: picking the file, the YouTube unlisted link and the length cap prompt.
 - The brand's side: in the [brand review FRD](brand-review-frd.md).
 - Run history beyond the change since the last run.
-- Steps 6 to 8: publish, re-confirming the hold, the live check and payout. The page hands off at approved (DC-FR-51).
+- Steps 6 to 8 (the go-ahead, publishing, the live check, capture and payout, and the later release reasons) are specified in the [publish and pay FRD](publish-and-pay-frd.md).
 - Payouts and Connected accounts pages.
 - Sign-in, sign-out and the creator's account.
 - Notifications.
@@ -364,3 +364,5 @@ Fields:
 | 1.13 signed | Revision 1.13 signed by William | none |
 | 1.14 | Step 5 for the creator, from the brand review grill-me: DC-FR-01 gains the objected and approved states; DC-FR-49 to DC-FR-52 added (objected item, objected, approved with "Don't publish yet", Copy link for the brand); Objected by brand added to DC-FR-13 and to the Needs you tab (DC-FR-20); DC-FR-07 points at the brand review FRD; DC-FR-45's simulated run can be told its outcome in mock builds. User stories 60 to 65 | [Objection settled by the two sides](../decisions/2026-10-08-objection-settled-by-the-two-sides.md), [Fresh brand link per review](../decisions/2026-10-08-fresh-brand-link-per-review.md) |
 | 1.14 signed | Revision 1.14 signed by William | none |
+| 1.15 | Pointer: this page's states past Approved, the money card's later stages and the further release reasons are specified in the [publish and pay FRD](publish-and-pay-frd.md). No requirement changes here | none |
+| 1.15 signed | Revision 1.15 signed by William | none |

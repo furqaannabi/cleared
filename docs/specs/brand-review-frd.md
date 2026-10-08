@@ -1,6 +1,6 @@
 # Brand review: FRD
 
-**Status:** Signed by William (revision 1.0). The objection rule and review links are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.1). The objection rule and review links are decided by William; Furqaan can supersede them. The objection rule and review links are decided by William; Furqaan can supersede them.
 
 **Surface:** Both sides of step 5 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's side:** each post's review status on the brand's deal page, and a review page per post where the brand answers the creator's asks, then approves the draft or objects to items in the 48-hour review window. **The creator's side** (amending the [creator draft check](creator-draft-check-frd.md), revision 1.14): objections, the approved state, and a link to send the brand.
 
@@ -230,7 +230,7 @@ The creator's deliverable (DC) gains `state: "objected" | "approved"`, item stat
 
 ## Out of Scope
 
-- Step 6 onward: re-confirming the hold, publishing, the live check and payment.
+- Step 6 onward: re-confirming the hold, publishing, the live check and payment. The brand's side of them is in the [publish and pay FRD](publish-and-pay-frd.md).
 - Manual approval outside an objection in the review window (the live check; Instagram's paid-partnership label).
 - The real upload flow (DC-FR-45 stands in).
 - Real email sending and the PayPal JS SDK.
@@ -248,3 +248,5 @@ The creator's deliverable (DC) gains `state: "objected" | "approved"`, item stat
 | --- | --- | --- |
 | 0.1 | First draft, from the grill-me session with William: an objection is settled by the two sides; a review page per post mirroring the draft check; the brand sees the latest draft only from an ask or the window's start; approve, or object to one or more items with notes; accept or ask to fix an Unsure item; a fresh link per review moment and "Copy link" for the creator; after objecting, only "Approve this draft anyway"; "{brand} objected" for the creator; the brand sees the facts only; inline confirmations; the window's end is final, with a last-hour warning; a seeded deal and a demo draft outcome; ends at Approved with "Don't publish yet" | [Objection settled by the two sides](../decisions/2026-10-08-objection-settled-by-the-two-sides.md), [Fresh brand link per review](../decisions/2026-10-08-fresh-brand-link-per-review.md) |
 | 1.0 | Signed by William | none |
+| 1.1 | Pointer: the brand's page after Approved (the live post, confirming, objecting, accepting, paid) is in the [publish and pay FRD](publish-and-pay-frd.md). No requirement changes here | none |
+| 1.1 | Signed by William | none |
