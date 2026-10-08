@@ -3,7 +3,7 @@
  * A status this code does not know is "unknown", never guessed, so the caller checks again (MP-BR-06).
  */
 import { ApiError } from "@paypal/paypal-server-sdk";
-import type { AuthorizeResult, HoldStatus } from "./port";
+import type { AuthorizeResult, CaptureResult, HoldStatus, PayoutStatus, RenewResult } from "./port";
 
 /** Whole cents as the decimal string PayPal takes: 120000 is "1200.00" (MP-BR-05). */
 export function dollars(amountCents: number): string {
@@ -53,6 +53,71 @@ export function holdStatus(authorization: { status?: string }): HoldStatus {
       return "ended";
     default:
       return "unknown";
+  }
+}
+
+/** What became of renewing a hold (MP-FR-12). */
+export function renewOutcome(authorization: { id?: string; status?: string }): RenewResult {
+  if (authorization.status === "DENIED") return { outcome: "refused" };
+  if (authorization.status === "CREATED" && authorization.id) {
+    return { outcome: "renewed", reference: authorization.id };
+  }
+  return { outcome: "unknown" };
+}
+
+/** What became of a capture (MP-FR-24). A pending capture may or may not take the money, so it is unknown. */
+export function captureOutcome(capture: { id?: string; status?: string }): CaptureResult {
+  switch (capture.status) {
+    case "COMPLETED":
+      return capture.id ? { outcome: "completed", reference: capture.id } : { outcome: "unknown" };
+    case "DECLINED":
+    case "FAILED":
+      return { outcome: "refused" };
+    default:
+      return { outcome: "unknown" };
+  }
+}
+
+/** The parts of a PayPal payout batch this code reads. Cleared sends one payout per batch. */
+export interface PayoutAnswer {
+  batch_header?: { batch_status?: string };
+  items?: { payout_item_id?: string; transaction_status?: string }[];
+}
+
+/** How a payout stands (MP-FR-29). */
+export function payoutStatus(batch: PayoutAnswer): PayoutStatus {
+  const item = batch.items?.[0];
+  if (!item) {
+    switch (batch.batch_header?.batch_status) {
+      case "PENDING":
+      case "PROCESSING":
+        return { outcome: "pending" };
+      case "DENIED":
+        return { outcome: "denied" };
+      default:
+        return { outcome: "unknown" };
+    }
+  }
+  switch (item.transaction_status) {
+    case "SUCCESS":
+      return item.payout_item_id ? { outcome: "succeeded", reference: item.payout_item_id } : { outcome: "unknown" };
+    case "UNCLAIMED":
+      return { outcome: "unclaimed" };
+    case "FAILED":
+      return { outcome: "failed" };
+    case "RETURNED":
+    case "REFUNDED":
+    case "REVERSED":
+      return { outcome: "returned" };
+    case "BLOCKED":
+      return { outcome: "blocked" };
+    case "DENIED":
+      return { outcome: "denied" };
+    case "PENDING":
+    case "ONHOLD":
+      return { outcome: "pending" };
+    default:
+      return { outcome: "unknown" };
   }
 }
 

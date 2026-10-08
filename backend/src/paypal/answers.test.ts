@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { ApiError } from "@paypal/paypal-server-sdk";
-import { dollars, holdStatus, orderOutcome, refusedClearly } from "./answers";
+import { captureOutcome, dollars, holdStatus, orderOutcome, payoutStatus, refusedClearly, renewOutcome } from "./answers";
 import { PAYPAL_API } from "./sandbox-paypal";
 
 describe("MP-BR-05 amounts sent to PayPal", () => {
@@ -62,6 +62,84 @@ describe("MP-FR-11 reading whether a hold still stands", () => {
     [undefined, "unknown"],
   ] as const)("PayPal's %s is %s", (status, expected) => {
     expect(holdStatus({ status })).toBe(expected);
+  });
+});
+
+describe("MP-FR-12 reading a renewed hold", () => {
+  test("a renewed hold has PayPal's new reference", () => {
+    expect(renewOutcome({ id: "AUTH-2", status: "CREATED" })).toEqual({ outcome: "renewed", reference: "AUTH-2" });
+  });
+
+  test("a renewal PayPal denied is refused", () => {
+    expect(renewOutcome({ id: "AUTH-2", status: "DENIED" })).toEqual({ outcome: "refused" });
+  });
+
+  test.each(["PENDING", "SOMETHING_NEW", undefined])("a %s renewal is unknown", (status) => {
+    expect(renewOutcome({ id: "AUTH-2", status })).toEqual({ outcome: "unknown" });
+  });
+
+  test("a renewal with no reference is unknown", () => {
+    expect(renewOutcome({ status: "CREATED" })).toEqual({ outcome: "unknown" });
+  });
+});
+
+describe("MP-FR-24 reading a capture", () => {
+  test("a completed capture has PayPal's reference", () => {
+    expect(captureOutcome({ id: "CAPTURE-1", status: "COMPLETED" })).toEqual({ outcome: "completed", reference: "CAPTURE-1" });
+  });
+
+  test.each(["DECLINED", "FAILED"])("a %s capture is refused", (status) => {
+    expect(captureOutcome({ id: "CAPTURE-1", status })).toEqual({ outcome: "refused" });
+  });
+
+  test.each(["PENDING", "SOMETHING_NEW", undefined])("a %s capture is unknown: the money may or may not have moved", (status) => {
+    expect(captureOutcome({ id: "CAPTURE-1", status })).toEqual({ outcome: "unknown" });
+  });
+
+  test("a completed capture with no reference is unknown", () => {
+    expect(captureOutcome({ status: "COMPLETED" })).toEqual({ outcome: "unknown" });
+  });
+});
+
+describe("MP-FR-29 reading a payout", () => {
+  const batch = (transaction_status: string, batch_status = "SUCCESS") => ({
+    batch_header: { batch_status },
+    items: [{ payout_item_id: "ITEM-1", transaction_status }],
+  });
+
+  test("a payout that arrived is succeeded, with PayPal's reference", () => {
+    expect(payoutStatus(batch("SUCCESS"))).toEqual({ outcome: "succeeded", reference: "ITEM-1" });
+  });
+
+  test.each([
+    ["UNCLAIMED", "unclaimed"],
+    ["FAILED", "failed"],
+    ["RETURNED", "returned"],
+    ["REFUNDED", "returned"],
+    ["REVERSED", "returned"],
+    ["BLOCKED", "blocked"],
+    ["DENIED", "denied"],
+    ["PENDING", "pending"],
+    ["ONHOLD", "pending"],
+    ["SOMETHING_NEW", "unknown"],
+  ] as const)("PayPal's %s is %s", (status, outcome) => {
+    expect(payoutStatus(batch(status))).toEqual({ outcome });
+  });
+
+  test("a batch PayPal has not processed yet is pending", () => {
+    expect(payoutStatus({ batch_header: { batch_status: "PENDING" } })).toEqual({ outcome: "pending" });
+    expect(payoutStatus({ batch_header: { batch_status: "PROCESSING" }, items: [] })).toEqual({ outcome: "pending" });
+  });
+
+  test("a batch PayPal denied is denied", () => {
+    expect(payoutStatus({ batch_header: { batch_status: "DENIED" } })).toEqual({ outcome: "denied" });
+  });
+
+  test("a succeeded payout with no reference, or an answer with nothing in it, is unknown", () => {
+    expect(payoutStatus({ batch_header: { batch_status: "SUCCESS" }, items: [{ transaction_status: "SUCCESS" }] })).toEqual({
+      outcome: "unknown",
+    });
+    expect(payoutStatus({})).toEqual({ outcome: "unknown" });
   });
 });
 
