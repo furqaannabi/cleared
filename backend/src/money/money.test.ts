@@ -9,6 +9,7 @@ import { FakePayPal } from "../../test/fake-paypal";
 import { prisma } from "../db";
 import { runDueJobs } from "../jobs/jobs";
 import { createMoney } from "./money";
+import { recordedPosts } from "./published-post";
 
 const at = (iso: string) => new Date(iso);
 
@@ -1135,5 +1136,22 @@ describe("MP-FR-32 a release PayPal will not carry out", () => {
 
     expect(await notices()).toContainEqual({ about: "release_failed", to: "cleared" });
     expect(await world.money.view(deliverableId)).toMatchObject({ stage: "released", release: { reason: "cancelled" } });
+  });
+});
+
+describe("MP-FR-16 what the module knows of a post until the live check exists", () => {
+  test("a post is published once that has been reported to the module, and not before", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    const posts = recordedPosts(prisma);
+
+    expect(await posts.publishedAt(deliverableId)).toBeNull();
+    expect(await posts.publishedAt("no_such_deliverable")).toBeNull();
+
+    world.timeIs("2026-10-16T09:35:00Z");
+    await world.money.askGoAhead(deliverableId);
+    await world.money.postPublished(deliverableId, at("2026-10-16T09:30:00Z"));
+
+    expect(await posts.publishedAt(deliverableId)).toEqual(at("2026-10-16T09:30:00Z"));
   });
 });

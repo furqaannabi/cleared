@@ -7,6 +7,7 @@
 import type { PrismaClient } from "../src/generated/prisma/client";
 import { runDueJobs } from "../src/jobs/jobs";
 import { createMoney, type Money } from "../src/money/money";
+import { recordedPosts } from "../src/money/published-post";
 import type { MoneyView } from "../src/money/view";
 import type { PayPalPort } from "../src/paypal/port";
 
@@ -59,12 +60,7 @@ export async function runMoneyCommand(deps: {
   const now = () => pretend ?? new Date();
 
   // The live check does not exist yet, so "is it published?" is answered from what `published` recorded.
-  const money: Money = createMoney({
-    prisma,
-    paypal,
-    now,
-    posts: { publishedAt: async (deliverableId) => (await money.view(deliverableId))?.publishedAt ?? null },
-  });
+  const money: Money = createMoney({ prisma, paypal, now, posts: recordedPosts(prisma) });
 
   /** Prints how the money stands after a step, or why the step was refused. */
   const after = async (step: Promise<{ ok: true } | { ok: false; reason: string }>, deliverableId: string) => {
