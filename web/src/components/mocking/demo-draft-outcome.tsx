@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "@/components/ui/select";
 import type { DemoOutcome } from "@/mocks/simulate-upload";
 
 /** "usual": DC-FR-45's fixed demo run; otherwise what the demo's next run finds. */
@@ -24,13 +25,13 @@ export function DemoDraftOutcome({ value, onChange }: { value: DemoChoice; onCha
   return (
     <label className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-dashed border-latte-line bg-latte-wash px-3 py-2 text-meta text-ink-2">
       <b className="text-ink">Demo</b> (mocks only): the next draft
-      <select value={value} onChange={(e) => onChange(e.target.value as DemoChoice)} className="min-h-11 rounded-sm border border-latte-line bg-surface px-2 text-[14px] text-ink">
+      <Select value={value} onChange={(e) => onChange(e.target.value as DemoChoice)}>
         {OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
         ))}
-      </select>
+      </Select>
     </label>
   );
 }

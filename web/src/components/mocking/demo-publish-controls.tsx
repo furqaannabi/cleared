@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import type { Deliverable } from "@/lib/deliverable/types";
+import { Select } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { setDemoGoAhead, setDemoLiveCheck, setDemoPayout, tryPayoutNow } from "@/mocks/demo-publish";
 
-const SELECT = "min-h-11 rounded-sm border border-latte-line bg-surface px-2 text-[14px] text-ink";
 
 /**
  * Mock builds only: what the demo's next go-ahead, live check and payout
@@ -37,33 +37,33 @@ export function DemoPublishControls({ d, onUpdated }: { d: Deliverable; onUpdate
       {d.state === "approved" && (
         <label className="flex flex-wrap items-center gap-2">
           the go-ahead answers
-          <select value={goAhead} onChange={(e) => (setGoAhead(e.target.value), void setDemoGoAhead(e.target.value as "go"))} className={SELECT}>
+          <Select value={goAhead} onChange={(e) => (setGoAhead(e.target.value), void setDemoGoAhead(e.target.value as "go"))}>
             <option value="go">go-ahead</option>
             <option value="wait">wait until</option>
             <option value="not_confirmed">not confirmed</option>
-          </select>
+          </Select>
         </label>
       )}
       {checking && (
         <label className="flex flex-wrap items-center gap-2">
           the live check finds
-          <select value={live} onChange={(e) => (setLive(e.target.value), void setDemoLiveCheck(e.target.value as "passed"))} className={SELECT}>
+          <Select value={live} onChange={(e) => (setLive(e.target.value), void setDemoLiveCheck(e.target.value as "passed"))}>
             <option value="passed">it passes</option>
             <option value="fixable">something to fix</option>
             <option value="not_fixable">something that can’t be fixed</option>
             <option value="undecided">something it can’t decide</option>
-          </select>
+          </Select>
         </label>
       )}
       {paying && (
         <label className="flex flex-wrap items-center gap-2">
           the payout is
-          <select value={payout} onChange={(e) => (setPayout(e.target.value), void setDemoPayout(e.target.value as "paid"))} className={SELECT}>
+          <Select value={payout} onChange={(e) => (setPayout(e.target.value), void setDemoPayout(e.target.value as "paid"))}>
             <option value="paid">paid</option>
             <option value="unclaimed">unclaimed</option>
             <option value="failed">bounced</option>
             <option value="wont_send">not sent by PayPal</option>
-          </select>
+          </Select>
         </label>
       )}
       {delayed && (
