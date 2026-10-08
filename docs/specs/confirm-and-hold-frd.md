@@ -226,7 +226,7 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 - Real PayPal JS SDK wiring and PayPal's branded button (a stand-in on mocks; see Requests for Furqaan).
 - Real email sending.
 - An emailed code or a brand account (the [decision](../decisions/2026-10-08-brand-access-by-link-session.md) leaves room for a code later).
-- Step 5 onward: the brand's review window, objections and accepting Unsure items.
+- Step 5 onward: the brand's review window, objections and accepting Unsure items (see the [brand review FRD](brand-review-frd.md)).
 
 ## Open items
 
@@ -241,3 +241,4 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | 1.0 | Signed by William | none |
 | 1.1 | Requests for Furqaan: the hold call split into start (returns the PayPal order id), approved and closed, as built against the mocks; the mock-only Demo PayPal endpoint noted. No requirement changes | none |
 | 1.1 | Signed by William | none |
+| 1.1 | Pointer: step 5, the brand's review, is specified in the [brand review FRD](brand-review-frd.md). No requirement changes | none |

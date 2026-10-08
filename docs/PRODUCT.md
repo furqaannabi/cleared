@@ -77,7 +77,7 @@ Each deliverable is checked twice: as a draft, while a mistake can still be fixe
 - **The review happens before publishing.** A published video cannot be edited, so objections are raised while a fix is still possible. After that, payment follows the live check with no second wait.
 - **A creator never publishes without a confirmed hold.** If PayPal cannot confirm the funds at step 6, the creator is told not to publish. A confirmed hold gives a go-ahead that lasts 48 hours; after that the creator asks again ([decision](decisions/2026-10-08-go-ahead-cancel-and-unheld-posts.md)).
 - **The AI never moves money.** It returns findings with evidence. Fixed code confirms the evidence exists, decides, and calls PayPal.
-- **A brand objection stops the clock.** Objecting to an item moves that deliverable to manual approval.
+- **A brand objection stops the clock.** Objecting to an item moves that deliverable to manual approval. Before publishing, the creator and the brand settle it: a new draft, or the brand approves this one; with neither by the deadline, the hold is released ([decision](decisions/2026-10-08-objection-settled-by-the-two-sides.md)).
 - **A missed deadline or a cancellation releases the hold** back to the brand. A deadline is missed only if no approved post was published in time ([decision](decisions/2026-10-08-what-ends-a-hold-after-publishing.md)). Either side can cancel until the creator has the go-ahead to publish; after that nobody can ([decision](decisions/2026-10-08-go-ahead-cancel-and-unheld-posts.md)).
 - **Nothing stays undecided past day 28 of a hold.** A hold that is neither captured nor released by then is released, one day before PayPal would end it ([decision](decisions/2026-10-08-what-ends-a-hold-after-publishing.md)).
 
@@ -91,7 +91,7 @@ The rules that link to a decision were set by Furqaan on 8 October 2026. William
 | A draft fails an item | The creator fixes it and resubmits. The review window does not start until every item passes. |
 | The AI is unsure about an item | It goes to a person. The creator fixes it or the brand accepts it. It never clears on a timer. |
 | The brand says nothing for 48 hours on a fully passing draft | The draft is cleared to publish. |
-| The brand objects to an item | The clock stops and that deliverable moves to manual approval. |
+| The brand objects to an item | The clock stops. The creator makes a new draft, or the brand approves this one anyway; with neither by the deadline, the hold is released ([decision](decisions/2026-10-08-objection-settled-by-the-two-sides.md)). |
 | PayPal cannot re-confirm the hold at step 6 | The creator is told not to publish, and the brand is told to check its PayPal funding. The hold stays in place and the creator can ask again. |
 | The live post cannot be tied to the approved draft | The brand has 48 hours to confirm the post or object with a reason. Confirming, or saying nothing, pays the creator. An objection goes to a person at Cleared. See [Platforms](#platforms) for when this happens. |
 | The live check fails on something the creator can still fix, such as a missing link | The creator fixes it and has it checked again, until the deadline or 24 hours after the failure if that is later. Still failing then, the hold is released. |

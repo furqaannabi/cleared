@@ -60,3 +60,5 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-08 | [The backend calls PayPal through its server SDK, behind our own interface](2026-10-08-paypal-client-sdk-behind-port.md) | Accepted |
 | 2026-10-08 | [Backend tests: Bun's test runner, a real Postgres and a fake PayPal](2026-10-08-backend-test-tooling.md) | Accepted |
 | 2026-10-08 | [A go-ahead runs to the deadline when the deadline falls inside PayPal's guarantee](2026-10-08-go-ahead-runs-to-a-deadline-inside-the-guarantee.md) | Accepted |
+| 2026-10-08 | [A brand objection is settled by the creator and the brand](2026-10-08-objection-settled-by-the-two-sides.md) | Accepted |
+| 2026-10-08 | [The brand gets a fresh link each time a draft needs it](2026-10-08-fresh-brand-link-per-review.md) | Accepted |

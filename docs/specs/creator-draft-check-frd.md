@@ -1,8 +1,8 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.13). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.14). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them. Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44) and the Suggested fix (DC-FR-46) are decided by William; Furqaan can supersede them.
 
-**Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus the hand-off into step 5 and the released state.
+**Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus its side of step 5 (the brand's review: objections and approval, with the brand's side in the [brand review FRD](brand-review-frd.md)) and the released state.
 
 **Scope of this build:** frontend only, against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). Requirements tagged **Depends on backend** need data the backend has not agreed to provide; each one names its fallback.
 
@@ -77,6 +77,12 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 57. As a creator whose new draft cancelled the brand's acceptance, I want to be told why that item is unsure again.
 58. As a creator who left the page while the check ran, I want the same summary when I come back, so that I don't miss what changed.
 59. As a creator watching a run land, I want the item that still needs me selected, so that I start on what's left.
+60. As a creator, I want an item the brand objected to to say so, with the brand's note, so that I know exactly what to change.
+61. As a creator, I want to see that the check passed an item the brand objected to, so that I know who said what.
+62. As a creator whose draft the brand objected to, I want to know the clock stopped and what I can do before the deadline, so that I'm not left guessing.
+63. As a creator, I want to know my draft is approved, by the brand or because the window ended, and not to publish until the hold is confirmed, so that I never publish without a confirmed hold.
+64. As a creator, I want to copy a link for the brand while they have something to do, so that I can nudge them myself.
+65. As a creator demoing on mock data, I want to choose whether a simulated draft passes or has an Unsure item, so that both sides of the review can be shown.
 
 ## Functional requirements
 
@@ -84,18 +90,27 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 
 | ID | Requirement |
 | --- | --- |
-| DC-FR-01 | The page shows exactly one of six states, taken from the deliverable's state in the API: **no draft**, **checking**, **results**, **fully passing**, **check failed**, **released**. The page never works out the deliverable's state itself; it renders the state the API reports. |
+| DC-FR-01 | The page shows exactly one of eight states, taken from the deliverable's state in the API: **no draft**, **checking**, **results**, **fully passing**, **objected**, **approved**, **check failed**, **released**. The page never works out the deliverable's state itself; it renders the state the API reports. |
 | DC-FR-02 | **No draft.** The checklist shows every item with its kind and brief line. Items checked at the draft check show **Not checked yet**; items checked only after publishing show **At live check**. The next-step bar says to upload the draft and names the deliverable's deadline. Its primary action is "Upload draft". The upload flow itself is out of scope (see [Open items](#open-items)). |
 | DC-FR-03 | **Checking (baseline).** Every item checked at the draft check shows the status **Checking**; items checked only after publishing keep **At live check**. The filter tabs are hidden. The next-step bar says the draft is being checked against the N items that can be checked before publishing, that the creator can leave the page, and how long ago the check started ("Started 2 min ago"), computed on the client. No estimate of time remaining is shown unless the API supplies one. |
 | DC-FR-04 | **Checking: stages.** **Depends on backend.** The page lists the check's stages in plain words (for example "Reading what's said", "Reading on-screen text", "Watching the video", "Checking each item"), each done, current or waiting. Fallback: DC-FR-03 only. |
 | DC-FR-05 | **Checking: item by item.** **Depends on backend.** Each item changes from Checking to its result as the API reports it, while the rest stay Checking. Fallback: all results appear together when the check finishes. |
 | DC-FR-06 | **Results.** Shown when the latest run has finished and at least one draft-check item is Fix needed, Unsure or Waiting for brand. |
-| DC-FR-07 | **Fully passing.** Shown when the API reports that the review window has started. The next-step bar names the brand and when the review window ends ("Glow Theory has until 9 Oct, 14:00 to review. If they say nothing, you're cleared to publish."). There is no primary action for the creator. The brand's review screen is out of scope. |
+| DC-FR-07 | **Fully passing.** Shown when the API reports that the review window has started. The next-step bar names the brand and when the review window ends ("Glow Theory has until 9 Oct, 14:00 to review. If they say nothing, you're cleared to publish."). There is no primary action for the creator; "Copy link for {brand}" sits beside the next step (DC-FR-52). The brand's side is in the [brand review FRD](brand-review-frd.md). |
 | DC-FR-08 | **Check failed: the file.** When the API reports that the file could not be checked because of the file (unreadable, unsupported format, longer than the length cap, or not the same video as the YouTube unlisted upload), the page shows a banner saying what is wrong and what to do, with the action "Upload again". The length cap is a value from the API and is never hard-coded. |
 | DC-FR-09 | **Check failed: our side.** When the API reports a processing failure, the banner says it is not the creator's fault and what happens next. **Depends on backend** for automatic retry ("We're trying again; you don't need to do anything."). Fallback: "Something went wrong on our side checking this draft." with the action "Try again". |
 | DC-FR-10 | **Released.** When the API reports the hold was released (missed deadline or cancelled deal), the page is read-only: the last run's results stay visible, the upload and ask actions are removed, and the checklist has no Needs you tab (DC-FR-20). The next-step bar says what happened, when and, if the API says, who cancelled, and that nothing more can happen on this deliverable. There is no primary action. |
 | DC-FR-11 | **Deadline warning.** In the no draft, results and check failed states, when fewer than 3 days remain before the deliverable's deadline, the next-step bar leads with the time left ("2 days left to post."). This changes emphasis only, not any timing. |
 | DC-FR-48 | **What the new run changed.** In the results state, from run 2 on, when at least one item's status differs from the previous run (DC-FR-19), a panel between the header and the work row says what changed, naming up to three items, then "and N more". Fixed items: "Code GLOW20 shown on screen now passes." Items that passed before and now need fixing or are unsure: said plainly, never hidden behind good news. An acceptance cancelled by the new draft (DC-BR-04): "Glow Theory's acceptance of Serum shown in use was cancelled by the new draft, so it's unsure again." It ends with how many items still need the creator (Fix needed and Unsure, as the Needs you tab) and "Below are your results from run N." Heading: "Your fix worked" when something was fixed and nothing got worse; "Your fix worked, but something changed" when both; "Something changed in this draft" when nothing was fixed. A pass seal only when nothing got worse, else a neutral seal. It is built from `previousStatus`, so it shows on every load of that run; when the run lands while the creator is on the page, its seal stamps in once (still under reduced motion). Below `md:` it is not a separate banner but the first line of the "What happens next" panel (DC-FR-47): the heading and how many items still need the creator, e.g. "Your fix worked · 1 item still needs you"; the names stay on tablet and up. In the fully passing state there is no separate panel: the passed banner adds one line, "Your fix worked: Code GLOW20 shown on screen now passes." On run 1 there is no panel or line. |
+
+### The brand's review (step 5)
+
+| ID | Requirement |
+| --- | --- |
+| DC-FR-49 | **Objected item.** An item the brand objected to shows Objected by brand. Its evidence panel and expanded card say "The check passed this. {brand} asked you to change it:" followed by the brand's note, before the brief line. It has no ask action. A new draft clears it (DC-BR-04). |
+| DC-FR-50 | **Objected.** Shown when the API reports the brand objected. The next-step bar: "{brand} asked you to fix {n} items. Upload a new draft by {date}. If {brand} approves this draft instead, you're cleared to publish." Its primary action is "Upload new draft". The first objected item is selected on load. The deal steps keep Brand review as current. See [Objection settled by the two sides](../decisions/2026-10-08-objection-settled-by-the-two-sides.md). |
+| DC-FR-51 | **Approved.** Shown when the API reports the draft approved: a banner "{brand} approved this draft" or "No objection from {brand} in 48 hours, so this draft is approved", then "Don't publish yet. Cleared confirms {brand}'s hold with PayPal first." There is no primary action and no upload. The deal steps mark Brand review done and Publish current. |
+| DC-FR-52 | **Copy link for the brand.** While the brand has something to do on this deliverable (an ask waiting, the window open, or objected), the next step offers "Copy link for {brand}", and "We've emailed it to {email}" when the API says it did. The link is copied, never shown in full, stored or logged. **Depends on backend;** on mocks it copies the demo link. See [Fresh brand link per review](../decisions/2026-10-08-fresh-brand-link-per-review.md). |
 
 ### Checklist and evidence
 
@@ -114,6 +129,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | Not checked yet | dot, "Not checked yet" (no draft only) | none, ink-4 text |
 | Waiting for brand | clock, "Waiting for {brand}" | unsure |
 | Accepted by brand | check in circle, "Accepted by {brand}" | waiting, with an espresso icon; never green |
+| Objected by brand | flag, "{brand} objected" | fail |
 
 | ID | Requirement |
 | --- | --- |
@@ -123,7 +139,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-17 | **Declined.** When the API reports that the brand declined an item, it shows Unsure with "{brand} asked you to fix this" and the brand's note if there is one. It cannot be asked about again in the same run. |
 | DC-FR-18 | **No answer.** A Waiting for brand item stays waiting with no time limit. While any item is waiting, the next-step bar names the brand and shows the deliverable's deadline. |
 | DC-FR-19 | **Change since last run.** From run 2 on, an item whose status differs from the previous run shows the change ("Was Fix needed, now Passed"; "Was accepted by Glow Theory, now Unsure"). Only the latest run is shown; earlier runs cannot be opened. |
-| DC-FR-20 | **Filter tabs.** All; Needs you (Fix needed, Unsure); Passed (Passed, Accepted by brand); Waiting for brand (shown only when its count is above 0); At live check. Each tab shows its count. An empty tab says "Nothing here right now." Once the hold is released (DC-FR-10) there is no Needs you tab, since nothing can be done; the items keep their results under All. |
+| DC-FR-20 | **Filter tabs.** All; Needs you (Fix needed, Unsure, Objected by brand); Passed (Passed, Accepted by brand); Waiting for brand (shown only when its count is above 0); At live check. Each tab shows its count. An empty tab says "Nothing here right now." Once the hold is released (DC-FR-10) there is no Needs you tab, since nothing can be done; the items keep their results under All. |
 | DC-FR-21 | **Default selection.** On load, with no item in the URL, the first Fix needed item is selected; else the first Unsure; else the first item. When a new run's results land while the creator is on the page, the same rule is applied again (the earlier selection belonged to the previous run) and the filter returns to All; the page does not scroll. |
 | DC-FR-46 | **Suggested fix.** When the API sends an item's `fixHint`, an item that is Fix needed, Unsure (including one the brand declined) or Waiting for brand shows it as "Suggested fix": one plain sentence saying what to change. It sits after the evidence and before the brief line, in the evidence panel (tablet and up) and in the expanded item card (phones); on a declined item it comes after the brand's note. The grid and the collapsed card do not show it. No other status shows a hint, even if one is sent. With no hint, nothing is shown (no placeholder). The hint is plain text: no links or formatting, and it never changes the item's status, the checklist or the money. |
 | DC-FR-22 | **Selecting an item** from the grid, a card or a timeline marker selects it everywhere: the evidence panel (tablet and up) or the expanded card (phone), the grid row, the timeline marker, and the video seeks to its timestamp. The change moves in one 200–350 ms ease-out step. |
@@ -183,7 +199,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-42 | Every animation honours `prefers-reduced-motion`. |
 | DC-FR-43 | Every interactive element is reachable by keyboard, has a visible focus ring and an accessible name; touch targets are at least 44 × 44 px; nothing depends on hover. |
 | DC-FR-44 | **One shared deadline date, with the viewer's own time.** A deliverable's deadline is the end of its day (23:59) in the creator's timezone, so the creator and the brand read the same date ("Post by 24 Oct"). When the viewer's timezone is different, the page adds when it ends for them ("ends 18:59 your time", or "ends 25 Oct, 07:59 your time" when their date differs). Countdowns (DC-FR-11) use the exact moment. |
-| DC-FR-45 | **Upload while the upload flow is unspecced.** When mocks are on, the upload actions (Upload draft, Upload new draft, Upload again) open the file picker and simulate a new run: the page shows Checking, then the new results with fresh evidence for the items that changed, from the mocks only; nothing is uploaded. When mocks are off, no upload button is shown until the upload flow's FRD is built. |
+| DC-FR-45 | **Upload while the upload flow is unspecced.** When mocks are on, the upload actions (Upload draft, Upload new draft, Upload again) open the file picker and simulate a new run: the page shows Checking, then the new results with fresh evidence for the items that changed, from the mocks only; nothing is uploaded. When mocks are off, no upload button is shown until the upload flow's FRD is built. In mock builds the simulated run can be told its outcome: "passes every item" (the review window starts) or "one Unsure item" (RW-FR-28); the choice is supplied only by the mock gate, like Demo PayPal. |
 
 ## Business rules
 
@@ -220,10 +236,10 @@ The mock shape is **provisional**: it follows PRODUCT.md's terms until the API c
 ```ts
 // Provisional. Not an agreed contract.
 type ItemStatus = "not_checked" | "checking" | "passed" | "fix_needed" | "unsure"
-  | "at_live_check" | "waiting_for_brand" | "accepted_by_brand";
+  | "at_live_check" | "waiting_for_brand" | "accepted_by_brand" | "objected_by_brand";
 
 type DeliverableState = "no_draft" | "checking" | "results"
-  | "fully_passing" | "check_failed" | "released";
+  | "fully_passing" | "objected" | "approved" | "check_failed" | "released";
 
 interface ChecklistItem {
   id: string;
@@ -282,6 +298,8 @@ Fields:
 | DC-FR-46 | Optional `fixHint` per Fix needed and Unsure item: one imperative sentence, at most 280 characters, plain text. Built by code for exact items (codes, links: "Show GLOW20 exactly, with a zero"), written by the AI for judgment items. Model output is validated against a schema like every model response; a missing or malformed hint is left out rather than guessed. It is guidance only and never affects the result. Built against the mock first (William's call); Furqaan can change it |
 | DC-FR-48, DC-FR-19 | Each run returns fresh evidence (and `fixHint`) for every item it checked; evidence from earlier runs is not sent. `previousStatus` is the item's status in the run before |
 | DC-FR-33 | Each deal summary's `deliverables: { id, platform, state }[]`, so the switcher can name each deliverable and show its step |
+| DC-FR-49 to DC-FR-51 | Deliverable states `objected` and `approved` (with `approvedBy: "brand" \| "window"` and `approvedAt`); item status `objected_by_brand` with `brandNote` (see RW Requests for Furqaan) |
+| DC-FR-52 | `reviewLink?: { url, emailedTo? }` while the brand has something to do on the deliverable |
 
 ## Testing Decisions
 
@@ -297,9 +315,9 @@ Fields:
 ## Out of Scope
 
 - The upload flow: picking the file, the YouTube unlisted link and the length cap prompt.
-- The brand's side: the review screen, accepting or declining an ask, objections.
+- The brand's side: in the [brand review FRD](brand-review-frd.md).
 - Run history beyond the change since the last run.
-- Steps 6 to 8: publish, re-confirming the hold, the live check and payout. The page hands off at fully passing.
+- Steps 6 to 8: publish, re-confirming the hold, the live check and payout. The page hands off at approved (DC-FR-51).
 - Payouts and Connected accounts pages.
 - Sign-in, sign-out and the creator's account.
 - Notifications.
@@ -344,3 +362,5 @@ Fields:
 | 1.12 signed | Revision 1.12 signed by William | none |
 | 1.13 | DC-FR-12: an item the creator added has no brief line and says "Added by you" in its place (William's choice over a synthetic line or leaving added items out), so a deal reaches the draft check once every hold is in (CH-FR-21). Requests for Furqaan: `briefLine` optional for added items | none |
 | 1.13 signed | Revision 1.13 signed by William | none |
+| 1.14 | Step 5 for the creator, from the brand review grill-me: DC-FR-01 gains the objected and approved states; DC-FR-49 to DC-FR-52 added (objected item, objected, approved with "Don't publish yet", Copy link for the brand); Objected by brand added to DC-FR-13 and to the Needs you tab (DC-FR-20); DC-FR-07 points at the brand review FRD; DC-FR-45's simulated run can be told its outcome in mock builds. User stories 60 to 65 | [Objection settled by the two sides](../decisions/2026-10-08-objection-settled-by-the-two-sides.md), [Fresh brand link per review](../decisions/2026-10-08-fresh-brand-link-per-review.md) |
+| 1.14 signed | Revision 1.14 signed by William | none |
