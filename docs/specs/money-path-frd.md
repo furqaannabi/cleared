@@ -1,6 +1,6 @@
 # Money path: FRD
 
-**Status:** Signed by Furqaan (revision 1.2). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
+**Status:** Signed by Furqaan (revision 1.3). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
 
 **Surface:** Backend. Everything that happens to one deliverable's money, from the brand approving a hold to the deliverable being cleared or its hold being released: steps 3, 6 and 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and the money side of every row in [When something does not go to plan](../PRODUCT.md#when-something-does-not-go-to-plan).
 
@@ -122,6 +122,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 | MP-FR-29 | **Payout results.** The deliverable is paid only when PayPal reports the payout succeeded. Until then it stays captured, with the reason and the next step: sending; unclaimed (the creator must accept the money at that email); or failed, returned, blocked or denied (the creator must correct their PayPal email and send it again). |
 | MP-FR-30 | **Sending a payout again.** The creator can have the payout sent again only when the last one has finished without paying. An unclaimed payout is first cancelled with PayPal, and a new one is sent only once PayPal confirms the cancellation. There is never more than one payout in flight. |
 | MP-FR-31 | **Cleared.** A deliverable whose payout succeeded is cleared. Nothing more can happen to its money. |
+| MP-FR-45 | **Payout PayPal will not send.** If PayPal refuses to send a payout at all, nothing has been sent and the reason lies with Cleared's own PayPal account (for example its balance, or what the account is allowed to do), not with the creator. The deliverable stays captured. The same payout is sent again every 6 hours under the same request id, so it can never be sent twice, and there is no end date: the money is already captured, so it keeps trying until it is sent. At the first refusal a notice is recorded for a person at Cleared, and one for the creator: the payout is delayed on Cleared's side and there is nothing they need to do. The creator cannot ask for it to be sent again meanwhile (MP-FR-30). |
 
 ### Release and cancel
 
@@ -193,6 +194,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 - **Order of work around a PayPal call:** lock and check the state and record the call as started in one transaction; call PayPal with no transaction open; record the answer, the transition and the next job in a second transaction. A crash between the two leaves a started call for the checker.
 - **Configuration:** the fee rate, the amount limits, the go-ahead length, the windows (48 hours, 24 hours, 7 days), the capture retry interval and the job retry limit are named settings with the values in this spec as defaults.
 - **Webhook events subscribed:** authorization created and voided; capture completed, denied, pending, refunded and reversed; and the payout item results.
+- **A payout PayPal will not send (MP-FR-45)** is a 400, 403 or 422 answer that names an error and is not PayPal pointing at a payout already sent under that id. A rejected log-in, a rate limit, a server error and no answer are not refusals: they stay unknown and are checked.
 - **Notices** are entries in the money record addressed to the creator, the brand or both, each with a reason code. Showing or emailing them is the job of the routes and pages built later.
 
 ### Requests for William
@@ -265,3 +267,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.1 | Signed by Furqaan | none |
 | 1.2 | MP-FR-24: the first capture re-confirms the hold when its guarantee has ended, as retries already do. Found while building: after a fix window or a brand's 48 hours the guarantee has usually lapsed, and a refused first capture costs the creator a 6-hour wait | [First capture re-confirms a lapsed hold](../decisions/2026-10-08-first-capture-re-confirms-a-lapsed-hold.md) |
 | 1.2 | Signed by Furqaan | none |
+| 1.3 | MP-FR-45 added: a payout PayPal will not send stays captured, is sent again every 6 hours under the same request id, and is put in front of a person at Cleared. Found against the sandbox: a business account not allowed to send payouts was refused outright, and the rules had no outcome for it, so it would have been checked forever with nobody told | [A payout PayPal will not send](../decisions/2026-10-08-a-payout-paypal-will-not-send.md) |
+| 1.3 | Signed by Furqaan | none |
