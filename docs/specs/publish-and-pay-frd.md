@@ -1,6 +1,6 @@
 # Publish and pay: FRD
 
-**Status:** Signed by William (revision 1.1). The money rules are the money path FRD's (Furqaan's).
+**Status:** Signed by William (revision 1.2). The money rules are the money path FRD's (Furqaan's).
 
 **Surface:** Both sides of steps 6 to 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The creator's side:** the draft check page past "Approved" (DC-FR-51): the go-ahead, "I've posted it", the live check in the checklist, and the money card through captured and paid, including every "not paid yet". **The brand's side:** the Drafts panel and the review page past "Approved" (RW-FR-22): confirming or objecting to a post the live check couldn't decide, accepting a post that failed, and paid.
 
@@ -230,3 +230,5 @@ Each maps to a function his money module already has (MP "Implementation Decisio
 | 0.1 | First draft, from the grill-me session with William: one spec for both sides; "I've posted it" with a Reel's link, and a check at the go-ahead's end; the go-ahead asked for when ready; live results in the same checklist with a summary banner; every money stage and payout problem on the money card; the brand's decisions after publishing on the review page, with both silence rules stated; every release reason; demo controls for each outcome. Follows the money path FRD's rules | [Go-ahead and cancel](../decisions/2026-10-08-go-ahead-cancel-and-unheld-posts.md), [After publishing](../decisions/2026-10-08-what-ends-a-hold-after-publishing.md), [Fee and limits](../decisions/2026-10-08-cleared-fee-and-amount-limits.md) |
 | 1.0 | Signed by William | none |
 | 1.1 | PP-FR-35 and PP-FR-36 added, from a grill-me session with William: a payout PayPal won't send shows as delayed on Cleared's side with nothing for the creator to do, and an unclaimed payout being cancelled shows as sending again. Neither changes the deals list or the brand's view. PP-FR-24, PP-FR-30 and PP-FR-32 and the contract follow. Shows MP-FR-45 and MP-FR-30 (money path 1.3). Signed by William | none |
+| 1.2 | Pointer: cancelling (Out of Scope here, "its own spec next") is specified in the [cancel FRD](cancel-frd.md); the released reason "cancelled (and by whom)" in PP-FR-22 and PP-FR-31 follows CN-FR-10. No requirement changes here | none |
+| 1.2 signed | Revision 1.2 signed by William | none |

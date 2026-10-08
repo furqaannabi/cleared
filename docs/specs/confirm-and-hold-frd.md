@@ -1,6 +1,6 @@
 # Confirm and hold: FRD
 
-**Status:** Signed by William (revision 1.1).
+**Status:** Signed by William (revision 1.2).
 
 **Surface:** Both sides of step 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's deal page:** the brand opens the creator's link, reads the terms and every checklist with where each item came from, asks for changes or agrees, then approves one PayPal hold per post. **The creator's side:** the brand's notes beside what they're about, "Send updated terms", and each post's hold as it comes in.
 
@@ -242,3 +242,5 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | 1.1 | Requests for Furqaan: the hold call split into start (returns the PayPal order id), approved and closed, as built against the mocks; the mock-only Demo PayPal endpoint noted. No requirement changes | none |
 | 1.1 | Signed by William | none |
 | 1.1 | Pointer: step 5, the brand's review, is specified in the [brand review FRD](brand-review-frd.md). No requirement changes | none |
+| 1.2 | Pointer: cancelling a deal or a post, including before the brand agrees (Out of Scope here), is specified in the [cancel FRD](cancel-frd.md). A cancelled deal's invite link answers as CH-FR-02. No requirement changes here | none |
+| 1.2 signed | Revision 1.2 signed by William | none |
