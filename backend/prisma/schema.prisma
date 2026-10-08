@@ -1,5 +1,4 @@
-// No models yet. Each model is added with the spec that needs it
-// (CLAUDE.md: no code without a signed spec).
+// Each model is added with the spec that needs it (CLAUDE.md: no code without a signed spec).
 
 generator client {
   provider = "prisma-client"
@@ -8,4 +7,40 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// Timers and retries (money path spec MP-FR-42, MP-FR-43;
+// docs/decisions/2026-10-08-jobs-table-in-postgres.md).
+// A job is written in the same transaction as the change it belongs to.
+model Job {
+  id      String @id @default(uuid())
+  /// Which handler runs it.
+  name    String
+  /// What the handler needs. Ids only: no emails, tokens or PayPal payloads.
+  payload Json
+
+  /// When it is due.
+  runAt       DateTime
+  status      JobStatus @default(pending)
+  /// While running: when another worker may take it over, if this one died.
+  lockedUntil DateTime?
+
+  /// How many times it has been started, and how many of those ended in an error.
+  attempts  Int     @default(0)
+  failures  Int     @default(0)
+  /// The last error's message, shortened. Never a payload.
+  lastError String?
+
+  createdAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@index([status, runAt])
+}
+
+enum JobStatus {
+  pending
+  running
+  done
+  /// Gave up after the retry limit. Stays in the table so a person can see it.
+  failed
 }

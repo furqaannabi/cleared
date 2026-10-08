@@ -1,0 +1,3 @@
+[test]
+# Creates and migrates the test database before any test file is loaded.
+preload = ["./test/setup.ts"]
