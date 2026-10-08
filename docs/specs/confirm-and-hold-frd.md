@@ -1,6 +1,6 @@
 # Confirm and hold: FRD
 
-**Status:** Signed by William (revision 1.0). Revision 1.1 (Requests for Furqaan only) is a draft, not signed.
+**Status:** Signed by William (revision 1.1).
 
 **Surface:** Both sides of step 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's deal page:** the brand opens the creator's link, reads the terms and every checklist with where each item came from, asks for changes or agrees, then approves one PayPal hold per post. **The creator's side:** the brand's notes beside what they're about, "Send updated terms", and each post's hold as it comes in.
 
@@ -240,3 +240,4 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | 0.1 | First draft, from the grill-me session with William: the brand asks for changes and the creator makes them; the link is swapped for a deal-scoped session and a clean URL; agreeing comes before the holds and is final; one PayPal approval per post; the brand sees each item's brief line, the creator's interpretations and the lines not on the checklist; notes on items, lines left out, amounts, deadlines and the deal; the link stays on through a change request and the terms are versioned; one message for a link that doesn't work; the creator sees only the brand's actions; a plain hold state per post; one Agree button under a summary | [Brand asks for changes](../decisions/2026-10-08-brand-asks-for-changes-not-edits.md), [Brand access by link session](../decisions/2026-10-08-brand-access-by-link-session.md) |
 | 1.0 | Signed by William | none |
 | 1.1 | Requests for Furqaan: the hold call split into start (returns the PayPal order id), approved and closed, as built against the mocks; the mock-only Demo PayPal endpoint noted. No requirement changes | none |
+| 1.1 | Signed by William | none |

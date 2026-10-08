@@ -12,4 +12,4 @@ A spec is signed only when William or Furqaan says so after reading it. No code 
 | [Landing page](landing-frd.md) | LP | Landing at `/`, and the `/deals` entry into the creator app | William | Signed by William (1.1) |
 | [Creator brief → checklist](creator-brief-checklist-frd.md) | BC | Creator app: a new deal, its brief, and a checklist per post | William | Signed by William (1.3) |
 | [Creator invite](creator-invite-frd.md) | IN | Creator app: amounts, deadlines, accounts, PayPal email and the brand link | William | Signed by William (1.2) |
-| [Confirm and hold](confirm-and-hold-frd.md) | CH | The brand's deal page from the invite link (terms, checklist, changes, agree, one hold per post) and the creator's side of it | William | Signed by William (1.0); 1.1 draft, not signed |
+| [Confirm and hold](confirm-and-hold-frd.md) | CH | The brand's deal page from the invite link (terms, checklist, changes, agree, one hold per post) and the creator's side of it | William | Signed by William (1.1) |
