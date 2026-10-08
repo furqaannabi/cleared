@@ -226,3 +226,23 @@ describe("MP-FR-43 late, never lost", () => {
     expect(runs).toHaveLength(1);
   });
 });
+
+describe("MP-FR-38 backing off between tries", () => {
+  test("a job is told how many times it has been started, so it can wait longer each time", async () => {
+    const seen: number[] = [];
+    const handlers: JobHandlers = {
+      deadline: async (_payload, { attempts, now }) => {
+        seen.push(attempts);
+        return attempts < 3 ? { retryAt: new Date(now.getTime() + 60_000) } : undefined;
+      },
+    };
+    await add(deadlineJob("2026-10-24T22:59:00Z"));
+
+    await runDueJobs(prisma, handlers, { now: at("2026-10-24T22:59:00Z") });
+    await runDueJobs(prisma, handlers, { now: at("2026-10-24T23:00:00Z") });
+    await runDueJobs(prisma, handlers, { now: at("2026-10-24T23:01:00Z") });
+
+    expect(seen).toEqual([1, 2, 3]);
+    expect(await prisma.job.findMany()).toMatchObject([{ status: "done", attempts: 3, failures: 0 }]);
+  });
+});

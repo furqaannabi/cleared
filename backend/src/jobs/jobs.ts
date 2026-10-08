@@ -15,7 +15,11 @@ export interface NewJob {
  * Does a job's work. It may run more than once for the same job, so it checks recorded state first.
  * Returning `retryAt` asks to be run again then; that is waiting, not failing. Throwing is failing.
  */
-export type JobHandler = (payload: unknown, context: { now: Date }) => Promise<void | { retryAt: Date }>;
+export type JobHandler = (
+  payload: unknown,
+  /** `attempts` is how many times this job has been started, this time included. */
+  context: { now: Date; attempts: number },
+) => Promise<void | { retryAt: Date }>;
 
 /** The handlers a worker knows, by job name. */
 export type JobHandlers = Record<string, JobHandler>;
@@ -58,6 +62,7 @@ interface ClaimedJob {
   name: string;
   payload: unknown;
   failures: number;
+  attempts: number;
 }
 
 const secondsAfter = (from: Date, seconds: number) => new Date(from.getTime() + seconds * 1000);
@@ -80,7 +85,7 @@ async function claim(prisma: PrismaClient, now: Date, settings: JobSettings): Pr
       LIMIT 1
       FOR UPDATE SKIP LOCKED
     )
-    RETURNING "id", "name", "payload", "failures"`;
+    RETURNING "id", "name", "payload", "failures", "attempts"`;
   return job;
 }
 
@@ -102,7 +107,7 @@ export async function runDueJobs(prisma: PrismaClient, handlers: JobHandlers, op
     try {
       const handler = handlers[job.name];
       if (!handler) throw new Error(`No handler for job ${job.name}`);
-      const result = await handler(job.payload, { now });
+      const result = await handler(job.payload, { now, attempts: job.attempts });
       if (result?.retryAt) {
         // Never back into this same run: a job that asks for "now" would be picked up again at once.
         const runAt = result.retryAt > now ? result.retryAt : secondsAfter(now, settings.firstRetrySeconds);

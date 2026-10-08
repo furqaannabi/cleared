@@ -7,6 +7,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { FakePayPal } from "../../test/fake-paypal";
 import { prisma } from "../db";
+import { runDueJobs } from "../jobs/jobs";
 import { createMoney } from "./money";
 
 const at = (iso: string) => new Date(iso);
@@ -30,6 +31,8 @@ function setUp(startAt = "2026-10-10T09:00:00Z") {
     timeIs: (iso: string) => {
       now = at(iso);
     },
+    /** Runs every job that is due at the clock's time, as the service's worker would. */
+    runJobs: () => runDueJobs(prisma, money.handlers, { now, log: () => {} }),
   };
 }
 
@@ -150,6 +153,9 @@ describe("MP-FR-03 and MP-FR-04 approved and held", () => {
     expect(world.paypal.holds()).toMatchObject([{ amountCents: 120_000, status: "in_place" }]);
     expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", hold: { state: "held" } });
     expect(await jobs()).toEqual([
+      // One follow-up per PayPal call, in case its answer never arrives.
+      { name: "follow_up", runAt: at("2026-10-10T09:01:00Z") },
+      { name: "follow_up", runAt: at("2026-10-10T09:06:10Z") },
       { name: "attempt_stuck", runAt: at("2026-10-11T09:05:10Z") },
       { name: "never_held", runAt: at("2026-10-17T08:00:00Z") },
       { name: "deadline", runAt: at("2026-10-24T22:59:00Z") },
@@ -216,7 +222,6 @@ describe("MP-FR-06 pending and unknown", () => {
 
     expect(await world.money.holdApproved(deliverableId, orderId)).toEqual({ ok: true, hold: { state } });
 
-    expect((await jobs()).map((job) => job.name)).toContain("check_attempt");
     expect(await prisma.payPalCall.findMany({ where: { purpose: "authorize_order" } })).toMatchObject([{ status: "started" }]);
     expect(await world.money.startHold(deliverableId)).toEqual({ ok: false, reason: "attempt_in_progress" });
   });
@@ -233,5 +238,249 @@ describe("MP-BR-11 and MP-BR-14 what is kept", () => {
     const kept = JSON.stringify([row.state, await prisma.moneyRecord.findMany(), await prisma.job.findMany(), await world.money.view(deliverableId)]);
 
     expect(kept).not.toContain("creator@example.com");
+  });
+});
+
+/** A deliverable whose brand approved in PayPal, with PayPal misbehaving once on the hold. Approved at 09:05. */
+async function approvedWith(world: World, misbehaviour: "pending" | "timeout_after" | "timeout_before") {
+  const deliverableId = await agreedDeliverable(world);
+  const orderId = await approvedInPayPal(world, deliverableId);
+  world.timeIs("2026-10-10T09:05:00Z");
+  world.paypal.next("authorizeOrder", misbehaviour);
+  await world.money.holdApproved(deliverableId, orderId);
+  return { deliverableId, orderId };
+}
+
+const callsTo = (world: World, method: string) => world.paypal.calls.filter((call) => call.method === method);
+
+describe("MP-FR-05 closed", () => {
+  test("closing PayPal without approving holds nothing, and the brand can start again", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    const started = await world.money.startHold(deliverableId);
+    if (!started.ok) throw new Error("the hold was not started");
+
+    expect(await world.money.holdClosed(deliverableId, started.orderId)).toEqual({ ok: true, hold: { state: "closed" } });
+    expect(world.paypal.holds()).toHaveLength(0);
+    expect(await world.money.startHold(deliverableId)).toMatchObject({ ok: true });
+  });
+
+  test("an order id that is not this deliverable's is refused", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    await world.money.startHold(deliverableId);
+
+    expect(await world.money.holdClosed(deliverableId, "ORDER-OTHER")).toEqual({ ok: false, reason: "wrong_order" });
+  });
+});
+
+describe("MP-FR-38 following up a call PayPal did not clearly answer", () => {
+  test("a pending hold that PayPal then approves becomes held", async () => {
+    const world = setUp();
+    const { deliverableId, orderId } = await approvedWith(world, "pending");
+    world.paypal.settlePending(orderId, "held");
+
+    world.timeIs("2026-10-10T09:06:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", hold: { state: "held", heldAt: at("2026-10-10T09:06:00Z") } });
+    expect(await prisma.payPalCall.findMany({ where: { purpose: "authorize_order" } })).toMatchObject([{ status: "settled" }]);
+    expect((await jobs()).map((job) => job.name)).toEqual(expect.arrayContaining(["deadline", "day_28"]));
+  });
+
+  test("a pending hold that PayPal then declines is declined", async () => {
+    const world = setUp();
+    const { deliverableId, orderId } = await approvedWith(world, "pending");
+    world.paypal.settlePending(orderId, "declined");
+
+    world.timeIs("2026-10-10T09:06:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "not_held", hold: { state: "declined" } });
+  });
+
+  test("a hold PayPal made but never answered for is found, not made again", async () => {
+    const world = setUp();
+    const { deliverableId } = await approvedWith(world, "timeout_after");
+
+    world.timeIs("2026-10-10T09:06:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held" });
+    expect(world.paypal.holds()).toHaveLength(1);
+    expect(callsTo(world, "authorizeOrder")).toHaveLength(1);
+  });
+
+  test("a request PayPal never received is sent again under the same request id, and holds once (MP-BR-06)", async () => {
+    const world = setUp();
+    const { deliverableId } = await approvedWith(world, "timeout_before");
+
+    world.timeIs("2026-10-10T09:06:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held" });
+    expect(world.paypal.holds()).toHaveLength(1);
+    const sent = callsTo(world, "authorizeOrder");
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.requestId).toBe(sent[0]!.requestId!);
+  });
+
+  test("while PayPal still has no answer, it is asked again later, waiting longer each time", async () => {
+    const world = setUp();
+    await approvedWith(world, "pending");
+    const followUpAt = async () =>
+      (await prisma.job.findMany({ where: { name: "follow_up", status: "pending" }, orderBy: { runAt: "desc" } }))[0]!.runAt;
+
+    world.timeIs("2026-10-10T09:06:00Z");
+    await world.runJobs();
+    const second = await followUpAt();
+    world.timeIs(second.toISOString());
+    await world.runJobs();
+    const third = await followUpAt();
+
+    expect(second.getTime()).toBeGreaterThan(at("2026-10-10T09:06:00Z").getTime());
+    expect(third.getTime() - second.getTime()).toBeGreaterThan(second.getTime() - at("2026-10-10T09:06:00Z").getTime());
+    expect(callsTo(world, "authorizeOrder")).toHaveLength(1);
+  });
+
+  test("an order PayPal did not clearly create is found under the same request id", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    world.paypal.next("createOrder", "timeout_after");
+    await world.money.startHold(deliverableId);
+
+    world.timeIs("2026-10-10T09:01:00Z");
+    await world.runJobs();
+
+    const created = callsTo(world, "createOrder");
+    expect(created).toHaveLength(2);
+    expect(created[1]!.requestId).toBe(created[0]!.requestId!);
+    expect(await prisma.payPalCall.findMany({ where: { purpose: "create_order" } })).toMatchObject([
+      { status: "settled", reference: expect.any(String) },
+    ]);
+  });
+
+  test("a call left started by a crash is followed up, because its job was written with it (MP-BR-07)", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    // The service stops between recording the call and hearing from PayPal.
+    const createOrder = world.paypal.createOrder.bind(world.paypal);
+    let crashed = false;
+    world.paypal.createOrder = async (input) => {
+      if (!crashed) {
+        crashed = true;
+        throw new Error("the service stopped");
+      }
+      return createOrder(input);
+    };
+    await world.money.startHold(deliverableId).catch(() => {});
+    expect(await prisma.payPalCall.findMany()).toMatchObject([{ purpose: "create_order", status: "started" }]);
+
+    world.timeIs("2026-10-10T09:01:00Z");
+    await world.runJobs();
+
+    expect(await prisma.payPalCall.findMany()).toMatchObject([{ purpose: "create_order", status: "settled" }]);
+  });
+
+  test("a follow-up for a call that was answered in time does nothing", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    const orderId = await approvedInPayPal(world, deliverableId);
+    await world.money.holdApproved(deliverableId, orderId);
+    const before = world.paypal.calls.length;
+
+    world.timeIs("2026-10-10T10:00:00Z");
+    await world.runJobs();
+
+    expect(world.paypal.calls).toHaveLength(before);
+    expect(await prisma.job.count({ where: { name: "follow_up", status: "done" } })).toBe(2);
+  });
+});
+
+describe("MP-FR-07 a stuck attempt", () => {
+  test("an attempt PayPal has not answered after 24 hours is declined, and the brand can start again", async () => {
+    const world = setUp();
+    const { deliverableId } = await approvedWith(world, "pending");
+
+    world.timeIs("2026-10-11T09:05:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "not_held", hold: { state: "declined" } });
+    expect(await world.money.startHold(deliverableId)).toMatchObject({ ok: true });
+  });
+
+  test("if PayPal holds the money after the attempt was given up, the hold is given back", async () => {
+    const world = setUp();
+    const { deliverableId, orderId } = await approvedWith(world, "pending");
+    world.timeIs("2026-10-11T09:05:00Z");
+    await world.runJobs();
+
+    // PayPal finishes its review late and holds the money.
+    world.paypal.settlePending(orderId, "held");
+    world.timeIs("2026-10-11T12:00:00Z");
+    await world.runJobs();
+
+    expect(world.paypal.holds()).toMatchObject([{ status: "ended" }]);
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "not_held", hold: { state: "declined" } });
+    expect(await prisma.payPalCall.findMany({ where: { purpose: "cancel_attempt" } })).toMatchObject([{ status: "settled" }]);
+  });
+
+  test("an attempt that was held in the meantime is left alone", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    const orderId = await approvedInPayPal(world, deliverableId);
+    await world.money.holdApproved(deliverableId, orderId);
+
+    world.timeIs("2026-10-11T09:05:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held" });
+    expect(world.paypal.holds()).toMatchObject([{ status: "in_place" }]);
+  });
+});
+
+describe("MP-FR-08 never held", () => {
+  test("a deliverable with no hold 7 days after the brand agreed is closed, and no hold can be started", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+
+    world.timeIs("2026-10-17T08:00:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "closed_not_held" });
+    expect(await world.money.startHold(deliverableId)).toEqual({ ok: false, reason: "closed_not_held" });
+  });
+
+  test("a held deliverable is left alone", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    const orderId = await approvedInPayPal(world, deliverableId);
+    await world.money.holdApproved(deliverableId, orderId);
+
+    world.timeIs("2026-10-17T08:00:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held" });
+  });
+
+  test("it waits while PayPal has not answered an approved attempt, and tries again later", async () => {
+    const world = setUp();
+    world.timeIs("2026-10-10T08:00:00Z");
+    const deliverableId = await agreedDeliverable(world);
+    // Approved in the last minutes before the 7 days are up.
+    world.timeIs("2026-10-17T07:58:00Z");
+    const started = await world.money.startHold(deliverableId);
+    if (!started.ok) throw new Error("the hold was not started");
+    world.paypal.brandApproves(started.orderId);
+    world.paypal.next("authorizeOrder", "pending");
+    await world.money.holdApproved(deliverableId, started.orderId);
+
+    world.timeIs("2026-10-17T08:00:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "not_held", hold: { state: "pending" } });
+    expect(await prisma.job.findMany({ where: { name: "never_held" } })).toMatchObject([
+      { status: "pending", failures: 0, runAt: at("2026-10-17T09:00:00Z") },
+    ]);
   });
 });
