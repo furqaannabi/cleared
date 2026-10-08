@@ -6,14 +6,13 @@
  * recorded as started with a job to follow it up, all in one transaction. PayPal is then called with no
  * transaction open. The answer, the change it causes and any job that follows are recorded together in a
  * second transaction. A crash in between leaves a started call, and its follow-up job finishes it.
- *
- * Not built here yet: the webhook route (MP-FR-35 to MP-FR-37, MP-FR-39).
  */
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import { enqueue, type JobHandlers } from "../jobs/jobs";
 import type { AuthorizeResult, PayPalPort } from "../paypal/port";
 import { decodeState, encodeState } from "./codec";
 import { awaitingPayPal } from "./outcomes";
+import { everyReference, readEvent, relatedIds, text, type PayPalEvent } from "./paypal-events";
 import type { PublishedPostPort } from "./published-post";
 import {
   defaultSettings,
@@ -38,7 +37,15 @@ export interface MoneyDeps {
   settings?: MoneySettings;
   /** Makes ids for attempts, captures, payouts and confirmations. */
   newId?: () => string;
+  /** Told about things worth a person's eye, with ids only. */
+  log?: (message: string, details: Record<string, unknown>) => void;
 }
+
+/**
+ * What became of a delivery from PayPal. rejected: PayPal did not confirm it sent it. duplicate: already
+ * acted on. ignored: it fitted no allowed change. Everything but rejected is acknowledged.
+ */
+export type WebhookResult = "rejected" | "duplicate" | "handled" | "ignored";
 
 /** Why the module would not do something: one of the rules' reasons, or one of its own. */
 export type MoneyRefusal = Refusal | "unknown_deliverable" | "paypal_unclear";
@@ -135,7 +142,7 @@ export function createMoney(deps: MoneyDeps) {
     event: MoneyEvent,
     cause: Cause,
     settle?: { callId: string; reference?: string },
-  ): Promise<{ ok: true; started: Call[] } | Refused> {
+  ): Promise<{ ok: true; started: Call[]; changed: boolean } | Refused> {
     return prisma.$transaction(async (tx) => {
       const [row] = await tx.$queryRaw<{ state: unknown }[]>`
         SELECT "state" FROM "DeliverableMoney" WHERE "deliverableId" = ${deliverableId} FOR UPDATE`;
@@ -145,7 +152,7 @@ export function createMoney(deps: MoneyDeps) {
       const before = decodeState(row.state);
       const first = transition(before, event, settings);
       if (!first.ok) return first;
-      if (first.state === before && first.effects.length === 0) return { ok: true, started: [] };
+      if (first.state === before && first.effects.length === 0) return { ok: true, started: [], changed: false };
 
       let state = first.state;
       const record = (entry: { kind: string; name: string; reference?: string; details?: Prisma.InputJsonObject }) =>
@@ -197,7 +204,7 @@ export function createMoney(deps: MoneyDeps) {
         where: { deliverableId },
         data: { state: encodeState(state), stage: state.stage, version: { increment: 1 } },
       });
-      return { ok: true, started };
+      return { ok: true, started, changed: true };
     });
   }
 
@@ -247,11 +254,175 @@ export function createMoney(deps: MoneyDeps) {
     return { ok: true, tried };
   }
 
-  /** Applies PayPal's answer to a call, settling the call in the same transaction, and carries on from it. */
-  async function answered(call: Call, event: MoneyEvent, reference?: string): Promise<void> {
-    const applied = await apply(call.deliverableId, event, "paypal", { callId: call.id, reference });
-    if (!applied.ok) return;
+  /** Applies what PayPal said, settling the call it answers in the same transaction, and carries on from it. */
+  async function carryOn(
+    deliverableId: string,
+    event: MoneyEvent,
+    cause: Cause,
+    settle?: { callId: string; reference?: string },
+  ): Promise<boolean> {
+    const applied = await apply(deliverableId, event, cause, settle);
+    if (!applied.ok) return false;
     for (const next of applied.started) await attempt(next, false);
+    return applied.changed;
+  }
+
+  /** Applies PayPal's answer to a call the module made. */
+  async function answered(call: Call, event: MoneyEvent, reference?: string): Promise<void> {
+    await carryOn(call.deliverableId, event, "paypal", { callId: call.id, reference });
+  }
+
+  /**
+   * Acts on a verified event (MP-FR-37). It goes through the same rules as the module's own calls, so it
+   * can settle what PayPal had not answered and can never reverse a finished stage. An event that fits
+   * nothing is ignored.
+   */
+  async function onEvent(event: PayPalEvent): Promise<{ outcome: "handled" | "ignored"; deliverableId?: string }> {
+    const { resource } = event;
+    const type = event.event_type;
+    const related = relatedIds(resource);
+    const at = now();
+    const outcome = (deliverableId: string, changed: boolean) =>
+      ({ outcome: changed ? "handled" : "ignored", deliverableId }) as const;
+
+    if (type === "PAYMENT.AUTHORIZATION.CREATED") {
+      const reference = text(resource.id);
+      if (!reference || resource.status !== "CREATED" || !related.orderId) return { outcome: "ignored" };
+      const order = await prisma.payPalCall.findFirst({ where: { purpose: "create_order", reference: related.orderId } });
+      if (!order) return { outcome: "ignored" };
+      const call = await findCall(order.deliverableId, "authorize_order", order.subjectId);
+      const changed = await carryOn(
+        order.deliverableId,
+        { type: "authorize_answered", attemptId: order.subjectId, outcome: "held", reference, at },
+        "webhook",
+        call ? { callId: call.id, reference } : undefined,
+      );
+      return outcome(order.deliverableId, changed);
+    }
+
+    if (type === "PAYMENT.AUTHORIZATION.VOIDED") {
+      const reference = text(resource.id);
+      const known = reference ? await prisma.payPalCall.findFirst({ where: { reference } }) : null;
+      if (!reference || !known) return { outcome: "ignored" };
+      const state = await readState(known.deliverableId);
+      // Only a release Cleared itself asked for is confirmed here. A hold that ended any other way is
+      // found the next time it is read, when the creator asks for the go-ahead.
+      const releasing = state?.release && !state.release.confirmedAt && state.hold?.reference === reference;
+      if (!releasing) return outcome(known.deliverableId, false);
+      const cancel = await findCall(known.deliverableId, "cancel_hold", reference);
+      const changed = await carryOn(
+        known.deliverableId,
+        { type: "hold_cancel_answered", outcome: "cancelled", at },
+        "webhook",
+        cancel ? { callId: cancel.id, reference } : undefined,
+      );
+      return outcome(known.deliverableId, changed);
+    }
+
+    if (type === "PAYMENT.CAPTURE.COMPLETED" || type === "PAYMENT.CAPTURE.DENIED") {
+      const captureReference = text(resource.id);
+      const held = related.authorizationId
+        ? await prisma.payPalCall.findFirst({ where: { reference: related.authorizationId } })
+        : null;
+      if (!captureReference || !held) return { outcome: "ignored" };
+      const state = await readState(held.deliverableId);
+      const capture = state?.capture;
+      if (!state?.hold || capture?.status !== "started") return outcome(held.deliverableId, false);
+      const call = await findCall(held.deliverableId, "capture_hold", capture.id);
+      // The hold may have been renewed on the way to this capture, before the module heard of it.
+      const renewedReference = related.authorizationId !== state.hold.reference ? related.authorizationId : undefined;
+      const completed = type === "PAYMENT.CAPTURE.COMPLETED";
+      const changed = await carryOn(
+        held.deliverableId,
+        completed
+          ? { type: "capture_answered", captureId: capture.id, outcome: "completed", reference: captureReference, renewedReference, at }
+          : { type: "capture_answered", captureId: capture.id, outcome: "refused", renewedReference, at },
+        "webhook",
+        call ? { callId: call.id, reference: completed ? captureReference : undefined } : undefined,
+      );
+      return outcome(held.deliverableId, changed);
+    }
+
+    if (type === "PAYMENT.CAPTURE.REFUNDED" || type === "PAYMENT.CAPTURE.REVERSED" || type === "CUSTOMER.DISPUTE.CREATED") {
+      // Money taken back after a capture (MP-FR-39): recorded and put in front of a person. Nothing is moved.
+      const references = everyReference(resource);
+      const known = references.length ? await prisma.payPalCall.findFirst({ where: { reference: { in: references } } }) : null;
+      const state = known ? await readState(known.deliverableId) : undefined;
+      if (!known || !state) return { outcome: "ignored" };
+      const entry = { deliverableId: known.deliverableId, at, cause: "webhook", stage: state.stage };
+      await prisma.$transaction([
+        prisma.moneyRecord.create({ data: { ...entry, kind: "paypal_event", name: type, reference: known.reference } }),
+        prisma.moneyRecord.create({ data: { ...entry, kind: "notice", name: "money_taken_back", details: { to: "cleared" } } }),
+      ]);
+      return outcome(known.deliverableId, true);
+    }
+
+    const payoutResult = /^PAYMENT\.PAYOUTS-ITEM\.([A-Z]+)$/.exec(type)?.[1];
+    if (payoutResult) {
+      const batch = text(resource.payout_batch_id);
+      const sending = batch ? await prisma.payPalCall.findFirst({ where: { purpose: "send_payout", reference: batch } }) : null;
+      if (!sending) return { outcome: "ignored" };
+      const { deliverableId, subjectId: payoutId } = sending;
+      const payout = (await readState(deliverableId))?.payout;
+      if (payout?.id !== payoutId) return outcome(deliverableId, false);
+      switch (payoutResult) {
+        case "SUCCEEDED": {
+          const reference = text(resource.payout_item_id) ?? sending.reference ?? payoutId;
+          const event: MoneyEvent = { type: "payout_answered", payoutId, outcome: "succeeded", reference, at };
+          return outcome(deliverableId, await carryOn(deliverableId, event, "webhook", { callId: sending.id }));
+        }
+        case "UNCLAIMED": {
+          if (payout.status !== "sending") return outcome(deliverableId, false);
+          const applied = await apply(deliverableId, { type: "payout_answered", payoutId, outcome: "unclaimed", at }, "webhook");
+          return outcome(deliverableId, applied.ok && applied.changed);
+        }
+        case "FAILED":
+        case "RETURNED":
+        case "REFUNDED":
+        case "BLOCKED":
+        case "DENIED": {
+          // While it is being cancelled, the cancellation's own answer decides what happens next.
+          if (payout.status === "cancelling") return outcome(deliverableId, false);
+          const ended = ({ FAILED: "failed", RETURNED: "returned", REFUNDED: "returned", BLOCKED: "blocked", DENIED: "denied" } as const)[payoutResult];
+          const event: MoneyEvent = { type: "payout_answered", payoutId, outcome: ended, at };
+          return outcome(deliverableId, await carryOn(deliverableId, event, "webhook", { callId: sending.id }));
+        }
+        default:
+          return outcome(deliverableId, false);
+      }
+    }
+
+    return { outcome: "ignored" };
+  }
+
+  /**
+   * A delivery from PayPal (MP-FR-35, MP-FR-36). It is verified with PayPal before anything else, stored
+   * under its event id, and acted on once. A delivery stored but never finished is acted on when PayPal
+   * sends it again.
+   */
+  async function webhook(delivery: { headers: Record<string, string>; body: string }): Promise<WebhookResult> {
+    if (!(await paypal.verifyWebhook(delivery))) return "rejected";
+    const event = readEvent(delivery.body);
+    if (!event) return "ignored";
+    const seen = await prisma.payPalEvent.findUnique({ where: { id: event.id } });
+    if (seen?.status === "done") return "duplicate";
+    if (!seen) {
+      try {
+        await prisma.payPalEvent.create({ data: { id: event.id, type: event.event_type, receivedAt: now() } });
+      } catch {
+        // Delivered twice at the same moment: the other delivery stored it and is acting on it.
+        return "duplicate";
+      }
+    }
+    const acted = await onEvent(event);
+    await prisma.payPalEvent.update({
+      where: { id: event.id },
+      data: { status: "done", outcome: acted.outcome, deliverableId: acted.deliverableId },
+    });
+    if (acted.outcome === "ignored") {
+      deps.log?.("A PayPal event fitted no allowed change and was ignored", { id: event.id, type: event.event_type });
+    }
+    return acted.outcome;
   }
 
   async function readState(deliverableId: string): Promise<MoneyState | undefined> {
@@ -699,6 +870,9 @@ export function createMoney(deps: MoneyDeps) {
     },
 
     handlers,
+
+    /** A delivery from PayPal: verified, stored under its event id, and acted on once (MP-FR-35 to MP-FR-37, MP-FR-39). */
+    webhook,
   };
 }
 

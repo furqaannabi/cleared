@@ -18,6 +18,7 @@ beforeEach(async () => {
   await prisma.payPalCall.deleteMany();
   await prisma.deliverableMoney.deleteMany();
   await prisma.job.deleteMany();
+  await prisma.payPalEvent.deleteMany();
 });
 
 /** A money module with a fake PayPal and a clock the test moves by hand. */
@@ -719,8 +720,8 @@ async function published(world: World, id = "del_1") {
 }
 
 /** A deliverable captured at 09:40 on 16 October, with its payout sent and not yet reported on. */
-async function captured(world: World) {
-  const deliverableId = await published(world);
+async function captured(world: World, id = "del_1") {
+  const deliverableId = await published(world, id);
   await world.money.liveCheckResult(deliverableId, "passed");
   return deliverableId;
 }
@@ -1181,5 +1182,258 @@ describe("MP-FR-40 the money view", () => {
       status: { reason: "payout_unclaimed", next: { who: "creator", step: "accept_payout" } },
       payout: { status: "unclaimed", canSendAgain: true },
     });
+  });
+});
+
+let nextEvent = 0;
+/** Delivers an event the way PayPal would: signed by the fake PayPal, through the module's webhook. */
+function deliver(world: World, event_type: string, resource: Record<string, unknown>, id = `WH-${++nextEvent}`) {
+  return world.money.webhook(world.paypal.webhook({ id, event_type, resource }));
+}
+
+const recordOf = async (kind: string) =>
+  (await prisma.moneyRecord.findMany({ where: { kind }, orderBy: { id: "asc" } })).map((entry) => entry.name);
+
+describe("MP-FR-35 verifying a webhook", () => {
+  test("an event PayPal did not send is rejected, and nothing is stored or changed", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    const forged = {
+      headers: { "paypal-transmission-sig": "made-up" },
+      body: JSON.stringify({
+        id: "WH-forged",
+        event_type: "PAYMENT.PAYOUTS-ITEM.SUCCEEDED",
+        resource: { payout_batch_id: payoutReference(world), payout_item_id: "ITEM-1" },
+      }),
+    };
+
+    expect(await world.money.webhook(forged)).toBe("rejected");
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured" });
+    expect(await prisma.payPalEvent.count()).toBe(0);
+  });
+
+  test("an event PayPal sent whose content has been changed on the way is rejected", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    const real = world.paypal.webhook({
+      id: "WH-1",
+      event_type: "PAYMENT.PAYOUTS-ITEM.FAILED",
+      resource: { payout_batch_id: payoutReference(world), payout_item_id: "ITEM-1" },
+    });
+
+    expect(await world.money.webhook({ headers: real.headers, body: real.body.replace("FAILED", "SUCCEEDED") })).toBe("rejected");
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured" });
+  });
+});
+
+describe("MP-FR-36 each event is acted on once", () => {
+  test("the same event delivered twice is acknowledged the second time and changes nothing more", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    const resource = { payout_batch_id: payoutReference(world), payout_item_id: "ITEM-1" };
+
+    expect(await deliver(world, "PAYMENT.PAYOUTS-ITEM.SUCCEEDED", resource, "WH-same")).toBe("handled");
+    expect(await deliver(world, "PAYMENT.PAYOUTS-ITEM.SUCCEEDED", resource, "WH-same")).toBe("duplicate");
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "paid" });
+    expect((await recordOf("event")).filter((name) => name === "payout_answered")).toHaveLength(1);
+    expect(await prisma.payPalEvent.findMany()).toMatchObject([
+      { id: "WH-same", type: "PAYMENT.PAYOUTS-ITEM.SUCCEEDED", status: "done", outcome: "handled", deliverableId },
+    ]);
+  });
+
+  test("an event that was stored but not finished is acted on when PayPal delivers it again", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    // The service stopped after storing the event and before acting on it.
+    await prisma.payPalEvent.create({
+      data: { id: "WH-cut-short", type: "PAYMENT.PAYOUTS-ITEM.SUCCEEDED", receivedAt: at("2026-10-16T09:41:00Z") },
+    });
+
+    const again = await deliver(
+      world,
+      "PAYMENT.PAYOUTS-ITEM.SUCCEEDED",
+      { payout_batch_id: payoutReference(world), payout_item_id: "ITEM-1" },
+      "WH-cut-short",
+    );
+
+    expect(again).toBe("handled");
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "paid" });
+  });
+});
+
+describe("MP-FR-37 what an event can do", () => {
+  test("it settles a hold PayPal was still reviewing, without waiting for the follow-up", async () => {
+    const world = setUp();
+    const { deliverableId, orderId } = await approvedWith(world, "pending");
+    world.paypal.settlePending(orderId, "held");
+    const reference = holdReference(world)!;
+
+    world.timeIs("2026-10-10T09:05:30Z");
+    const result = await deliver(world, "PAYMENT.AUTHORIZATION.CREATED", {
+      id: reference,
+      status: "CREATED",
+      supplementary_data: { related_ids: { order_id: orderId } },
+    });
+
+    expect(result).toBe("handled");
+    expect(await world.money.view(deliverableId)).toMatchObject({
+      stage: "held",
+      hold: { state: "held", reference, heldAt: at("2026-10-10T09:05:30Z") },
+    });
+    expect(await prisma.payPalCall.findMany({ where: { purpose: "authorize_order" } })).toMatchObject([
+      { status: "settled", reference },
+    ]);
+    expect((await prisma.moneyRecord.findMany({ where: { name: "authorize_answered" } })).at(-1)).toMatchObject({ cause: "webhook" });
+  });
+
+  // One test per result: a fake PayPal numbers its references from the start each time, and real ones never repeat.
+  test("it reports a payout as paid", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+
+    await deliver(world, "PAYMENT.PAYOUTS-ITEM.SUCCEEDED", { payout_batch_id: payoutReference(world), payout_item_id: "ITEM-1" });
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "paid", payout: { status: "paid", reference: "ITEM-1" } });
+  });
+
+  test("it reports a payout as unclaimed", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+
+    await deliver(world, "PAYMENT.PAYOUTS-ITEM.UNCLAIMED", { payout_batch_id: payoutReference(world), payout_item_id: "ITEM-1" });
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", payout: { status: "unclaimed" } });
+    expect(await notices()).toContainEqual({ about: "payout_unclaimed", to: "creator" });
+  });
+
+  test("it reports a payout as failed", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+
+    await deliver(world, "PAYMENT.PAYOUTS-ITEM.FAILED", { payout_batch_id: payoutReference(world), payout_item_id: "ITEM-1" });
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", payout: { status: "failed", why: "failed" } });
+  });
+
+  test("it settles a capture PayPal never answered for, and the payout follows", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    const reference = holdReference(world)!;
+    world.paypal.next("captureHold", "timeout_after");
+    await world.money.liveCheckResult(deliverableId, "passed");
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", capture: { status: "started" } });
+
+    const result = await deliver(world, "PAYMENT.CAPTURE.COMPLETED", {
+      id: "CAPTURE-FROM-EVENT",
+      status: "COMPLETED",
+      supplementary_data: { related_ids: { authorization_id: reference } },
+    });
+
+    expect(result).toBe("handled");
+    expect(await world.money.view(deliverableId)).toMatchObject({
+      stage: "captured",
+      capture: { status: "completed", reference: "CAPTURE-FROM-EVENT" },
+      payout: { status: "sending" },
+    });
+    expect(world.paypal.capturedCents()).toBe(120_000);
+    expect(world.paypal.payouts()).toHaveLength(1);
+  });
+
+  test("it confirms a release PayPal had not answered for", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    const reference = holdReference(world)!;
+    // PayPal ends the hold, but its answer is lost on the way back.
+    const cancelHold = world.paypal.cancelHold.bind(world.paypal);
+    world.paypal.cancelHold = async (held) => {
+      await cancelHold(held);
+      return "unknown";
+    };
+    world.timeIs("2026-10-12T10:00:00Z");
+    await world.money.cancel(deliverableId, "brand");
+    expect((await world.money.view(deliverableId))?.release).not.toHaveProperty("confirmedAt");
+
+    world.timeIs("2026-10-12T10:00:20Z");
+    await deliver(world, "PAYMENT.AUTHORIZATION.VOIDED", { id: reference, status: "VOIDED" });
+
+    expect((await world.money.view(deliverableId))?.release).toMatchObject({
+      reason: "cancelled",
+      confirmedAt: at("2026-10-12T10:00:20Z"),
+    });
+  });
+
+  test("it can never reverse a finished stage", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    const resource = { payout_batch_id: payoutReference(world), payout_item_id: "ITEM-1" };
+    await deliver(world, "PAYMENT.PAYOUTS-ITEM.SUCCEEDED", resource);
+    const before = await prisma.moneyRecord.count();
+
+    await deliver(world, "PAYMENT.PAYOUTS-ITEM.RETURNED", resource);
+    await deliver(world, "PAYMENT.PAYOUTS-ITEM.FAILED", resource);
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "paid", payout: { status: "paid" } });
+    expect(await prisma.moneyRecord.count()).toBe(before);
+  });
+
+  test.each<[string, string, Record<string, unknown>]>([
+    ["a kind of event this code does not act on", "BILLING.SUBSCRIPTION.CREATED", { id: "SUB-1" }],
+    ["an event about a payout that is not Cleared's", "PAYMENT.PAYOUTS-ITEM.SUCCEEDED", { payout_batch_id: "NOT-OURS", payout_item_id: "ITEM-9" }],
+    ["an event about a hold that is not Cleared's", "PAYMENT.AUTHORIZATION.CREATED", { id: "AUTH-NOT-OURS", status: "CREATED", supplementary_data: { related_ids: { order_id: "ORDER-NOT-OURS" } } }],
+    ["an event with nothing in it", "PAYMENT.CAPTURE.COMPLETED", {}],
+  ])("%s is stored as ignored and changes nothing", async (_, type, resource) => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    const before = await prisma.moneyRecord.count();
+
+    expect(await deliver(world, type, resource, "WH-odd")).toBe("ignored");
+
+    expect(await prisma.payPalEvent.findMany()).toMatchObject([{ id: "WH-odd", type, status: "done", outcome: "ignored" }]);
+    expect(await prisma.moneyRecord.count()).toBe(before);
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured" });
+  });
+
+  test("a verified delivery that is not an event at all is ignored", async () => {
+    const world = setUp();
+    const signed = world.paypal.webhook({ id: "", event_type: "" });
+
+    expect(await world.money.webhook(signed)).toBe("ignored");
+    expect(await prisma.payPalEvent.count()).toBe(0);
+  });
+});
+
+describe("MP-FR-39 money taken back after a capture", () => {
+  test.each(["PAYMENT.CAPTURE.REFUNDED", "PAYMENT.CAPTURE.REVERSED"])(
+    "%s is recorded and put in front of a person at Cleared, and no money is moved",
+    async (type) => {
+      const world = setUp();
+      const deliverableId = await captured(world);
+      const captureReference = (await world.money.view(deliverableId))!.capture!.reference!;
+      const callsBefore = world.paypal.calls.length;
+
+      const result = await deliver(world, type, { id: "REFUND-1", supplementary_data: { related_ids: { capture_id: captureReference } } });
+
+      expect(result).toBe("handled");
+      expect(await recordOf("paypal_event")).toEqual([type]);
+      expect(await notices()).toContainEqual({ about: "money_taken_back", to: "cleared" });
+      expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", payout: { status: "sending" } });
+      expect(world.paypal.calls).toHaveLength(callsBefore);
+    },
+  );
+
+  test("a dispute opened on a capture is treated the same way", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    const captureReference = (await world.money.view(deliverableId))!.capture!.reference!;
+
+    await deliver(world, "CUSTOMER.DISPUTE.CREATED", {
+      dispute_id: "DISPUTE-1",
+      disputed_transactions: [{ seller_transaction_id: captureReference }],
+    });
+
+    expect(await recordOf("paypal_event")).toEqual(["CUSTOMER.DISPUTE.CREATED"]);
+    expect(await notices()).toContainEqual({ about: "money_taken_back", to: "cleared" });
   });
 });
