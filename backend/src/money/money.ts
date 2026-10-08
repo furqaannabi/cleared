@@ -7,7 +7,7 @@
  * transaction open. The answer, the change it causes and any job that follows are recorded together in a
  * second transaction. A crash in between leaves a started call, and its follow-up job finishes it.
  *
- * Not built here yet: the webhook route (MP-FR-35 to MP-FR-37, MP-FR-39) and the full money view (MP-FR-40).
+ * Not built here yet: the webhook route (MP-FR-35 to MP-FR-37, MP-FR-39).
  */
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import { enqueue, type JobHandlers } from "../jobs/jobs";
@@ -26,7 +26,7 @@ import {
   type MoneyTerms,
   type Refusal,
 } from "./transition";
-import { moneyView, type GoAheadView, type HoldView, type MoneyView } from "./view";
+import { moneyView, type CreatorMoneyView, type GoAheadView, type HoldView, type MoneyView } from "./view";
 
 export interface MoneyDeps {
   prisma: PrismaClient;
@@ -686,7 +686,18 @@ export function createMoney(deps: MoneyDeps) {
       await prisma.deliverableMoney.update({ where: { deliverableId }, data: { payoutEmail } });
     },
 
+    /** How a deliverable's money stands. It never holds the creator's PayPal email (MP-FR-40, MP-BR-14). */
     view,
+
+    /** The creator's own view: the same, with the PayPal email their payout goes to. Never shown to the brand. */
+    async creatorView(deliverableId: string): Promise<CreatorMoneyView | undefined> {
+      const row = await prisma.deliverableMoney.findUnique({
+        where: { deliverableId },
+        select: { state: true, payoutEmail: true },
+      });
+      return row ? { ...moneyView(decodeState(row.state)), payoutEmail: row.payoutEmail } : undefined;
+    },
+
     handlers,
   };
 }

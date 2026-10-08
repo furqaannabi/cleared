@@ -156,6 +156,8 @@ describe("MP-FR-03 and MP-FR-04 approved and held", () => {
         heldAt: at("2026-10-10T09:05:10Z"),
         // 23:59 in Lagos on 24 October, 14 days after the hold.
         deadlineAt: at("2026-10-24T22:59:00Z"),
+        guaranteeEndsAt: at("2026-10-13T09:05:10Z"),
+        day28At: at("2026-11-07T09:05:10Z"),
       },
     });
     expect(world.paypal.holds()).toMatchObject([{ amountCents: 120_000, status: "in_place" }]);
@@ -672,7 +674,7 @@ describe("MP-FR-15 when a go-ahead runs out", () => {
     world.timeIs("2026-10-17T10:00:00Z");
     await world.runJobs();
 
-    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", goAhead: { state: "none" }, publishedAt: null });
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", goAhead: { state: "ended" }, publishedAt: null });
   });
 
   test("with a post published, the go-ahead is kept and the publication is recorded", async () => {
@@ -738,8 +740,7 @@ describe("MP-FR-16 and MP-FR-17 published, and the live check passed", () => {
       stage: "captured",
       approval: { by: "live_check" },
       capture: { status: "completed", reference: expect.any(String) },
-      feeCents: 6_000,
-      payoutCents: 114_000,
+      amounts: { amount: "1200.00", fee: "60.00", payout: "1140.00", currency: "USD" },
       payout: { status: "sending" },
     });
   });
@@ -1153,5 +1154,32 @@ describe("MP-FR-16 what the module knows of a post until the live check exists",
     await world.money.postPublished(deliverableId, at("2026-10-16T09:30:00Z"));
 
     expect(await posts.publishedAt(deliverableId)).toEqual(at("2026-10-16T09:30:00Z"));
+  });
+});
+
+describe("MP-FR-40 the money view", () => {
+  test("the creator's view carries their PayPal email; the view everyone else gets never does (MP-BR-14)", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+
+    const forCreator = await world.money.creatorView(deliverableId);
+    const forBrand = await world.money.view(deliverableId);
+
+    expect(forCreator).toMatchObject({ payoutEmail: "creator@example.com", stage: "captured" });
+    expect(JSON.stringify(forBrand)).not.toContain("creator@example.com");
+    expect(forBrand).not.toHaveProperty("payoutEmail");
+  });
+
+  test("it says why the creator is not paid yet and what happens next (MP-BR-15)", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    world.paypal.payoutEnds(payoutReference(world), "unclaimed");
+    world.timeIs("2026-10-16T09:41:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({
+      status: { reason: "payout_unclaimed", next: { who: "creator", step: "accept_payout" } },
+      payout: { status: "unclaimed", canSendAgain: true },
+    });
   });
 });

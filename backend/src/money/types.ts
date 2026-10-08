@@ -120,6 +120,8 @@ export interface Closed {
  */
 export type GoAhead =
   | { status: "none" }
+  /** A go-ahead ran out with nothing published. The creator asks again (MP-FR-15). */
+  | { status: "ended" }
   | { status: "confirming"; confirmId: string }
   | { status: "running"; until: Date }
   /** Too little of PayPal's guarantee is left, and it cannot be renewed before `until` (MP-FR-13). */

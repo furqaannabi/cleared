@@ -550,7 +550,8 @@ describe("MP-FR-15 when a go-ahead runs out", () => {
   test("with no post published, the go-ahead ends and the creator must ask again", () => {
     const ended = after(running(), endsDue(null));
 
-    expect(ended).toMatchObject({ stage: "held", goAhead: { status: "none" }, publishedAt: null });
+    // "ended", not "none", so the creator's page can say a go-ahead ran out and was not simply never asked for.
+    expect(ended).toMatchObject({ stage: "held", goAhead: { status: "ended" }, publishedAt: null });
     // The renewed guarantee has 24 hours left, which is inside the margin, and PayPal cannot renew it yet (MP-FR-13).
     expect(transition(ended, askGoAhead("2026-10-17T11:00:00Z", "conf_2"))).toMatchObject({
       ok: true,

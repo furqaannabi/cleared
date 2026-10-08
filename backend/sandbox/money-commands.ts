@@ -205,6 +205,11 @@ function describe(view: MoneyView): string[] {
       ? `Hold: held, PayPal ref ${hold.reference}, post by ${time(hold.deadlineAt)}`
       : `Hold: ${hold.state}${hold.state === "declined" ? " (PayPal did not hold it. If it was not approved first, start again with: hold <id>)" : ""}`,
   );
+  if (view.status) {
+    const { who, step, by, from } = view.status.next;
+    const when = by ? `, by ${time(by)}` : from ? `, from ${time(from)}` : "";
+    lines.push(`Why not paid: ${view.status.reason}. Next: ${who === "nobody" ? "nothing" : `${who}, ${step}${when}`}`);
+  }
   if (view.goAhead.state !== "none") {
     lines.push(`Go-ahead: ${view.goAhead.state}${"until" in view.goAhead ? ` until ${time(view.goAhead.until)}` : ""}`);
   }
@@ -214,8 +219,8 @@ function describe(view: MoneyView): string[] {
   }
   if (view.approval) lines.push(`Approved to pay by: ${view.approval.by}`);
   if (view.capture) lines.push(`Capture: ${view.capture.status}${view.capture.reference ? `, PayPal ref ${view.capture.reference}` : ""}`);
-  if (view.feeCents !== null && view.payoutCents !== null) {
-    lines.push(`Fee: ${dollars(view.feeCents)}   Creator's payout: ${dollars(view.payoutCents)}`);
+  if (view.amounts.fee !== null && view.amounts.payout !== null) {
+    lines.push(`Fee: $${view.amounts.fee}   Creator's payout: $${view.amounts.payout}`);
   }
   if (view.payout) {
     lines.push(`Payout: ${view.payout.status}${view.payout.why ? ` (${view.payout.why})` : ""}${view.payout.reference ? `, PayPal ref ${view.payout.reference}` : ""}`);

@@ -82,7 +82,7 @@ export function goAheadTransition(state: MoneyState, event: GoAheadEvent, settin
       if (state.goAhead.status !== "running" || event.at < state.goAhead.until) return unchanged(state);
       // A published post keeps its go-ahead, so nobody can cancel while the live check runs (MP-FR-33).
       if (event.publishedAt) return { ok: true, state: { ...state, publishedAt: event.publishedAt }, effects: [] };
-      return { ok: true, state: { ...state, goAhead: { status: "none" } }, effects: [] };
+      return { ok: true, state: { ...state, goAhead: { status: "ended" } }, effects: [] };
     }
   }
 }
