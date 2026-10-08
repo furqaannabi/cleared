@@ -1,6 +1,7 @@
 import type { Deliverable } from "@/lib/deliverable/types";
 import { resetDealDrafts } from "./deal-drafts";
 import { deliverables } from "./fixtures/deliverables";
+import { resetInvites } from "./invites";
 
 /*
  * An in-memory copy of the synthetic fixtures, so mocked changes (asking the
@@ -15,4 +16,5 @@ export const findDeliverable = (id: string) => data[id];
 export function resetMockData() {
   data = structuredClone(deliverables);
   resetDealDrafts();
+  resetInvites();
 }

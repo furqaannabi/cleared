@@ -113,7 +113,7 @@ export const dealSummarySchema = z.object({
   // One line, e.g. "Brand review · 31h left"; shown as plain text.
   status: z.string().max(120),
   // BC-FR-03: a deal still at the checklist or invite step has no deliverable to open yet.
-  step: z.enum(["checklist", "invite"]).optional(),
+  step: z.enum(["checklist", "invite", "waiting_for_brand"]).optional(),
   openDeliverableId: z.string().min(1).optional(),
   // DC-FR-33: the deal's deliverables, for the switcher.
   deliverables: z.array(
@@ -158,7 +158,7 @@ export const questionSchema = z.object({
 export const dealDraftSchema = z.object({
   id: z.string().min(1),
   brandName: z.string().min(1).max(120),
-  step: z.enum(["checklist", "invite"]),
+  step: z.enum(["checklist", "invite", "waiting_for_brand"]),
   deliverables: z.array(z.object({ id: z.string().min(1), platform })).min(1).max(10),
   brief: z.object({ lines: z.array(z.object({ number: z.number().int().positive(), text: z.string().max(2000) })) }).optional(),
   reading: z.enum(["idle", "reading", "done", "failed"]),
@@ -168,3 +168,47 @@ export const dealDraftSchema = z.object({
   ready: z.boolean(),
 });
 
+
+/** IN-BR-02: a US-dollar amount as a two-place decimal string, never a number. */
+const amount = z.string().regex(/^\d{1,7}\.\d{2}$/);
+
+/** IN-FR-04 to IN-FR-20: a deal at the invite step (provisional; creator invite FRD). */
+export const dealInviteSchema = z.object({
+  dealId: z.string().min(1),
+  brandName: z.string().min(1).max(120),
+  step: z.enum(["invite", "waiting_for_brand"]),
+  posts: z
+    .array(
+      z.object({
+        deliverableId: z.string().min(1),
+        platform,
+        // How many checklist items the post has (IN-FR-03).
+        itemCount: z.number().int().nonnegative(),
+        amount: amount.optional(),
+        // IN-BR-01: days after the hold, 1 to 21.
+        deadlineDays: z.number().int().min(1).max(21).optional(),
+        // IN-FR-06: the API's reason it turned the amount down; plain text.
+        amountProblem: z.string().min(1).max(200).optional(),
+      }),
+    )
+    .min(1)
+    .max(10),
+  brandEmail: z.email().max(254).optional(),
+  // IN-BR-04: only ever from the API, never stored by the frontend.
+  link: z
+    .object({
+      url: z.url({ protocol: /^https$/ }),
+      expiresAt: isoTime,
+      emailedTo: z.email().max(254).optional(),
+      expired: z.boolean(),
+    })
+    .optional(),
+});
+
+/** IN-FR-10, IN-FR-12: the creator's own details. Only the creator ever sees the PayPal email (IN-BR-05). */
+export const creatorProfileSchema = z.object({
+  name: z.string().min(1).max(120),
+  paypalEmail: z.email().max(254).optional(),
+  // Connected accounts only.
+  accounts: z.array(z.object({ platform: z.enum(["youtube", "instagram"]), name: z.string().min(1).max(120) })),
+});

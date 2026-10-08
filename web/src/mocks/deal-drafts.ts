@@ -7,6 +7,8 @@ import { checkedByFor, nextId, readBrief } from "./brief-reader";
 type Draft = z.infer<typeof dealDraftSchema>;
 type Stored = Draft & { readStartedAt?: number; pending?: Pick<Draft, "items" | "questions"> };
 
+const STATUS: Record<Draft["step"], string> = { checklist: "Checklist", invite: "Invite", waiting_for_brand: "Waiting for brand" };
+
 /*
  * Mock deal drafts for the brief → checklist step (BC FRD). In memory, reset
  * between tests. Reading is simulated: lines are read one by one over time,
@@ -15,15 +17,52 @@ type Stored = Draft & { readStartedAt?: number; pending?: Pick<Draft, "items" | 
 let drafts = new Map<string, Stored>();
 let msPerLine = 450;
 
+const PINE_BRIEF = [
+  "Thanks for working with Pine & Co on the Trail Flask launch.",
+  "In the YouTube video, say “Pine & Co” in the first 60 seconds.",
+  "Show the Trail Flask being filled and carried outdoors.",
+  "Say and show the code PINE15.",
+  "Put pineandco.com/ada in the YouTube description, and #PineTrail in the Reel caption.",
+  "Mark the post as a paid promotion.",
+];
+
+/**
+ * IN 1.1: a demo deal already at the invite step (checklist ready, amounts
+ * and deadlines blank), so the invite page is one click from the rail after
+ * any reload. Synthetic, like every fixture.
+ */
+function seedDemoDrafts() {
+  const deliverables: Draft["deliverables"] = [
+    { id: "del_pine_video", platform: "youtube_video" },
+    { id: "del_pine_reel", platform: "instagram_reel" },
+  ];
+  const lines = PINE_BRIEF.map((text, i) => ({ number: i + 1, text }));
+  const read = readBrief(lines, deliverables, "Pine & Co");
+  drafts.set("deal_pine", {
+    id: "deal_pine",
+    brandName: "Pine & Co",
+    step: "invite",
+    deliverables,
+    brief: { lines },
+    reading: "done",
+    readUpTo: lines.length,
+    items: read.items,
+    questions: read.questions,
+    ready: true,
+  });
+}
+seedDemoDrafts();
+
 /** How long the mock takes per brief line (0 in tests that want it instant). */
 export function setReadingSpeed(ms: number) {
   msPerLine = ms;
 }
 
-/** Clears every mock deal draft. */
+/** Clears every mock deal draft, leaving only the seeded demo deal. */
 export function resetDealDrafts() {
   drafts = new Map();
   msPerLine = 450;
+  seedDemoDrafts();
 }
 
 /** The mock deal drafts, as deal summaries for GET /deals. */
@@ -31,10 +70,15 @@ export function draftSummaries() {
   return [...drafts.values()].map((d) => ({
     id: d.id,
     brandName: d.brandName,
-    status: d.step === "invite" ? "Invite" : "Checklist",
+    status: STATUS[d.step],
     step: d.step,
     deliverables: [],
   }));
+}
+
+/** One stored deal draft, for the invite mocks (IN FRD); undefined if there is none. */
+export function findDraft(id: string): Draft | undefined {
+  return drafts.get(id);
 }
 
 /** The draft as the API returns it: reading progress applied, internals removed. */
@@ -173,6 +217,16 @@ export const dealDraftHandlers: RequestHandler[] = [
     if (!editable(d) || open || empty) return refused();
     d.ready = true;
     d.step = "invite";
+    return json(d);
+  }),
+
+  // IN-FR-03: back to the checklist, only before the link exists.
+  http.post(`${apiBaseUrl}/deals/:dealId/checklist/reopen`, ({ params }) => {
+    const d = drafts.get(String(params.dealId));
+    if (!d) return notFound();
+    if (d.step !== "invite") return refused();
+    d.ready = false;
+    d.step = "checklist";
     return json(d);
   }),
 ];

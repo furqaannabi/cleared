@@ -3,6 +3,9 @@
 import { LoadProblem } from "@/components/draft-check/load-problem";
 import { PageSkeleton } from "@/components/draft-check/page-skeleton";
 import { BriefForm } from "@/components/brief/brief-form";
+import { DealStepHeader } from "@/components/new-deal/deal-step-header";
+import { useRefreshDeals } from "@/components/shell/use-deals";
+import type { DealDraft } from "@/lib/checklist-builder/types";
 import { ReadingView } from "@/components/brief/reading-view";
 import { ChecklistBuilder } from "./checklist-builder";
 import { useDealDraft } from "./use-deal-draft";
@@ -15,14 +18,24 @@ import { useDealDraft } from "./use-deal-draft";
  * @see docs/specs/creator-brief-checklist-frd.md BC-FR-03 to BC-FR-18
  */
 export function ChecklistPage({ dealId }: { dealId: string }) {
-  const { draft, error, replace, reload } = useDealDraft(dealId);
+  const { draft, error, replace: setDraft, reload } = useDealDraft(dealId);
+  const refreshDeals = useRefreshDeals();
+  // BC-FR-17: the rail follows the deal's step.
+  const replace = (next: DealDraft) => {
+    if (draft && next.step !== draft.step) refreshDeals();
+    setDraft(next);
+  };
   return (
     <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1240px] px-4 pt-4 pb-36 focus:outline-none md:px-6 md:pb-16 lg:px-9">
       {error && <LoadProblem error={error === "not_found" ? "not_found" : "unavailable"} onRetry={reload} />}
       {!draft && !error && <PageSkeleton />}
       {draft && (
         <>
-          <Header brand={draft.brandName} stage={draft.ready ? "invite" : draft.reading === "done" ? "checklist" : "brief"} />
+          <DealStepHeader
+            brand={draft.brandName}
+            title={draft.reading === "done" ? "Checklist" : "Brief"}
+            stage={draft.ready ? "invite" : draft.reading === "done" ? "checklist" : "brief"}
+          />
           <div className="mt-6">
             {draft.reading === "idle" && <BriefForm draft={draft} onSent={replace} />}
             {draft.reading === "reading" && <ReadingView draft={draft} />}
@@ -39,33 +52,5 @@ export function ChecklistPage({ dealId }: { dealId: string }) {
         </>
       )}
     </main>
-  );
-}
-
-const STAGES = [
-  { id: "posts", label: "Posts" },
-  { id: "brief", label: "Brief" },
-  { id: "checklist", label: "Checklist" },
-  { id: "invite", label: "Invite" },
-] as const;
-
-function Header({ brand, stage }: { brand: string; stage: "brief" | "checklist" | "invite" }) {
-  const at = STAGES.findIndex((s) => s.id === stage);
-  return (
-    <header>
-      <p className="text-meta text-ink-3">Deals › {brand}</p>
-      <h1 className="mt-1.5 font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">
-        {brand} · {stage === "brief" ? "Brief" : "Checklist"}
-      </h1>
-      <ol aria-label="New deal steps" className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-bold">
-        {STAGES.map((s, i) => (
-          <li key={s.id} aria-current={i === at ? "step" : undefined} className={`flex items-center gap-2 ${i < at ? "text-espresso" : i === at ? "text-ink" : "text-ink-4"}`}>
-            {i > 0 && <span aria-hidden="true" className="text-ink-4">·</span>}
-            {s.label}
-            {i < at && <span className="sr-only">(done)</span>}
-          </li>
-        ))}
-      </ol>
-    </header>
   );
 }

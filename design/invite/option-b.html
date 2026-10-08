@@ -1,0 +1,95 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Invite B: the invoice</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../landing/landing.css"><link rel="stylesheet" href="invite.css"><style>
+.grid{display:grid;gap:24px}
+@media(min-width:1024px){.grid{grid-template-columns:minmax(0,1fr) 320px;align-items:start;gap:32px}}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:6px 6px 20px 20px;box-shadow:0 1px 2px rgba(28,21,10,.05),0 18px 40px rgba(120,80,0,.08);padding:22px 18px 24px;position:relative}
+@media(min-width:768px){.sheet{padding:36px 40px 34px}}
+.sheet::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--marigold);border-radius:6px 6px 0 0}
+.sh-top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.sh-top h2{font-size:26px}@media(min-width:768px){.sh-top h2{font-size:30px}}
+.sh-top p{font-size:14px;color:var(--ink-3)}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0;font-size:14px}
+.parties small{display:block;font-size:12.5px;color:var(--ink-4);font-weight:700}
+.parties b{font-size:15px}
+.lines{border-top:1px solid var(--ink);margin-top:6px}
+.ln{display:grid;grid-template-columns:1fr;gap:10px;padding:16px 0;border-bottom:1px solid var(--line)}
+@media(min-width:768px){.ln{grid-template-columns:1fr 210px 170px;align-items:center;gap:18px}}
+.ln b{font-size:16px}.ln .sub{font-size:13px;color:var(--ink-3)}
+.ln .amt .in{justify-content:flex-end;font-size:17px}
+.lh{display:none}
+@media(min-width:768px){.lh{display:grid;grid-template-columns:1fr 210px 170px;gap:18px;font-size:12.5px;font-weight:800;color:var(--ink-4);padding:10px 0 0}.lh span:last-child{text-align:right}}
+.dd{display:flex;align-items:center;gap:10px}
+.dd small{font-size:13px;color:var(--ink-3);line-height:1.3}
+.tot{display:flex;justify-content:space-between;align-items:baseline;padding:16px 0 4px}
+.tot b{font-family:var(--head);font-size:30px;font-weight:800;letter-spacing:-.02em}
+.payto{display:grid;gap:6px;margin-top:18px;max-width:420px}
+.fine{margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+.fine h3{font-size:14.5px;font-weight:800;margin-bottom:10px}
+.fine .rule{font-size:13.5px}
+.side{display:grid;gap:16px}
+@media(min-width:1024px){.side{position:sticky;top:24px}}
+.todo{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:12px}
+.todo h2{font-size:17px}
+.ti{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;font-size:14.5px}
+.ti .seal{width:22px;height:22px}
+.ti.done{color:var(--ink-3)}
+.ti .act{margin-top:8px}
+@media(max-width:1023px){.go{position:fixed;left:12px;right:12px;bottom:12px;background:var(--surface);border-radius:16px;padding:12px 14px;box-shadow:0 10px 30px rgba(28,21,10,.18);display:grid;gap:8px;z-index:5}}
+.go p{font-size:14px;color:var(--ink-2)}
+.locked .in{border-color:transparent;background:transparent;padding:0}
+.sentnote{display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:700;color:var(--ink-2);margin-bottom:12px}
+</style></head><body data-step="Invite"><main>
+<p class="crumb">Deals › Glow Theory</p><h1>Glow Theory · Invite</h1>
+<div class="steps"><span class="dn"><i class="sl ok"></i>Posts</span>·<span class="dn"><i class="sl ok"></i>Brief</span>·<span class="dn"><i class="sl ok"></i>Checklist</span>·<span class="on"><i class="sl now"></i>Invite</span></div>
+
+<div class="grid">
+<article class="sheet" aria-label="The terms Glow Theory will see">
+  <div class="sh-top"><div><h2>Sponsorship terms</h2><p>What Glow Theory sees when they open your link</p></div><p style="font-weight:700"><a class="link" href="#">Edit checklist</a></p></div>
+  <div class="parties"><div><small>Creator</small><b>Ada Okafor</b></div><div><small>Brand</small><b>Glow Theory</b></div></div>
+  <div class="lh"><span>Post</span><span>Post within</span><span>Amount</span></div>
+  <div class="lines">
+    <div class="ln"><div><b>YouTube video</b><p class="sub">6 checklist items · <a class="link" href="#">View</a></p></div>
+      <div class="dd"><div class="step"><button aria-label="One day fewer">−</button><span>14</span><button aria-label="One day more">+</button></div><small>days of the hold<br>22 Oct if approved today</small></div>
+      <div class="amt"><div class="in"><span class="pre">$</span>1,200.00</div></div></div>
+    <div class="ln"><div><b>Instagram Reel</b><p class="sub">6 checklist items · <a class="link" href="#">View</a></p></div>
+      <div class="dd"><div class="step"><button aria-label="One day fewer">−</button><span>10</span><button aria-label="One day more">+</button></div><small>days of the hold<br>18 Oct if approved today</small></div>
+      <div class="amt"><div class="in"><span class="pre">$</span>450.00</div></div></div>
+  </div>
+  <div class="tot"><span style="font-weight:700">Total, held as one hold per post</span><b>$1,650.00</b></div>
+  <div class="payto"><label class="f">Paid to your PayPal</label><div class="in">ada@example.com</div><p class="hint">Only you see this. Check it: a payment to the wrong email can’t be pulled back.</p></div>
+  <div class="fine"><h3>How you’ll be paid</h3><div class="rules"><p class="rule"><b>1</b>Glow Theory approves a hold for each post. The money is reserved, not taken.</p><p class="rule"><b>2</b>Your draft is checked against the checklist. If every item passes, Glow Theory has 48 hours to object. If they don’t, it’s approved. Anything that doesn’t pass waits for you to fix it or for Glow Theory to accept it.</p><p class="rule"><b>3</b>Post by the deadline. Once the live post checks out, you’re paid to your PayPal.</p><p class="rule"><b>4</b>Miss the deadline, and the hold goes back to Glow Theory.</p></div></div>
+</article>
+
+<aside class="side">
+  <div class="todo"><h2>Before you send</h2>
+    <div class="ti done"><span class="seal" style="color:var(--espresso)"><svg class="s" viewBox="0 0 24 24"><path d="M12 1.4a2.48 2.48 0 0 1 4.6 1.05 2.48 2.48 0 0 1 3.69 2.94 2.48 2.48 0 0 1 2.04 4.25 2.48 2.48 0 0 1 0 4.72 2.48 2.48 0 0 1-2.04 4.25 2.48 2.48 0 0 1-3.69 2.94A2.48 2.48 0 0 1 12 22.6a2.48 2.48 0 0 1-4.6-1.05 2.48 2.48 0 0 1-3.69-2.94 2.48 2.48 0 0 1-2.04-4.25 2.48 2.48 0 0 1 0-4.72 2.48 2.48 0 0 1 2.04-4.25A2.48 2.48 0 0 1 7.4 2.45 2.48 2.48 0 0 1 12 1.4Z" fill="var(--latte)"/></svg><svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><span>Amounts and deadlines</span></div>
+    <div class="ti done"><span class="seal" style="color:var(--espresso)"><svg class="s" viewBox="0 0 24 24"><path d="M12 1.4a2.48 2.48 0 0 1 4.6 1.05 2.48 2.48 0 0 1 3.69 2.94 2.48 2.48 0 0 1 2.04 4.25 2.48 2.48 0 0 1 0 4.72 2.48 2.48 0 0 1-2.04 4.25 2.48 2.48 0 0 1-3.69 2.94A2.48 2.48 0 0 1 12 22.6a2.48 2.48 0 0 1-4.6-1.05 2.48 2.48 0 0 1-3.69-2.94 2.48 2.48 0 0 1-2.04-4.25 2.48 2.48 0 0 1 0-4.72 2.48 2.48 0 0 1 2.04-4.25A2.48 2.48 0 0 1 7.4 2.45 2.48 2.48 0 0 1 12 1.4Z" fill="var(--latte)"/></svg><svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><span>YouTube connected as Ada Okafor</span></div>
+    <div class="ti"><span class="seal" style="color:var(--ink-4)"><svg class="s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--latte-line)" stroke-width="2"/></svg></span><span><b>Connect Instagram</b><br><span class="hint" style="margin:0">Professional accounts only. Cleared reads it to check the live Reel.</span><span class="act" style="display:block"><a class="btn2" href="#">Connect Instagram</a></span></span></div>
+    <div class="ti done"><span class="seal" style="color:var(--espresso)"><svg class="s" viewBox="0 0 24 24"><path d="M12 1.4a2.48 2.48 0 0 1 4.6 1.05 2.48 2.48 0 0 1 3.69 2.94 2.48 2.48 0 0 1 2.04 4.25 2.48 2.48 0 0 1 0 4.72 2.48 2.48 0 0 1-2.04 4.25 2.48 2.48 0 0 1-3.69 2.94A2.48 2.48 0 0 1 12 22.6a2.48 2.48 0 0 1-4.6-1.05 2.48 2.48 0 0 1-3.69-2.94 2.48 2.48 0 0 1-2.04-4.25 2.48 2.48 0 0 1 0-4.72 2.48 2.48 0 0 1 2.04-4.25A2.48 2.48 0 0 1 7.4 2.45 2.48 2.48 0 0 1 12 1.4Z" fill="var(--latte)"/></svg><svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><span>PayPal email</span></div>
+    <div><label class="f" style="font-size:14px">Glow Theory’s email (optional)</label><div class="in">sam@glowtheory.com</div><p class="hint">We’ll email them the link too.</p></div>
+  </div>
+  <div class="go"><p><b>Connect Instagram</b> to create the link.</p><a class="btn" aria-disabled="true" href="#">Create link for Glow Theory</a></div>
+</aside>
+</div>
+
+<p class="state">After “Create link”</p>
+<div class="grid">
+<article class="sheet locked" aria-label="The terms you sent">
+  <p class="sentnote">Sent to Glow Theory · waiting for them to confirm the checklist and approve the holds</p>
+  <div class="sh-top"><div><h2>Sponsorship terms</h2><p>Locked while the link is open</p></div><p><a class="link" href="#">Change terms</a></p></div>
+  <div class="lines" style="margin-top:18px">
+    <div class="ln"><div><b>YouTube video</b><p class="sub">6 checklist items</p></div><div class="sub" style="font-size:14.5px;color:var(--ink-2)">Within 14 days of the hold</div><div style="text-align:right;font-weight:800;font-size:17px">$1,200.00</div></div>
+    <div class="ln"><div><b>Instagram Reel</b><p class="sub">6 checklist items</p></div><div class="sub" style="font-size:14.5px;color:var(--ink-2)">Within 10 days of the hold</div><div style="text-align:right;font-weight:800;font-size:17px">$450.00</div></div>
+  </div>
+  <div class="tot"><span style="font-weight:700">Total</span><b>$1,650.00</b></div>
+</article>
+<aside class="side"><div class="todo"><h2>Send this link to Glow Theory</h2>
+  <div class="linkbox"><span>cleared.app/b/7Hq2-kR9x-Wm4p</span></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="#">Copy link</a><a class="btn2" href="#">Share</a></div>
+  <p class="hint" style="margin:0">Anyone with this link can open this deal. Send it only to Glow Theory. Expires on 15 Oct.</p>
+  <p class="hint" style="margin:0">We’ve also emailed it to sam@glowtheory.com.</p>
+  <a class="link" href="#" style="font-size:14px">Make a new link</a></div></aside>
+</div>
+</main><script src="shell.js"></script></body></html>

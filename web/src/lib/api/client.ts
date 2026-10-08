@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { dealDraftSchema, dealsSchema, deliverableSchema, draftSchema } from "./schemas";
+import { creatorProfileSchema, dealDraftSchema, dealInviteSchema, dealsSchema, deliverableSchema, draftSchema } from "./schemas";
 
 /** `rejected`: the API refused a change (the item changed, say); the others are as for reads. */
 export type ApiError = "not_found" | "invalid_response" | "unavailable" | "rejected";
@@ -55,6 +55,7 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
   const dealPath = (id: string) => `/deals/${encodeURIComponent(id)}`;
   const questionPath = (dealId: string, qid: string) => `${dealPath(dealId)}/questions/${encodeURIComponent(qid)}`;
   const itemPath = (dealId: string, itemId: string) => `${dealPath(dealId)}/items/${encodeURIComponent(itemId)}`;
+  const invitePath = (id: string) => `${dealPath(id)}/invite`;
   const askPath = (deliverableId: string, itemId: string) =>
     `${deliverablePath(deliverableId)}/items/${encodeURIComponent(itemId)}/ask`;
 
@@ -104,5 +105,29 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
       request("POST", `${dealPath(dealId)}/items`, dealDraftSchema, item),
     /** BC-FR-16: the creator agrees the checklist; the deal moves to the invite step. */
     markChecklistReady: (dealId: string) => request("POST", `${dealPath(dealId)}/checklist/ready`, dealDraftSchema),
+    /** IN-FR-03: back to the checklist step before the link exists; the invite terms are kept. */
+    reopenChecklist: (dealId: string) => request("POST", `${dealPath(dealId)}/checklist/reopen`, dealDraftSchema),
+
+    // Creator invite (IN FRD). Each deal call returns the whole invite.
+    /** IN-FR-04: the deal's invite terms and link. */
+    getInvite: (dealId: string) => request("GET", invitePath(dealId), dealInviteSchema),
+    /** IN-FR-05, IN-FR-07, IN-FR-15: save one post's amount (a two-place decimal string) and/or deadline in days. */
+    updateInvitePost: (dealId: string, deliverableId: string, terms: { amount?: string; deadlineDays?: number }) =>
+      request("PATCH", `${invitePath(dealId)}/posts/${encodeURIComponent(deliverableId)}`, dealInviteSchema, terms),
+    /** IN-FR-13: the brand's email, or null to clear it. */
+    updateInvite: (dealId: string, terms: { brandEmail: string | null }) => request("PATCH", invitePath(dealId), dealInviteSchema, terms),
+    /** IN-FR-17: lock the terms and create the brand's link. */
+    createInviteLink: (dealId: string) => request("POST", `${invitePath(dealId)}/link`, dealInviteSchema),
+    /** IN-FR-18: turn the link off and make a new one. */
+    renewInviteLink: (dealId: string) => request("POST", `${invitePath(dealId)}/link/renew`, dealInviteSchema),
+    /** IN-FR-19: turn the link off and reopen the terms for editing. */
+    turnOffInviteLink: (dealId: string) => request("DELETE", `${invitePath(dealId)}/link`, dealInviteSchema),
+
+    /** IN-FR-10, IN-FR-12: the creator's name, PayPal email and connected accounts. */
+    getProfile: () => request("GET", "/me", creatorProfileSchema),
+    /** IN-FR-12: save the PayPal email payments go to. */
+    setPaypalEmail: (email: string) => request("PUT", "/me/paypal-email", creatorProfileSchema, { email }),
+    /** IN-FR-11: connect an account. Provisional: the real flow is a sign-in redirect (Requests for Furqaan). */
+    connectAccount: (platform: "youtube" | "instagram") => request("POST", `/me/accounts/${platform}`, creatorProfileSchema),
   };
 }

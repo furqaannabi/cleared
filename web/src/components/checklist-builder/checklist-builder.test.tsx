@@ -138,5 +138,7 @@ describe("BC-FR-16, BC-FR-17 checklist ready", () => {
     ).toBeVisible();
     expect(within(items()).queryByRole("button", { name: /^Change/ })).toBeNull();
     expect(screen.queryByRole("button", { name: "Add an item" })).toBeNull();
+    // IN-FR-01: straight on to the invite step.
+    expect(screen.getByRole("link", { name: "Set amounts and invite Glow Theory" })).toHaveAttribute("href", expect.stringMatching(/^\/deals\/[^/]+\/invite$/));
   });
 });

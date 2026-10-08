@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { api } from "@/lib/api";
 import type { ChecklistView } from "@/lib/checklist-builder/checklist-view";
 import type { DealDraft } from "@/lib/checklist-builder/types";
@@ -6,14 +7,23 @@ import type { Save } from "./checklist-builder";
 /**
  * BC-FR-16, BC-FR-17: "Checklist ready", held back (with what is left) until
  * every question is answered and every post has an item; after it, what
- * happens next. Fixed to the bottom on phones.
+ * happens next and the way on to the invite step (IN-FR-01). Fixed to the
+ * bottom on phones.
  */
 export function ReadyBar({ draft, view, save, problem }: { draft: DealDraft; view: ChecklistView; save: Save; problem: string | null }) {
   if (draft.ready) {
     return (
-      <p role="status" className="rounded-lg border border-pass-wash bg-surface px-5 py-4 font-semibold">
-        Your checklist is ready. Next you’ll set the amount and deadline for each post and invite {draft.brandName}.
-      </p>
+      <div className="flex flex-col gap-3 rounded-lg border border-pass-wash bg-surface px-5 py-4 md:flex-row md:items-center md:justify-between">
+        <p role="status" className="font-semibold">
+          Your checklist is ready. Next you’ll set the amount and deadline for each post and invite {draft.brandName}.
+        </p>
+        <Link
+          href={`/deals/${encodeURIComponent(draft.id)}/invite`}
+          className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-pill bg-espresso px-6 text-body-strong font-bold text-surface hover:bg-espresso-hover md:min-h-11"
+        >
+          Set amounts and invite {draft.brandName}
+        </Link>
+      </div>
     );
   }
   const allowed = view.ready.allowed;

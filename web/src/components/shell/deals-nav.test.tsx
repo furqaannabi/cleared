@@ -13,3 +13,10 @@ describe("DC-FR-31 deals list", () => {
     expect(links[1]).toHaveTextContent("NCNorthbound CoffeeBrand review");
   });
 });
+
+describe("DC-FR-31 initials", () => {
+  test("skip words that aren't letters, such as an ampersand", () => {
+    render(<DealsNav deals={[{ id: "deal_pine", brandName: "Pine & Co", status: "Invite", deliverables: [] }]} currentDealId={null} />);
+    expect(screen.getByRole("link")).toHaveTextContent(/^PCPine & Co/);
+  });
+});

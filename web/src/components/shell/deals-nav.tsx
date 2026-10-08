@@ -10,6 +10,7 @@ const TINTS = ["bg-avatar-rose text-avatar-rose-ink", "bg-avatar-sky text-avatar
 const initials = (name: string) =>
   name
     .split(/\s+/)
+    .filter((w) => /^\p{L}/u.test(w))
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? "")
     .join("");
