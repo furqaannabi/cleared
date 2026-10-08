@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { useDemoBuild } from "@/components/mocking/demo-build";
 import { api } from "@/lib/api";
 import type { DealInvite } from "@/lib/invite/types";
 import { ConfirmAction } from "./confirm-action";
@@ -37,6 +39,7 @@ export function LinkPanel({
   onInvite: (invite: DealInvite) => void;
 }) {
   const { link, brandName } = invite;
+  const demo = useDemoBuild();
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -63,6 +66,7 @@ export function LinkPanel({
       <h2 id="link-heading" className="font-head text-[17px] font-bold">
         Send this link to {brandName}
       </h2>
+      {(invite.version ?? 1) > 1 && <p className="text-meta font-bold text-ink-2">Version {invite.version} sent</p>}
       {link.expired ? (
         <p className="font-bold">This link has expired.</p>
       ) : (
@@ -92,6 +96,12 @@ export function LinkPanel({
         <p className="text-meta text-ink-3">Anyone with this link can open this deal. Send it only to {brandName}.</p>
         <p className="text-meta text-ink-3">{`Expires on ${shortDate(link.expiresAt)}.`}</p>
         {link.emailedTo && <p className="text-meta text-ink-3">{`We’ve also emailed it to ${link.emailedTo}.`}</p>}
+        {/* Mock builds only: open the brand's side in this browser (CH "Mocks"). */}
+        {demo && (
+          <Link href={`/b/${link.url.split("/b/")[1]}`} className="inline-flex min-h-11 items-center text-[14px] font-bold text-espresso underline underline-offset-3">
+            Open as {brandName}
+          </Link>
+        )}
         </>
       )}
       <ConfirmAction

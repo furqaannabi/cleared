@@ -10,6 +10,7 @@ import type { DealDraft } from "@/lib/checklist-builder/types";
 import { ReadingView } from "@/components/brief/reading-view";
 import { ChecklistBuilder } from "./checklist-builder";
 import { useDealDraft } from "./use-deal-draft";
+import { BrandNotesOnChecklist } from "./brand-notes";
 
 /**
  * `/deals/[dealId]/checklist`: the brief and the checklist for a deal at step 1.
@@ -40,6 +41,7 @@ export function ChecklistPage({ dealId }: { dealId: string }) {
             stage={draft.ready ? "invite" : draft.reading === "done" ? "checklist" : "brief"}
           />
           {draft.reading !== "idle" && draft.reading !== "failed" && <p className="mt-2 text-meta text-ink-3">Posts are set once the brief is read.</p>}
+          <BrandNotesOnChecklist draft={draft} />
           <div id="brief" className="mt-6 scroll-mt-6">
             {draft.reading === "idle" && <BriefForm draft={draft} onSent={replace} />}
             {draft.reading === "reading" && <ReadingView draft={draft} />}

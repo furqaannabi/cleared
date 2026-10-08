@@ -8,6 +8,7 @@ import { useRefreshDeals } from "@/components/shell/use-deals";
 import { stepLinks } from "@/lib/checklist-builder/step-links";
 import { inviteView } from "@/lib/invite/invite-view";
 import { BeforeYouSend } from "./before-you-send";
+import { BrandChanges } from "./brand-changes";
 import { CreateLinkBar } from "./create-link-bar";
 import { LinkPanel } from "./link-panel";
 import type { DealInvite } from "@/lib/invite/types";
@@ -52,10 +53,11 @@ export function InvitePage({ dealId }: { dealId: string }) {
             stage="invite"
             links={stepLinks({ id: invite.dealId, step: invite.step, reading: "done" })}
           />
+          {invite.step === "changes_requested" && <BrandChanges invite={invite} save={save} problems={problems} onInvite={takeInvite} />}
           <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
             <TermsSheet invite={invite} profile={profile} view={view} save={save} problems={problems} onInvite={takeInvite} onProfile={setProfile} />
-            <div className={`grid gap-4 lg:sticky lg:top-6 ${invite.link ? "order-first lg:order-none" : ""}`}>
-              {invite.link ? (
+            <div className={`grid gap-4 lg:sticky lg:top-6 ${invite.link && invite.step === "waiting_for_brand" ? "order-first lg:order-none" : ""}`}>
+              {invite.step === "agreed" ? null : invite.link && invite.step !== "changes_requested" ? (
                 <LinkPanel invite={{ ...invite, link: invite.link }} save={save} problems={problems} onInvite={takeInvite} />
               ) : (
                 <>

@@ -48,7 +48,7 @@ test("IN: checklist ready → invite → amounts, deadlines, Instagram → link 
   await expect(panel.getByText("Copied")).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/^https:\/\/cleared\.example\/b\//);
   if (testInfo.project.name === "desktop-1280") {
-    await expect(page.getByRole("navigation", { name: "Deals" }).getByText("Waiting for brand")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Deals" }).getByRole("link", { name: /Glow Theory/ }).getByText("Waiting for brand")).toBeVisible();
   }
   await noSidewaysScroll(page);
   await page.screenshot({ path: testInfo.outputPath("link.png"), fullPage: true });

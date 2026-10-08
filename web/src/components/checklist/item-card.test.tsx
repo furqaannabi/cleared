@@ -26,6 +26,14 @@ describe("DC-FR-12 item card", () => {
     expect(screen.getByText("Checked by: Exact match")).toBeVisible();
   });
 
+  test("DC-FR-12 (1.13): an item the creator added says so where the brief line would be", () => {
+    const { briefLine, ...added } = byId("it_5");
+    void briefLine;
+    render(<ItemCard item={added} brandName="Glow Theory" expanded onToggle={() => {}} />);
+    expect(screen.getByText("Added by you")).toBeVisible();
+    expect(screen.queryByText(/^Brief line/)).toBeNull();
+  });
+
   test("DC-FR-19: an expanded card shows what changed since the last run", () => {
     render(<ItemCard item={byId("it_4")} brandName="Glow Theory" expanded onToggle={() => {}} />);
     expect(screen.getByText("Was Fix needed")).toBeVisible();

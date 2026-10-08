@@ -20,6 +20,18 @@ describe("DC-FR-40 checklist grid", () => {
     expect(within(row).getByText("Fix needed")).toBeInTheDocument();
   });
 
+  test("DC-FR-12 (1.13): an item the creator added reads Added by you in the Brief column", async () => {
+    const items = view.items.map((i) => {
+      if (i.id !== "it_5") return i;
+      const { briefLine, ...added } = i;
+      void briefLine;
+      return added;
+    });
+    render(<ChecklistGrid items={items} brandName="Glow Theory" selectedId={null} onSelect={() => {}} wide />);
+    const [row] = await screen.findAllByRole("row", { name: /GLOW20 shown on screen/ });
+    expect(within(row).getByText("Added by you")).toBeInTheDocument();
+  });
+
   test("DC-FR-22: clicking a row selects that item, and the selected item's row is marked", async () => {
     const onSelect = vi.fn();
     render(<ChecklistGrid items={view.items} brandName="Glow Theory" selectedId="it_5" onSelect={onSelect} wide />);

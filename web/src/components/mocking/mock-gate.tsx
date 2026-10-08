@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { PayPalApprovalProvider } from "@/components/brand-deal/paypal-approval";
 import { worker } from "@/mocks/browser";
+import { resetSaved } from "@/mocks/browser-persist";
+import { DemoBuildProvider } from "./demo-build";
+import { DemoPayPal } from "./demo-paypal";
 
 /**
  * Browser-only: starts the MSW worker and renders children once it is ready,
- * so no early request goes unmocked. Loaded by `MockProvider` with
+ * so no early request goes unmocked. Holds are approved with the demo PayPal
+ * (CH-FR-17), which ships only with the mocks. Loaded by `MockProvider` with
  * `ssr: false`, because MSW's browser entry cannot load on the server.
  *
  * @param children - the app
@@ -27,5 +32,15 @@ export default function MockGate({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return ready ? children : null;
+  return ready ? (
+    <DemoBuildProvider
+      reset={() => {
+        resetSaved();
+        // A full load, so every page fetches the seed again.
+        window.location.replace(new URL("/deals", window.location.href));
+      }}
+    >
+      <PayPalApprovalProvider approval={DemoPayPal}>{children}</PayPalApprovalProvider>
+    </DemoBuildProvider>
+  ) : null;
 }

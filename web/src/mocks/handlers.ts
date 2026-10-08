@@ -1,5 +1,6 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
 import { apiBaseUrl } from "@/lib/api";
+import { brandDealHandlers } from "./brand-deals";
 import { dealDraftHandlers, draftSummaries } from "./deal-drafts";
 import { deals } from "./fixtures/deals";
 import { inviteHandlers } from "./invites";
@@ -19,6 +20,8 @@ export const handlers: RequestHandler[] = [
   ...dealDraftHandlers,
   // IN FRD: the invite step and the creator's profile.
   ...inviteHandlers,
+  // CH FRD: the brand's side of confirm and hold.
+  ...brandDealHandlers,
 
   // DC-FR-01, DC-FR-38
   http.get(`${apiBaseUrl}/deliverables/:deliverableId`, ({ params }) => {

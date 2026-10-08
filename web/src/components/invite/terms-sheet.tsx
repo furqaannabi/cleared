@@ -47,15 +47,22 @@ export function TermsSheet({
 }) {
   const router = useRouter();
   const refreshDeals = useRefreshDeals();
-  const locked = invite.step === "waiting_for_brand";
+  // IN-BR-03: read-only once the link exists, except while answering the brand's notes (CH-FR-22).
+  const locked = invite.step !== "invite" && invite.step !== "changes_requested";
+  const held = invite.posts.filter((p) => p.hold?.state === "held").length;
   return (
     <section
       aria-labelledby="terms-heading"
       className="relative overflow-hidden rounded-t-[6px] rounded-b-[20px] border border-line bg-surface px-[18px] pt-[26px] pb-6 shadow-panel before:absolute before:inset-x-0 before:top-0 before:h-1.5 before:bg-marigold md:px-8 md:pt-9 md:pb-8"
     >
-      {locked && (
+      {invite.step === "waiting_for_brand" && (
         <p className="mb-3 text-meta font-bold text-ink-2">
           Sent to {invite.brandName} · waiting for them to confirm the checklist and approve the holds
+        </p>
+      )}
+      {invite.step === "agreed" && (
+        <p className="mb-3 text-meta font-bold text-ink-2">
+          {invite.brandName} agreed · {held} of {invite.posts.length} held
         </p>
       )}
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
@@ -63,10 +70,12 @@ export function TermsSheet({
           <h2 id="terms-heading" className="font-head text-[26px] leading-[1.1] font-extrabold tracking-[-0.015em] md:text-[30px]">
             Sponsorship terms
           </h2>
-          <p className="mt-1 text-[14px] text-ink-3">{locked ? "Locked while the link is open" : `What ${invite.brandName} sees when they open your link`}</p>
+          <p className="mt-1 text-[14px] text-ink-3">
+            {invite.step === "agreed" ? `Agreed with ${invite.brandName}` : locked ? "Locked while the link is open" : `What ${invite.brandName} sees when they open your link`}
+          </p>
         </div>
         <div className="max-w-sm">
-          {locked ? (
+          {invite.step === "agreed" ? null : locked ? (
             <ConfirmAction
               label="Change terms"
               warning={`${invite.brandName}’s link will stop working. You’ll make a new one when you’re done.`}
@@ -112,7 +121,17 @@ export function TermsSheet({
       </div>
       <div className="border-t border-ink">
         {view.posts.map((post) => (
-          <PostLine key={post.deliverableId} dealId={invite.dealId} post={post} save={save} problems={problems} onInvite={onInvite} locked={locked} />
+          <PostLine
+            key={post.deliverableId}
+            dealId={invite.dealId}
+            brand={invite.brandName}
+            post={post}
+            notes={(invite.notes ?? []).filter((n) => n.version === invite.version && "deliverableId" in n.about && n.about.deliverableId === post.deliverableId)}
+            save={save}
+            problems={problems}
+            onInvite={onInvite}
+            locked={locked}
+          />
         ))}
       </div>
       {view.total && (

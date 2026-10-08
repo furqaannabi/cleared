@@ -134,7 +134,7 @@ export default function ChecklistGrid({
       { colId: "item", headerName: "Item", field: "name", flex: 3, minWidth: 280, cellRenderer: ItemCell },
       { colId: "kind", headerName: "Kind", field: "kind", width: 140, valueFormatter: (p) => kindLabel(p.value), wideOnly: true },
       { colId: "time", headerName: "Time", width: 128, valueGetter: (p) => p.data?.evidence?.startSec ?? Infinity, cellRenderer: TimeCell },
-      { colId: "brief", headerName: "Brief", width: 96, valueGetter: (p) => p.data?.briefLine.number, valueFormatter: (p) => `Line ${p.value}`, wideOnly: true },
+      { colId: "brief", headerName: "Brief", width: 96, valueGetter: (p) => p.data?.briefLine?.number, valueFormatter: (p) => (p.value ? `Line ${p.value}` : "Added by you"), wideOnly: true },
       {
         colId: "result",
         headerName: "Result",

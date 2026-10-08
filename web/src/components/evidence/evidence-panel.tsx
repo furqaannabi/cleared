@@ -68,9 +68,7 @@ export function EvidencePanel({
         <Field label="From the brief">
           <span className="flex items-start gap-2 text-ink-2">
             <BriefIcon />
-            <span>
-              Line {item.briefLine.number}: “{item.briefLine.text}”
-            </span>
+            <span>{item.briefLine ? `Line ${item.briefLine.number}: “${item.briefLine.text}”` : "Added by you"}</span>
           </span>
         </Field>
         <Field label="Checked by">{checkedByLabel(item.checkedBy)}</Field>

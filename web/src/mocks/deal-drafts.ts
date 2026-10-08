@@ -2,12 +2,19 @@ import { http, HttpResponse, type RequestHandler } from "msw";
 import type { z } from "zod";
 import { apiBaseUrl } from "@/lib/api";
 import type { dealDraftSchema } from "@/lib/api/schemas";
+import { allHeld, brandNotes, heldCount, isRevising } from "./brand-deals";
 import { checkedByFor, nextId, readBrief } from "./brief-reader";
 
 type Draft = z.infer<typeof dealDraftSchema>;
 type Stored = Draft & { readStartedAt?: number; pending?: Pick<Draft, "items" | "questions"> };
 
-const STATUS: Record<Draft["step"], string> = { checklist: "Checklist", invite: "Invite", waiting_for_brand: "Waiting for brand" };
+const STATUS: Record<Draft["step"], string> = {
+  checklist: "Checklist",
+  invite: "Invite",
+  waiting_for_brand: "Waiting for brand",
+  changes_requested: "Changes asked",
+  agreed: "Agreed",
+};
 
 /*
  * Mock deal drafts for the brief → checklist step (BC FRD). In memory, reset
@@ -16,6 +23,15 @@ const STATUS: Record<Draft["step"], string> = { checklist: "Checklist", invite: 
  */
 let drafts = new Map<string, Stored>();
 let msPerLine = 450;
+
+const MAPLE_BRIEF = [
+  "Thanks for partnering with Maple & Moss on the Ember candle launch!",
+  "In the YouTube video, say “Maple & Moss” in the first 60 seconds.",
+  "Mention us early in the Reel.",
+  "Say and show the code MOSS10.",
+  "Keep it fun and cosy!",
+  "Mark the post as a paid promotion.",
+];
 
 const PINE_BRIEF = [
   "Thanks for working with Pine & Co on the Trail Flask launch.",
@@ -50,8 +66,47 @@ function seedDemoDrafts() {
     questions: read.questions,
     ready: true,
   });
+
+  // CH 1.0: a demo deal already sent to the brand, its link seeded in the invite mocks.
+  const maple: Draft["deliverables"] = [
+    { id: "del_maple_video", platform: "youtube_video" },
+    { id: "del_maple_reel", platform: "instagram_reel" },
+    { id: "del_maple_short", platform: "youtube_short" },
+  ];
+  const mapleLines = MAPLE_BRIEF.map((text, i) => ({ number: i + 1, text }));
+  const mapleRead = readBrief(mapleLines, maple, "Maple & Moss");
+  const d: Stored = {
+    id: "deal_maple",
+    brandName: "Maple & Moss",
+    step: "waiting_for_brand",
+    deliverables: maple,
+    brief: { lines: mapleLines },
+    reading: "done",
+    readUpTo: mapleLines.length,
+    items: mapleRead.items,
+    questions: mapleRead.questions,
+    ready: true,
+  };
+  for (const q of d.questions) applyAnswer(d, q, q.suggestions.length ? { kind: "suggestion", text: q.suggestions[0] } : { kind: "left_out" });
+  d.items.push({ id: "it_maple_link", deliverableId: "del_maple_video", name: "maplemoss.com/ada in the description", kind: "written", addedByCreator: true, checkedBy: "at_live_check" });
+  drafts.set(d.id, d);
 }
 seedDemoDrafts();
+
+/** Records an answer; a suggestion or the creator's own words becomes an item on the posts the line is about (BC-FR-13). */
+function applyAnswer(d: Draft, q: Draft["questions"][number], answer: NonNullable<Draft["questions"][number]["answer"]>) {
+  q.answer = answer.kind === "left_out" ? { kind: "left_out" } : { kind: answer.kind, text: answer.text!.trim().slice(0, 200) };
+  if (answer.kind === "left_out") return;
+  const line = d.brief!.lines.find((l) => l.number === q.briefLine)!;
+  const name = answer.kind === "own_words" ? answer.text!.trim() : `Mentions ${d.brandName} ${answer.text!.trim().replace(/^In/, "in")}`;
+  for (const deliverableId of readBrief([line], d.deliverables, d.brandName).targetsFor(line.number)) {
+    d.items.push({ id: nextId("it"), deliverableId, name, kind: "timing", briefLine: q.briefLine, addedByCreator: false, checkedBy: "ai_timestamp" });
+  }
+  d.items.sort((a, b) => (a.briefLine ?? 1e9) - (b.briefLine ?? 1e9));
+}
+
+/** The mock deal drafts, for keeping the mock data in the browser. */
+export const draftsData = { get: () => [...drafts.entries()], set: (entries: [string, Stored][]) => void (drafts = new Map(entries)) };
 
 /** How long the mock takes per brief line (0 in tests that want it instant). */
 export function setReadingSpeed(ms: number) {
@@ -67,13 +122,20 @@ export function resetDealDrafts() {
 
 /** The mock deal drafts, as deal summaries for GET /deals. */
 export function draftSummaries() {
-  return [...drafts.values()].map((d) => ({
-    id: d.id,
-    brandName: d.brandName,
-    status: STATUS[d.step],
-    step: d.step,
-    deliverables: [],
-  }));
+  return [...drafts.values()].map((d) => {
+    // CH-FR-21: once every post is held the deal leaves set-up, for its first post's draft check.
+    if (allHeld(d.id))
+      return {
+        id: d.id,
+        brandName: d.brandName,
+        status: "Waiting for your draft",
+        openDeliverableId: d.deliverables[0].id,
+        deliverables: d.deliverables.map((x) => ({ id: x.id, platform: x.platform, state: "no_draft" as const })),
+      };
+    const { held, posts } = heldCount(d.id);
+    const status = isRevising(d.id) ? STATUS.changes_requested : d.step === "agreed" ? `Agreed · ${held} of ${posts} held` : STATUS[d.step];
+    return { id: d.id, brandName: d.brandName, status, step: d.step, deliverables: [] };
+  });
 }
 
 /** One stored deal draft, for the invite mocks (IN FRD); undefined if there is none. */
@@ -97,7 +159,8 @@ function view(d: Stored): Draft {
   const { readStartedAt, pending, ...out } = d;
   void readStartedAt;
   void pending;
-  return structuredClone(out);
+  const notes = brandNotes(d.id);
+  return structuredClone(notes ? { ...out, notes } : out);
 }
 
 const json = (d: Stored) => HttpResponse.json(view(d));
@@ -167,15 +230,7 @@ export const dealDraftHandlers: RequestHandler[] = [
     if (!editable(d) || !q || q.answer) return d ? refused() : notFound();
     const answer = (await request.json()) as NonNullable<Draft["questions"][number]["answer"]>;
     if (answer.kind !== "left_out" && !answer.text?.trim()) return refused();
-    q.answer = answer.kind === "left_out" ? { kind: "left_out" } : { kind: answer.kind, text: answer.text!.trim().slice(0, 200) };
-    if (answer.kind !== "left_out") {
-      const line = d.brief!.lines.find((l) => l.number === q.briefLine)!;
-      const name = answer.kind === "own_words" ? answer.text!.trim() : `Mentions ${d.brandName} ${answer.text!.trim().replace(/^In/, "in")}`;
-      for (const deliverableId of readBrief([line], d.deliverables, d.brandName).targetsFor(line.number)) {
-        d.items.push({ id: nextId("it"), deliverableId, name, kind: "timing", briefLine: q.briefLine, addedByCreator: false, checkedBy: "ai_timestamp" });
-      }
-      d.items.sort((a, b) => (a.briefLine ?? 1e9) - (b.briefLine ?? 1e9));
-    }
+    applyAnswer(d, q, answer);
     return json(d);
   }),
   http.delete(`${apiBaseUrl}/deals/:dealId/questions/:qid`, ({ params }) => {
@@ -230,15 +285,16 @@ export const dealDraftHandlers: RequestHandler[] = [
     const empty = d.deliverables.some((x) => !d.items.some((i) => i.deliverableId === x.id));
     if (!editable(d) || open || empty) return refused();
     d.ready = true;
-    d.step = "invite";
+    // CH-FR-22: while answering the brand's notes, ready goes back to "changes asked", not a fresh invite.
+    d.step = isRevising(d.id) ? "changes_requested" : "invite";
     return json(d);
   }),
 
-  // IN-FR-03: back to the checklist, only before the link exists.
+  // IN-FR-03: back to the checklist before the link exists, or while answering the brand's notes (CH-FR-22).
   http.post(`${apiBaseUrl}/deals/:dealId/checklist/reopen`, ({ params }) => {
     const d = drafts.get(String(params.dealId));
     if (!d) return notFound();
-    if (d.step !== "invite") return refused();
+    if (d.step !== "invite" && d.step !== "changes_requested") return refused();
     d.ready = false;
     d.step = "checklist";
     return json(d);

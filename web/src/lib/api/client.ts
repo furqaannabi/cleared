@@ -1,8 +1,9 @@
 import type { z } from "zod";
-import { creatorProfileSchema, dealDraftSchema, dealInviteSchema, dealsSchema, deliverableSchema, draftSchema } from "./schemas";
+import { brandDealSchema, brandSessionSchema, holdStartSchema, creatorProfileSchema, dealDraftSchema, dealInviteSchema, dealsSchema, deliverableSchema, draftSchema } from "./schemas";
 
 /** `rejected`: the API refused a change (the item changed, say); the others are as for reads. */
 export type ApiError = "not_found" | "invalid_response" | "unavailable" | "rejected";
+type BrandNoteAbout = z.infer<typeof brandDealSchema>["notes"][number]["about"];
 type DraftPlatform = "youtube_video" | "youtube_short" | "instagram_reel";
 type DraftItemKind = "said" | "shown_as_text" | "shown" | "timing" | "written" | "disclosure" | "publication";
 
@@ -56,6 +57,7 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
   const questionPath = (dealId: string, qid: string) => `${dealPath(dealId)}/questions/${encodeURIComponent(qid)}`;
   const itemPath = (dealId: string, itemId: string) => `${dealPath(dealId)}/items/${encodeURIComponent(itemId)}`;
   const invitePath = (id: string) => `${dealPath(id)}/invite`;
+  const holdPath = (dealId: string, deliverableId: string) => `/brand${dealPath(dealId)}/posts/${encodeURIComponent(deliverableId)}/hold`;
   const askPath = (deliverableId: string, itemId: string) =>
     `${deliverablePath(deliverableId)}/items/${encodeURIComponent(itemId)}/ask`;
 
@@ -125,6 +127,11 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     renewInviteLink: (dealId: string) => request("POST", `${invitePath(dealId)}/link/renew`, dealInviteSchema),
     /** IN-FR-19: turn the link off and reopen the terms for editing. */
     turnOffInviteLink: (dealId: string) => request("DELETE", `${invitePath(dealId)}/link`, dealInviteSchema),
+    /** CH-FR-23: the creator's reply to one of the brand's notes; plain text. */
+    replyToNote: (dealId: string, noteId: string, reply: string) =>
+      request("PUT", `${dealPath(dealId)}/notes/${encodeURIComponent(noteId)}/reply`, dealInviteSchema, { reply }),
+    /** CH-FR-24: send the updated terms to the brand's same link, as a new version. */
+    sendUpdatedTerms: (dealId: string) => request("POST", `${invitePath(dealId)}/send`, dealInviteSchema),
 
     /** IN-FR-10, IN-FR-12: the creator's name, PayPal email and connected accounts. */
     getProfile: () => request("GET", "/me", creatorProfileSchema),
@@ -132,5 +139,24 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     setPaypalEmail: (email: string) => request("PUT", "/me/paypal-email", creatorProfileSchema, { email }),
     /** IN-FR-11: connect an account. Provisional: the real flow is a sign-in redirect (Requests for Furqaan). */
     connectAccount: (platform: "youtube" | "instagram") => request("POST", `/me/accounts/${platform}`, creatorProfileSchema),
+
+    // Confirm and hold, the brand's side (CH FRD). The session is an HttpOnly cookie set by the API.
+    /** CH-FR-01: swap a link's token for a session scoped to its deal. The token is never stored or logged (CH-BR-06). */
+    openBrandLink: (token: string) => request("POST", `/b/${encodeURIComponent(token)}/session`, brandSessionSchema),
+    /** CH-FR-04 to CH-FR-09: the deal as the brand sees it. */
+    getBrandDeal: (dealId: string) => request("GET", `/brand${dealPath(dealId)}`, brandDealSchema),
+    /** CH-FR-11, CH-FR-12: send the brand's notes together; the deal moves to `changes_requested`. Notes are plain text (CH-BR-07). */
+    sendChanges: (dealId: string, notes: { about: BrandNoteAbout; text: string }[]) =>
+      request("POST", `/brand${dealPath(dealId)}/notes`, brandDealSchema, { notes }),
+    /** CH-FR-14, CH-FR-15: agree to the version shown; the API refuses one that's out of date (CH-BR-02). */
+    agree: (dealId: string, version: number) => request("POST", `/brand${dealPath(dealId)}/agree`, brandDealSchema, { version }),
+    /** CH-FR-17: start one post's hold; returns the PayPal order its approval needs. The page never moves money itself (CH-BR-05). */
+    startHold: (dealId: string, deliverableId: string) => request("POST", holdPath(dealId, deliverableId), holdStartSchema),
+    /** CH-FR-18: PayPal approved the order; the API authorizes it and reports the hold's state. */
+    confirmHold: (dealId: string, deliverableId: string, orderId: string) =>
+      request("POST", `${holdPath(dealId, deliverableId)}/approved`, brandDealSchema, { orderId }),
+    /** CH-FR-18: the brand closed PayPal without approving; nothing was held. */
+    cancelHold: (dealId: string, deliverableId: string, orderId: string) =>
+      request("POST", `${holdPath(dealId, deliverableId)}/closed`, brandDealSchema, { orderId }),
   };
 }

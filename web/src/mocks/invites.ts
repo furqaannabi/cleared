@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { apiBaseUrl } from "@/lib/api";
 import type { creatorProfileSchema, dealInviteSchema } from "@/lib/api/schemas";
 import { nextId } from "./brief-reader";
+import { brandNotes, creatorExtras } from "./brand-deals";
 import { findDraft } from "./deal-drafts";
 
 type Invite = z.infer<typeof dealInviteSchema>;
@@ -24,10 +25,45 @@ const LINK_DAYS = 7;
 let profile: Profile = structuredClone(DEMO_PROFILE);
 let terms = new Map<string, { posts: Record<string, Terms>; brandEmail?: string; link?: Invite["link"] }>();
 
-/** Restores the demo profile and clears every deal's invite terms. */
+/** The mock profile and invite terms, for keeping the mock data in the browser. */
+export const invitesData = {
+  get: () => ({ profile, terms: [...terms.entries()] }),
+  set: (d: { profile: Profile; terms: [string, NonNullable<ReturnType<typeof terms.get>>][] }) => {
+    profile = d.profile;
+    terms = new Map(d.terms);
+  },
+};
+
+/** Restores the demo profile and every deal's invite terms to the seed: only the demo deal already sent to its brand (CH 1.0). */
 export function resetInvites() {
   profile = structuredClone(DEMO_PROFILE);
   terms = new Map();
+  seedSentDeal();
+}
+
+function seedSentDeal() {
+  terms.set("deal_maple", {
+    posts: {
+      del_maple_video: { amount: "1200.00", deadlineDays: 14 },
+      del_maple_reel: { amount: "450.00", deadlineDays: 10 },
+      del_maple_short: { amount: "300.00", deadlineDays: 7 },
+    },
+    link: { url: "https://cleared.example/b/demo_maple", expiresAt: new Date(Date.now() + LINK_DAYS * 86_400_000).toISOString(), expired: false },
+  });
+}
+seedSentDeal();
+
+/** The deal a live link's token opens, or undefined for an unknown, turned-off or expired one (CH-FR-02). */
+export function dealForToken(token: string): string | undefined {
+  for (const [dealId, t] of terms) {
+    if (t.link && !t.link.expired && Date.parse(t.link.expiresAt) > Date.now() && t.link.url.endsWith(`/b/${token}`)) return dealId;
+  }
+  return undefined;
+}
+
+/** A deal's amount and deadline per post, for the brand's view. */
+export function postTerms(dealId: string): Record<string, Terms> {
+  return structuredClone(terms.get(dealId)?.posts ?? {});
 }
 
 function termsFor(dealId: string) {
@@ -36,11 +72,12 @@ function termsFor(dealId: string) {
   return t;
 }
 
-/** The deal's invite as the API returns it, or undefined if the deal isn't at the invite step. */
-function inviteFor(dealId: string): Invite | undefined {
+/** The deal's invite as the API returns it, or undefined if the deal isn't at the invite step or after it. */
+export function inviteFor(dealId: string): Invite | undefined {
   const d = findDraft(dealId);
   if (!d || d.step === "checklist") return undefined;
   const t = termsFor(dealId);
+  const extras = creatorExtras(dealId);
   return structuredClone({
     dealId: d.id,
     brandName: d.brandName,
@@ -50,13 +87,27 @@ function inviteFor(dealId: string): Invite | undefined {
       platform: x.platform,
       itemCount: d.items.filter((i) => i.deliverableId === x.id).length,
       ...t.posts[x.id],
+      // CH-FR-25: each post's hold, once the brand has agreed.
+      ...(d.step === "agreed" ? { hold: extras.holds[x.id] ?? { state: "not_started" as const } } : {}),
     })),
     brandEmail: t.brandEmail,
     link: t.link,
+    ...(t.link ? { version: extras.version } : {}),
+    ...(brandNotes(dealId) ? { notes: brandNotes(dealId) } : {}),
   });
 }
 
-function canCreate(invite: Invite): boolean {
+/** Where the creator is paid, for the draft checks the mock starts once every hold is in. */
+export const payoutEmail = () => profile.paypalEmail ?? "ada@example.com";
+
+/** Restarts the link's expiry when updated terms are sent (CH-FR-24). */
+export function restartLink(dealId: string) {
+  const link = terms.get(dealId)?.link;
+  if (link) link.expiresAt = new Date(Date.now() + LINK_DAYS * 86_400_000).toISOString();
+}
+
+/** Whether every term is in place for the link, or for sending updated terms (IN-FR-16, CH-FR-24). */
+export function canCreate(invite: Invite): boolean {
   const needs = new Set(invite.posts.map((p) => (p.platform === "instagram_reel" ? "instagram" : "youtube")));
   return (
     invite.posts.every((p) => p.amount && p.deadlineDays) &&
@@ -91,7 +142,8 @@ export const inviteHandlers: RequestHandler[] = [
     const body = (await request.json()) as Terms;
     const badAmount = body.amount !== undefined && !/^\d{1,7}\.\d{2}$/.test(body.amount);
     const badDays = body.deadlineDays !== undefined && !(Number.isInteger(body.deadlineDays) && body.deadlineDays >= 1 && body.deadlineDays <= 21);
-    if (invite.step !== "invite" || !invite.posts.some((p) => p.deliverableId === id) || badAmount || badDays) return refused();
+    const editableStep = invite.step === "invite" || invite.step === "changes_requested";
+    if (!editableStep || !invite.posts.some((p) => p.deliverableId === id) || badAmount || badDays) return refused();
     const t = termsFor(dealId);
     t.posts[id] = { ...t.posts[id], ...body };
     return HttpResponse.json(inviteFor(dealId));
@@ -103,7 +155,8 @@ export const inviteHandlers: RequestHandler[] = [
     const invite = inviteFor(dealId);
     if (!invite) return notFound();
     const { brandEmail } = (await request.json()) as { brandEmail?: string | null };
-    if (invite.step !== "invite" || (brandEmail !== null && !isEmail(brandEmail))) return refused();
+    const editableStep = invite.step === "invite" || invite.step === "changes_requested";
+    if (!editableStep || (brandEmail !== null && !isEmail(brandEmail))) return refused();
     termsFor(dealId).brandEmail = brandEmail ?? undefined;
     return HttpResponse.json(inviteFor(dealId));
   }),

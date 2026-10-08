@@ -15,13 +15,15 @@ export function ReadyBar({ draft, view, save, problem }: { draft: DealDraft; vie
     return (
       <div className="flex flex-col gap-3 rounded-lg border border-pass-wash bg-surface px-5 py-4 md:flex-row md:items-center md:justify-between">
         <p role="status" className="font-semibold">
-          Your checklist is ready. Next you’ll set the amount and deadline for each post and invite {draft.brandName}.
+          {draft.step === "changes_requested"
+            ? `Your checklist is ready. Next, check the terms and send them back to ${draft.brandName}.`
+            : `Your checklist is ready. Next you’ll set the amount and deadline for each post and invite ${draft.brandName}.`}
         </p>
         <Link
           href={`/deals/${encodeURIComponent(draft.id)}/invite`}
           className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-pill bg-espresso px-6 text-body-strong font-bold text-surface hover:bg-espresso-hover md:min-h-11"
         >
-          Set amounts and invite {draft.brandName}
+          {draft.step === "changes_requested" ? `Back to the terms for ${draft.brandName}` : `Set amounts and invite ${draft.brandName}`}
         </Link>
       </div>
     );

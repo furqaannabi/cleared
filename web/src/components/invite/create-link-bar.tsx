@@ -7,7 +7,9 @@ import type { Save, SaveProblems } from "./save";
 
 /**
  * "Create link for {brand}", held back until every term is in place, with the
- * first thing left and how many more. Fixed to the bottom on phones.
+ * first thing left and how many more. While answering the brand's notes it is
+ * "Send updated terms to {brand}" instead, held back the same way (CH-FR-24).
+ * Fixed to the bottom on phones.
  *
  * @param invite - the deal's invite terms
  * @param view - the invite view model
@@ -32,9 +34,10 @@ export function CreateLinkBar({
   problems: SaveProblems;
   onInvite: (invite: DealInvite) => void;
 }) {
+  const update = invite.step === "changes_requested";
   return (
     <section
-      aria-label="Create link"
+      aria-label={update ? "Send updated terms" : "Create link"}
       className="fixed inset-x-3 bottom-3 z-10 grid gap-2 rounded-lg bg-surface p-3.5 shadow-floating-bar lg:static lg:bg-transparent lg:p-0 lg:shadow-none"
     >
       {view.canCreate && view.total && (
@@ -49,10 +52,12 @@ export function CreateLinkBar({
       <button
         type="button"
         aria-disabled={!view.canCreate || undefined}
-        onClick={() => view.canCreate && save("link", () => api.createInviteLink(invite.dealId), onInvite)}
+        onClick={() =>
+          view.canCreate && save("link", () => (update ? api.sendUpdatedTerms(invite.dealId) : api.createInviteLink(invite.dealId)), onInvite)
+        }
         className="inline-flex min-h-12 items-center justify-center rounded-pill bg-espresso px-6 text-body-strong font-bold text-surface hover:bg-espresso-hover aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
       >
-        Create link for {invite.brandName}
+        {update ? `Send updated terms to ${invite.brandName}` : `Create link for ${invite.brandName}`}
       </button>
       <SaveProblem retry={problems.link} />
     </section>

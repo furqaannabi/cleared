@@ -94,7 +94,7 @@ function Loaded({
   const actions = useItemActions(deliverable.id, deliverable.brandName, onUpdated);
   // DC-FR-30: View brief, beside the next step from md: up and in the checklist header on phones.
   const briefSheet = deliverable.brief && (
-    <BriefSheet brief={deliverable.brief} brandName={deliverable.brandName} highlightLine={selected?.briefLine.number ?? null} />
+    <BriefSheet brief={deliverable.brief} brandName={deliverable.brandName} highlightLine={selected?.briefLine?.number ?? null} />
   );
   // DC-FR-09: retry a check that failed on our side; the page shows what the API returns.
   const [retrying, setRetrying] = useState(false);

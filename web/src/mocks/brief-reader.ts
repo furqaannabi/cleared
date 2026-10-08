@@ -82,6 +82,9 @@ function readLine(text: string, brand: string): { items: Read[]; question?: Omit
 let seq = 0;
 const nextId = (p: string) => `${p}_${(++seq).toString(36)}`;
 
+/** The id counter, kept with the mock data so ids made after a reload don't clash. */
+export const idCounter = { get: () => seq, set: (n: number) => void (seq = Math.max(seq, n)) };
+
 /** Reads the whole brief into items and questions, in line order. */
 export function readBrief(lines: { number: number; text: string }[], deliverables: Draft["deliverables"], brand: string) {
   const items: Item[] = [];

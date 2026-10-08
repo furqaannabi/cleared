@@ -35,7 +35,7 @@ test("DC-FR-41: grid rows and item cards show the same thing for every item", as
       describeStatus(item.status, BRAND).label,
       item.evidence?.text,
       itemTime(item),
-      String(item.briefLine.number),
+      item.briefLine ? String(item.briefLine.number) : "Added by you",
     ].filter((x): x is string => Boolean(x));
     for (const piece of expected) {
       expect(grid, `grid ${item.id}: ${piece}`).toContain(piece);

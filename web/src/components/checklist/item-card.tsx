@@ -74,9 +74,7 @@ export function ItemCard({
               <p className="mt-0.5">{item.suggestedFix}</p>
             </div>
           )}
-          <p>
-            Brief line {item.briefLine.number}: “{item.briefLine.text}”
-          </p>
+          <p>{item.briefLine ? `Brief line ${item.briefLine.number}: “${item.briefLine.text}”` : "Added by you"}</p>
           <p className="text-meta text-ink-3">Checked by: {checkedByLabel(item.checkedBy)}</p>
           {actions && <div className="mt-1">{actions}</div>}
         </div>

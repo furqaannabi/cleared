@@ -5,6 +5,7 @@ import { Seal } from "@/components/ui/seal";
 import { api } from "@/lib/api";
 import { PLATFORM_LABEL, type ChecklistView, type ItemRow } from "@/lib/checklist-builder/checklist-view";
 import type { DealDraft } from "@/lib/checklist-builder/types";
+import { latestNotes } from "./brand-notes";
 import type { Save } from "./checklist-builder";
 
 /**
@@ -57,6 +58,14 @@ function Item({ item, draft, view, selected, onSelect, save, problems, readOnly 
           {item.kindLabel} · {item.howLabel} · {item.source}
         </p>
         {item.sourceText && <p className="mt-1.5 text-[13px] text-ink-3 lg:hidden">Line {item.briefLine}: “{item.sourceText}”</p>}
+        {/* CH-FR-22: the brand's note about this item, beside it. */}
+        {latestNotes(draft.notes)
+          .filter((n) => n.about.kind === "item" && n.about.itemId === item.id)
+          .map((n) => (
+            <p key={n.id} className="mt-1.5 rounded-sm bg-latte-wash px-3 py-2 text-[13.5px] text-ink-2">
+              <b className="text-ink">{draft.brandName}:</b> <span className="whitespace-pre-wrap">{n.text}</span>
+            </p>
+          ))}
         {problems[item.id] && (
           <p role="alert" className="mt-1.5 text-meta font-semibold text-fail">
             {problems[item.id]}

@@ -22,6 +22,13 @@ describe("DC-FR-12 evidence panel", () => {
     expect(within(panel).getByText("Exact match")).toBeVisible();
   });
 
+  test("DC-FR-12 (1.13): an item the creator added says so under From the brief", () => {
+    const { briefLine, ...added } = byId("it_5");
+    void briefLine;
+    render(<EvidencePanel item={added} brandName="Glow Theory" />);
+    expect(screen.getByText("Added by you")).toBeVisible();
+  });
+
   test("with nothing selected, says how to see an item's evidence", () => {
     render(<EvidencePanel item={null} brandName="Glow Theory" />);
     expect(screen.getByRole("region", { name: "Evidence" })).toHaveTextContent(

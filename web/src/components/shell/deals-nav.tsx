@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { useDemoBuild } from "@/components/mocking/demo-build";
 import type { z } from "zod";
 import type { dealsSchema } from "@/lib/api/schemas";
 
@@ -65,6 +69,32 @@ export function DealsNav({
           );
         })}
       </ul>
+      <DemoReset rail={rail} />
     </nav>
+  );
+}
+
+/** Mock builds only: back to the seeded demo data, after a confirm in place. */
+function DemoReset({ rail }: { rail: boolean }) {
+  const demo = useDemoBuild();
+  const [asking, setAsking] = useState(false);
+  if (!demo) return null;
+  const quiet = `inline-flex min-h-11 items-center px-2.5 text-label font-semibold underline underline-offset-3 ${rail ? "text-white/70 hover:text-white" : "text-ink-3 hover:text-ink"}`;
+  return asking ? (
+    <div className={`mt-3 grid gap-1 px-2.5 text-label ${rail ? "text-white/80" : "text-ink-2"}`}>
+      <p>Every demo deal goes back to how it started.</p>
+      <div className="flex gap-1">
+        <button type="button" onClick={demo.reset} className={`${quiet} -mx-2.5 font-bold`}>
+          Yes, reset
+        </button>
+        <button type="button" onClick={() => setAsking(false)} className={quiet}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  ) : (
+    <button type="button" onClick={() => setAsking(true)} className={`${quiet} mt-3`}>
+      Reset demo data
+    </button>
   );
 }
