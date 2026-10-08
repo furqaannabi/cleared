@@ -10,7 +10,15 @@ import { ITEM_STATUSES } from "@/lib/checklist/item-status";
 
 const itemStatus = z.enum(ITEM_STATUSES);
 // DC-FR-01: the page states the API reports; objected and approved come from the brand's review (DC-FR-50, DC-FR-51).
-const deliverableState = z.enum(["no_draft", "checking", "results", "fully_passing", "objected", "approved", "check_failed", "released"]);
+const deliverableState = z.enum([
+  "no_draft", "checking", "results", "fully_passing", "objected", "approved", "check_failed", "released",
+  // PP-FR-01 to PP-FR-23: past Approved.
+  "posting", "published", "captured", "paid", "approved_not_paid",
+]);
+const money = z.string().regex(/^\d{1,7}\.\d{2}$/);
+/** PP-BR-05: a post link is only ever https on the platform's own domain. */
+const postUrl = z.url({ protocol: /^https$/, hostname: /^(www\.)?(youtube\.com|youtu\.be|instagram\.com)$/ });
+const releaseReason = z.enum(["deadline", "cancelled", "day_28", "fix_window_ended", "not_accepted", "ruled_not_to_pay", "hold_not_confirmed"]);
 
 function isTimeZone(tz: string): boolean {
   try {
@@ -102,6 +110,42 @@ export const deliverableSchema = z.object({
   objectedAt: isoTime.optional(),
   approvedAt: isoTime.optional(),
   approvedBy: z.enum(["brand", "window"]).optional(),
+  // PP-FR-01 to PP-FR-05: the go-ahead to post, as the API answers it.
+  goAhead: z
+    .discriminatedUnion("state", [
+      z.object({ state: z.literal("go"), endsAt: isoTime }),
+      z.object({ state: z.literal("wait"), until: isoTime }),
+      z.object({ state: z.literal("not_confirmed") }),
+      z.object({ state: z.literal("ended") }),
+    ])
+    .optional(),
+  // PP-FR-06 to PP-FR-09: the published post.
+  post: z.object({ url: postUrl.optional(), publishedAt: isoTime }).optional(),
+  // PP-FR-09 to PP-FR-15: the live check's overall result; plain text throughout (PP-BR-03).
+  liveCheck: z
+    .discriminatedUnion("state", [
+      z.object({ state: z.literal("checking") }),
+      z.object({ state: z.literal("passed") }),
+      z.object({ state: z.literal("fixable"), fixBy: isoTime }),
+      z.object({ state: z.literal("not_fixable"), reason: z.string().max(300), brandBy: isoTime }),
+      z.object({ state: z.literal("undecided"), what: z.string().max(120), brandBy: isoTime }),
+      z.object({ state: z.literal("objected"), reason: z.string().max(500), ruleBy: isoTime }),
+    ])
+    .optional(),
+  // PP-FR-17, PP-FR-21: the capture, with the fee and payout as the API works them out (PP-BR-07).
+  capture: z.object({ reference: z.string().min(1).max(64), at: isoTime, amount: money, fee: money, payout: money }).optional(),
+  captureRefused: z.object({ retryUntil: isoTime }).optional(),
+  // PP-FR-17 to PP-FR-20: the payout to the creator; only ever shown to the creator (PP-BR-04).
+  payout: z
+    .object({
+      state: z.enum(["sending", "unclaimed", "failed", "paid"]),
+      email: z.email(),
+      reason: z.string().max(200).optional(),
+      reference: z.string().min(1).max(64).optional(),
+      at: isoTime.optional(),
+      canSendAgain: z.boolean(),
+    })
+    .optional(),
   // DC-FR-52: a fresh link for the brand while it has something to do; only ever from the API, never stored.
   reviewLink: z.object({ url: z.url({ protocol: /^https$/ }), emailedTo: z.email().max(254).optional() }).optional(),
   checkFailure: checkFailureSchema.optional(),
@@ -109,7 +153,7 @@ export const deliverableSchema = z.object({
   checkStartedAt: isoTime.optional(),
   stages: z.array(z.object({ name: z.string().max(80), status: z.enum(["done", "current", "waiting"]) })).optional(),
   releasedAt: isoTime.optional(),
-  releaseReason: z.enum(["deadline", "cancelled"]).optional(),
+  releaseReason: releaseReason.optional(),
   cancelledBy: z.enum(["creator", "brand"]).optional(),
   releaseReference: z.string().min(1).optional(),
 });
@@ -282,6 +326,14 @@ export const brandDealSchema = z.object({
             z.object({ state: z.literal("objected"), count: z.number().int().positive() }),
             z.object({ state: z.literal("approved") }),
             z.object({ state: z.literal("released") }),
+            // PP-FR-25: past Approved.
+            z.object({ state: z.literal("posting"), postBy: isoTime }),
+            z.object({ state: z.literal("live_check") }),
+            z.object({ state: z.literal("confirm"), endsAt: isoTime }),
+            z.object({ state: z.literal("accept"), endsAt: isoTime }),
+            z.object({ state: z.literal("with_cleared") }),
+            z.object({ state: z.literal("taken"), amount: money }),
+            z.object({ state: z.literal("approved_not_paid") }),
           ])
           .optional(),
       }),
@@ -333,8 +385,19 @@ export const brandDeliverableSchema = z.object({
     z.object({ state: z.literal("window"), endsAt: isoTime }),
     z.object({ state: z.literal("objected"), objectedAt: isoTime }),
     z.object({ state: z.literal("approved"), approvedAt: isoTime, by: z.enum(["brand", "window"]) }),
-    z.object({ state: z.literal("released"), releasedAt: isoTime, reason: z.enum(["deadline", "cancelled"]) }),
+    z.object({ state: z.literal("released"), releasedAt: isoTime, reason: releaseReason }),
+    // PP-FR-25 to PP-FR-31: past Approved.
+    z.object({ state: z.literal("posting"), postBy: isoTime }),
+    z.object({ state: z.literal("live_check") }),
+    z.object({ state: z.literal("confirm"), endsAt: isoTime, what: z.string().max(120) }),
+    z.object({ state: z.literal("accept"), endsAt: isoTime, reason: z.string().max(300) }),
+    z.object({ state: z.literal("with_cleared"), reason: z.string().max(500), ruleBy: isoTime }),
+    z.object({ state: z.literal("taken"), amount: money, reference: z.string().min(1).max(64), at: isoTime, creatorPaid: z.boolean() }),
+    z.object({ state: z.literal("capture_refused"), retryUntil: isoTime }),
+    z.object({ state: z.literal("approved_not_paid") }),
   ]),
+  // PP-FR-26: the live post, once there is one.
+  post: z.object({ url: postUrl }).optional(),
   draft: z
     .object({
       url: videoUrl,

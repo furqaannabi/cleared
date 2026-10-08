@@ -27,6 +27,7 @@ export function ApprovedBanner({ deliverable }: { deliverable: Deliverable }) {
         <p className="mt-0.5 text-[14px] text-ink-2 md:text-body">
           {deliverable.approvedBy === "window" ? `No objection from ${b} in 48 hours, so this draft is approved.` : `${b} approved this draft.`}
         </p>
+        {deliverable.state === "approved" && <p className="mt-0.5 text-[14px] font-semibold text-ink md:text-body">Don’t publish yet. Cleared confirms {b}’s hold with PayPal first.</p>}
       </div>
     </section>
   );

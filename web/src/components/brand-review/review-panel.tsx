@@ -4,7 +4,8 @@ import { formatDayTime } from "@/lib/deliverable/format";
 import { formatAmount } from "@/lib/invite/amount";
 import type { BrandReviewView } from "@/lib/brand-review/review-view";
 import type { BrandDeliverable } from "@/lib/brand-review/types";
-import { GHOST, OUTLINE, PRIMARY } from "./styles";
+import { useId, useState } from "react";
+import { FIELD, GHOST, OUTLINE, PRIMARY } from "./styles";
 import type { ReviewActions } from "./use-review-actions";
 
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
@@ -78,6 +79,20 @@ export function ReviewPanel({ post, view, actions, timeZone }: { post: BrandDeli
             </>
           }
         />
+      ) : actions.confirming === "confirm_post" || actions.confirming === "accept_post" ? (
+        <Confirm
+          busy={actions.busy}
+          yes={actions.confirming === "confirm_post" ? "Yes, confirm" : "Yes, accept"}
+          onYes={actions.confirming === "confirm_post" ? actions.confirmPost : actions.acceptPost}
+          onNo={() => actions.confirm(null)}
+          text={
+            <>
+              <b>{actions.confirming === "confirm_post" ? "Confirm?" : "Accept?"}</b> Your {amount} is taken and {c} is paid.
+            </>
+          }
+        />
+      ) : actions.objecting ? (
+        <ObjectField actions={actions} />
       ) : actions.confirming === "approve" ? (
         <Confirm
           busy={actions.busy}
@@ -102,6 +117,21 @@ export function ReviewPanel({ post, view, actions, timeZone }: { post: BrandDeli
               Approve draft
             </button>
           )}
+          {view.actions.confirmPost && (
+            <>
+              <button type="button" onClick={() => actions.confirm("confirm_post")} className={PRIMARY}>
+                Confirm the post
+              </button>
+              <button type="button" onClick={() => actions.openObjection(true)} className={OUTLINE}>
+                Object
+              </button>
+            </>
+          )}
+          {view.actions.acceptPost && (
+            <button type="button" onClick={() => actions.confirm("accept_post")} className={OUTLINE}>
+              Accept the post anyway
+            </button>
+          )}
           {view.actions.approveAnyway && (
             <button type="button" onClick={() => actions.confirm("approve")} className={OUTLINE}>
               Approve this draft anyway
@@ -110,6 +140,34 @@ export function ReviewPanel({ post, view, actions, timeZone }: { post: BrandDeli
         </>
       )}
     </section>
+  );
+}
+
+/** PP-FR-27: an objection to a live post needs a reason; plain text, at most 500 characters. */
+function ObjectField({ actions }: { actions: ReviewActions }) {
+  const [text, setText] = useState("");
+  const id = useId();
+  return (
+    <div className="grid gap-2 rounded-md border border-latte-line bg-surface p-3">
+      <label htmlFor={id} className="text-[13.5px] font-bold">
+        Why are you objecting?
+      </label>
+      <textarea id={id} rows={3} maxLength={500} value={text} onChange={(e) => setText(e.target.value)} className={FIELD} />
+      {actions.objectProblem && (
+        <p role="alert" className="text-meta font-bold text-fail">
+          {actions.objectProblem}
+        </p>
+      )}
+      <p className="text-meta text-ink-3">A person at Cleared will decide. Your money stays held until then.</p>
+      <span className="flex flex-wrap gap-2">
+        <button type="button" disabled={actions.busy} onClick={() => actions.objectToPost(text)} className={OUTLINE}>
+          Send objection
+        </button>
+        <button type="button" onClick={() => actions.openObjection(false)} className={GHOST}>
+          Cancel
+        </button>
+      </span>
+    </div>
   );
 }
 

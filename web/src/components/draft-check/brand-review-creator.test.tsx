@@ -5,7 +5,6 @@ import { api } from "@/lib/api";
 import { DraftCheckPage } from "./draft-check-page";
 
 const DEAL = "deal_juniper";
-const next = () => screen.getByRole("region", { name: "What happens next" });
 
 describe("DC-FR-49, DC-FR-50 the brand objected", () => {
   test("names how many items and the deadline; the objected item says the check passed it, with the brand's note", async () => {
@@ -28,7 +27,7 @@ describe("DC-FR-51 approved", () => {
     render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_short" />);
     const banner = await screen.findByRole("region", { name: "Draft approved" });
     expect(banner).toHaveTextContent("Juniper & Salt approved this draft.");
-    expect(within(next()).getByText("Don’t publish yet. Cleared confirms Juniper & Salt’s hold with PayPal first.")).toBeVisible();
+    expect(within(banner).getByText("Don’t publish yet. Cleared confirms Juniper & Salt’s hold with PayPal first.")).toBeVisible();
     expect(screen.queryByRole("button", { name: /Upload/ })).toBeNull();
   });
 });

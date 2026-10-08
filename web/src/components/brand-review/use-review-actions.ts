@@ -6,7 +6,7 @@ import { removeObjection, saveObjection, type Objection } from "@/lib/brand-revi
 import type { BrandDeliverable } from "@/lib/brand-review/types";
 
 /** What the brand is confirming in place, if anything (RW-FR-16, RW-FR-18). */
-export type Confirming = "approve" | "send" | null;
+export type Confirming = "approve" | "send" | "confirm_post" | "accept_post" | null;
 
 /**
  * The brand's answers on one post: objections being written (memory only,
@@ -28,6 +28,8 @@ export function useReviewActions(post: BrandDeliverable, setPost: (p: BrandDeliv
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [unsent, setUnsent] = useState<Objection[] | null>(null);
+  const [objecting, setObjecting] = useState(false);
+  const [objectProblem, setObjectProblem] = useState<string | null>(null);
   const ids = { dealId: post.dealId, deliverableId: post.deliverableId };
 
   async function run(call: () => ReturnType<typeof api.approveDraft>, onRefused?: (fresh: BrandDeliverable | null) => void) {
@@ -58,6 +60,8 @@ export function useReviewActions(post: BrandDeliverable, setPost: (p: BrandDeliv
     busy,
     problem,
     unsent,
+    objecting,
+    objectProblem,
     edit(itemId: string | null) {
       setEditing(itemId);
       setEditProblem(null);
@@ -82,6 +86,19 @@ export function useReviewActions(post: BrandDeliverable, setPost: (p: BrandDeliv
           setObjections([]);
         },
       ).then((ok) => ok && setObjections([])),
+    // PP-FR-27, PP-FR-28: the brand's decisions on a live post.
+    confirmPost: () => run(() => api.confirmPost(ids.dealId, ids.deliverableId)),
+    acceptPost: () => run(() => api.acceptPost(ids.dealId, ids.deliverableId)),
+    openObjection(open: boolean) {
+      setObjecting(open);
+      setObjectProblem(null);
+    },
+    async objectToPost(reason: string) {
+      const text = reason.trim();
+      if (!text) return setObjectProblem("Say why you’re objecting.");
+      if (text.length > 500) return setObjectProblem("Keep it to 500 characters.");
+      if (await run(() => api.objectToPost(ids.dealId, ids.deliverableId, text))) setObjecting(false);
+    },
     accept: (itemId: string) => run(() => api.acceptItem(ids.dealId, ids.deliverableId, itemId)),
     askToFix: (itemId: string, note: string) => run(() => api.askToFix(ids.dealId, ids.deliverableId, itemId, note.trim() || undefined)),
   };

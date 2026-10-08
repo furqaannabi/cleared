@@ -57,3 +57,10 @@ test("RW-FR-28: on mocks, the next draft can be told to pass every item, which o
     await within(screen.getByRole("region", { name: "What happens next" })).findByText(/^Every item passed\. Juniper & Salt has until /, {}, { timeout: 6000 }),
   ).toBeVisible();
 }, 10_000);
+
+test("PP-FR-32: on mocks, the demo can make the go-ahead not confirmed", async () => {
+  render(<DraftCheckPage dealId="deal_juniper" deliverableId="del_juniper_short" />);
+  await userEvent.selectOptions(await screen.findByRole("combobox", { name: /the go-ahead answers/ }), "not_confirmed");
+  await userEvent.click(within(screen.getByRole("region", { name: "From approved to paid" })).getByRole("button", { name: "Get the go-ahead" }));
+  expect(await within(screen.getByRole("region", { name: "From approved to paid" })).findByText("Don’t post yet")).toBeVisible();
+});

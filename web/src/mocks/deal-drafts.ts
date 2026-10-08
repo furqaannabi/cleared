@@ -152,12 +152,24 @@ function heldSummary(d: Draft) {
   const needsCreator = (id: string) => {
     const x = findDeliverable(id);
     if (!x) return true;
-    if (["no_draft", "objected", "check_failed"].includes(x.state)) return true;
+    if (["no_draft", "objected", "check_failed", "approved", "posting"].includes(x.state)) return true;
+    // PP-FR-24: a live post to fix, or a payout that needs the creator.
+    if (x.state === "published" && x.liveCheck?.state === "fixable") return true;
+    if (x.state === "captured" && (x.payout?.state === "unclaimed" || x.payout?.state === "failed")) return true;
     return x.state === "results" && x.items.some((i) => i.status === "fix_needed" || i.status === "unsure");
   };
   const states = posts.map((p) => p.state);
-  const status = states.includes("objected")
+  const payoutProblem = posts.some((p) => ["unclaimed", "failed"].includes(findDeliverable(p.id)?.payout?.state ?? ""));
+  const status = payoutProblem
+    ? "Payout needs you"
+    : states.includes("objected")
     ? `${d.brandName} objected`
+    : states.some((s) => s === "approved" || s === "posting")
+      ? "Ready to post"
+      : states.includes("published")
+        ? "Live check"
+        : states.every((s) => s === "paid")
+          ? "Paid"
     : states.every((s) => s === "no_draft")
       ? "Waiting for your draft"
       : posts.some((p) => needsCreator(p.id))

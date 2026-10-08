@@ -76,6 +76,15 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** DC-FR-09: retry a check that failed on our side. Returns the updated deliverable. */
     retryCheck: (deliverableId: string) =>
       request("POST", `${deliverablePath(deliverableId)}/check/retry`, deliverableSchema),
+    /** PP-FR-01 to PP-FR-05: ask for the go-ahead to post; the API re-confirms the hold and answers. */
+    getGoAhead: (deliverableId: string) => request("POST", `${deliverablePath(deliverableId)}/go-ahead`, deliverableSchema),
+    /** PP-FR-06, PP-FR-07: "I've posted it"; a Reel gives its link. Starts the live check. */
+    markPosted: (deliverableId: string, url?: string) =>
+      request("POST", `${deliverablePath(deliverableId)}/posted`, deliverableSchema, url ? { url } : {}),
+    /** PP-FR-12: check the live post again, within the fix window. */
+    checkLiveAgain: (deliverableId: string) => request("POST", `${deliverablePath(deliverableId)}/live-check/again`, deliverableSchema),
+    /** PP-FR-19, PP-FR-20: send a payout that didn't pay again. */
+    sendPayoutAgain: (deliverableId: string) => request("POST", `${deliverablePath(deliverableId)}/payout/again`, deliverableSchema),
     /** DC-FR-15: withdraw an ask. Returns the updated deliverable. */
     withdrawAsk: (deliverableId: string, itemId: string) =>
       request("DELETE", askPath(deliverableId, itemId), deliverableSchema),
@@ -152,6 +161,15 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** RW-FR-13: accept an item the creator asked about. */
     acceptItem: (dealId: string, deliverableId: string, itemId: string) =>
       request("POST", `${brandDeliverablePath(dealId, deliverableId)}/items/${encodeURIComponent(itemId)}/accept`, brandDeliverableSchema),
+    /** PP-FR-27: confirm a post the live check couldn't decide; the money is taken. */
+    confirmPost: (dealId: string, deliverableId: string) =>
+      request("POST", `${brandDeliverablePath(dealId, deliverableId)}/post/confirm`, brandDeliverableSchema),
+    /** PP-FR-27: object to a live post, with a plain-text reason; a person at Cleared decides. */
+    objectToPost: (dealId: string, deliverableId: string, reason: string) =>
+      request("POST", `${brandDeliverablePath(dealId, deliverableId)}/post/object`, brandDeliverableSchema, { reason }),
+    /** PP-FR-28: accept a post that failed the live check anyway; the money is taken. */
+    acceptPost: (dealId: string, deliverableId: string) =>
+      request("POST", `${brandDeliverablePath(dealId, deliverableId)}/post/accept`, brandDeliverableSchema),
     /** RW-FR-16, RW-FR-21: approve the draft, in the window or after objecting. */
     approveDraft: (dealId: string, deliverableId: string) =>
       request("POST", `${brandDeliverablePath(dealId, deliverableId)}/approve`, brandDeliverableSchema),

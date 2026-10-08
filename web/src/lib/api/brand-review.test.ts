@@ -232,8 +232,8 @@ describe("DC-FR-31, DC-FR-37 the creator's deals list once every post is held", 
     expect(juniper).toMatchObject({ openDeliverableId: VIDEO, status: "Juniper & Salt objected" });
   });
 
-  test("with nothing for the creator to do, it says the brand is reviewing", async () => {
+  test("PP-FR-24: an approved post needs the creator (the go-ahead), so the deal opens it", async () => {
     const deals = await api.getDeals();
-    expect(deals.ok && deals.data.find((d) => d.id === DEAL)).toMatchObject({ openDeliverableId: VIDEO, status: "Brand review" });
+    expect(deals.ok && deals.data.find((d) => d.id === DEAL)).toMatchObject({ openDeliverableId: SHORT, status: "Ready to post" });
   });
 });

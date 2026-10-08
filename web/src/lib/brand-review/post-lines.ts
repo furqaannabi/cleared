@@ -1,6 +1,7 @@
 import type { BrandDeal } from "@/lib/brand-deal/types";
 import { PLATFORM_LABEL } from "@/lib/checklist-builder/checklist-view";
 import { itemCount } from "@/lib/deliverable/format";
+import { formatAmount } from "@/lib/invite/amount";
 
 /** One post's draft, as a line on the brand's deal page. */
 export interface PostLine {
@@ -57,6 +58,26 @@ export function postLines(deal: Pick<BrandDeal, "dealId" | "creatorName" | "post
           return { ...base, text: `Approved${postBy}`, action: null };
         case "released":
           return { ...base, text: "The hold came back to you", action: null };
+        // PP-FR-25: after Approved; the brand's two decisions come first, the soonest at the top.
+        case "confirm":
+        case "accept":
+          return {
+            ...base,
+            needsYou: true,
+            endsAt: Date.parse(r.endsAt),
+            text: `${r.state === "confirm" ? "Confirm the post" : "Accept the post?"} · ${left(Date.parse(r.endsAt) - now.getTime())} left`,
+            action: { text: "Review post", href, style: "primary" as const },
+          };
+        case "posting":
+          return { ...base, text: `${c} has the go-ahead · posts by ${day(r.postBy.slice(0, 10))}`, action: { text: "View draft", href, style: "link" as const } };
+        case "live_check":
+          return { ...base, text: "Posted · checking the live post", action: { text: "View post", href, style: "link" as const } };
+        case "with_cleared":
+          return { ...base, text: "A person at Cleared is deciding", action: { text: "View post", href, style: "link" as const } };
+        case "taken":
+          return { ...base, text: `Paid · ${formatAmount(r.amount)} taken`, action: { text: "View post", href, style: "link" as const } };
+        case "approved_not_paid":
+          return { ...base, text: "Approved, not paid", action: null };
         default:
           return { ...base, text: `${c} is working on the draft${postBy}` };
       }

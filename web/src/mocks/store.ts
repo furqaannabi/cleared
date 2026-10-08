@@ -3,7 +3,9 @@ import { resetBrandDeals } from "./brand-deals";
 import { resetDealDrafts } from "./deal-drafts";
 import { deliverables } from "./fixtures/deliverables";
 import { juniperDeliverables } from "./fixtures/juniper";
+import { settle } from "./publish-settle";
 import { resetInvites } from "./invites";
+import { resetPublish } from "./publish";
 
 /*
  * An in-memory copy of the synthetic fixtures, so mocked changes (asking the
@@ -16,14 +18,17 @@ const seed = (): Record<string, Deliverable> => ({
 let data: Record<string, Deliverable> = seed();
 
 /**
- * One mock deliverable, or undefined. A review window that has run out with
- * no objection is approved first, as the backend's timer would (RW-BR-01).
+ * One mock deliverable, or undefined. Whatever the clock has made due is
+ * applied first, as the backend's timers would: a review window that ran out
+ * with no objection is approved (RW-BR-01), and the steps after it (PP FRD).
  */
 export function findDeliverable(id: string): Deliverable | undefined {
   const d = data[id];
   if (d?.state === "fully_passing" && d.reviewWindowEndsAt && Date.parse(d.reviewWindowEndsAt) <= Date.now()) {
     Object.assign(d, { state: "approved", approvedAt: d.reviewWindowEndsAt, approvedBy: "window", reviewWindowEndsAt: undefined });
   }
+  // PP FRD: the go-ahead, live check, brand's 48 hours and payout, as the backend's timers would.
+  if (d) settle(d, Date.now());
   return d;
 }
 
@@ -41,4 +46,5 @@ export function resetMockData() {
   resetDealDrafts();
   resetInvites();
   resetBrandDeals();
+  resetPublish();
 }

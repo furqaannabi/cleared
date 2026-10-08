@@ -1,6 +1,7 @@
 import { formatDay, formatDayTime, formatDuration, formatMoney, itemCount } from "./format";
 import { deadlineView, postBy as postByText } from "./deadline";
 import type { CheckFailure, Deliverable } from "./types";
+import { journey } from "@/lib/publish/journey";
 
 export type NextStepAction = "upload_draft" | "upload_new_draft" | "upload_again" | "try_again";
 
@@ -59,6 +60,17 @@ export function nextStep(d: Deliverable, timeZone?: string): NextStep {
         detail: `Don’t publish yet. Cleared confirms ${d.brandName}’s hold with PayPal first.`,
         action: null,
       };
+    // PP FRD: past Approved the journey says what happens next; its action lives in the journey panel.
+    case "posting":
+    case "published":
+    case "captured":
+    case "paid":
+    case "approved_not_paid": {
+      const step = journey(d, new Date(), { timeZone }).steps.find((s) => s.state === "now" || s.state === "problem");
+      return step
+        ? { lead: step.title.endsWith("…") || step.title.endsWith(".") ? step.title : `${step.title}.`, detail: step.body ?? "", action: null }
+        : { lead: "Cleared. Nothing more to do on this post.", detail: "", action: null };
+    }
     case "check_failed":
       return checkFailedStep(d);
     case "released":
@@ -141,6 +153,16 @@ function releasedStep(d: Deliverable, timeZone?: string): NextStep {
   let why: string;
   if (d.releaseReason === "deadline") {
     why = `The deadline of ${deadlineView(d, timeZone).date} passed before a passing draft was published, so the ${amount} hold was released${on}.`;
+  } else if (d.releaseReason === "day_28") {
+    why = `The hold reached its 28th day with nothing decided, so the ${amount} hold was released${on}.`;
+  } else if (d.releaseReason === "fix_window_ended") {
+    why = `The fix window ended with your live post still failing, so the ${amount} hold went back to ${d.brandName}${on}.`;
+  } else if (d.releaseReason === "not_accepted") {
+    why = `${d.brandName} didn’t accept the post within 48 hours, so the ${amount} hold went back to them${on}.`;
+  } else if (d.releaseReason === "ruled_not_to_pay") {
+    why = `A person at Cleared decided not to pay for this post, so the ${amount} hold went back to ${d.brandName}${on}.`;
+  } else if (d.releaseReason === "hold_not_confirmed") {
+    why = `PayPal couldn’t confirm ${d.brandName}’s hold before the deadline, so the ${amount} hold was released${on}.`;
   } else if (d.cancelledBy === "brand") {
     why = `${d.brandName} cancelled the deal${on}, so the ${amount} hold went back to them.`;
   } else if (d.cancelledBy === "creator") {

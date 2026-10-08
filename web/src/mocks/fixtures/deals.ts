@@ -27,4 +27,11 @@ export const deals: z.infer<typeof dealsSchema> = [
     openDeliverableId: "del_kora_reel",
     deliverables: [{ id: "del_kora_reel", platform: "instagram_reel", state: "no_draft" }],
   },
+  {
+    id: "deal_wren",
+    brandName: "Wren Coffee",
+    status: "Paid",
+    openDeliverableId: "del_wren_video",
+    deliverables: [{ id: "del_wren_video", platform: "youtube_video", state: "paid" }],
+  },
 ];

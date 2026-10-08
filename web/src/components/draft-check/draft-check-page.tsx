@@ -27,6 +27,9 @@ import { CheckStages } from "./check-stages";
 import { DraftCheckLayout } from "./draft-check-layout";
 import { PassedBanner } from "./passed-banner";
 import { ApprovedBanner, CopyReviewLink } from "./review-status";
+import { JourneySlot } from "@/components/publish/journey-slot";
+import { DemoPublishControls } from "@/components/mocking/demo-publish-controls";
+import { JOURNEY_STATES } from "@/lib/publish/journey";
 import { DemoDraftOutcome, type DemoChoice } from "@/components/mocking/demo-draft-outcome";
 import { RunChangeBanner } from "./run-change-banner";
 import { runChangeRecap } from "@/lib/deliverable/run-change";
@@ -130,6 +133,8 @@ function Loaded({
         );
       }
     : undefined;
+  // PP FRD, design B: past Approved the journey takes the money card's and the next step's place.
+  const inJourney = JOURNEY_STATES.includes(deliverable.state);
   const barHasAction =
     view.nextStep.action === "try_again" || (view.nextStep.action !== null && simulateUpload !== undefined);
   // DC-FR-26: a fresh link for the draft when the current one stops working.
@@ -204,19 +209,20 @@ function Loaded({
       {deliverable.state === "approved" && <ApprovedBanner deliverable={deliverable} />}
       <CopyReviewLink deliverable={deliverable} />
       {simulateUpload && view.nextStep.action?.startsWith("upload") && <DemoDraftOutcome value={demoOutcome} onChange={setDemoOutcome} />}
+      {MOCKING_ENABLED && inJourney && <DemoPublishControls d={deliverable} />}
       {/* DC-FR-47: on phones the work comes first: this panel, the player, the checklist, then the money. */}
-      {!wide && !view.checkFailed && (
+      {!wide && !view.checkFailed && !inJourney && (
         <div className="mt-5">
           <WhatHappensNext step={view.nextStep} recap={view.runChange && runChangeRecap(view.runChange)} onShowItem={showItem} />
         </div>
       )}
       <DraftCheckLayout
         vertical={deliverable.platform !== "youtube_video"}
-        money={wide && <MoneyCard deliverable={deliverable} />}
+        money={inJourney ? <JourneySlot d={deliverable} onUpdated={onUpdated} /> : wide && <MoneyCard deliverable={deliverable} />}
         player={playerSlot}
         next={
           // DC-FR-30: phones show the bar only when it has an action (or a problem to report).
-          (wide || barHasAction || retryProblem) && (
+          !inJourney && (wide || barHasAction || retryProblem) && (
             <NextStepBar
               step={view.nextStep}
               onTryAgain={retryCheck}
@@ -265,7 +271,7 @@ function Loaded({
         </div>
       </section>
       {/* DC-FR-47: phones keep the money row, after the work. */}
-      {!wide && (
+      {!wide && !inJourney && (
         <div className="mt-8">
           <MoneyCard deliverable={deliverable} compact />
         </div>

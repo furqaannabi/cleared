@@ -129,3 +129,47 @@ describe("RW-FR-06, RW-FR-22 nothing to see yet, and approved", () => {
     expect(screen.queryByRole("button", { name: /Approve|Object/ })).toBeNull();
   });
 });
+
+describe("PP-FR-26 to PP-FR-30 after posting", () => {
+  const posted = (liveCheck: object) =>
+    Object.assign(findDeliverable("del_juniper_short")!, {
+      state: "published",
+      post: { url: "https://www.youtube.com/watch?v=tideshort01", publishedAt: new Date().toISOString() },
+      liveCheck,
+    });
+  const later = () => new Date(Date.now() + 40 * 3_600_000).toISOString();
+
+  test("couldn't decide: the live post, why, the silence line; confirming takes the money", async () => {
+    const user = userEvent.setup();
+    posted({ state: "undecided", what: "the paid promotion label", brandBy: later() });
+    await openPost("del_juniper_short", "YouTube Short");
+    expect(screen.getByRole("link", { name: "View the live post" })).toHaveAttribute("href", "https://www.youtube.com/watch?v=tideshort01");
+    expect(within(review()).getByText(/If you say nothing by .+, Ada Okafor is paid\./)).toBeVisible();
+    await user.click(within(review()).getByRole("button", { name: "Confirm the post" }));
+    expect(within(review()).getByText(/Your \$350\.00 is taken and Ada Okafor is paid\./)).toBeVisible();
+    await user.click(within(review()).getByRole("button", { name: "Yes, confirm" }));
+    expect(await within(review()).findByText(/Ada Okafor’s payment is on its way\./)).toBeVisible();
+  });
+
+  test("objecting needs a reason, then a person at Cleared decides", async () => {
+    const user = userEvent.setup();
+    posted({ state: "undecided", what: "the paid promotion label", brandBy: later() });
+    await openPost("del_juniper_short", "YouTube Short");
+    await user.click(within(review()).getByRole("button", { name: "Object" }));
+    await user.click(within(review()).getByRole("button", { name: "Send objection" }));
+    expect(within(review()).getByText("Say why you’re objecting.")).toBeVisible();
+    await user.type(within(review()).getByRole("textbox", { name: "Why are you objecting?" }), "The label isn’t on.");
+    await user.click(within(review()).getByRole("button", { name: "Send objection" }));
+    expect(await within(review()).findByText("A person at Cleared is deciding")).toBeVisible();
+  });
+
+  test("failed for good: accept the post anyway, after a confirmation; silence returns the money", async () => {
+    const user = userEvent.setup();
+    posted({ state: "not_fixable", reason: "The live post isn’t the approved draft.", brandBy: later() });
+    await openPost("del_juniper_short", "YouTube Short");
+    expect(within(review()).getByText(/If you don’t accept it by .+, the hold comes back to you\./)).toBeVisible();
+    await user.click(within(review()).getByRole("button", { name: "Accept the post anyway" }));
+    await user.click(within(review()).getByRole("button", { name: "Yes, accept" }));
+    expect(await within(review()).findByText("Paid")).toBeVisible();
+  });
+});

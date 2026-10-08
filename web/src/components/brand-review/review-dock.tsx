@@ -16,8 +16,33 @@ import type { ReviewActions } from "./use-review-actions";
  * @see docs/specs/brand-review-frd.md RW-FR-29
  */
 export function ReviewDock({ view, actions, creator }: { view: BrandReviewView; actions: ReviewActions; creator: string }) {
+  if (actions.confirming || actions.objecting) return null;
+  // PP-FR-27, PP-FR-28: the brand's decisions on a live post.
+  if (view.actions.confirmPost || view.actions.acceptPost) {
+    const go = (what: "confirm_post" | "accept_post") => {
+      actions.confirm(what);
+      document.getElementById("your-review")?.scrollIntoView?.({ block: "start" });
+    };
+    return (
+      <div className="fixed inset-x-3 bottom-3 z-10 flex gap-2 rounded-[16px] bg-surface p-3.5 shadow-floating-bar lg:hidden [&>*]:flex-1">
+        {view.actions.confirmPost ? (
+          <>
+            <button type="button" onClick={() => actions.openObjection(true)} className={OUTLINE}>
+              Object
+            </button>
+            <button type="button" onClick={() => go("confirm_post")} className={`${PRIMARY} min-h-11 text-[14.5px]`}>
+              Confirm
+            </button>
+          </>
+        ) : (
+          <button type="button" onClick={() => go("accept_post")} className={OUTLINE}>
+            Accept anyway
+          </button>
+        )}
+      </div>
+    );
+  }
   if (!view.actions.approve && !view.actions.approveAnyway) return null;
-  if (actions.confirming) return null;
   const n = actions.objections.length;
   const open = (what: "approve" | "send") => {
     actions.confirm(what);

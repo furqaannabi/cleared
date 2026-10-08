@@ -46,3 +46,29 @@ describe("RW-FR-01, RW-FR-02 each post's draft on the brand's deal page", () => 
     expect(lines.map((l) => l.deliverableId)).toEqual(["soon", "late"]);
   });
 });
+
+describe("PP-FR-25 each post's line after Approved", () => {
+  test("posting, live check, the brand's decisions first, with Cleared, paid", () => {
+    const lines = postLines(
+      deal([
+        post("a", { state: "posting", postBy: "2026-10-10T14:00:00Z" }),
+        post("b", { state: "live_check" }),
+        post("c", { state: "accept", endsAt: "2026-10-10T08:00:00Z" }),
+        post("d", { state: "confirm", endsAt: "2026-10-09T08:00:00Z" }),
+        post("e", { state: "with_cleared" }),
+        post("f", { state: "taken", amount: "350.00" }),
+        post("g", { state: "approved_not_paid" }),
+      ]),
+      NOW,
+    );
+    expect(lines.map((l) => [l.deliverableId, l.text, l.action?.text ?? null])).toEqual([
+      ["d", "Confirm the post · 20h 0m left", "Review post"],
+      ["c", "Accept the post? · 44h 0m left", "Review post"],
+      ["a", "Ada Okafor has the go-ahead · posts by 10 Oct", "View draft"],
+      ["b", "Posted · checking the live post", "View post"],
+      ["e", "A person at Cleared is deciding", "View post"],
+      ["f", "Paid · $350.00 taken", "View post"],
+      ["g", "Approved, not paid", null],
+    ]);
+  });
+});

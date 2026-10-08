@@ -60,6 +60,22 @@ function reviewOf(d: Deliverable): BrandDeliverable["review"] {
       return { state: "window", endsAt: d.reviewWindowEndsAt! };
     case "results":
       return askedThisRun(d) ? { state: "asked" } : { state: "nothing_yet" };
+    // PP-FR-25 to PP-FR-31: past Approved. Never the payout's email or problems (PP-BR-04).
+    case "posting":
+      return { state: "posting", postBy: d.goAhead?.state === "go" ? d.goAhead.endsAt : d.deadline };
+    case "published": {
+      const lc = d.liveCheck;
+      if (d.captureRefused) return { state: "capture_refused", retryUntil: d.captureRefused.retryUntil };
+      if (lc?.state === "undecided") return { state: "confirm", endsAt: lc.brandBy, what: lc.what };
+      if (lc?.state === "not_fixable") return { state: "accept", endsAt: lc.brandBy, reason: lc.reason };
+      if (lc?.state === "objected") return { state: "with_cleared", reason: lc.reason, ruleBy: lc.ruleBy };
+      return { state: "live_check" };
+    }
+    case "captured":
+    case "paid":
+      return { state: "taken", amount: d.capture!.amount, reference: d.capture!.reference, at: d.capture!.at, creatorPaid: d.state === "paid" };
+    case "approved_not_paid":
+      return { state: "approved_not_paid" };
     default:
       return { state: "nothing_yet" };
   }
@@ -84,6 +100,7 @@ export function brandDeliverableFor(dealId: string, d: Deliverable): BrandDelive
     creatorTimeZone: d.creatorTimeZone,
     hold: { amount: terms.amount, reference: d.hold.reference, deadline: d.deadline },
     review,
+    ...(d.post?.url ? { post: { url: d.post.url } } : {}),
     ...(showDraft
       ? {
           draft: {
@@ -144,6 +161,15 @@ export function postReview(deliverableId: string) {
       return { state: "objected" as const, count: d.items.filter((i) => i.status === "objected_by_brand").length };
     case "window":
       return { state: "window" as const, endsAt: review.endsAt };
+    case "posting":
+      return { state: "posting" as const, postBy: review.postBy };
+    case "confirm":
+    case "accept":
+      return { state: review.state, endsAt: review.endsAt };
+    case "taken":
+      return { state: "taken" as const, amount: review.amount };
+    case "capture_refused":
+      return { state: "live_check" as const };
     default:
       return { state: review.state };
   }

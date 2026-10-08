@@ -210,6 +210,15 @@ describe("DC-FR-30 next step", () => {
     expect(next({ state: "approved", approvedBy: "window" }).lead).toBe("No objection from Glow Theory in 48 hours, so this draft is approved.");
   });
 
+  test("PP-FR-22: every release reason, in plain words", () => {
+    const why = (releaseReason: Deliverable["releaseReason"]) => next({ state: "released", releaseReason, releasedAt: "2026-10-24T10:00:00Z" }).detail;
+    expect(why("day_28")).toMatch(/^The hold reached its 28th day with nothing decided, so the \$1,200\.00 hold was released on 24 Oct\./);
+    expect(why("fix_window_ended")).toMatch(/^The fix window ended with your live post still failing/);
+    expect(why("not_accepted")).toMatch(/^Glow Theory didn’t accept the post within 48 hours/);
+    expect(why("ruled_not_to_pay")).toMatch(/^A person at Cleared decided not to pay for this post/);
+    expect(why("hold_not_confirmed")).toMatch(/^PayPal couldn’t confirm Glow Theory’s hold before the deadline/);
+  });
+
   test("DC-FR-08, DC-FR-30 check failed on the file: the bar says what to do (the banner says why and that the hold is safe)", () => {
     expect(
       next({
@@ -421,6 +430,15 @@ describe("DC-FR-34 deal steps", () => {
     const steps = stepsFor("approved");
     expect(steps.items.map((s) => s.state)).toEqual(["done", "done", "done", "done", "current", "upcoming", "upcoming"]);
     expect(steps.summary).toBe("Step 5 of 7 · Publish");
+  });
+
+  test("PP-FR-24: posting is at Publish, published at Live check, captured at Paid, paid all done", () => {
+    expect(stepsFor("posting").summary).toBe("Step 5 of 7 · Publish");
+    expect(stepsFor("published").summary).toBe("Step 6 of 7 · Live check");
+    expect(stepsFor("captured").summary).toBe("Step 7 of 7 · Paid");
+    const paid = stepsFor("paid");
+    expect(paid.items.every((s) => s.state === "done")).toBe(true);
+    expect(paid.summary).toBe("Cleared · paid");
   });
 
   test("a released deliverable has ended, with no current step", () => {

@@ -120,6 +120,14 @@ function Review({ post, setPost, reload }: { post: BrandDeliverable; setPost: (p
             <PlatformMark platform={post.platform} />
             <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">{label}</h1>
           </div>
+          {/* PP-FR-26: the live post, on the platform (its link is checked to be the platform's own, PP-BR-05). */}
+          {post.post && (
+            <p className="mt-1 text-[14px] text-ink-3">
+              <a href={post.post.url} target="_blank" rel="noopener noreferrer" className="font-bold text-espresso underline underline-offset-3">
+                View the live post
+              </a>
+            </p>
+          )}
 
           <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[auto_1fr] lg:gap-7">
             <div className="lg:col-start-2 lg:row-start-1">

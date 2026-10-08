@@ -2,6 +2,7 @@ import { http, HttpResponse, type RequestHandler } from "msw";
 import { apiBaseUrl } from "@/lib/api";
 import { brandDealHandlers } from "./brand-deals";
 import { brandReviewHandlers, creatorView } from "./brand-review";
+import { publishHandlers } from "./publish";
 import { dealDraftHandlers, draftSummaries } from "./deal-drafts";
 import { deals } from "./fixtures/deals";
 import { inviteHandlers } from "./invites";
@@ -23,6 +24,8 @@ export const handlers: RequestHandler[] = [
   ...inviteHandlers,
   // RW FRD: the brand's review of each post (first: a review link's swap falls through to the invite link's).
   ...brandReviewHandlers,
+  // PP FRD: the go-ahead, posting, the live check, the brand's decisions after posting, the payout.
+  ...publishHandlers,
   // CH FRD: the brand's side of confirm and hold.
   ...brandDealHandlers,
 

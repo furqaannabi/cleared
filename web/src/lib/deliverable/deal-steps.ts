@@ -9,7 +9,7 @@ export interface DealStepsView {
 }
 
 /** Which deal step each page state is at (the page states in this FRD reach Publish once approved, DC-FR-51). */
-const CURRENT: Record<Exclude<Deliverable["state"], "released">, number> = {
+const CURRENT: Record<Exclude<Deliverable["state"], "released" | "paid" | "approved_not_paid">, number> = {
   no_draft: 2,
   checking: 2,
   results: 2,
@@ -17,6 +17,10 @@ const CURRENT: Record<Exclude<Deliverable["state"], "released">, number> = {
   fully_passing: 3,
   objected: 3,
   approved: 4,
+  // PP-FR-24
+  posting: 4,
+  published: 5,
+  captured: 6,
 };
 
 /**
@@ -32,6 +36,11 @@ export function dealSteps(d: Deliverable): DealStepsView {
       summary: "Ended · hold released",
     };
   }
+  // PP-FR-24: paid has every step done; approved, not paid ends before Paid.
+  if (d.state === "paid") return { items: DEAL_STEPS.map((label) => ({ label, state: "done" })), summary: "Cleared · paid" };
+  if (d.state === "approved_not_paid") {
+    return { items: DEAL_STEPS.map((label, i) => ({ label, state: i < 6 ? "done" : "ended" })), summary: "Ended · approved, not paid" };
+  }
   const current = CURRENT[d.state];
   return {
     items: DEAL_STEPS.map((label, i) => ({ label, state: i < current ? "done" : i === current ? "current" : "upcoming" })),
@@ -43,5 +52,7 @@ export function dealSteps(d: Deliverable): DealStepsView {
 export function stepLabel(state: Deliverable["state"]): string {
   if (state === "released") return "Hold released";
   if (state === "no_draft") return "Waiting for your draft";
+  if (state === "paid") return "Paid";
+  if (state === "approved_not_paid") return "Approved, not paid";
   return DEAL_STEPS[CURRENT[state]];
 }

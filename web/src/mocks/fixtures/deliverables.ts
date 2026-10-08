@@ -164,6 +164,36 @@ export const glowTheoryReel: Deliverable = {
   ],
 };
 
+/** PP-FR-32: a post that's paid, with every reference: the end of the journey. */
+export const wrenVideo: Deliverable = {
+  id: "del_wren_video",
+  brandName: "Wren Coffee",
+  platform: "youtube_video",
+  state: "paid",
+  run: 1,
+  deadline: "2026-10-12T22:59:00Z",
+  creatorTimeZone: "Africa/Lagos",
+  hold: { amountMinor: 80000, currency: "USD", reference: "DEMO-WH3K81", heldAt: "2026-09-28T09:00:00Z", stage: "paid" },
+  payoutEmail: "ada@example.com",
+  approvedAt: "2026-10-03T14:00:00Z",
+  approvedBy: "window",
+  draft: { fileName: "wren_v1.mp4", durationSec: 408, url: "/mock-media/synthetic-draft-16x9.mp4", urlExpiresAt: "2099-01-01T00:00:00Z" },
+  goAhead: { state: "go", endsAt: "2026-10-05T10:00:00Z" },
+  post: { url: "https://www.youtube.com/watch?v=wrencoffee1", publishedAt: "2026-10-04T16:20:00Z" },
+  liveCheck: { state: "passed" },
+  capture: { reference: "DEMO-CAP4W92", at: "2026-10-04T16:31:00Z", amount: "800.00", fee: "40.00", payout: "760.00" },
+  payout: { state: "paid", email: "ada@example.com", reference: "DEMO-PAY7Q15", at: "2026-10-04T16:40:00Z", canSendAgain: false },
+  brief: [{ number: 1, text: "Say “Wren Coffee” and show the bag." }, { number: 2, text: "Mark the post as a paid promotion." }],
+  items: [
+    { id: "wv_1", name: "Says “Wren Coffee” and shows the bag", kind: "said", status: "passed", checkedBy: "ai_timestamp",
+      briefLine: { number: 1, text: "Say “Wren Coffee” and show the bag." },
+      evidence: { label: "Transcript", text: "“…this is Wren Coffee’s house blend…”", startSec: 31 } },
+    { id: "wv_2", name: "Marked as a paid promotion", kind: "disclosure", status: "passed", checkedBy: "published_post",
+      briefLine: { number: 2, text: "Mark the post as a paid promotion." },
+      evidence: { label: "On the live post", text: "The paid promotion label is on." } },
+  ],
+};
+
 export const deliverables: Record<string, Deliverable> = Object.fromEntries(
-  [glowTheoryVideo, glowTheoryVideoReleased, glowTheoryVideoFailedOurs, glowTheoryReel, northboundShort, koraReel].map((d) => [d.id, d]),
+  [glowTheoryVideo, glowTheoryVideoReleased, glowTheoryVideoFailedOurs, glowTheoryReel, northboundShort, koraReel, wrenVideo].map((d) => [d.id, d]),
 );
