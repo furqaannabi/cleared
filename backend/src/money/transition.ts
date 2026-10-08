@@ -725,7 +725,7 @@ export function transition(
       return {
         ok: true,
         state: { ...state, capture: { id: event.captureId, status: "started", refusals: 0 } },
-        effects: [captureHold(state, state.hold, event.captureId, false)],
+        effects: [captureHold(state, state.hold, event.captureId, event.at >= state.hold.guaranteeEndsAt)],
       };
     case "capture_retry_due": {
       if (state.stage !== "held" || !state.hold || state.capture?.status !== "refused") return unchanged(state);

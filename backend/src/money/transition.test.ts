@@ -1605,3 +1605,29 @@ describe("MP-FR-32 release", () => {
     expect(transition(heldDeliverable(), cancelAnswered("cancelled"))).toEqual({ ok: false, reason: "not_released" });
   });
 });
+
+describe("MP-FR-24 the first capture and the guarantee (revision 1.2)", () => {
+  test("it re-confirms the hold first when the guarantee has ended", () => {
+    // Held on the 10th and never renewed, so the guarantee ended on the 13th; the capture starts on the 17th.
+    expect(transition(approvedToPay(), captureStarted())).toMatchObject({
+      ok: true,
+      effects: [{ type: "capture_hold", captureId: "cap_1", reference: "AUTH-1", renewFirst: true }],
+    });
+  });
+
+  test("it does not re-confirm a hold that is still guaranteed", () => {
+    // Renewed at 10:00:05 on the 15th, so guaranteed to the 18th.
+    const approved = after(
+      readyToPublish(),
+      askGoAhead("2026-10-15T10:00:00Z"),
+      { type: "hold_confirmed", confirmId: "conf_1", renewedReference: "AUTH-2", at: at("2026-10-15T10:00:05Z") },
+      { type: "post_published", publishedAt: at("2026-10-16T09:00:00Z"), at: at("2026-10-16T09:05:00Z") },
+      liveCheck("passed", "2026-10-16T09:10:00Z"),
+    );
+
+    expect(transition(approved, captureStarted("cap_1", "2026-10-16T09:10:01Z"))).toMatchObject({
+      ok: true,
+      effects: [{ type: "capture_hold", captureId: "cap_1", reference: "AUTH-2", renewFirst: false }],
+    });
+  });
+});
