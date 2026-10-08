@@ -1467,3 +1467,141 @@ describe("MP-FR-31 cleared", () => {
     });
   });
 });
+
+const cancelBy = (by: "creator" | "brand", time = "2026-10-12T10:00:00Z"): MoneyEvent => ({
+  type: "cancel_requested",
+  by,
+  at: at(time),
+});
+
+describe("MP-FR-33 cancelling a held deliverable", () => {
+  // Renewed at 10:00:05 on the 15th, so the go-ahead runs to 10:00:05 on the 17th.
+  const goAheadRunning = () =>
+    after(readyToPublish(), askGoAhead("2026-10-15T10:00:00Z"), {
+      type: "hold_confirmed",
+      confirmId: "conf_1",
+      renewedReference: "AUTH-2",
+      at: at("2026-10-15T10:00:05Z"),
+    });
+
+  test.each(["creator", "brand"] as const)("the %s can cancel, which releases the hold", (by) => {
+    expect(transition(heldDeliverable(), cancelBy(by))).toMatchObject({
+      ok: true,
+      state: { stage: "released", release: { reason: "cancelled", by, at: at("2026-10-12T10:00:00Z") } },
+      effects: [{ type: "cancel_hold", reference: "AUTH-1" }],
+    });
+  });
+
+  test("nobody can cancel while a go-ahead is running", () => {
+    expect(transition(goAheadRunning(), cancelBy("brand", "2026-10-16T10:00:00Z"))).toEqual({
+      ok: false,
+      reason: "go_ahead_running",
+    });
+  });
+
+  test("a go-ahead past its end time still blocks cancelling until it has been checked for a post (MP-FR-15)", () => {
+    expect(transition(goAheadRunning(), cancelBy("brand", "2026-10-17T10:00:30Z"))).toEqual({
+      ok: false,
+      reason: "go_ahead_running",
+    });
+  });
+
+  test("cancelling is possible again once a go-ahead has ended unused", () => {
+    const ended = after(goAheadRunning(), { type: "go_ahead_ends_due", publishedAt: null, at: at("2026-10-17T10:00:05Z") });
+
+    expect(transition(ended, cancelBy("brand", "2026-10-17T10:01:00Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "released", release: { reason: "cancelled", by: "brand" } },
+    });
+  });
+
+  test("nobody can cancel once a post is published", () => {
+    expect(transition(published(), cancelBy("brand", "2026-10-17T10:00:00Z"))).toEqual({
+      ok: false,
+      reason: "already_published",
+    });
+    expect(transition(captured(), cancelBy("creator", "2026-10-17T10:00:00Z"))).toEqual({
+      ok: false,
+      reason: "already_published",
+    });
+  });
+});
+
+describe("MP-FR-34 cancelling before the hold", () => {
+  test("a deliverable that is not held is closed", () => {
+    expect(transition(agreedDeliverable(), cancelBy("creator"))).toMatchObject({
+      ok: true,
+      state: { stage: "closed_not_held", closed: { because: "cancelled", by: "creator", at: at("2026-10-12T10:00:00Z") } },
+      effects: [],
+    });
+  });
+
+  test("an attempt PayPal has not answered is cancelled with PayPal", () => {
+    expect(transition(after(authorizing(), answered("pending")), cancelBy("brand"))).toMatchObject({
+      ok: true,
+      state: { stage: "closed_not_held", attempt: { status: "declined", declinedBecause: "cancelled" } },
+      effects: [{ type: "cancel_attempt", attemptId: "att_1", orderId: "ORDER-1" }],
+    });
+  });
+
+  test("a hold can no longer be started or approved afterwards, and the reason says it was cancelled", () => {
+    const cancelled = after(awaitingApproval(), cancelBy("creator"));
+
+    expect(transition(cancelled, startAgain)).toEqual({ ok: false, reason: "cancelled" });
+    expect(transition(cancelled, { type: "hold_approved", orderId: "ORDER-1", at: at("2026-10-12T10:05:00Z") })).toEqual({
+      ok: false,
+      reason: "cancelled",
+    });
+  });
+
+  test("a deliverable closed as never held says so, not cancelled", () => {
+    const neverHeld = after(agreedDeliverable(), { type: "never_held_due", at: at("2026-10-17T08:00:00Z") });
+
+    expect(neverHeld).toMatchObject({ closed: { because: "never_held" } });
+    expect(transition(neverHeld, cancelBy("creator", "2026-10-18T10:00:00Z"))).toEqual({ ok: false, reason: "closed_not_held" });
+  });
+});
+
+describe("MP-FR-32 release", () => {
+  const released = () => after(heldDeliverable(), cancelBy("brand"));
+  const cancelAnswered = (outcome: "cancelled" | "already_ended" | "unknown" | "failed"): MoneyEvent => ({
+    type: "hold_cancel_answered",
+    outcome,
+    at: at("2026-10-12T10:00:05Z"),
+  });
+
+  test.each(["cancelled", "already_ended"] as const)("PayPal answering %s confirms the release", (outcome) => {
+    expect(transition(released(), cancelAnswered(outcome))).toMatchObject({
+      ok: true,
+      state: { stage: "released", release: { reason: "cancelled", confirmedAt: at("2026-10-12T10:00:05Z") } },
+      effects: [],
+    });
+  });
+
+  test("an unclear answer is followed up with PayPal", () => {
+    const before = released();
+
+    expect(transition(before, cancelAnswered("unknown"))).toEqual({
+      ok: true,
+      state: before,
+      effects: [{ type: "check_hold_cancelled", reference: "AUTH-1" }],
+    });
+  });
+
+  test("a release PayPal will not carry out is put in front of a person at Cleared", () => {
+    expect(transition(released(), cancelAnswered("failed"))).toMatchObject({
+      ok: true,
+      effects: [{ type: "notify", to: "cleared", about: "release_failed" }],
+    });
+  });
+
+  test("a confirmation that arrives twice changes nothing the second time", () => {
+    const confirmed = after(released(), cancelAnswered("cancelled"));
+
+    expect(transition(confirmed, cancelAnswered("cancelled"))).toEqual({ ok: true, state: confirmed, effects: [] });
+  });
+
+  test("it is refused for a deliverable that was never released", () => {
+    expect(transition(heldDeliverable(), cancelAnswered("cancelled"))).toEqual({ ok: false, reason: "not_released" });
+  });
+});

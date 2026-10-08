@@ -17,7 +17,7 @@ export interface MoneyTerms {
 /** One deliverable's money. */
 export interface MoneyState extends MoneyTerms {
   /**
-   * closed_not_held is final: the brand never held it within the time allowed (MP-FR-08).
+   * closed_not_held is final: it was never held in the time allowed, or was cancelled first (MP-FR-08, MP-FR-34).
    * released is final: the hold went back to the brand (MP-FR-32).
    * approved_not_paid is final: paying was approved, but the hold ended before it could be captured (MP-FR-23).
    * paid is final: the creator has the money and the deliverable is cleared (MP-FR-31).
@@ -37,6 +37,8 @@ export interface MoneyState extends MoneyTerms {
   waitingOn: WaitingOn | null;
   /** Why and when the hold was released. */
   release: Release | null;
+  /** Why and when the deliverable was closed without a hold. */
+  closed: Closed | null;
   /** The latest try at capturing the hold. */
   capture: Capture | null;
   /** Cleared's fee and what the creator is paid, in cents. Fixed when the capture completes (MP-FR-27). */
@@ -91,7 +93,25 @@ export type WaitingOn =
   | { for: "brand_to_accept"; until: Date };
 
 export interface Release {
-  reason: "deadline" | "hold_not_confirmed" | "day_28" | "cleared_ruled" | "fix_window_ended" | "not_accepted";
+  reason:
+    | "deadline"
+    | "hold_not_confirmed"
+    | "day_28"
+    | "cleared_ruled"
+    | "fix_window_ended"
+    | "not_accepted"
+    | "cancelled";
+  at: Date;
+  /** Who cancelled, when the reason is a cancellation. */
+  by?: "creator" | "brand";
+  /** When PayPal confirmed the hold had ended (MP-FR-32). */
+  confirmedAt?: Date;
+}
+
+/** Why a deliverable was closed without ever being held. */
+export interface Closed {
+  because: "never_held" | "cancelled";
+  by?: "creator" | "brand";
   at: Date;
 }
 
@@ -133,7 +153,7 @@ export interface HoldAttempt {
    */
   status: "creating" | "awaiting_approval" | "authorizing" | "pending" | "unknown" | "held" | "declined" | "closed";
   /** Why a declined attempt was declined: by PayPal, or because PayPal never answered (MP-FR-07). */
-  declinedBecause?: "paypal_declined" | "timed_out";
+  declinedBecause?: "paypal_declined" | "timed_out" | "cancelled";
 }
 
 export type MoneyEvent =
@@ -185,6 +205,9 @@ export type MoneyEvent =
       outcome: "unclaimed" | "failed" | "returned" | "blocked" | "denied" | "unknown" | "cancelled";
       at: Date;
     }
+  | { type: "cancel_requested"; by: "creator" | "brand"; at: Date }
+  /** PayPal's answer to ending a released hold (MP-FR-32). */
+  | { type: "hold_cancel_answered"; outcome: "cancelled" | "already_ended" | "unknown" | "failed"; at: Date }
   /** The creator asks for the payout to be sent again, after correcting their PayPal email (MP-FR-30). */
   | { type: "payout_retry_requested"; payoutId: string; at: Date }
   | { type: "authorize_answered"; attemptId: string; outcome: "held"; reference: string; at: Date }
@@ -202,6 +225,7 @@ export type MoneyEffect =
   | { type: "notify"; to: "brand" | "creator" | "cleared"; about: Notice }
   /** Give the hold back to the brand. The call to PayPal is MP-FR-32. */
   | { type: "cancel_hold"; reference: string }
+  | { type: "check_hold_cancelled"; reference: string }
   /** An approval is on record: begin a capture attempt. */
   | { type: "start_capture" }
   /** Ask PayPal to capture the hold. Always the full amount held (MP-BR-03). */
@@ -238,7 +262,8 @@ export type Notice =
   | "capture_failed"
   | "payment_failed"
   | "payout_unclaimed"
-  | "payout_failed";
+  | "payout_failed"
+  | "release_failed";
 
 /** Why an event was refused. The routes built later turn each into its own message (MP-FR-02). */
 export type Refusal =
@@ -264,7 +289,11 @@ export type Refusal =
   | "capture_in_progress"
   | "not_captured"
   | "unknown_payout"
-  | "payout_in_progress";
+  | "payout_in_progress"
+  | "cancelled"
+  | "go_ahead_running"
+  | "already_published"
+  | "not_released";
 
 export type TransitionResult =
   | { ok: true; state: MoneyState; effects: MoneyEffect[] }
@@ -320,6 +349,7 @@ export function newMoney(terms: MoneyTerms): MoneyState {
     approval: null,
     waitingOn: null,
     release: null,
+    closed: null,
     capture: null,
     feeCents: null,
     payoutCents: null,
@@ -369,7 +399,12 @@ const approve = (state: MoneyState, by: Approval["by"], at: Date): TransitionRes
  * Gives the hold back to the brand. A deliverable that was approved to pay ends as approved, not paid,
  * so its pages can say the post was accepted and why no money arrived (MP-FR-23).
  */
-function release(state: MoneyState, reason: Release["reason"], at: Date): TransitionResult {
+function release(
+  state: MoneyState,
+  reason: Release["reason"],
+  at: Date,
+  by?: "creator" | "brand",
+): TransitionResult {
   if (!state.hold) return refuse("not_held");
   return {
     ok: true,
@@ -377,7 +412,7 @@ function release(state: MoneyState, reason: Release["reason"], at: Date): Transi
       ...state,
       stage: state.approval ? "approved_not_paid" : "released",
       waitingOn: null,
-      release: { reason, at },
+      release: by ? { reason, at, by } : { reason, at },
     },
     effects: [{ type: "cancel_hold", reference: state.hold.reference }],
   };
@@ -407,7 +442,12 @@ const REQUESTS: ReadonlySet<MoneyEvent["type"]> = new Set([
   "cleared_ruled",
   "brand_accepted",
   "payout_retry_requested",
+  "cancel_requested",
 ]);
+
+/** The refusal for anything asked of a deliverable that was closed without a hold. */
+const closedRefusal = (state: MoneyState): TransitionResult =>
+  refuse(state.closed?.because === "cancelled" ? "cancelled" : "closed_not_held");
 
 /** Sends a new payout for what the creator is owed. */
 function sendPayout(state: MoneyState, payoutId: string): TransitionResult {
@@ -469,6 +509,21 @@ export function transition(
   event: MoneyEvent,
   settings: MoneySettings = defaultSettings,
 ): TransitionResult {
+  // PayPal's answer about ending a hold arrives after the release is recorded. It confirms; it changes no stage.
+  if (event.type === "hold_cancel_answered") {
+    if (!state.release || !state.hold) return refuse("not_released");
+    if (state.release.confirmedAt) return unchanged(state);
+    switch (event.outcome) {
+      case "cancelled":
+      case "already_ended":
+        return { ok: true, state: { ...state, release: { ...state.release, confirmedAt: event.at } }, effects: [] };
+      case "unknown":
+        return { ok: true, state, effects: [{ type: "check_hold_cancelled", reference: state.hold.reference }] };
+      case "failed":
+        // The brand's money may still be reserved. A person has to look.
+        return { ok: true, state, effects: [{ type: "notify", to: "cleared", about: "release_failed" }] };
+    }
+  }
   // Nothing changes a deliverable's money once it is paid, released or ended unpaid (MP-BR-08).
   if (state.stage === "released" || state.stage === "approved_not_paid" || state.stage === "paid") {
     return REQUESTS.has(event.type) ? refuse("finished") : unchanged(state);
@@ -484,9 +539,13 @@ export function transition(
       if (state.stage !== "not_held") return unchanged(state);
       // An approved attempt may still come back held. It settles within MP-FR-07's limit, so the job tries again.
       if (state.attempt && awaitingPayPal(state.attempt)) return refuse("attempt_in_progress");
-      return { ok: true, state: { ...state, stage: "closed_not_held" }, effects: [] };
+      return {
+        ok: true,
+        state: { ...state, stage: "closed_not_held", closed: { because: "never_held", at: event.at } },
+        effects: [],
+      };
     case "start_hold":
-      if (state.stage === "closed_not_held") return refuse("closed_not_held");
+      if (state.stage === "closed_not_held") return closedRefusal(state);
       if (state.stage === "held") return refuse("already_held");
       if (!state.agreedAt) return refuse("not_agreed");
       if (state.attempt && awaitingPayPal(state.attempt)) return refuse("attempt_in_progress");
@@ -508,7 +567,7 @@ export function transition(
       };
     }
     case "hold_approved": {
-      if (state.stage === "closed_not_held") return refuse("closed_not_held");
+      if (state.stage === "closed_not_held") return closedRefusal(state);
       const attempt = state.attempt;
       if (!attempt || attempt.orderId !== event.orderId) return refuse("wrong_order");
       if (attempt.status !== "awaiting_approval") return unchanged(state);
@@ -719,6 +778,29 @@ export function transition(
         },
         effects: [{ type: "start_payout" }],
       };
+    }
+    case "cancel_requested": {
+      if (state.stage === "closed_not_held") return closedRefusal(state);
+      if (state.publishedAt) return refuse("already_published");
+      // A running go-ahead blocks cancelling until its end has been checked for a published post (MP-FR-15).
+      if (state.goAhead.status === "running") return refuse("go_ahead_running");
+      if (state.stage === "held") return release(state, "cancelled", event.at, event.by);
+      const closed: Closed = { because: "cancelled", by: event.by, at: event.at };
+      const attempt = state.attempt;
+      if (attempt && awaitingPayPal(attempt) && attempt.orderId) {
+        // PayPal may still authorize it, so it is cancelled there too (MP-FR-34).
+        return {
+          ok: true,
+          state: {
+            ...state,
+            stage: "closed_not_held",
+            closed,
+            attempt: { ...attempt, status: "declined", declinedBecause: "cancelled" },
+          },
+          effects: [{ type: "cancel_attempt", attemptId: attempt.id, orderId: attempt.orderId }],
+        };
+      }
+      return { ok: true, state: { ...state, stage: "closed_not_held", closed }, effects: [] };
     }
     case "payout_started":
       if (state.stage !== "captured") return refuse("not_captured");
