@@ -20,8 +20,9 @@ export interface MoneyState extends MoneyTerms {
    * closed_not_held is final: the brand never held it within the time allowed (MP-FR-08).
    * released is final: the hold went back to the brand (MP-FR-32).
    * approved_not_paid is final: paying was approved, but the hold ended before it could be captured (MP-FR-23).
+   * paid is final: the creator has the money and the deliverable is cleared (MP-FR-31).
    */
-  stage: "not_held" | "held" | "closed_not_held" | "released" | "approved_not_paid";
+  stage: "not_held" | "held" | "captured" | "paid" | "closed_not_held" | "released" | "approved_not_paid";
   agreedAt: Date | null;
   attempt: HoldAttempt | null;
   hold: Hold | null;
@@ -36,6 +37,41 @@ export interface MoneyState extends MoneyTerms {
   waitingOn: WaitingOn | null;
   /** Why and when the hold was released. */
   release: Release | null;
+  /** The latest try at capturing the hold. */
+  capture: Capture | null;
+  /** Cleared's fee and what the creator is paid, in cents. Fixed when the capture completes (MP-FR-27). */
+  feeCents: number | null;
+  payoutCents: number | null;
+  /** The latest payout to the creator. There is never more than one in flight (MP-FR-30). */
+  payout: Payout | null;
+}
+
+export interface Payout {
+  id: string;
+  /**
+   * sending: PayPal has not reported a result. unclaimed: waiting for the creator to accept the money.
+   * failed: finished without paying. cancelling: an unclaimed payout is being cancelled so `nextId` can be sent.
+   */
+  status: "sending" | "unclaimed" | "failed" | "cancelling" | "paid";
+  /** How a failed payout ended. */
+  why?: "failed" | "returned" | "blocked" | "denied";
+  /** The payout to send once this one's cancellation is confirmed. */
+  nextId?: string;
+  /** PayPal's reference for a paid payout, and when it was paid. */
+  reference?: string;
+  at?: Date;
+}
+
+/** One try at capturing the hold. A new one is made only after PayPal clearly refused the last (MP-BR-06). */
+export interface Capture {
+  id: string;
+  /** started: PayPal has not given a clear answer yet, so no other capture may begin (MP-FR-26). */
+  status: "started" | "refused" | "completed";
+  /** How many tries PayPal has refused so far (MP-FR-25). */
+  refusals: number;
+  /** PayPal's reference for the capture, and when it completed. */
+  reference?: string;
+  at?: Date;
 }
 
 /** Who or what approved paying for the live post (MP-FR-17 to MP-FR-21). */
@@ -128,6 +164,29 @@ export type MoneyEvent =
   /** The deadline has come. `publishedAt` is what the live check answered just before (MP-FR-22). */
   | { type: "deadline_due"; publishedAt: Date | null; at: Date }
   | { type: "day_28_due"; at: Date }
+  | { type: "capture_started"; captureId: string; at: Date }
+  /** `renewedReference` is set when the hold was renewed on the way to this answer (MP-FR-25). */
+  | {
+      type: "capture_answered";
+      captureId: string;
+      outcome: "completed";
+      reference: string;
+      renewedReference?: string;
+      at: Date;
+    }
+  | { type: "capture_answered"; captureId: string; outcome: "refused"; renewedReference?: string; at: Date }
+  | { type: "capture_answered"; captureId: string; outcome: "unknown"; renewedReference?: string; at: Date }
+  | { type: "capture_retry_due"; captureId: string; at: Date }
+  | { type: "payout_started"; payoutId: string; at: Date }
+  | { type: "payout_answered"; payoutId: string; outcome: "succeeded"; reference: string; at: Date }
+  | {
+      type: "payout_answered";
+      payoutId: string;
+      outcome: "unclaimed" | "failed" | "returned" | "blocked" | "denied" | "unknown" | "cancelled";
+      at: Date;
+    }
+  /** The creator asks for the payout to be sent again, after correcting their PayPal email (MP-FR-30). */
+  | { type: "payout_retry_requested"; payoutId: string; at: Date }
   | { type: "authorize_answered"; attemptId: string; outcome: "held"; reference: string; at: Date }
   | { type: "authorize_answered"; attemptId: string; outcome: "declined" | "pending" | "unknown"; at: Date };
 
@@ -143,8 +202,17 @@ export type MoneyEffect =
   | { type: "notify"; to: "brand" | "creator" | "cleared"; about: Notice }
   /** Give the hold back to the brand. The call to PayPal is MP-FR-32. */
   | { type: "cancel_hold"; reference: string }
-  /** Capture the hold in full. The capture itself is MP-FR-24. */
+  /** An approval is on record: begin a capture attempt. */
   | { type: "start_capture" }
+  /** Ask PayPal to capture the hold. Always the full amount held (MP-BR-03). */
+  | { type: "capture_hold"; captureId: string; reference: string; amountCents: number; renewFirst: boolean }
+  | { type: "check_capture"; captureId: string }
+  /** The capture completed: begin a payout attempt. */
+  | { type: "start_payout" }
+  /** Pay the creator. The module reads their PayPal email at this moment; it is never part of the state. */
+  | { type: "send_payout"; payoutId: string; amountCents: number }
+  | { type: "check_payout"; payoutId: string }
+  | { type: "cancel_payout"; payoutId: string }
   | { type: "schedule_job"; job: "attempt_stuck"; attemptId: string; at: Date }
   | {
       type: "schedule_job";
@@ -155,7 +223,8 @@ export type MoneyEffect =
         | "go_ahead_ends"
         | "brand_confirm_ends"
         | "fix_window_ends"
-        | "brand_accept_ends";
+        | "brand_accept_ends"
+        | "capture_retry";
       at: Date;
     };
 
@@ -165,7 +234,11 @@ export type Notice =
   | "confirm_live_post"
   | "brand_objected"
   | "fix_live_post"
-  | "accept_failed_post";
+  | "accept_failed_post"
+  | "capture_failed"
+  | "payment_failed"
+  | "payout_unclaimed"
+  | "payout_failed";
 
 /** Why an event was refused. The routes built later turn each into its own message (MP-FR-02). */
 export type Refusal =
@@ -185,7 +258,13 @@ export type Refusal =
   | "nothing_to_confirm"
   | "nothing_to_rule_on"
   | "nothing_to_accept"
-  | "finished";
+  | "finished"
+  | "not_approved"
+  | "unknown_capture"
+  | "capture_in_progress"
+  | "not_captured"
+  | "unknown_payout"
+  | "payout_in_progress";
 
 export type TransitionResult =
   | { ok: true; state: MoneyState; effects: MoneyEffect[] }
@@ -207,6 +286,10 @@ export interface MoneySettings {
   brandWindowHours: number;
   /** The least time a creator gets to fix a failed live post, when the deadline is nearer (MP-FR-20). */
   fixWindowHours: number;
+  /** Cleared's fee, in hundredths of a percent: 500 is 5% (MP-FR-27). */
+  feeBasisPoints: number;
+  /** How long after a refused capture the next try is made (MP-FR-25). */
+  captureRetryHours: number;
 }
 
 /** The values in the signed spec. */
@@ -219,6 +302,8 @@ export const defaultSettings: MoneySettings = {
   guaranteeMarginHours: 24,
   brandWindowHours: 48,
   fixWindowHours: 24,
+  feeBasisPoints: 500,
+  captureRetryHours: 6,
 };
 
 /** A deliverable's money before the brand has agreed anything. */
@@ -235,6 +320,10 @@ export function newMoney(terms: MoneyTerms): MoneyState {
     approval: null,
     waitingOn: null,
     release: null,
+    capture: null,
+    feeCents: null,
+    payoutCents: null,
+    payout: null,
   };
 }
 
@@ -294,6 +383,15 @@ function release(state: MoneyState, reason: Release["reason"], at: Date): Transi
   };
 }
 
+/** Asks PayPal to capture the hold in full, re-confirming it first when asked to (MP-FR-25). */
+const captureHold = (state: MoneyState, hold: Hold, captureId: string, renewFirst: boolean): MoneyEffect => ({
+  type: "capture_hold",
+  captureId,
+  reference: hold.reference,
+  amountCents: state.amountCents,
+  renewFirst,
+});
+
 /** The events that ask for something, as opposed to jobs falling due and PayPal's answers. */
 const REQUESTS: ReadonlySet<MoneyEvent["type"]> = new Set([
   "brand_agreed",
@@ -308,7 +406,18 @@ const REQUESTS: ReadonlySet<MoneyEvent["type"]> = new Set([
   "brand_objected",
   "cleared_ruled",
   "brand_accepted",
+  "payout_retry_requested",
 ]);
+
+/** Sends a new payout for what the creator is owed. */
+function sendPayout(state: MoneyState, payoutId: string): TransitionResult {
+  if (state.stage !== "captured" || state.payoutCents === null) return refuse("not_captured");
+  return {
+    ok: true,
+    state: { ...state, payout: { id: payoutId, status: "sending" } },
+    effects: [{ type: "send_payout", payoutId, amountCents: state.payoutCents }],
+  };
+}
 
 /** Tells the creator to come back when PayPal can renew the hold. */
 const waitForRenewal = (state: MoneyState, hold: Hold): TransitionResult => ({
@@ -360,8 +469,8 @@ export function transition(
   event: MoneyEvent,
   settings: MoneySettings = defaultSettings,
 ): TransitionResult {
-  // Nothing changes a deliverable's money once it is released or ended unpaid (MP-BR-08).
-  if (state.stage === "released" || state.stage === "approved_not_paid") {
+  // Nothing changes a deliverable's money once it is paid, released or ended unpaid (MP-BR-08).
+  if (state.stage === "released" || state.stage === "approved_not_paid" || state.stage === "paid") {
     return REQUESTS.has(event.type) ? refuse("finished") : unchanged(state);
   }
   switch (event.type) {
@@ -546,7 +655,125 @@ export function transition(
     }
     case "day_28_due":
       if (state.stage !== "held" || !state.hold || event.at < state.hold.day28At) return unchanged(state);
+      // PayPal may already have captured. Releasing now could leave money taken on a deliverable shown as unpaid.
+      if (state.capture?.status === "started") return refuse("capture_in_progress");
       return release(state, "day_28", event.at);
+    case "capture_started":
+      if (state.stage !== "held" || !state.hold) return refuse("not_held");
+      if (!state.approval) return refuse("not_approved");
+      // The first try only. Later tries are made by the retry job, after a clear refusal.
+      if (state.capture) return unchanged(state);
+      return {
+        ok: true,
+        state: { ...state, capture: { id: event.captureId, status: "started", refusals: 0 } },
+        effects: [captureHold(state, state.hold, event.captureId, false)],
+      };
+    case "capture_retry_due": {
+      if (state.stage !== "held" || !state.hold || state.capture?.status !== "refused") return unchanged(state);
+      // From day 28 the day 28 job ends the deliverable; no further try is made.
+      if (event.at >= state.hold.day28At) return unchanged(state);
+      return {
+        ok: true,
+        state: { ...state, capture: { ...state.capture, id: event.captureId, status: "started" } },
+        effects: [captureHold(state, state.hold, event.captureId, event.at >= state.hold.guaranteeEndsAt)],
+      };
+    }
+    case "capture_answered": {
+      if (!state.capture || state.capture.id !== event.captureId) return refuse("unknown_capture");
+      if (state.capture.status !== "started") return unchanged(state);
+      if (event.outcome === "unknown") {
+        return { ok: true, state, effects: [{ type: "check_capture", captureId: event.captureId }] };
+      }
+      const hold =
+        state.hold && event.renewedReference
+          ? { ...state.hold, reference: event.renewedReference, guaranteeEndsAt: daysAfter(event.at, GUARANTEE_DAYS) }
+          : state.hold;
+      if (event.outcome === "refused") {
+        const firstRefusal = state.capture.refusals === 0;
+        return {
+          ok: true,
+          state: { ...state, hold, capture: { ...state.capture, status: "refused", refusals: state.capture.refusals + 1 } },
+          effects: [
+            { type: "schedule_job", job: "capture_retry", at: hoursAfter(event.at, settings.captureRetryHours) },
+            // Both sides are told once, when the trouble starts, not on every try.
+            ...(firstRefusal
+              ? ([
+                  { type: "notify", to: "creator", about: "capture_failed" },
+                  { type: "notify", to: "brand", about: "payment_failed" },
+                ] as const)
+              : []),
+          ],
+        };
+      }
+      // Whole cents, rounded down: any fraction of a cent goes to the creator.
+      const feeCents = Math.floor((state.amountCents * settings.feeBasisPoints) / 10_000);
+      return {
+        ok: true,
+        state: {
+          ...state,
+          hold,
+          stage: "captured",
+          capture: { ...state.capture, status: "completed", reference: event.reference, at: event.at },
+          feeCents,
+          payoutCents: state.amountCents - feeCents,
+        },
+        effects: [{ type: "start_payout" }],
+      };
+    }
+    case "payout_started":
+      if (state.stage !== "captured") return refuse("not_captured");
+      // The first payout only. Another is sent only when the creator asks, after this one ends unpaid.
+      if (state.payout) return unchanged(state);
+      return sendPayout(state, event.payoutId);
+    case "payout_retry_requested": {
+      if (state.stage !== "captured") return refuse("not_captured");
+      const payout = state.payout;
+      if (payout?.status === "failed") return sendPayout(state, event.payoutId);
+      if (payout?.status === "unclaimed") {
+        // The money is still on offer at the old email. It must be withdrawn before any is sent elsewhere.
+        return {
+          ok: true,
+          state: { ...state, payout: { ...payout, status: "cancelling", nextId: event.payoutId } },
+          effects: [{ type: "cancel_payout", payoutId: payout.id }],
+        };
+      }
+      return refuse("payout_in_progress");
+    }
+    case "payout_answered": {
+      const payout = state.payout;
+      if (!payout || payout.id !== event.payoutId) return refuse("unknown_payout");
+      if (payout.status === "failed") return unchanged(state);
+      switch (event.outcome) {
+        case "succeeded":
+          return {
+            ok: true,
+            state: {
+              ...state,
+              stage: "paid",
+              payout: { id: payout.id, status: "paid", reference: event.reference, at: event.at },
+            },
+            effects: [],
+          };
+        case "unknown":
+          return { ok: true, state, effects: [{ type: "check_payout", payoutId: payout.id }] };
+        case "unclaimed":
+          if (payout.status !== "sending") return unchanged(state);
+          return {
+            ok: true,
+            state: { ...state, payout: { ...payout, status: "unclaimed" } },
+            effects: [{ type: "notify", to: "creator", about: "payout_unclaimed" }],
+          };
+        case "cancelled":
+          if (payout.status !== "cancelling" || !payout.nextId) return unchanged(state);
+          return sendPayout(state, payout.nextId);
+        default:
+          return {
+            ok: true,
+            state: { ...state, payout: { id: payout.id, status: "failed", why: event.outcome } },
+            effects: [{ type: "notify", to: "creator", about: "payout_failed" }],
+          };
+      }
+    }
     case "fix_window_ends_due":
       if (state.waitingOn?.for !== "creator_to_fix" || event.at < state.waitingOn.until) return unchanged(state);
       return release(state, "fix_window_ended", event.at);

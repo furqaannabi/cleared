@@ -1043,3 +1043,427 @@ describe("MP-BR-08 a finished deliverable", () => {
     expect(transition(before, event)).toEqual({ ok: true, state: before, effects: [] });
   });
 });
+
+/** A published deliverable whose live check passed at 09:40 UTC on 17 October: approved to pay, not yet captured. */
+function approvedToPay(terms: Partial<MoneyTerms> = {}): MoneyState {
+  return after(
+    authorizing(terms),
+    answered("held"),
+    { type: "draft_cleared", at: at("2026-10-10T12:00:00Z") },
+    { type: "post_published", publishedAt: at("2026-10-17T09:30:00Z"), at: at("2026-10-17T09:35:00Z") },
+    liveCheck("passed"),
+  );
+}
+
+const captureStarted = (captureId = "cap_1", time = "2026-10-17T09:40:01Z"): MoneyEvent => ({
+  type: "capture_started",
+  captureId,
+  at: at(time),
+});
+
+describe("MP-FR-24 capture", () => {
+  test("an approved hold is captured in full", () => {
+    expect(transition(approvedToPay({ amountCents: 120_000 }), captureStarted())).toMatchObject({
+      ok: true,
+      state: { stage: "held", capture: { id: "cap_1", status: "started" } },
+      effects: [{ type: "capture_hold", captureId: "cap_1", reference: "AUTH-1", amountCents: 120_000 }],
+    });
+  });
+
+  test("a capture is refused without an approval on record (MP-BR-04)", () => {
+    expect(transition(published(), captureStarted())).toEqual({ ok: false, reason: "not_approved" });
+  });
+
+  test("a second capture is never started while one is unanswered (MP-FR-26)", () => {
+    const capturing = after(approvedToPay(), captureStarted());
+
+    expect(transition(capturing, captureStarted("cap_2", "2026-10-17T09:41:00Z"))).toEqual({
+      ok: true,
+      state: capturing,
+      effects: [],
+    });
+  });
+
+  test("a completed capture records the reference and starts the payout", () => {
+    const capturing = after(approvedToPay({ amountCents: 120_000 }), captureStarted());
+
+    expect(
+      transition(capturing, {
+        type: "capture_answered",
+        captureId: "cap_1",
+        outcome: "completed",
+        reference: "CAPTURE-1",
+        at: at("2026-10-17T09:40:05Z"),
+      }),
+    ).toMatchObject({
+      ok: true,
+      state: {
+        stage: "captured",
+        capture: { id: "cap_1", status: "completed", reference: "CAPTURE-1", at: at("2026-10-17T09:40:05Z") },
+      },
+      effects: [{ type: "start_payout" }],
+    });
+  });
+});
+
+describe("MP-FR-27 the fee", () => {
+  const captured = (amountCents: number) =>
+    after(approvedToPay({ amountCents }), captureStarted(), {
+      type: "capture_answered",
+      captureId: "cap_1",
+      outcome: "completed",
+      reference: "CAPTURE-1",
+      at: at("2026-10-17T09:40:05Z"),
+    });
+
+  test("a $1,200.00 post keeps a $60.00 fee and pays the creator $1,140.00", () => {
+    expect(captured(120_000)).toMatchObject({ feeCents: 6_000, payoutCents: 114_000 });
+  });
+
+  test("the fee is rounded down to the cent, in the creator's favour", () => {
+    // 5% of $33.33 is $1.6665.
+    expect(captured(3_333)).toMatchObject({ feeCents: 166, payoutCents: 3_167 });
+  });
+
+  test("the fee and the payout always add up to the amount held", () => {
+    for (const amountCents of [2_000, 2_001, 9_999, 33_333, 999_999, 1_000_000]) {
+      const state = captured(amountCents);
+      expect((state.feeCents ?? 0) + (state.payoutCents ?? 0)).toBe(amountCents);
+    }
+  });
+});
+
+describe("MP-FR-25 capture refused", () => {
+  const refusedAt = (time: string, captureId = "cap_1"): MoneyEvent => ({
+    type: "capture_answered",
+    captureId,
+    outcome: "refused",
+    at: at(time),
+  });
+  const retryDue = (time: string, captureId = "cap_2"): MoneyEvent => ({ type: "capture_retry_due", captureId, at: at(time) });
+  const refused = () => after(approvedToPay(), captureStarted(), refusedAt("2026-10-17T09:40:05Z"));
+
+  test("a refusal schedules another try in 6 hours and tells both sides", () => {
+    expect(transition(after(approvedToPay(), captureStarted()), refusedAt("2026-10-17T09:40:05Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "held", capture: { id: "cap_1", status: "refused" } },
+      effects: [
+        { type: "schedule_job", job: "capture_retry", at: at("2026-10-17T15:40:05Z") },
+        { type: "notify", to: "creator", about: "capture_failed" },
+        { type: "notify", to: "brand", about: "payment_failed" },
+      ],
+    });
+  });
+
+  test("the next try re-confirms the hold first when its guarantee has ended", () => {
+    // Held on the 10th and never renewed, so the guarantee ended on the 13th.
+    expect(transition(refused(), retryDue("2026-10-17T15:40:05Z"))).toMatchObject({
+      ok: true,
+      state: { capture: { id: "cap_2", status: "started" } },
+      effects: [{ type: "capture_hold", captureId: "cap_2", reference: "AUTH-1", amountCents: 120_000, renewFirst: true }],
+    });
+  });
+
+  test("the next try does not re-confirm a hold that is still guaranteed", () => {
+    // Renewed at 10:00:05 on the 15th, so guaranteed to the 18th.
+    const state = after(
+      readyToPublish(),
+      askGoAhead("2026-10-15T10:00:00Z"),
+      { type: "hold_confirmed", confirmId: "conf_1", renewedReference: "AUTH-2", at: at("2026-10-15T10:00:05Z") },
+      { type: "post_published", publishedAt: at("2026-10-16T09:00:00Z"), at: at("2026-10-16T09:05:00Z") },
+      liveCheck("passed", "2026-10-16T09:10:00Z"),
+      captureStarted("cap_1", "2026-10-16T09:10:01Z"),
+      refusedAt("2026-10-16T09:10:05Z"),
+    );
+
+    expect(transition(state, retryDue("2026-10-16T15:10:05Z"))).toMatchObject({
+      ok: true,
+      effects: [{ type: "capture_hold", captureId: "cap_2", reference: "AUTH-2", renewFirst: false }],
+    });
+  });
+
+  test("a hold renewed during a try keeps its new reference and guarantee", () => {
+    const retrying = after(refused(), retryDue("2026-10-17T15:40:05Z"));
+
+    expect(
+      transition(retrying, {
+        type: "capture_answered",
+        captureId: "cap_2",
+        outcome: "refused",
+        renewedReference: "AUTH-2",
+        at: at("2026-10-17T15:40:10Z"),
+      }),
+    ).toMatchObject({
+      ok: true,
+      state: { hold: { reference: "AUTH-2", guaranteeEndsAt: at("2026-10-20T15:40:10Z") }, capture: { status: "refused" } },
+    });
+  });
+
+  test("a second refusal schedules another try without telling both sides again", () => {
+    const retrying = after(refused(), retryDue("2026-10-17T15:40:05Z"));
+
+    expect(transition(retrying, refusedAt("2026-10-17T15:40:10Z", "cap_2"))).toMatchObject({
+      ok: true,
+      effects: [{ type: "schedule_job", job: "capture_retry", at: at("2026-10-17T21:40:10Z") }],
+    });
+    expect(transition(retrying, refusedAt("2026-10-17T15:40:10Z", "cap_2"))).toMatchObject({
+      effects: expect.not.arrayContaining([expect.objectContaining({ type: "notify" })]),
+    });
+  });
+
+  test("a retry that succeeds captures the hold", () => {
+    const retrying = after(refused(), retryDue("2026-10-17T15:40:05Z"));
+
+    expect(
+      transition(retrying, {
+        type: "capture_answered",
+        captureId: "cap_2",
+        outcome: "completed",
+        reference: "CAPTURE-2",
+        at: at("2026-10-17T15:40:10Z"),
+      }),
+    ).toMatchObject({ ok: true, state: { stage: "captured", capture: { reference: "CAPTURE-2" } } });
+  });
+
+  test("the retry job does nothing on day 28 or later, or when no refusal is waiting", () => {
+    const waiting = refused();
+    const capturing = after(approvedToPay(), captureStarted());
+
+    expect(transition(waiting, retryDue("2026-11-07T09:05:10Z"))).toEqual({ ok: true, state: waiting, effects: [] });
+    expect(transition(capturing, retryDue("2026-10-17T15:40:05Z"))).toEqual({ ok: true, state: capturing, effects: [] });
+  });
+
+  test("on day 28 a refused capture ends as approved, not paid", () => {
+    expect(transition(refused(), { type: "day_28_due", at: at("2026-11-07T09:05:10Z") })).toMatchObject({
+      ok: true,
+      state: { stage: "approved_not_paid", release: { reason: "day_28" } },
+      effects: [{ type: "cancel_hold", reference: "AUTH-1" }],
+    });
+  });
+});
+
+describe("MP-FR-26 capture not answered", () => {
+  const unanswered = () =>
+    after(approvedToPay(), captureStarted(), {
+      type: "capture_answered",
+      captureId: "cap_1",
+      outcome: "unknown",
+      at: at("2026-10-17T09:40:30Z"),
+    });
+
+  test("an unclear answer is followed up with PayPal, not retried as a new capture", () => {
+    const capturing = after(approvedToPay(), captureStarted());
+
+    expect(
+      transition(capturing, { type: "capture_answered", captureId: "cap_1", outcome: "unknown", at: at("2026-10-17T09:40:30Z") }),
+    ).toEqual({ ok: true, state: capturing, effects: [{ type: "check_capture", captureId: "cap_1" }] });
+  });
+
+  test("the real answer settles it later", () => {
+    expect(
+      transition(unanswered(), {
+        type: "capture_answered",
+        captureId: "cap_1",
+        outcome: "completed",
+        reference: "CAPTURE-1",
+        at: at("2026-10-17T10:00:00Z"),
+      }),
+    ).toMatchObject({ ok: true, state: { stage: "captured" } });
+  });
+
+  test("day 28 waits while a capture is unanswered, so a hold is never released under a capture", () => {
+    expect(transition(unanswered(), { type: "day_28_due", at: at("2026-11-07T09:05:10Z") })).toEqual({
+      ok: false,
+      reason: "capture_in_progress",
+    });
+  });
+});
+
+/** A $1,200.00 deliverable captured at 09:40:05 UTC on 17 October; the creator is owed $1,140.00. */
+function captured(): MoneyState {
+  return after(approvedToPay({ amountCents: 120_000 }), captureStarted(), {
+    type: "capture_answered",
+    captureId: "cap_1",
+    outcome: "completed",
+    reference: "CAPTURE-1",
+    at: at("2026-10-17T09:40:05Z"),
+  });
+}
+
+const payoutStarted = (payoutId = "pay_1", time = "2026-10-17T09:40:06Z"): MoneyEvent => ({
+  type: "payout_started",
+  payoutId,
+  at: at(time),
+});
+
+type PayoutOutcome = "unclaimed" | "failed" | "returned" | "blocked" | "denied" | "unknown" | "cancelled";
+const payoutAnswered = (outcome: PayoutOutcome, payoutId = "pay_1", time = "2026-10-17T09:45:00Z"): MoneyEvent => ({
+  type: "payout_answered",
+  payoutId,
+  outcome,
+  at: at(time),
+});
+const payoutSucceeded = (payoutId = "pay_1", time = "2026-10-17T09:45:00Z"): MoneyEvent => ({
+  type: "payout_answered",
+  payoutId,
+  outcome: "succeeded",
+  reference: "PAYOUT-1",
+  at: at(time),
+});
+
+describe("MP-FR-28 payout", () => {
+  test("a completed capture pays out the amount less the fee", () => {
+    expect(transition(captured(), payoutStarted())).toMatchObject({
+      ok: true,
+      state: { stage: "captured", payout: { id: "pay_1", status: "sending" } },
+      effects: [{ type: "send_payout", payoutId: "pay_1", amountCents: 114_000 }],
+    });
+  });
+
+  test("a payout is refused without a completed capture (MP-BR-04)", () => {
+    expect(transition(approvedToPay(), payoutStarted())).toEqual({ ok: false, reason: "not_captured" });
+  });
+
+  test("a second payout is never started beside the first (MP-BR-04)", () => {
+    const sending = after(captured(), payoutStarted());
+
+    expect(transition(sending, payoutStarted("pay_2"))).toEqual({ ok: true, state: sending, effects: [] });
+  });
+});
+
+describe("MP-FR-29 payout results", () => {
+  const sending = () => after(captured(), payoutStarted());
+
+  test("paid only when PayPal reports the payout succeeded (MP-FR-31)", () => {
+    expect(transition(sending(), payoutSucceeded())).toMatchObject({
+      ok: true,
+      state: { stage: "paid", payout: { status: "paid", reference: "PAYOUT-1", at: at("2026-10-17T09:45:00Z") } },
+      effects: [],
+    });
+  });
+
+  test("an unclaimed payout stays captured and the creator is told to accept it", () => {
+    expect(transition(sending(), payoutAnswered("unclaimed"))).toMatchObject({
+      ok: true,
+      state: { stage: "captured", payout: { status: "unclaimed" } },
+      effects: [{ type: "notify", to: "creator", about: "payout_unclaimed" }],
+    });
+  });
+
+  test.each(["failed", "returned", "blocked", "denied"] as const)(
+    "a %s payout stays captured and the creator is told to correct their PayPal email",
+    (outcome) => {
+      expect(transition(sending(), payoutAnswered(outcome))).toMatchObject({
+        ok: true,
+        state: { stage: "captured", payout: { status: "failed", why: outcome } },
+        effects: [{ type: "notify", to: "creator", about: "payout_failed" }],
+      });
+    },
+  );
+
+  test("an unclear answer is followed up with PayPal", () => {
+    const before = sending();
+
+    expect(transition(before, payoutAnswered("unknown"))).toEqual({
+      ok: true,
+      state: before,
+      effects: [{ type: "check_payout", payoutId: "pay_1" }],
+    });
+  });
+
+  test("an unclaimed payout the creator then accepts is paid", () => {
+    const unclaimed = after(sending(), payoutAnswered("unclaimed"));
+
+    expect(transition(unclaimed, payoutSucceeded("pay_1", "2026-10-19T12:00:00Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "paid" },
+    });
+  });
+
+  test("an unclaimed payout PayPal later returns has failed", () => {
+    const unclaimed = after(sending(), payoutAnswered("unclaimed"));
+
+    expect(transition(unclaimed, payoutAnswered("returned", "pay_1", "2026-11-16T09:45:00Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "captured", payout: { status: "failed", why: "returned" } },
+    });
+  });
+
+  test("an answer about a payout that is not the current one is refused", () => {
+    expect(transition(sending(), payoutSucceeded("pay_other"))).toEqual({ ok: false, reason: "unknown_payout" });
+  });
+});
+
+describe("MP-FR-30 sending a payout again", () => {
+  const retry = (payoutId = "pay_2", time = "2026-10-18T10:00:00Z"): MoneyEvent => ({
+    type: "payout_retry_requested",
+    payoutId,
+    at: at(time),
+  });
+  const failed = () => after(captured(), payoutStarted(), payoutAnswered("failed"));
+  const unclaimed = () => after(captured(), payoutStarted(), payoutAnswered("unclaimed"));
+
+  test("after a failed payout, a new one is sent", () => {
+    expect(transition(failed(), retry())).toMatchObject({
+      ok: true,
+      state: { payout: { id: "pay_2", status: "sending" } },
+      effects: [{ type: "send_payout", payoutId: "pay_2", amountCents: 114_000 }],
+    });
+  });
+
+  test("it is refused while a payout is still being sent", () => {
+    expect(transition(after(captured(), payoutStarted()), retry())).toEqual({ ok: false, reason: "payout_in_progress" });
+  });
+
+  test("an unclaimed payout is cancelled with PayPal first, and nothing new is sent yet", () => {
+    expect(transition(unclaimed(), retry())).toMatchObject({
+      ok: true,
+      state: { payout: { id: "pay_1", status: "cancelling", nextId: "pay_2" } },
+      effects: [{ type: "cancel_payout", payoutId: "pay_1" }],
+    });
+  });
+
+  test("the new payout is sent only once PayPal confirms the cancellation", () => {
+    const cancelling = after(unclaimed(), retry());
+
+    expect(transition(cancelling, payoutAnswered("cancelled", "pay_1", "2026-10-18T10:00:10Z"))).toMatchObject({
+      ok: true,
+      state: { payout: { id: "pay_2", status: "sending" } },
+      effects: [{ type: "send_payout", payoutId: "pay_2", amountCents: 114_000 }],
+    });
+  });
+
+  test("if the creator accepted the money before the cancellation, it is paid and nothing new is sent", () => {
+    const cancelling = after(unclaimed(), retry());
+
+    expect(transition(cancelling, payoutSucceeded("pay_1", "2026-10-18T10:00:10Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "paid", payout: { id: "pay_1", status: "paid" } },
+      effects: [],
+    });
+  });
+
+  test("it is refused while a cancellation is in flight, and before any capture", () => {
+    expect(transition(after(unclaimed(), retry()), retry("pay_3"))).toEqual({ ok: false, reason: "payout_in_progress" });
+    expect(transition(approvedToPay(), retry())).toEqual({ ok: false, reason: "not_captured" });
+  });
+});
+
+describe("MP-FR-31 cleared", () => {
+  const paid = () => after(captured(), payoutStarted(), payoutSucceeded());
+
+  test("nothing more can happen to a paid deliverable's money", () => {
+    const before = paid();
+
+    expect(transition(before, { type: "payout_retry_requested", payoutId: "pay_2", at: at("2026-10-18T10:00:00Z") })).toEqual({
+      ok: false,
+      reason: "finished",
+    });
+    expect(transition(before, payoutAnswered("returned"))).toEqual({ ok: true, state: before, effects: [] });
+    expect(transition(before, { type: "day_28_due", at: at("2026-11-07T09:05:10Z") })).toEqual({
+      ok: true,
+      state: before,
+      effects: [],
+    });
+  });
+});
