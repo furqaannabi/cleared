@@ -7,14 +7,16 @@
  * transaction open. The answer, the change it causes and any job that follows are recorded together in a
  * second transaction. A crash in between leaves a started call, and its follow-up job finishes it.
  *
- * Built so far: opening a deliverable's money, the brand agreeing, and the whole hold step
- * (MP-FR-01 to MP-FR-08), with the follow-up of calls PayPal did not clearly answer (MP-FR-38).
+ * Built so far: opening a deliverable's money, the brand agreeing, the whole hold step (MP-FR-01 to
+ * MP-FR-08), the go-ahead to publish (MP-FR-10 to MP-FR-15), and the follow-up of calls PayPal did not
+ * clearly answer (MP-FR-38).
  */
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import { enqueue, type JobHandlers } from "../jobs/jobs";
 import type { AuthorizeResult, PayPalPort } from "../paypal/port";
 import { decodeState, encodeState } from "./codec";
 import { awaitingPayPal } from "./outcomes";
+import type { PublishedPostPort } from "./published-post";
 import {
   defaultSettings,
   newMoney,
@@ -26,11 +28,13 @@ import {
   type MoneyTerms,
   type Refusal,
 } from "./transition";
-import { moneyView, type HoldView, type MoneyView } from "./view";
+import { moneyView, type GoAheadView, type HoldView, type MoneyView } from "./view";
 
 export interface MoneyDeps {
   prisma: PrismaClient;
   paypal: PayPalPort;
+  /** Whether a deliverable's approved post is published. The live check, once built. */
+  posts: PublishedPostPort;
   /** The clock. Passed in so the module has none of its own. */
   now?: () => Date;
   settings?: MoneySettings;
@@ -47,7 +51,13 @@ export type Refused = { ok: false; reason: MoneyRefusal };
 type Cause = "call" | "job" | "webhook" | "paypal";
 
 /** The effects that are something asked of PayPal, done after the transaction that recorded them. */
-type PayPalEffect = Extract<MoneyEffect, { type: "create_order" | "authorize_order" | "cancel_attempt" }>;
+type PayPalEffect = Extract<
+  MoneyEffect,
+  { type: "create_order" | "authorize_order" | "cancel_attempt" | "check_hold" | "renew_hold" }
+>;
+
+/** What a call belongs to: a hold attempt, or one request for the go-ahead. */
+const subjectOf = (effect: PayPalEffect) => ("attemptId" in effect ? effect.attemptId : effect.confirmId);
 
 /** One thing asked of PayPal, as recorded: what it is for, which attempt, and the request id it is sent under. */
 interface Call {
@@ -82,7 +92,7 @@ const secondsAfter = (from: Date, seconds: number) => new Date(from.getTime() + 
 export type Money = ReturnType<typeof createMoney>;
 
 export function createMoney(deps: MoneyDeps) {
-  const { prisma, paypal } = deps;
+  const { prisma, paypal, posts } = deps;
   const now = deps.now ?? (() => new Date());
   const settings = deps.settings ?? defaultSettings;
   const newId = deps.newId ?? (() => crypto.randomUUID());
@@ -134,6 +144,8 @@ export function createMoney(deps: MoneyDeps) {
           case "create_order":
           case "authorize_order":
           case "cancel_attempt":
+          case "check_hold":
+          case "renew_hold":
             started.push(await startCall(tx, deliverableId, effect, event.at));
             await record({ kind: "paypal_call", name: effect.type });
             break;
@@ -151,7 +163,7 @@ export function createMoney(deps: MoneyDeps) {
    * call per purpose and attempt: asked again, it is the same call with the same request id (MP-BR-06).
    */
   async function startCall(tx: Prisma.TransactionClient, deliverableId: string, effect: PayPalEffect, at: Date): Promise<Call> {
-    const key = { deliverableId, purpose: effect.type, subjectId: effect.attemptId };
+    const key = { deliverableId, purpose: effect.type, subjectId: subjectOf(effect) };
     // A cancellation is about an order that already exists, so the call keeps which one.
     const about = effect.type === "cancel_attempt" ? effect.orderId : undefined;
     const call = await tx.payPalCall.upsert({
@@ -254,6 +266,40 @@ export function createMoney(deps: MoneyDeps) {
         return SETTLED;
       }
 
+      case "check_hold":
+      case "renew_hold": {
+        const asked = state.goAhead.status === "confirming" && state.goAhead.confirmId === call.subjectId;
+        if (!asked || !state.hold) return abandon(call);
+        const confirmId = call.subjectId;
+        if (call.purpose === "check_hold") {
+          const status = await paypal.readHold(state.hold.reference);
+          if (status === "unknown") return OPEN;
+          if (status === "in_place") {
+            await answered(call, { type: "hold_confirmed", confirmId, at: now() }, state.hold.reference);
+          } else {
+            await answered(call, { type: "hold_not_confirmed", confirmId, at: now() });
+          }
+          return SETTLED;
+        }
+        // Sent again after an unclear answer, it goes under the same request id, so PayPal renews once.
+        const renewed = await paypal.renewHold({
+          requestId: call.requestId,
+          reference: state.hold.reference,
+          amountCents: state.amountCents,
+        });
+        if (renewed.outcome === "unknown") return OPEN;
+        if (renewed.outcome === "renewed") {
+          await answered(
+            call,
+            { type: "hold_confirmed", confirmId, renewedReference: renewed.reference, at: now() },
+            renewed.reference,
+          );
+        } else {
+          await answered(call, { type: "hold_not_confirmed", confirmId, at: now() });
+        }
+        return SETTLED;
+      }
+
       default:
         throw new Error(`The money module cannot follow up "${call.purpose}" yet`);
     }
@@ -307,6 +353,13 @@ export function createMoney(deps: MoneyDeps) {
       await dispatch(deliverableId, { type: "attempt_stuck_due", attemptId, at: now() }, "job");
     },
 
+    /** A go-ahead's end time: it ends unless a post was published under it (MP-FR-15). */
+    async go_ahead_ends(payload) {
+      const { deliverableId } = ids(payload, "deliverableId");
+      const publishedAt = await posts.publishedAt(deliverableId);
+      await dispatch(deliverableId, { type: "go_ahead_ends_due", publishedAt, at: now() }, "job");
+    },
+
     /** Seven days after the brand agreed (MP-FR-08). */
     async never_held(payload) {
       const { deliverableId } = ids(payload, "deliverableId");
@@ -352,6 +405,23 @@ export function createMoney(deps: MoneyDeps) {
     async holdClosed(deliverableId: string, orderId: string): Promise<{ ok: true; hold: HoldView } | Refused> {
       const done = await dispatch(deliverableId, { type: "hold_closed", orderId, at: now() }, "call");
       return done.ok ? holdNow(deliverableId) : done;
+    },
+
+    /** The draft is cleared to publish. Decided outside this module, and trusted (MP-FR-10). */
+    async draftCleared(deliverableId: string): Promise<{ ok: true } | Refused> {
+      const done = await dispatch(deliverableId, { type: "draft_cleared", at: now() }, "call");
+      return done.ok ? { ok: true } : done;
+    },
+
+    /**
+     * The creator asks to publish: re-confirm the hold with PayPal and say where they stand
+     * (MP-FR-10 to MP-FR-14). A go-ahead already running, or being confirmed, is answered as it stands.
+     */
+    async askGoAhead(deliverableId: string): Promise<{ ok: true; goAhead: GoAheadView } | Refused> {
+      const done = await dispatch(deliverableId, { type: "go_ahead_requested", confirmId: newId(), at: now() }, "call");
+      if (!done.ok) return done;
+      const after = await view(deliverableId);
+      return after ? { ok: true, goAhead: after.goAhead } : { ok: false, reason: "unknown_deliverable" };
     },
 
     view,

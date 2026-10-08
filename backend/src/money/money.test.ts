@@ -23,10 +23,17 @@ beforeEach(async () => {
 function setUp(startAt = "2026-10-10T09:00:00Z") {
   const paypal = new FakePayPal();
   let now = at(startAt);
-  const money = createMoney({ prisma, paypal, now: () => now });
+  // Stands in for the live check: which approved posts are published, and when.
+  const published = new Map<string, Date>();
+  const posts = { publishedAt: async (deliverableId: string) => published.get(deliverableId) ?? null };
+  const money = createMoney({ prisma, paypal, posts, now: () => now });
   return {
     paypal,
     money,
+    /** The live check finds the approved post published. */
+    postPublished: (deliverableId: string, iso: string) => {
+      published.set(deliverableId, at(iso));
+    },
     /** Moves the clock. */
     timeIs: (iso: string) => {
       now = at(iso);
@@ -482,5 +489,212 @@ describe("MP-FR-08 never held", () => {
     expect(await prisma.job.findMany({ where: { name: "never_held" } })).toMatchObject([
       { status: "pending", failures: 0, runAt: at("2026-10-17T09:00:00Z") },
     ]);
+  });
+});
+
+/** A deliverable held at 09:05:10 UTC on 10 October: guaranteed to the 13th, deadline 22:59 UTC on the 24th. */
+async function heldDeliverable(world: World) {
+  const deliverableId = await agreedDeliverable(world);
+  const orderId = await approvedInPayPal(world, deliverableId);
+  world.timeIs("2026-10-10T09:05:10Z");
+  await world.money.holdApproved(deliverableId, orderId);
+  return deliverableId;
+}
+
+/** A held deliverable whose draft was cleared to publish at 12:00 on 10 October. */
+async function readyToPublish(world: World) {
+  const deliverableId = await heldDeliverable(world);
+  world.timeIs("2026-10-10T12:00:00Z");
+  await world.money.draftCleared(deliverableId);
+  return deliverableId;
+}
+
+const notices = async () =>
+  (await prisma.moneyRecord.findMany({ where: { kind: "notice" }, orderBy: { id: "asc" } })).map((entry) => ({
+    about: entry.name,
+    ...(entry.details as { to: string }),
+  }));
+
+const holdReference = (world: World) => world.paypal.holds().find((hold) => hold.status === "in_place")?.reference;
+
+describe("MP-FR-10 asking for the go-ahead", () => {
+  test("is refused before the deliverable is held, and PayPal is not asked", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    const before = world.paypal.calls.length;
+
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({ ok: false, reason: "not_held" });
+    expect(world.paypal.calls).toHaveLength(before);
+  });
+
+  test("is refused until the draft is cleared to publish", async () => {
+    const world = setUp();
+    const deliverableId = await heldDeliverable(world);
+
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({ ok: false, reason: "draft_not_cleared" });
+  });
+
+  test("is refused once the deadline has passed", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+
+    world.timeIs("2026-10-24T23:00:00Z");
+
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({ ok: false, reason: "deadline_passed" });
+  });
+});
+
+describe("MP-FR-11 inside the guarantee", () => {
+  test("PayPal is asked whether the hold still stands, and the creator gets a go-ahead with its end time", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    world.timeIs("2026-10-10T13:00:00Z");
+
+    // The guarantee ends at 09:05:10 on the 13th, so the go-ahead stops 24 hours before that (MP-FR-13).
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({
+      ok: true,
+      goAhead: { state: "running", until: at("2026-10-12T09:05:10Z") },
+    });
+    expect(callsTo(world, "readHold")).toHaveLength(1);
+    expect(callsTo(world, "renewHold")).toHaveLength(0);
+    expect(await jobs()).toContainEqual({ name: "go_ahead_ends", runAt: at("2026-10-12T09:05:10Z") });
+  });
+
+  test("asking again while a go-ahead is running gives the same answer without asking PayPal again", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    world.timeIs("2026-10-10T13:00:00Z");
+    const first = await world.money.askGoAhead(deliverableId);
+
+    world.timeIs("2026-10-10T15:00:00Z");
+
+    expect(await world.money.askGoAhead(deliverableId)).toEqual(first);
+    expect(callsTo(world, "readHold")).toHaveLength(1);
+  });
+});
+
+describe("MP-FR-12 after the guarantee", () => {
+  test("the hold is renewed, its new reference is kept, and the go-ahead lasts 48 hours", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    const oldReference = holdReference(world);
+    world.timeIs("2026-10-15T10:00:00Z");
+
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({
+      ok: true,
+      goAhead: { state: "running", until: at("2026-10-17T10:00:00Z") },
+    });
+
+    expect(callsTo(world, "renewHold")).toMatchObject([{ reference: oldReference, requestId: expect.any(String) }]);
+    const view = await world.money.view(deliverableId);
+    expect(view?.hold).toMatchObject({ state: "held", reference: holdReference(world) });
+    expect(holdReference(world)).not.toBe(oldReference);
+  });
+
+  test("a renewal PayPal did not clearly answer is followed up under the same request id, and renews once (MP-BR-06)", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    world.timeIs("2026-10-15T10:00:00Z");
+    world.paypal.next("renewHold", "timeout_after");
+
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({ ok: true, goAhead: { state: "confirming" } });
+
+    world.timeIs("2026-10-15T10:01:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ goAhead: { state: "running", until: at("2026-10-17T10:01:00Z") } });
+    const sent = callsTo(world, "renewHold");
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.requestId).toBe(sent[0]!.requestId!);
+    expect(world.paypal.holds().filter((hold) => hold.status === "in_place")).toHaveLength(1);
+  });
+});
+
+describe("MP-FR-13 how long a go-ahead lasts", () => {
+  test("with under 24 hours of guarantee left the creator is told when to ask again, and PayPal is not asked", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    world.timeIs("2026-10-12T10:00:00Z");
+
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({
+      ok: true,
+      goAhead: { state: "wait_until", until: at("2026-10-13T09:05:10Z") },
+    });
+    expect(callsTo(world, "readHold")).toHaveLength(0);
+    expect(callsTo(world, "renewHold")).toHaveLength(0);
+  });
+});
+
+describe("MP-FR-14 not confirmed", () => {
+  test("a hold that no longer stands gives no go-ahead, and the brand is told", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    // The hold ends on PayPal's side without Cleared knowing.
+    await world.paypal.cancelHold(holdReference(world)!);
+    world.timeIs("2026-10-10T13:00:00Z");
+
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({ ok: true, goAhead: { state: "not_confirmed" } });
+    expect(await notices()).toEqual([{ about: "hold_not_confirmed", to: "brand" }]);
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held" });
+  });
+
+  test("a renewal PayPal refuses gives no go-ahead, the hold stays, and the creator can ask again", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    world.timeIs("2026-10-15T10:00:00Z");
+    world.paypal.next("renewHold", "refused");
+
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({ ok: true, goAhead: { state: "not_confirmed" } });
+    expect(world.paypal.holds()).toMatchObject([{ status: "in_place" }]);
+
+    world.timeIs("2026-10-16T10:00:00Z");
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({
+      ok: true,
+      goAhead: { state: "running", until: at("2026-10-18T10:00:00Z") },
+    });
+  });
+});
+
+describe("MP-FR-15 when a go-ahead runs out", () => {
+  /** A go-ahead given at 10:00 on 15 October, running to 10:00 on the 17th. */
+  async function goAheadRunning(world: World) {
+    const deliverableId = await readyToPublish(world);
+    world.timeIs("2026-10-15T10:00:00Z");
+    await world.money.askGoAhead(deliverableId);
+    return deliverableId;
+  }
+
+  test("with no post published, the go-ahead ends", async () => {
+    const world = setUp();
+    const deliverableId = await goAheadRunning(world);
+
+    world.timeIs("2026-10-17T10:00:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", goAhead: { state: "none" }, publishedAt: null });
+  });
+
+  test("with a post published, the go-ahead is kept and the publication is recorded", async () => {
+    const world = setUp();
+    const deliverableId = await goAheadRunning(world);
+    world.postPublished(deliverableId, "2026-10-17T09:30:00Z");
+
+    world.timeIs("2026-10-17T10:00:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({
+      goAhead: { state: "running" },
+      publishedAt: at("2026-10-17T09:30:00Z"),
+    });
+  });
+
+  test("it does not end early", async () => {
+    const world = setUp();
+    const deliverableId = await goAheadRunning(world);
+
+    world.timeIs("2026-10-17T09:59:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ goAhead: { state: "running" } });
   });
 });
