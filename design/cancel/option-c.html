@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cancel C: now and after</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../landing/landing.css"><link rel="stylesheet" href="../invite/invite.css"><link rel="stylesheet" href="../brand-deal/brand.css"><link rel="stylesheet" href="../brand-review/review.css"><link rel="stylesheet" href="../publish-and-pay/pp.css"><link rel="stylesheet" href="cancel.css"><style>
+/* C: the confirmation is a two-line ledger, Now and After, so the change is read rather than described: the money, where it is, where it goes. The deal's version is the same ledger, one row per post. */
+.ledger{display:grid;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ledger .r{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:11px 14px}
+.ledger .r+.r{border-top:1px solid var(--line)}
+.ledger .k{font-size:12px;font-weight:800;color:var(--ink-4)}
+.ledger .w{font-size:14.5px;color:var(--ink-2)}
+.ledger .w b{color:var(--ink)}
+.ledger .m{font-family:var(--head);font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
+.ledger .r.after{background:var(--latte-wash)}
+.ledger .r.after .m{color:var(--ink-2)}
+.ledger3 .r{grid-template-columns:minmax(0,1fr) auto}
+.ledger3 .r .w{display:grid;gap:2px}
+.ledger3 .r .w span{font-size:13.5px;color:var(--ink-3)}
+.ledger3 .r.stays .m{color:var(--ink-4)}
+</style></head><body><main>
+<p class="crumbs"><a href="#">Deals</a> › <a href="#">Juniper &amp; Salt</a> › Instagram Reel</p>
+<h1 style="margin-top:4px">Juniper &amp; Salt · Instagram Reel</h1>
+<p class="sub2">Draft check, run 1 · 0:45 long · Post by 15 Oct</p>
+
+<div class="cols">
+<div class="stack">
+  <div class="player9">Draft · 0:45</div>
+</div>
+<aside class="stack">
+  <section class="money"><p class="lab">Held in PayPal for this Reel</p><i class="mseal"></i><p class="amt">$600.00</p><p class="ref">Ref DEMO-JR4M8T1X · held 5 Oct</p>
+    <div class="track"><span class="now">Held</span><span>Confirmed</span><span>Captured</span><span>Paid</span></div></section>
+  <section class="cx open" aria-label="Cancel this post">
+    <div class="sheethead"><span>Instagram Reel · Juniper &amp; Salt</span><a class="btn2 ghost" href="#">Keep it</a></div>
+    <h2>Cancel this post?</h2>
+    <div class="ledger">
+      <div class="r"><span class="k">Now</span><span class="w">Held in PayPal for this Reel</span><span class="m">$600.00</span></div>
+      <div class="r after"><span class="k">After</span><span class="w"><b>Back to Juniper &amp; Salt.</b> The Reel closes.</span><span class="m">$600.00</span></div>
+    </div>
+    <p class="say"><b>This can’t be undone.</b></p>
+    <div class="note"><label>Add a note for Juniper &amp; Salt (optional)</label><div class="ta typed">The timing doesn’t work for my channel this month.</div><p class="cnt">52 / 300</p></div>
+    <div class="acts"><a class="danger" href="#">Cancel the post</a><a class="keep" href="#">Keep it</a></div>
+  </section>
+</aside>
+</div>
+
+<p class="state">Closed: the button under the card</p>
+<div class="mini">
+  <div class="stack"><section class="money"><p class="lab">Held in PayPal for this Reel</p><i class="mseal"></i><p class="amt">$600.00</p><p class="ref">Ref DEMO-JR4M8T1X · held 5 Oct</p><div class="track"><span class="now">Held</span><span>Confirmed</span><span>Captured</span><span>Paid</span></div></section>
+    <button class="qcancel">Cancel this post</button></div>
+  <div class="stack"><section class="money"><p class="lab">Held in PayPal for this Short</p><i class="mseal"></i><p class="amt">$350.00</p><p class="ref">Ref DEMO-JS2B6W3N · held 5 Oct</p></section>
+    <p class="whyl">You can’t cancel now: you have the go-ahead to post.</p></div>
+</div>
+
+<p class="state">Cancel the deal (bottom of the invite page)</p>
+<div class="mini">
+  <section class="cx" aria-label="Cancel the deal">
+    <h2>Cancel the deal?</h2>
+    <div class="ledger ledger3">
+      <div class="r"><span class="w"><b>YouTube video</b><span>Back to Juniper &amp; Salt</span></span><span class="m">$1,500.00</span></div>
+      <div class="r"><span class="w"><b>Instagram Reel</b><span>Back to Juniper &amp; Salt</span></span><span class="m">$600.00</span></div>
+      <div class="r stays"><span class="w"><b>YouTube Short</b><span>Stays held · you have the go-ahead to post</span></span><span class="m">$350.00</span></div>
+    </div>
+    <p class="say"><b>This can’t be undone.</b></p>
+    <div class="note"><label>Add a note for Juniper &amp; Salt (optional)</label><div class="ta">For example, why you’re cancelling</div><p class="cnt">0 / 300</p></div>
+    <div class="acts"><a class="danger" href="#">Cancel 2 posts</a><a class="keep" href="#">Keep it</a></div>
+  </section>
+  <section class="cx" aria-label="Cancel the deal before agreeing">
+    <h2>Cancel the deal?</h2>
+    <div class="ledger">
+      <div class="r"><span class="k">Now</span><span class="w">Invite sent · nothing held</span><span class="m"></span></div>
+      <div class="r after"><span class="k">After</span><span class="w"><b>Both posts close.</b> Pine &amp; Co’s link stops working.</span><span class="m"></span></div>
+    </div>
+    <p class="say"><b>This can’t be undone.</b></p>
+    <div class="acts"><a class="danger" href="#">Cancel the deal</a><a class="keep" href="#">Keep it</a></div>
+  </section>
+</div>
+</main><script src="../publish-and-pay/pp.js"></script><script src="cancel.js"></script></body></html>

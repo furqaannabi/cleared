@@ -1,0 +1,70 @@
+/* Cancel mockups (design/ prototypes: never shipped, never imported by web/). Builds on ../landing/landing.css, ../invite/invite.css, ../brand-deal/brand.css, ../brand-review/review.css and ../publish-and-pay/pp.css. */
+.crumbs{font-size:13.5px;color:var(--ink-3)}
+.crumbs a{color:var(--espresso);font-weight:700}
+.sub2{font-size:14px;color:var(--ink-3);margin-top:4px}
+.cols{display:grid;gap:18px;margin-top:18px}
+@media(min-width:1024px){.cols{grid-template-columns:minmax(0,1.25fr) minmax(320px,1fr);align-items:start;gap:26px}}
+.stack{display:grid;gap:14px;min-width:0}
+.cols>*,.mini>*{min-width:0}
+
+/* the held money card (DESIGN.md "Money card") */
+.money{position:relative;overflow:hidden;background:var(--marigold);color:var(--marigold-ink);border-radius:20px;padding:18px;box-shadow:var(--card-shadow)}
+.money::after{content:"";position:absolute;right:-60px;top:-70px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.3)}
+.money>*{position:relative;z-index:1}
+.money .lab{font-size:13px;font-weight:700;color:var(--marigold-ink-2)}
+.money .amt{font-family:var(--head);font-size:34px;font-weight:800;letter-spacing:-.01em;line-height:1.05;margin-top:4px;font-variant-numeric:tabular-nums}
+.money .ref{font-size:13px;font-weight:600;color:var(--marigold-ink-2);margin-top:4px}
+.money .mseal{position:absolute;top:16px;right:18px;width:46px;height:46px;z-index:1}
+.track{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.track span{text-align:center;font-size:12px;font-weight:700;padding:6px 0;border-radius:999px;background:rgba(255,255,255,.35);color:var(--marigold-ink-2)}
+.track span.now{background:var(--marigold-ink);color:var(--marigold)}
+.money .mfoot{display:flex;justify-content:space-between;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(60,40,0,.15);font-size:13px;font-weight:600;color:var(--marigold-ink-2)}
+.money .mfoot b{color:var(--marigold-ink)}
+.money.back{background:var(--latte);color:var(--ink);border:1px solid var(--latte-line);box-shadow:none}
+.money.back::after{background:rgba(255,255,255,.5)}
+.money.back .lab,.money.back .ref{color:var(--ink-3)}
+.money.back .amt{color:var(--ink-2)}
+
+/* the quiet cancel (CN-FR-01): text, never a pill */
+.qcancel{justify-self:start;display:inline-flex;align-items:center;min-height:44px;padding:0 2px;font:inherit;font-size:14px;font-weight:700;color:var(--espresso);background:none;border:0;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--latte-line);cursor:pointer}
+.whyl{font-size:13.5px;color:var(--ink-3);min-height:44px;display:flex;align-items:center}
+
+/* the confirmation */
+.cx{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:12px}
+.cx h2{font-family:var(--head);font-size:20px;line-height:1.2}
+.cx .say{font-size:14.5px;color:var(--ink-2)}
+.cx .say b{color:var(--ink)}
+.note label{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px}
+.note .ta{min-height:76px;border:1px solid var(--latte-line);border-radius:12px;padding:10px 12px;font-size:15px;color:var(--ink-3);background:#fff}
+.note .ta.typed{color:var(--ink)}
+.note .cnt{font-size:12.5px;color:var(--ink-3);margin-top:4px;text-align:right;font-variant-numeric:tabular-nums}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.danger{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;background:var(--fail);color:#fff;font-weight:700;font-size:14.5px;text-decoration:none;box-shadow:0 2px 6px rgba(120,20,15,.22)}
+.keep{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--latte-line);background:var(--surface);font-weight:700;font-size:14.5px;color:var(--espresso);text-decoration:none}
+
+/* On phones the open confirmation is a full-screen sheet (CN-FR-04, CN-FR-17). */
+.sheethead{display:none}
+@media(max-width:767px){
+  .cx.open{position:fixed;inset:0;z-index:20;border-radius:0;border:0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));grid-template-rows:auto auto auto 1fr auto;overflow:auto}
+  .cx.open .sheethead{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--ink-3);font-weight:700}
+  .cx.open .acts{flex-direction:column-reverse;align-items:stretch;align-self:end}
+  .cx.open .acts>*{width:100%}
+}
+
+/* lists of posts (the deal) */
+.posts{display:grid}
+.posts .p{display:grid;grid-template-columns:22px minmax(0,1fr);gap:2px 12px;padding:12px 0;border-top:1px solid var(--line-soft)}
+.posts .p:first-child{border-top:0}
+.posts .p b{font-size:15px}
+.posts .p .o{grid-column:2;font-size:13.5px;color:var(--ink-2)}
+.posts .p .o.stays{color:var(--ink-3)}
+.pl2{width:22px;height:22px;color:var(--ink-3)}
+
+.state{margin:48px 0 16px;padding-top:16px;border-top:2px dashed var(--latte-line);font-size:13px;font-weight:800;color:var(--ink-4)}
+.mini{display:grid;gap:16px}
+@media(min-width:900px){.mini{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:4px 16px}
+.list h2{font-size:18px;padding:12px 0 2px}
+.player9{background:var(--espresso-deep);border-radius:18px;aspect-ratio:9/12;max-height:420px;display:grid;place-items:end start;padding:14px;color:#fff;font-size:13px;font-weight:700}
+@media(min-width:1024px){.player9{aspect-ratio:4/4}}
+.note-q{font-size:14px;color:var(--ink-2);border-left:0;background:var(--latte-wash);border-radius:12px;padding:10px 12px}
