@@ -1,6 +1,6 @@
 # Confirm and hold: FRD
 
-**Status:** Signed by William (revision 1.0).
+**Status:** Signed by William (revision 1.0). Revision 1.1 (Requests for Furqaan only) is a draft, not signed.
 
 **Surface:** Both sides of step 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's deal page:** the brand opens the creator's link, reads the terms and every checklist with where each item came from, asks for changes or agrees, then approves one PayPal hold per post. **The creator's side:** the brand's notes beside what they're about, "Send updated terms", and each post's hold as it comes in.
 
@@ -202,7 +202,10 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | CH-FR-10 to CH-FR-12 | `POST /brand/deals/{id}/notes` (the set, sent together); `step` becomes `changes_requested` |
 | CH-FR-13, CH-FR-24 | Terms versions: each send makes a new version; what changed between versions per item, amount and deadline |
 | CH-FR-14 to CH-FR-16 | `POST /brand/deals/{id}/agree` with the version; refuses an out-of-date version; `step` becomes `agreed` |
-| CH-FR-17, CH-FR-18 | `POST /brand/deals/{id}/posts/{deliverableId}/hold` (creates the PayPal order and returns what the approval needs) and the hold state per post; the PayPal JS SDK wiring and its return; `PayPal-Request-Id` on every create |
+| CH-FR-17 | `POST /brand/deals/{id}/posts/{deliverableId}/hold`: creates the PayPal order and returns `{ orderId }` for the approval step; refused before the brand agrees, for a held post, and while a hold is pending or unknown. `PayPal-Request-Id` on every create |
+| CH-FR-18 | `POST …/hold/approved` with `{ orderId }`: PayPal approved, so the API authorizes and returns the deal with the hold's state (`held` with reference and deadline, `declined`, `pending` or `unknown`). `POST …/hold/closed` with `{ orderId }`: the brand closed PayPal; the hold is `closed`. Both refuse an order id from another post |
+| CH-FR-17, CH-FR-18 | The PayPal JS SDK wiring for the approval step (the page calls the two endpoints above from its approve and cancel callbacks) |
+| Mocks only | `POST /__demo/paypal/next` with `{ outcome }` sets the Demo PayPal's next answer. It exists only in the MSW mocks and is never part of the real API |
 | CH-FR-19, CH-FR-21 | When every post is held, the deal leaves set-up; the deal summary's `openDeliverableId` per DC-FR-37 |
 | CH-FR-22, CH-FR-23 | Notes on the creator's invite and checklist; `PUT /deals/{id}/notes/{noteId}/reply` |
 | CH-FR-24 | `POST /deals/{id}/invite/send`: new version, `waiting_for_brand`, link expiry restarted; email to the brand that the terms changed (SES, as IN-FR-13) |
@@ -236,3 +239,4 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | --- | --- | --- |
 | 0.1 | First draft, from the grill-me session with William: the brand asks for changes and the creator makes them; the link is swapped for a deal-scoped session and a clean URL; agreeing comes before the holds and is final; one PayPal approval per post; the brand sees each item's brief line, the creator's interpretations and the lines not on the checklist; notes on items, lines left out, amounts, deadlines and the deal; the link stays on through a change request and the terms are versioned; one message for a link that doesn't work; the creator sees only the brand's actions; a plain hold state per post; one Agree button under a summary | [Brand asks for changes](../decisions/2026-10-08-brand-asks-for-changes-not-edits.md), [Brand access by link session](../decisions/2026-10-08-brand-access-by-link-session.md) |
 | 1.0 | Signed by William | none |
+| 1.1 | Requests for Furqaan: the hold call split into start (returns the PayPal order id), approved and closed, as built against the mocks; the mock-only Demo PayPal endpoint noted. No requirement changes | none |
