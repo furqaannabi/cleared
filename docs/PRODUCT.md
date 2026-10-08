@@ -50,6 +50,7 @@ The similar projects found as of 6 October 2026 read text or code, and judge the
 | Draft check | AI checking the video file against the checklist before it is published |
 | Review window | The 48 hours the brand has to approve or object to a passing draft |
 | Re-confirming the hold | Asking PayPal, just before the creator publishes, to confirm the reserved funds are still there. PayPal calls this reauthorizing. |
+| Go-ahead | Cleared telling the creator, after re-confirming the hold, that they can publish. It lasts 48 hours. |
 | Live check | Confirming through the platform's API that the approved post is published |
 | Manual approval | A person decides whether the deliverable is paid, in place of the timer or the live check |
 | Cleared | A deliverable that has passed its live check and been paid |
@@ -74,10 +75,13 @@ Each deliverable is checked twice: as a draft, while a mistake can still be fixe
 - **Both sides agree the checklist before any money is held.** The checklist is the only thing a deliverable is judged against.
 - **Silence clears a passing draft, and nothing else.** If every item passes and the brand says nothing for 48 hours, the draft is cleared to publish. An item the AI fails or is unsure about never clears on a timer: the creator fixes it or the brand accepts it.
 - **The review happens before publishing.** A published video cannot be edited, so objections are raised while a fix is still possible. After that, payment follows the live check with no second wait.
-- **A creator never publishes without a confirmed hold.** If PayPal cannot confirm the funds at step 6, the creator is told not to publish.
+- **A creator never publishes without a confirmed hold.** If PayPal cannot confirm the funds at step 6, the creator is told not to publish. A confirmed hold gives a go-ahead that lasts 48 hours; after that the creator asks again ([decision](decisions/2026-10-08-go-ahead-cancel-and-unheld-posts.md)).
 - **The AI never moves money.** It returns findings with evidence. Fixed code confirms the evidence exists, decides, and calls PayPal.
 - **A brand objection stops the clock.** Objecting to an item moves that deliverable to manual approval.
-- **A missed deadline or a cancelled deal releases the hold** back to the brand.
+- **A missed deadline or a cancellation releases the hold** back to the brand. A deadline is missed only if no approved post was published in time ([decision](decisions/2026-10-08-what-ends-a-hold-after-publishing.md)). Either side can cancel until the creator has the go-ahead to publish; after that nobody can ([decision](decisions/2026-10-08-go-ahead-cancel-and-unheld-posts.md)).
+- **Nothing stays undecided past day 28 of a hold.** A hold that is neither captured nor released by then is released, one day before PayPal would end it ([decision](decisions/2026-10-08-what-ends-a-hold-after-publishing.md)).
+
+The rules that link to a decision were set by Furqaan on 8 October 2026. William can supersede them.
 
 ## When something does not go to plan
 
@@ -88,10 +92,15 @@ Each deliverable is checked twice: as a draft, while a mistake can still be fixe
 | The AI is unsure about an item | It goes to a person. The creator fixes it or the brand accepts it. It never clears on a timer. |
 | The brand says nothing for 48 hours on a fully passing draft | The draft is cleared to publish. |
 | The brand objects to an item | The clock stops and that deliverable moves to manual approval. |
-| PayPal cannot re-confirm the hold at step 6 | The creator is told not to publish. |
-| The live post cannot be tied to the approved draft | The deliverable goes to manual approval. See [Platforms](#platforms) for when this happens. |
-| The deadline passes with no approved live post | The hold is released back to the brand. |
-| The deal is cancelled | The hold is released back to the brand. |
+| PayPal cannot re-confirm the hold at step 6 | The creator is told not to publish, and the brand is told to check its PayPal funding. The hold stays in place and the creator can ask again. |
+| The live post cannot be tied to the approved draft | The brand has 48 hours to confirm the post or object with a reason. Confirming, or saying nothing, pays the creator. An objection goes to a person at Cleared. See [Platforms](#platforms) for when this happens. |
+| The live check fails on something the creator can still fix, such as a missing link | The creator fixes it and has it checked again, until the deadline or 24 hours after the failure if that is later. Still failing then, the hold is released. |
+| The deadline passes and no approved post was published in time | The hold is released back to the brand. A post published in time keeps its hold while its live check finishes. |
+| The creator or the brand cancels before the go-ahead to publish | The hold is released back to the brand. During a go-ahead, and once a post is published, nobody can cancel. |
+| The brand agrees but never approves a hold | After 7 days that post is closed as not held. Posts already held carry on. |
+| PayPal refuses the capture for an approved post | Cleared tries again until day 28 and tells both sides why. If it never succeeds, the deliverable ends as approved, not paid. |
+| The payout does not reach the creator | The deliverable stays captured, never paid. The creator accepts the money at that email, or corrects their PayPal email and has it sent again. |
+| A hold is still undecided on day 28 | It is released back to the brand. |
 
 ## What gets checked
 
@@ -129,20 +138,23 @@ No field for the paid-partnership label was found in Instagram's API, so on Inst
 | Stage | What happens in PayPal | What both sides see |
 | --- | --- | --- |
 | Held | The brand approves an authorization for the deliverable's amount. The money is reserved, not taken. | Held, with the PayPal reference |
-| Re-confirmed | Just before publishing, Cleared asks PayPal to confirm the reserved funds again. | Confirmed, or a warning not to publish |
+| Re-confirmed | Just before publishing, Cleared asks PayPal to confirm the reserved funds again. | A go-ahead that lasts 48 hours, or a warning not to publish |
 | Captured | After a passing live check, the hold is captured to Cleared's PayPal account. | Captured, with the PayPal reference |
-| Paid | Cleared pays the amount out to the creator's PayPal email. | Paid, with the PayPal reference |
-| Released | On a missed deadline or a cancellation, the hold is released and the money returns to the brand. | Released |
+| Paid | Cleared pays the amount, less its 5% fee, out to the creator's PayPal email. | Paid, with the PayPal reference |
+| Released | On a missed deadline, a cancellation, or day 28, the hold is released and the money returns to the brand. | Released, with the reason |
 
 - **There is one hold per deliverable.** A deal with three posts has three holds, each captured or released on its own.
 - **A hold lasts 29 days, and PayPal guarantees the funds only for the first 3.** This is why the hold is re-confirmed before publishing, and why a deliverable's deadline is capped at 21 days after the hold.
-- **Capturing straight to the creator's PayPal account is untested.** It would remove the payout step. If PayPal does not allow it, the capture-then-payout path above stays.
+- **Cleared's fee is 5%, taken from the creator's payout.** PayPal's own charges come out of that fee. A $1,200 post pays the creator $1,140 ([decision](decisions/2026-10-08-cleared-fee-and-amount-limits.md)).
+- **One hold is between $20 and $10,000.**
+- **The hold is captured to Cleared's account and then paid out.** Capturing straight to the creator was considered and closed, because the fee has to pass through Cleared's account.
 - **The sandbox accounts are US accounts.** The build uses US sandbox business and personal accounts, and PayPal payouts need US sandbox recipients.
 
 ## Limits in version one
 
 - **Deadlines are capped at 21 days after the hold**, for the reason given above.
 - **Payment goes through Cleared's PayPal account**, not directly from brand to creator.
+- **A post PayPal never lets Cleared collect for ends as "approved, not paid".** Getting paid after that is outside Cleared.
 - **The paid-partnership label on Instagram is a manual check.**
 - **Instagram creators need a professional account.**
 - **A Reel with licensed music cannot be fetched**, so it goes to manual approval.
@@ -218,9 +230,6 @@ The repo is [github.com/furqaannabi/cleared](https://github.com/furqaannabi/clea
 ## Still open
 
 - **Which Bedrock video model.** To be chosen after testing both on a real sponsored clip.
-- **Whether a hold can be captured straight to the creator's PayPal account**, which would remove the payout step.
-- **Manual approval.** Who decides, and what happens to the hold if nobody does before the deadline, is not yet defined.
-- **A live check that fails on something still fixable.** A description or caption can be edited after publishing, so a missing link could be corrected. Whether the creator gets a chance to fix it is not yet defined.
 - **Team.** The build is planned for two people. Who the second person is, and what they take, is not settled.
 - **First spec.** Not yet written. It should turn [How a deal runs](#how-a-deal-runs) into numbered requirements before any code.
 

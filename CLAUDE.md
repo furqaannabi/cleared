@@ -64,7 +64,9 @@ Chosen in `docs/PRODUCT.md`:
 | What is shown, such as the product in use | A video model on Amazon Bedrock: TwelveLabs Pegasus or Amazon Nova (open) |
 | Frontend | Next.js on Vercel |
 | API | Hono on Bun, in TypeScript, described with OpenAPI (see `docs/decisions/2026-10-07-backend-hono-bun-prisma-postgres.md`) |
-| Pipeline and timers | A job queue kept in Postgres, run by the same backend service. No Lambda, Step Functions or EventBridge Scheduler |
+| Pipeline and timers | Our own jobs table in Postgres, run by the same backend service; a job is written in the same transaction as the change it belongs to (see `docs/decisions/2026-10-08-jobs-table-in-postgres.md`). No Lambda, Step Functions or EventBridge Scheduler |
+| PayPal client | `@paypal/paypal-server-sdk` for Orders and Payments, plain HTTP for Payouts and webhook verification, all behind one PayPal port; the address is fixed to the sandbox in code (see `docs/decisions/2026-10-08-paypal-client-sdk-behind-port.md`) |
+| Backend tests | Bun's test runner against the Docker Postgres, with a fake PayPal behind the port; a small sandbox suite run by hand (see `docs/decisions/2026-10-08-backend-test-tooling.md`) |
 | Data | PostgreSQL on Amazon RDS, through Prisma. No DynamoDB |
 | Backend hosting | One container on Amazon ECS Fargate |
 | Sign-in | Cognito, with Google and Instagram sign-in for connecting accounts |
@@ -86,9 +88,7 @@ Everything behind the frontend uses AWS or the hackathon's sponsor tools. PRODUC
 
 | Decision | Owner |
 | --- | --- |
-| Job queue library for the Postgres-backed queue | Furqaan |
 | Infrastructure as code (CDK, Terraform, …) | Furqaan |
-| Backend test tooling | Furqaan |
 | API contract between `web/` and the backend (Furqaan has chosen OpenAPI as its format; William to agree) | Both |
 
 ---
@@ -130,12 +130,20 @@ From `docs/PRODUCT.md`. Do not re-open without explicit human instruction.
 | One hold per deliverable | A deal with three posts has three holds, each captured or released on its own |
 | Review window | 48 hours from a fully passing draft |
 | Deadline cap | 21 days after the hold (a hold lasts 29 days; funds are guaranteed only for the first 3) |
-| Payment route (v1) | Hold captured to Cleared's PayPal account, then paid out to the creator's PayPal email |
+| Payment route (v1) | Hold captured to Cleared's PayPal account, then paid out to the creator's PayPal email, less Cleared's fee. Capturing straight to the creator is closed |
+| Cleared's fee | 5% of the deliverable's amount, taken from the creator's payout, in whole cents rounded down. PayPal's charges come out of it. One hold is $20 to $10,000 (see `docs/decisions/2026-10-08-cleared-fee-and-amount-limits.md`; William to review) |
+| Go-ahead | A re-confirmed hold gives a go-ahead to publish that lasts 48 hours; then the creator asks again. If PayPal cannot re-confirm, the brand is told and the creator can ask again (see `docs/decisions/2026-10-08-go-ahead-cancel-and-unheld-posts.md`; William to review) |
+| Cancel | Either side, while there is no go-ahead and nothing is published. Nobody after that (same record) |
+| Never held | A post with no hold 7 days after the brand agreed is closed as not held. A hold attempt with no answer after 24 hours is cancelled (same record) |
+| Missed deadline | Released only if no approved post was published in time (see `docs/decisions/2026-10-08-what-ends-a-hold-after-publishing.md`; William to review) |
+| Live check cannot decide | The brand has 48 hours to confirm or object; silence pays; an objection goes to a person at Cleared (same record) |
+| Live check fails, fixable | The creator fixes and re-checks until the deadline, or 24 hours after the failure if later; then released (same record) |
+| Day 28 | A hold neither captured nor released on day 28 is released. A refused capture is retried until then (same record) |
 | Platforms (v1) | YouTube videos and Shorts, Instagram Reels. Everything else in "Not included" stays out |
 | Instagram paid-partnership label | Always a manual check in v1 |
 | Instagram accounts | Professional accounts only. A Reel with licensed music cannot be fetched, so it goes to manual approval |
 
-**Still open (do not assume):** which Bedrock video model; whether a hold can be captured straight to the creator; manual approval (who decides, and what happens to the hold if nobody does before the deadline); whether a live check that fails on something still fixable (a missing link in the description) gives the creator a chance to fix it.
+**Still open (do not assume):** which Bedrock video model; and the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`.
 
 ---
 

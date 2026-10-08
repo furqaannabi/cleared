@@ -53,3 +53,9 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-08 | [The brand asks for changes; the creator makes them](2026-10-08-brand-asks-for-changes-not-edits.md) | Accepted |
 | 2026-10-08 | [The brand gets in by its link, swapped for a deal-scoped session](2026-10-08-brand-access-by-link-session.md) | Accepted |
 | 2026-10-08 | [Mock data is kept in the browser in a mock build](2026-10-08-mock-data-kept-in-the-browser.md) | Accepted |
+| 2026-10-08 | [Cleared takes a 5% fee from the creator's payout; holds are $20 to $10,000](2026-10-08-cleared-fee-and-amount-limits.md) | Accepted |
+| 2026-10-08 | [What ends a hold once a post is published](2026-10-08-what-ends-a-hold-after-publishing.md) | Accepted |
+| 2026-10-08 | [Before publishing: a 48-hour go-ahead, who can cancel, and posts that are never held](2026-10-08-go-ahead-cancel-and-unheld-posts.md) | Accepted |
+| 2026-10-08 | [Timers and retries run from our own jobs table in Postgres](2026-10-08-jobs-table-in-postgres.md) | Accepted |
+| 2026-10-08 | [The backend calls PayPal through its server SDK, behind our own interface](2026-10-08-paypal-client-sdk-behind-port.md) | Accepted |
+| 2026-10-08 | [Backend tests: Bun's test runner, a real Postgres and a fake PayPal](2026-10-08-backend-test-tooling.md) | Accepted |
