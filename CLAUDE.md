@@ -69,7 +69,7 @@ Chosen in `docs/PRODUCT.md`:
 | Backend tests | Bun's test runner against the Docker Postgres, with a fake PayPal behind the port; a small sandbox suite run by hand (see `docs/decisions/2026-10-08-backend-test-tooling.md`) |
 | Data | PostgreSQL on Amazon RDS, through Prisma. No DynamoDB |
 | Backend hosting | One container on Amazon ECS Fargate |
-| Sign-in | Cognito, with Google and Instagram sign-in for connecting accounts |
+| Sign-in | Cognito: creators sign in with Google through the backend, which sets an HttpOnly session; Instagram is a connection, not a sign-in; a per-visit demo account (see `docs/decisions/2026-10-08-creator-sign-in-through-the-backend.md`; Furqaan to review) |
 | Files and secrets | S3, KMS |
 | Evidence table and brand dashboard | AG Grid and AG Studio, on `md:` and up; cards on phones (see `docs/decisions/2026-10-06-evidence-view-ag-grid.md`) |
 | PayPal coding help | APIMatic's Context Plugin for PayPal |

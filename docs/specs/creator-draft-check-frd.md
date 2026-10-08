@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.16). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.17). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus its side of step 5 (the brand's review: objections and approval, with the brand's side in the [brand review FRD](brand-review-frd.md)) and the released state.
 
@@ -368,3 +368,5 @@ Fields:
 | 1.15 signed | Revision 1.15 signed by William | none |
 | 1.16 | Pointer: cancelling a post, and who cancelled it with their note in the released state (DC-FR-10, DC-FR-29), are specified in the [cancel FRD](cancel-frd.md) (CN-FR-10, CN-FR-11). The status line's repeated sentence kept once. No requirement changes here | none |
 | 1.16 signed | Revision 1.16 signed by William | none |
+| 1.17 | Pointer: DC-FR-31's creator name in the rail opens the account menu (Sign out, or Leave the demo, and "Demo account"), per the [sign-in FRD](sign-in-frd.md) (SI-FR-11 to SI-FR-13). No requirement changes here | [Creator sign-in through the backend](../decisions/2026-10-08-creator-sign-in-through-the-backend.md) |
+| 1.17 signed | Revision 1.17 signed by William | none |

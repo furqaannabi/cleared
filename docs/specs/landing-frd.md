@@ -1,6 +1,6 @@
 # Landing page: FRD
 
-**Status:** Signed by William (revision 1.1).
+**Status:** Signed by William (revision 1.2).
 
 **Surface:** Landing, at `/`. Anyone can open it. A static Server Component (CLAUDE.md "Surfaces"). It is the first thing a judge sees at the hosted demo URL, and the front door of the product's story.
 
@@ -44,11 +44,11 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 | --- | --- |
 | LP-FR-01 | **Header.** The Cleared logo, linking to `/`. From `md:` up, "See a deal in action" is repeated on the right. No navigation menu (there are no other pages). |
 | LP-FR-02 | **Headline and one sentence.** The tagline "Brand deals where the content and the payment clear together." as the page's only `h1`, and one plain sentence on what Cleared does: the brand's money is held in PayPal, AI checks the video against the brief, and the creator is paid when the approved post is live. |
-| LP-FR-03 | **The one action.** A primary button "See a deal in action" that opens `/deals`. It is the page's only primary action. No sign-up, waitlist or "coming soon". |
-| LP-FR-15 | **`/deals` opens the first deal.** A new creator-app route: it loads the creator's deals list (the one the rail uses, DC-FR-31) and opens the first deal, which opens its deliverable (DC-FR-37). With no deals it says plainly "You have no deals yet." inside the app shell. While the list loads it shows the app's loading state; if the list fails it offers Try again. No deal id is written into the landing page. |
+| LP-FR-03 | **Two ways in (1.2).** The sign-in FRD's "Sign in with Google" (primary, SI-FR-01) and "Try the demo account" (outlined, SI-FR-02), side by side from `sm:`, stacked on phones. Sign in with Google is the page's only primary action. No waitlist or "coming soon". |
+| LP-FR-15 | **`/deals` opens the first deal.** A new creator-app route: it loads the creator's deals list (the one the rail uses, DC-FR-31) and opens the first deal, which opens its deliverable (DC-FR-37). With no deals it says plainly "You have no deals yet." inside the app shell. While the list loads it shows the app's loading state; if the list fails it offers Try again. No deal id is written into the landing page. (1.2) A signed-out visitor is sent to `/sign-in?next=/deals` first (SI-FR-06). |
 | LP-FR-16 | **One photo.** The draft video's frame is a photo of a hand holding a serum dropper bottle: no face and no real brand, free licence (Unsplash). Served optimised (AVIF/WebP, sized per screen), with empty alt text since it is decorative beside the labelled example. |
-| LP-FR-17 | **Closing.** Before the footer, an espresso band "See a whole deal clear." with the button again and the demo note. |
-| LP-FR-04 | **Demo note.** Next to the button: "Demo with made-up data. No real money moves." |
+| LP-FR-17 | **Closing.** Before the footer, an espresso band "See a whole deal clear." with the two ways in again and the demo note. |
+| LP-FR-04 | **Demo note.** Under "Try the demo account": "Made-up data. No real money moves." (SI-FR-02). |
 | LP-FR-05 | **Product visual.** A phone showing the creator app on the example deal: the draft video (a photo frame, LP-FR-16), its timeline with seal markers, and three checklist items; beside it, tilted slightly, the marigold "$1,200.00 held in PayPal" card. Built from the app's own components and tokens; its example data is written in the landing page, never imported from the mocks, and labelled as an example. |
 | LP-FR-06 | **Motion.** All CSS, and still under reduced motion: on load the phone's timeline seals pop in and a pass seal stamps once onto the phone; the money card floats gently. As the visitor scrolls (where the browser supports scroll-driven animation; elsewhere everything simply shows): the chat messages appear one by one, the marigold thread joining the five steps draws down the page, each step's number seal stamps in while its words and panel slide in from opposite sides, the checklist items settle from "Checking" to their results, the review countdown ticks, and the CLEARED seal stamps onto the payout. |
 | LP-FR-07 | **Phones.** Below `md:` the button is on the first screen; the visual follows it, cut down to the money card and two items. |
@@ -95,14 +95,13 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 
 ## Out of Scope
 
-- Sign-up, sign-in, waitlists and pricing.
+- Waitlists and pricing. Sign-in is in the [sign-in FRD](sign-in-frd.md).
 - A separate brand landing page or brand navigation.
-- How a judge is signed in to the hosted demo (see Open items).
 - Blog, docs, legal pages.
 
 ## Open items
 
-- **Demo entry (both William and Furqaan):** the hosted demo needs a pre-connected demo creator account so a judge lands signed in (PRODUCT.md "Risks to test first"). Until then `/deals` runs on the mocks. For the Furqaan handover note.
+- None. (1.2: the demo entry is "Try the demo account", SI-FR-02.)
 
 ## Revision
 
@@ -112,3 +111,5 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 | 1.0 | Signed by William | none |
 | 1.1 | William chose design B2 from the mockups (design/landing/): the phone with the money card, the problem as a chat, one deal start to paid joined by a marigold thread, the CLEARED stamp, a closing band, one photo, and scroll-driven motion | none |
 | 1.1 signed | Revision 1.1 signed by William | none |
+| 1.2 | From the sign-in grill-me: LP-FR-03's one button becomes the two ways in (Sign in with Google, Try the demo account), LP-FR-04 and LP-FR-17 follow, LP-FR-15 sends a signed-out visitor to sign in first; the demo-entry open item closes. Tests follow | [Creator sign-in through the backend](../decisions/2026-10-08-creator-sign-in-through-the-backend.md) |
+| 1.2 signed | Revision 1.2 signed by William | none |
