@@ -135,6 +135,23 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* Tailwind v4 leaves buttons on the default cursor; every active control
+     shows a pointer, and a held-back one says it can't be used (DESIGN.md). */
+  button,
+  [role="button"],
+  [role="tab"],
+  select,
+  summary,
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+  }
+
+  :disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
   body {
     background: var(--color-ground);
     color: var(--color-ink);

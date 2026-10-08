@@ -396,6 +396,7 @@ The landing at `/` (docs/specs/landing-frd.md, design B2 in design/landing/optio
 - Do use tabular figures for every amount, time and count.
 - Do label synthetic or placeholder content as such.
 - Do theme browser surfaces: selection in `latte-line`, espresso focus rings with 2px offset, latte-tinted scrollbars.
+- Do show a pointer on every active control (buttons, tabs, selects, links) and `not-allowed` on a disabled or held-back one; set once in the base styles.
 
 ### Don't:
 - Don't use dark, neon "crypto dashboard" styling.
