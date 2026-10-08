@@ -48,11 +48,14 @@ import { useUrlSelection } from "./use-url-selection";
  * @see docs/specs/creator-draft-check-frd.md DC-FR-01, DC-FR-38, DC-FR-39
  */
 export function DraftCheckPage({ dealId, deliverableId }: { dealId: string; deliverableId: string }) {
-  const { load, retry, replace } = useDeliverable(deliverableId);
+  const { load, retry, replace } = useDeliverable(deliverableId, dealId);
+  // DC-FR-33: a post opened by switching settles in; the first one simply appears.
+  const [switched] = useState(load.status === "switching");
   return (
     <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1240px] focus:outline-none px-4 pt-4 pb-36 md:px-6 lg:px-9">
       {load.status === "loading" && <PageSkeleton />}
-      {load.status === "ready" && <Loaded dealId={dealId} deliverable={load.deliverable} onUpdated={replace} />}
+      {load.status === "switching" && <Loaded key={load.previous.id} dealId={dealId} deliverable={load.previous} onUpdated={replace} openingId={deliverableId} />}
+      {load.status === "ready" && <Loaded key={load.deliverable.id} dealId={dealId} deliverable={load.deliverable} onUpdated={replace} settle={switched} />}
       {load.status === "error" && <LoadProblem error={load.error} onRetry={retry} />}
     </main>
   );
@@ -62,10 +65,16 @@ function Loaded({
   dealId,
   deliverable,
   onUpdated,
+  openingId,
+  settle = false,
 }: {
   dealId: string;
   deliverable: Deliverable;
   onUpdated: (d: Deliverable) => void;
+  /** DC-FR-33: another post in the deal is opening; this one stays, dimmed, with that post's tab marked. */
+  openingId?: string;
+  /** DC-FR-33: this post was opened by switching, so it settles in under the tabs. */
+  settle?: boolean;
 }) {
   // Recomputed per load; `now` is read once so the page doesn't shift while open.
   const view = useMemo(() => deliverableView(deliverable, new Date()), [deliverable]);
@@ -200,8 +209,12 @@ function Loaded({
         dealId={dealId}
         brandName={deliverable.brandName}
         deliverableName={view.deliverableName}
-        switcher={deal && <DeliverableSwitcher dealId={dealId} deliverables={deal.deliverables} currentId={deliverable.id} />}
+        switcher={deal && <DeliverableSwitcher dealId={dealId} deliverables={deal.deliverables} currentId={openingId ?? deliverable.id} />}
       />
+      <div
+        aria-busy={openingId ? true : undefined}
+        className={`transition-opacity duration-150 ${openingId ? "pointer-events-none opacity-55" : ""} ${settle ? "motion-safe:animate-post-in" : ""}`}
+      >
       {view.checkFailed && <CheckFailedBanner banner={view.checkFailed} />}
       {/* DC-FR-48: a banner from md: up; on phones it is the first line of What happens next. */}
       {view.runChange && wide && <RunChangeBanner change={view.runChange} landed={landed} />}
@@ -282,6 +295,7 @@ function Loaded({
           Demo data. Glow Theory, Northbound Coffee, Kora Audio, Juniper & Salt, Maple & Moss and Ada Okafor are made up, and no money moves.
         </p>
       )}
+      </div>
       {/* Says what Ask and Withdraw did, for screen readers (DC-FR-14, DC-FR-15). */}
       <p role="status" className="sr-only">
         {actions.announcement}

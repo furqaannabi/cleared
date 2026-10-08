@@ -13,6 +13,28 @@ describe("creator draft check page", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Loading this deliverable");
   });
 
+  test("DC-FR-33: switching to another post in the deal keeps the page, marks the new tab at once, then shows the post", async () => {
+    const page = (id: string) => (
+      <DealsProvider>
+        <DraftCheckPage key={id} dealId="deal_juniper" deliverableId={id} />
+      </DealsProvider>
+    );
+    const { rerender } = render(page("del_juniper_video"));
+    await screen.findByRole("navigation", { name: "Deliverables in this deal" });
+    rerender(page("del_juniper_reel"));
+    expect(screen.queryByText("Loading this deliverable")).toBeNull();
+    const tabs = screen.getByRole("navigation", { name: "Deliverables in this deal" });
+    expect(within(tabs).getByRole("link", { name: /Instagram Reel/ })).toHaveAttribute("aria-current", "page");
+    expect(await screen.findByRole("heading", { level: 1, name: "Juniper & Salt · Instagram Reel" })).toBeVisible();
+  });
+
+  test("DC-FR-39: another deal still opens on the loading shape", async () => {
+    const { rerender } = render(<DraftCheckPage key="a" dealId="deal_juniper" deliverableId="del_juniper_video" />);
+    await screen.findByRole("heading", { level: 1, name: "Juniper & Salt · YouTube video" });
+    rerender(<DraftCheckPage key="b" dealId="deal_glow" deliverableId="del_glow_video" />);
+    expect(screen.getByRole("status")).toHaveTextContent("Loading this deliverable");
+  });
+
   test("DC-FR-32, DC-FR-30: shows the deliverable's title and what happens next", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     expect(await screen.findByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();

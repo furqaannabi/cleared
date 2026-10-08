@@ -107,11 +107,23 @@
   /* The fully passing moment: the seal stamps once; the item seals line up. */
   --animate-seal-stamp: seal-stamp 420ms var(--ease-out-expo) both;
   --animate-seal-in: seal-in 260ms var(--ease-out-expo) both;
+  /* Switching posts in a deal: the new post settles in under the tabs (DC-FR-33). */
+  --animate-post-in: post-in 180ms var(--ease-out-expo) both;
 
   @keyframes seal-stamp {
     from {
       opacity: 0;
       transform: scale(1.25) rotate(-10deg);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes post-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
     }
     to {
       opacity: 1;
