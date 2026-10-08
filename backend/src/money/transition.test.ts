@@ -346,3 +346,246 @@ describe("MP-FR-09 amount limits", () => {
     expect(transition(agreedDeliverable({ amountCents: 1_000_000 }), start).ok).toBe(true);
   });
 });
+
+/** A deliverable held at 09:05:10 UTC on 10 October: guaranteed to the 13th, deadline 22:59 UTC on the 24th. */
+function heldDeliverable(): MoneyState {
+  return after(authorizing(), answered("held"));
+}
+
+/** A held deliverable whose draft is cleared to publish. */
+function readyToPublish(): MoneyState {
+  return after(heldDeliverable(), { type: "draft_cleared", at: at("2026-10-10T12:00:00Z") });
+}
+
+const askGoAhead = (time: string, confirmId = "conf_1"): MoneyEvent => ({
+  type: "go_ahead_requested",
+  confirmId,
+  at: at(time),
+});
+
+describe("MP-FR-10 asking for the go-ahead", () => {
+  test("is refused before the deliverable is held", () => {
+    expect(transition(agreedDeliverable(), askGoAhead("2026-10-10T13:00:00Z"))).toEqual({
+      ok: false,
+      reason: "not_held",
+    });
+  });
+
+  test("is refused until the draft is cleared to publish", () => {
+    expect(transition(heldDeliverable(), askGoAhead("2026-10-10T13:00:00Z"))).toEqual({
+      ok: false,
+      reason: "draft_not_cleared",
+    });
+  });
+
+  test("is refused once the deadline has passed", () => {
+    expect(transition(readyToPublish(), askGoAhead("2026-10-24T23:00:00Z"))).toEqual({
+      ok: false,
+      reason: "deadline_passed",
+    });
+  });
+});
+
+describe("MP-FR-11 inside the guarantee", () => {
+  const asked = () => after(readyToPublish(), askGoAhead("2026-10-10T13:00:00Z"));
+
+  test("re-confirming asks PayPal whether the hold is still in place", () => {
+    expect(transition(readyToPublish(), askGoAhead("2026-10-10T13:00:00Z"))).toMatchObject({
+      ok: true,
+      state: { goAhead: { status: "confirming", confirmId: "conf_1" } },
+      effects: [{ type: "check_hold", confirmId: "conf_1", reference: "AUTH-1" }],
+    });
+  });
+
+  test("a hold still in place gives the go-ahead, and its end is scheduled", () => {
+    // The guarantee ends at 09:05:10 on the 13th, so the go-ahead stops 24 hours before that (MP-FR-13).
+    expect(
+      transition(asked(), { type: "hold_confirmed", confirmId: "conf_1", at: at("2026-10-10T13:00:05Z") }),
+    ).toMatchObject({
+      ok: true,
+      state: {
+        goAhead: { status: "running", until: at("2026-10-12T09:05:10Z") },
+        hold: { reference: "AUTH-1", guaranteeEndsAt: at("2026-10-13T09:05:10Z") },
+      },
+      effects: [{ type: "schedule_job", job: "go_ahead_ends", at: at("2026-10-12T09:05:10Z") }],
+    });
+  });
+
+  test("asking again while PayPal is being asked, or while a go-ahead is running, changes nothing", () => {
+    const confirming = asked();
+    const running = after(confirming, { type: "hold_confirmed", confirmId: "conf_1", at: at("2026-10-10T13:00:05Z") });
+
+    expect(transition(confirming, askGoAhead("2026-10-10T13:00:02Z", "conf_2"))).toEqual({
+      ok: true,
+      state: confirming,
+      effects: [],
+    });
+    expect(transition(running, askGoAhead("2026-10-10T14:00:00Z", "conf_2"))).toEqual({
+      ok: true,
+      state: running,
+      effects: [],
+    });
+  });
+});
+
+describe("MP-FR-12 after the guarantee", () => {
+  test("re-confirming asks PayPal to renew the hold", () => {
+    expect(transition(readyToPublish(), askGoAhead("2026-10-15T10:00:00Z"))).toMatchObject({
+      ok: true,
+      effects: [{ type: "renew_hold", confirmId: "conf_1", reference: "AUTH-1" }],
+    });
+  });
+
+  test("a renewed hold records the new reference, a new 3-day guarantee and a 48-hour go-ahead", () => {
+    const asked = after(readyToPublish(), askGoAhead("2026-10-15T10:00:00Z"));
+
+    expect(
+      transition(asked, {
+        type: "hold_confirmed",
+        confirmId: "conf_1",
+        renewedReference: "AUTH-2",
+        at: at("2026-10-15T10:00:05Z"),
+      }),
+    ).toMatchObject({
+      ok: true,
+      state: {
+        hold: { reference: "AUTH-2", guaranteeEndsAt: at("2026-10-18T10:00:05Z") },
+        goAhead: { status: "running", until: at("2026-10-17T10:00:05Z") },
+      },
+      effects: [{ type: "schedule_job", job: "go_ahead_ends", at: at("2026-10-17T10:00:05Z") }],
+    });
+  });
+});
+
+describe("MP-FR-13 how long a go-ahead lasts", () => {
+  test("it never runs past the deadline", () => {
+    // The deadline is 22:59 UTC on the 24th. A hold renewed the evening before would otherwise run to the 25th.
+    const asked = after(readyToPublish(), askGoAhead("2026-10-23T20:00:00Z"));
+
+    expect(
+      transition(asked, {
+        type: "hold_confirmed",
+        confirmId: "conf_1",
+        renewedReference: "AUTH-2",
+        at: at("2026-10-23T20:00:05Z"),
+      }),
+    ).toMatchObject({ ok: true, state: { goAhead: { status: "running", until: at("2026-10-24T22:59:00Z") } } });
+  });
+
+  test("with under 24 hours of guarantee left, the answer is to wait until it can be renewed", () => {
+    // The guarantee ends at 09:05:10 on the 13th. PayPal is not asked: the answer would not help.
+    expect(transition(readyToPublish(), askGoAhead("2026-10-12T10:00:00Z"))).toMatchObject({
+      ok: true,
+      state: { goAhead: { status: "wait_until", until: at("2026-10-13T09:05:10Z") } },
+      effects: [],
+    });
+  });
+
+  test("a confirmation that arrives with under 24 hours of guarantee left also says to wait", () => {
+    const asked = after(readyToPublish(), askGoAhead("2026-10-12T09:05:00Z"));
+
+    expect(
+      transition(asked, { type: "hold_confirmed", confirmId: "conf_1", at: at("2026-10-12T09:05:20Z") }),
+    ).toMatchObject({
+      ok: true,
+      state: { goAhead: { status: "wait_until", until: at("2026-10-13T09:05:10Z") } },
+      effects: [],
+    });
+  });
+
+  test("after waiting, the creator can ask again and the hold is renewed", () => {
+    const waiting = after(readyToPublish(), askGoAhead("2026-10-12T10:00:00Z"));
+
+    expect(transition(waiting, askGoAhead("2026-10-13T09:06:00Z", "conf_2"))).toMatchObject({
+      ok: true,
+      effects: [{ type: "renew_hold", confirmId: "conf_2" }],
+    });
+  });
+});
+
+describe("MP-FR-14 not confirmed", () => {
+  const notConfirmed = () =>
+    after(readyToPublish(), askGoAhead("2026-10-15T10:00:00Z"), {
+      type: "hold_not_confirmed",
+      confirmId: "conf_1",
+      at: at("2026-10-15T10:00:05Z"),
+    });
+
+  test("no go-ahead is given, the hold stays, and the brand is told", () => {
+    const asked = after(readyToPublish(), askGoAhead("2026-10-15T10:00:00Z"));
+
+    expect(
+      transition(asked, { type: "hold_not_confirmed", confirmId: "conf_1", at: at("2026-10-15T10:00:05Z") }),
+    ).toMatchObject({
+      ok: true,
+      state: { stage: "held", hold: { reference: "AUTH-1" }, goAhead: { status: "not_confirmed" } },
+      effects: [{ type: "notify", to: "brand", about: "hold_not_confirmed" }],
+    });
+  });
+
+  test("the creator can ask again", () => {
+    expect(transition(notConfirmed(), askGoAhead("2026-10-16T10:00:00Z", "conf_2"))).toMatchObject({
+      ok: true,
+      state: { goAhead: { status: "confirming", confirmId: "conf_2" } },
+      effects: [{ type: "renew_hold", confirmId: "conf_2", reference: "AUTH-1" }],
+    });
+  });
+});
+
+describe("MP-FR-15 when a go-ahead runs out", () => {
+  // Renewed at 10:00:05 on the 15th, so the go-ahead runs to 10:00:05 on the 17th.
+  const running = () =>
+    after(readyToPublish(), askGoAhead("2026-10-15T10:00:00Z"), {
+      type: "hold_confirmed",
+      confirmId: "conf_1",
+      renewedReference: "AUTH-2",
+      at: at("2026-10-15T10:00:05Z"),
+    });
+  const endsDue = (publishedAt: string | null, time = "2026-10-17T10:00:05Z"): MoneyEvent => ({
+    type: "go_ahead_ends_due",
+    publishedAt: publishedAt ? at(publishedAt) : null,
+    at: at(time),
+  });
+
+  test("with no post published, the go-ahead ends and the creator must ask again", () => {
+    const ended = after(running(), endsDue(null));
+
+    expect(ended).toMatchObject({ stage: "held", goAhead: { status: "none" }, publishedAt: null });
+    // The renewed guarantee has 24 hours left, which is inside the margin, and PayPal cannot renew it yet (MP-FR-13).
+    expect(transition(ended, askGoAhead("2026-10-17T11:00:00Z", "conf_2"))).toMatchObject({
+      ok: true,
+      state: { goAhead: { status: "wait_until", until: at("2026-10-18T10:00:05Z") } },
+    });
+    expect(transition(ended, askGoAhead("2026-10-18T10:01:00Z", "conf_2"))).toMatchObject({
+      ok: true,
+      state: { goAhead: { status: "confirming", confirmId: "conf_2" } },
+      effects: [{ type: "renew_hold", confirmId: "conf_2" }],
+    });
+  });
+
+  test("with a post published, the go-ahead is kept and the publication recorded", () => {
+    const before = running();
+
+    expect(transition(before, endsDue("2026-10-17T09:30:00Z"))).toEqual({
+      ok: true,
+      state: { ...before, publishedAt: at("2026-10-17T09:30:00Z") },
+      effects: [],
+    });
+  });
+
+  test("a late job from an earlier go-ahead does not end the current one", () => {
+    const before = running();
+
+    expect(transition(before, endsDue(null, "2026-10-16T08:00:00Z"))).toEqual({
+      ok: true,
+      state: before,
+      effects: [],
+    });
+  });
+
+  test("it does nothing when no go-ahead is running", () => {
+    const before = readyToPublish();
+
+    expect(transition(before, endsDue(null))).toEqual({ ok: true, state: before, effects: [] });
+  });
+});

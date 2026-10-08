@@ -21,7 +21,25 @@ export interface MoneyState extends MoneyTerms {
   agreedAt: Date | null;
   attempt: HoldAttempt | null;
   hold: Hold | null;
+  /** When the draft was cleared to publish. Decided outside this module (MP-FR-10). */
+  draftClearedAt: Date | null;
+  goAhead: GoAhead;
+  /** When an approved post was published, as the live check reports it (MP-FR-16). */
+  publishedAt: Date | null;
 }
+
+/**
+ * Where the creator stands on publishing (MP-FR-10 to MP-FR-15). A go-ahead is "running" only
+ * between PayPal confirming the hold and the time it runs out.
+ */
+export type GoAhead =
+  | { status: "none" }
+  | { status: "confirming"; confirmId: string }
+  | { status: "running"; until: Date }
+  /** Too little of PayPal's guarantee is left, and it cannot be renewed before `until` (MP-FR-13). */
+  | { status: "wait_until"; until: Date }
+  /** PayPal could not confirm or renew the hold. The creator may ask again (MP-FR-14). */
+  | { status: "not_confirmed" };
 
 /** The deliverable's hold, with the three moments fixed when it was approved (MP-FR-04). */
 export interface Hold {
@@ -59,6 +77,13 @@ export type MoneyEvent =
   | { type: "hold_closed"; orderId: string; at: Date }
   | { type: "attempt_stuck_due"; attemptId: string; at: Date }
   | { type: "never_held_due"; at: Date }
+  | { type: "draft_cleared"; at: Date }
+  | { type: "go_ahead_requested"; confirmId: string; at: Date }
+  /** PayPal says the hold is in place. `renewedReference` is set when the hold had to be renewed. */
+  | { type: "hold_confirmed"; confirmId: string; renewedReference?: string; at: Date }
+  | { type: "hold_not_confirmed"; confirmId: string; at: Date }
+  /** The go-ahead's end time has come. `publishedAt` is what the live check answered just before (MP-FR-15). */
+  | { type: "go_ahead_ends_due"; publishedAt: Date | null; at: Date }
   | { type: "authorize_answered"; attemptId: string; outcome: "held"; reference: string; at: Date }
   | { type: "authorize_answered"; attemptId: string; outcome: "declined" | "pending" | "unknown"; at: Date };
 
@@ -68,8 +93,12 @@ export type MoneyEffect =
   | { type: "authorize_order"; attemptId: string; orderId: string }
   | { type: "check_attempt"; attemptId: string }
   | { type: "cancel_attempt"; attemptId: string; orderId: string }
+  | { type: "check_hold"; confirmId: string; reference: string }
+  | { type: "renew_hold"; confirmId: string; reference: string }
+  /** A notice recorded for one side. Showing or sending it is the job of the pages built later. */
+  | { type: "notify"; to: "brand" | "creator"; about: "hold_not_confirmed" }
   | { type: "schedule_job"; job: "attempt_stuck"; attemptId: string; at: Date }
-  | { type: "schedule_job"; job: "never_held" | "deadline" | "day_28"; at: Date };
+  | { type: "schedule_job"; job: "never_held" | "deadline" | "day_28" | "go_ahead_ends"; at: Date };
 
 /** Why an event was refused. The routes built later turn each into its own message (MP-FR-02). */
 export type Refusal =
@@ -80,7 +109,11 @@ export type Refusal =
   | "amount_below_minimum"
   | "amount_above_maximum"
   | "unknown_attempt"
-  | "wrong_order";
+  | "wrong_order"
+  | "not_held"
+  | "draft_not_cleared"
+  | "deadline_passed"
+  | "unknown_confirmation";
 
 export type TransitionResult =
   | { ok: true; state: MoneyState; effects: MoneyEffect[] }
@@ -95,6 +128,9 @@ export interface MoneySettings {
   stuckAttemptHours: number;
   /** How long after the brand agrees a deliverable may go without a hold (MP-FR-08). */
   neverHeldDays: number;
+  /** How long a go-ahead lasts at most, and how long before the guarantee ends it must stop (MP-FR-13). */
+  goAheadHours: number;
+  guaranteeMarginHours: number;
 }
 
 /** The values in the signed spec. */
@@ -103,11 +139,13 @@ export const defaultSettings: MoneySettings = {
   maxAmountCents: 1_000_000,
   stuckAttemptHours: 24,
   neverHeldDays: 7,
+  goAheadHours: 48,
+  guaranteeMarginHours: 24,
 };
 
 /** A deliverable's money before the brand has agreed anything. */
 export function newMoney(terms: MoneyTerms): MoneyState {
-  return { ...terms, stage: "not_held", agreedAt: null, attempt: null, hold: null };
+  return { ...terms, stage: "not_held", agreedAt: null, attempt: null, hold: null, draftClearedAt: null, goAhead: { status: "none" }, publishedAt: null };
 }
 
 const refuse = (reason: Refusal): TransitionResult => ({ ok: false, reason });
@@ -122,6 +160,19 @@ const awaitingPayPal = (attempt: HoldAttempt) =>
 const hoursAfter = (from: Date, hours: number) => new Date(from.getTime() + hours * 3_600_000);
 
 const daysAfter = (from: Date, days: number) => hoursAfter(from, days * 24);
+
+const earliest = (...moments: Date[]) => new Date(Math.min(...moments.map((moment) => moment.getTime())));
+
+/** The last moment a go-ahead may cover under the current guarantee: the margin before it ends (MP-FR-13). */
+const guaranteeCovers = (hold: Hold, settings: MoneySettings) =>
+  hoursAfter(hold.guaranteeEndsAt, -settings.guaranteeMarginHours);
+
+/** Tells the creator to come back when PayPal can renew the hold. */
+const waitForRenewal = (state: MoneyState, hold: Hold): TransitionResult => ({
+  ok: true,
+  state: { ...state, goAhead: { status: "wait_until", until: hold.guaranteeEndsAt } },
+  effects: [],
+});
 
 /** PayPal guarantees held funds for 3 days and ends a hold after 29; day 28 leaves one day's margin. */
 const GUARANTEE_DAYS = 3;
@@ -235,6 +286,59 @@ export function transition(
         state: { ...state, attempt: { ...attempt, status: "declined", declinedBecause: "timed_out" } },
         effects: [{ type: "cancel_attempt", attemptId: attempt.id, orderId: attempt.orderId }],
       };
+    }
+    case "draft_cleared":
+      return { ok: true, state: { ...state, draftClearedAt: event.at }, effects: [] };
+    case "go_ahead_requested": {
+      if (state.stage !== "held" || !state.hold) return refuse("not_held");
+      if (!state.draftClearedAt) return refuse("draft_not_cleared");
+      if (event.at >= state.hold.deadlineAt) return refuse("deadline_passed");
+      if (state.goAhead.status === "confirming" || state.goAhead.status === "running") return unchanged(state);
+      // PayPal can only renew a hold once its guarantee has ended; until then we ask whether it still stands.
+      const insideGuarantee = event.at < state.hold.guaranteeEndsAt;
+      if (insideGuarantee && event.at >= guaranteeCovers(state.hold, settings)) {
+        return waitForRenewal(state, state.hold);
+      }
+      const ask = insideGuarantee ? "check_hold" : "renew_hold";
+      return {
+        ok: true,
+        state: { ...state, goAhead: { status: "confirming", confirmId: event.confirmId } },
+        effects: [{ type: ask, confirmId: event.confirmId, reference: state.hold.reference }],
+      };
+    }
+    case "hold_confirmed": {
+      if (!state.hold) return refuse("not_held");
+      if (state.goAhead.status !== "confirming") return unchanged(state);
+      if (state.goAhead.confirmId !== event.confirmId) return refuse("unknown_confirmation");
+      const hold: Hold = event.renewedReference
+        ? { ...state.hold, reference: event.renewedReference, guaranteeEndsAt: daysAfter(event.at, GUARANTEE_DAYS) }
+        : state.hold;
+      if (event.at >= guaranteeCovers(hold, settings)) return waitForRenewal(state, hold);
+      const until = earliest(
+        hoursAfter(event.at, settings.goAheadHours),
+        guaranteeCovers(hold, settings),
+        hold.deadlineAt,
+      );
+      return {
+        ok: true,
+        state: { ...state, hold, goAhead: { status: "running", until } },
+        effects: [{ type: "schedule_job", job: "go_ahead_ends", at: until }],
+      };
+    }
+    case "hold_not_confirmed": {
+      if (state.goAhead.status !== "confirming") return unchanged(state);
+      if (state.goAhead.confirmId !== event.confirmId) return refuse("unknown_confirmation");
+      return {
+        ok: true,
+        state: { ...state, goAhead: { status: "not_confirmed" } },
+        effects: [{ type: "notify", to: "brand", about: "hold_not_confirmed" }],
+      };
+    }
+    case "go_ahead_ends_due": {
+      if (state.goAhead.status !== "running" || event.at < state.goAhead.until) return unchanged(state);
+      // A published post keeps its go-ahead, so nobody can cancel while the live check runs (MP-FR-33).
+      if (event.publishedAt) return { ok: true, state: { ...state, publishedAt: event.publishedAt }, effects: [] };
+      return { ok: true, state: { ...state, goAhead: { status: "none" } }, effects: [] };
     }
     case "authorize_answered": {
       const attempt = state.attempt;
