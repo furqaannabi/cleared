@@ -11,10 +11,13 @@ import { resetPublish } from "./publish";
  * An in-memory copy of the synthetic fixtures, so mocked changes (asking the
  * brand, withdrawing) persist for a session. Tests reset it after each test.
  */
-const seed = (): Record<string, Deliverable> => ({
-  ...structuredClone(deliverables),
-  ...Object.fromEntries(juniperDeliverables(Date.now()).map((d) => [d.id, d])),
-});
+const seed = (): Record<string, Deliverable> => {
+  const now = Date.now();
+  const data = structuredClone(deliverables);
+  // DC-FR-07: the Northbound Short's review window is open whenever the demo starts, not until a fixed date.
+  data.del_nb_short.reviewWindowEndsAt = new Date(now + 31 * 3_600_000).toISOString();
+  return { ...data, ...Object.fromEntries(juniperDeliverables(now).map((d) => [d.id, d])) };
+};
 let data: Record<string, Deliverable> = seed();
 
 /**
