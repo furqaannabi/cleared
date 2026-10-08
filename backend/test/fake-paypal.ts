@@ -41,6 +41,8 @@ interface FakeHold {
 
 interface FakePayout {
   payoutReference: string;
+  /** Where the money was sent. Kept here for tests to check; it is never in the call log. */
+  email: string;
   amountCents: number;
   status: PayoutStatus;
 }
@@ -155,6 +157,7 @@ export class FakePayPal implements PayPalPort {
       const payoutReference = this.id("PAYOUT");
       this.payoutsByReference.set(payoutReference, {
         payoutReference,
+        email: input.email,
         amountCents: input.amountCents,
         status: { outcome: "pending" },
       });

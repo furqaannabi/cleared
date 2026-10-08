@@ -46,7 +46,7 @@ function setUp(startAt = "2026-10-10T09:00:00Z") {
 type World = ReturnType<typeof setUp>;
 
 /** A $1,200.00 deliverable, due 14 days after its hold, for a creator in Lagos. The brand agreed at 08:00. */
-async function agreedDeliverable({ money, timeIs }: World, deliverableId = "del_1") {
+async function agreedDeliverable({ money, timeIs }: Pick<World, "money" | "timeIs">, deliverableId = "del_1") {
   timeIs("2026-10-10T08:00:00Z");
   await money.open({
     deliverableId,
@@ -493,8 +493,8 @@ describe("MP-FR-08 never held", () => {
 });
 
 /** A deliverable held at 09:05:10 UTC on 10 October: guaranteed to the 13th, deadline 22:59 UTC on the 24th. */
-async function heldDeliverable(world: World) {
-  const deliverableId = await agreedDeliverable(world);
+async function heldDeliverable(world: World, id = "del_1") {
+  const deliverableId = await agreedDeliverable(world, id);
   const orderId = await approvedInPayPal(world, deliverableId);
   world.timeIs("2026-10-10T09:05:10Z");
   await world.money.holdApproved(deliverableId, orderId);
@@ -502,8 +502,8 @@ async function heldDeliverable(world: World) {
 }
 
 /** A held deliverable whose draft was cleared to publish at 12:00 on 10 October. */
-async function readyToPublish(world: World) {
-  const deliverableId = await heldDeliverable(world);
+async function readyToPublish(world: World, id = "del_1") {
+  const deliverableId = await heldDeliverable(world, id);
   world.timeIs("2026-10-10T12:00:00Z");
   await world.money.draftCleared(deliverableId);
   return deliverableId;
@@ -696,5 +696,444 @@ describe("MP-FR-15 when a go-ahead runs out", () => {
     await world.runJobs();
 
     expect(await world.money.view(deliverableId)).toMatchObject({ goAhead: { state: "running" } });
+  });
+});
+
+/**
+ * A deliverable whose approved post is live. The go-ahead was given at 10:00 on 15 October (the hold was
+ * renewed, so it is guaranteed to 10:00 on the 18th), the post went up at 09:30 on the 16th, and it is
+ * now 09:40 on the 16th.
+ */
+async function published(world: World, id = "del_1") {
+  const deliverableId = await readyToPublish(world, id);
+  world.timeIs("2026-10-15T10:00:00Z");
+  await world.money.askGoAhead(deliverableId);
+  world.postPublished(deliverableId, "2026-10-16T09:30:00Z");
+  world.timeIs("2026-10-16T09:35:00Z");
+  await world.money.postPublished(deliverableId, at("2026-10-16T09:30:00Z"));
+  world.timeIs("2026-10-16T09:40:00Z");
+  return deliverableId;
+}
+
+/** A deliverable captured at 09:40 on 16 October, with its payout sent and not yet reported on. */
+async function captured(world: World) {
+  const deliverableId = await published(world);
+  await world.money.liveCheckResult(deliverableId, "passed");
+  return deliverableId;
+}
+
+const payoutReference = (world: World, index = 0) => world.paypal.payouts()[index]!.payoutReference;
+
+describe("MP-FR-16 and MP-FR-17 published, and the live check passed", () => {
+  test("a passing live check captures the hold in full and sends the creator the amount less the fee", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+
+    expect(await world.money.liveCheckResult(deliverableId, "passed")).toMatchObject({ ok: true });
+
+    expect(world.paypal.capturedCents()).toBe(120_000);
+    expect(world.paypal.payouts()).toMatchObject([{ email: "creator@example.com", amountCents: 114_000 }]);
+    expect(await world.money.view(deliverableId)).toMatchObject({
+      stage: "captured",
+      approval: { by: "live_check" },
+      capture: { status: "completed", reference: expect.any(String) },
+      feeCents: 6_000,
+      payoutCents: 114_000,
+      payout: { status: "sending" },
+    });
+  });
+
+  test("the deliverable is paid only when PayPal reports the payout arrived (MP-FR-29, MP-FR-31)", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    world.timeIs("2026-10-16T09:41:00Z");
+    await world.runJobs();
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured" });
+
+    world.paypal.payoutEnds(payoutReference(world), "succeeded");
+    world.timeIs("2026-10-16T09:45:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "paid", payout: { status: "paid" } });
+    expect(world.paypal.paidOutCents()).toBe(114_000);
+  });
+
+  test("a result for a post that was never reported published is refused", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+
+    expect(await world.money.liveCheckResult(deliverableId, "passed")).toEqual({ ok: false, reason: "not_published" });
+    expect(world.paypal.capturedCents()).toBe(0);
+  });
+
+  test("a second passing result does not capture or pay again (MP-BR-03, MP-BR-04)", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+
+    await world.money.liveCheckResult(deliverableId, "passed");
+
+    expect(callsTo(world, "captureHold")).toHaveLength(1);
+    expect(world.paypal.payouts()).toHaveLength(1);
+  });
+});
+
+describe("MP-FR-18 and MP-FR-19 the live check cannot decide", () => {
+  test("the brand has 48 hours and is told; confirming captures the hold", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+
+    await world.money.liveCheckResult(deliverableId, "cannot_decide");
+
+    expect(await world.money.view(deliverableId)).toMatchObject({
+      stage: "held",
+      waitingOn: { for: "brand_to_confirm", until: at("2026-10-18T09:40:00Z") },
+    });
+    expect(await notices()).toContainEqual({ about: "confirm_live_post", to: "brand" });
+
+    expect(await world.money.brandConfirmed(deliverableId)).toMatchObject({ ok: true });
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", approval: { by: "brand_confirmed" } });
+  });
+
+  test("48 hours of silence captures the hold", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    await world.money.liveCheckResult(deliverableId, "cannot_decide");
+
+    world.timeIs("2026-10-18T09:40:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", approval: { by: "brand_silence" } });
+  });
+
+  test("an objection goes to a person at Cleared, and silence no longer pays", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    await world.money.liveCheckResult(deliverableId, "cannot_decide");
+
+    await world.money.brandObjected(deliverableId, "The link goes to the wrong page.");
+    world.timeIs("2026-10-18T09:40:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", waitingOn: { for: "cleared_to_rule" } });
+    expect(await notices()).toContainEqual({ about: "brand_objected", to: "cleared" });
+    expect(world.paypal.capturedCents()).toBe(0);
+  });
+
+  test("Cleared ruling to pay captures the hold, re-confirming it first because its guarantee has ended (MP-FR-24)", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    await world.money.liveCheckResult(deliverableId, "cannot_decide");
+    await world.money.brandObjected(deliverableId, "The link goes to the wrong page.");
+    const heldBefore = holdReference(world);
+
+    // The guarantee ended at 10:00 on the 18th.
+    world.timeIs("2026-10-20T10:00:00Z");
+    expect(await world.money.clearedRuled(deliverableId, "pay")).toMatchObject({ ok: true });
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", approval: { by: "cleared" } });
+    expect(callsTo(world, "renewHold")).toHaveLength(2);
+    expect(callsTo(world, "captureHold")[0]!.reference).not.toBe(heldBefore);
+    expect(world.paypal.capturedCents()).toBe(120_000);
+  });
+
+  test("Cleared ruling not to pay gives the hold back to the brand (MP-FR-32)", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    await world.money.liveCheckResult(deliverableId, "cannot_decide");
+    await world.money.brandObjected(deliverableId, "The link goes to the wrong page.");
+
+    world.timeIs("2026-10-17T12:00:00Z");
+    await world.money.clearedRuled(deliverableId, "release");
+
+    expect(await world.money.view(deliverableId)).toMatchObject({
+      stage: "released",
+      release: { reason: "cleared_ruled", confirmedAt: at("2026-10-17T12:00:00Z") },
+    });
+    expect(holdReference(world)).toBeUndefined();
+    expect(world.paypal.capturedCents()).toBe(0);
+  });
+});
+
+describe("MP-FR-20 and MP-FR-21 the live check failed", () => {
+  test("a fixable failure gives the creator until the deadline; a pass inside it captures the hold", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+
+    await world.money.liveCheckResult(deliverableId, "failed_fixable");
+    expect(await world.money.view(deliverableId)).toMatchObject({
+      waitingOn: { for: "creator_to_fix", until: at("2026-10-24T22:59:00Z") },
+    });
+    expect(await notices()).toContainEqual({ about: "fix_live_post", to: "creator" });
+
+    world.timeIs("2026-10-17T09:00:00Z");
+    await world.money.liveCheckResult(deliverableId, "passed");
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured" });
+  });
+
+  test("still failing when the fix window ends, the hold is released", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    await world.money.liveCheckResult(deliverableId, "failed_fixable");
+
+    world.timeIs("2026-10-24T22:59:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "released", release: { reason: "fix_window_ended" } });
+    expect(holdReference(world)).toBeUndefined();
+  });
+
+  test("a failure that cannot be fixed needs the brand to accept: accepting captures, silence releases", async () => {
+    const accepting = setUp();
+    const accepted = await published(accepting);
+    await accepting.money.liveCheckResult(accepted, "failed_not_fixable");
+    expect(await notices()).toContainEqual({ about: "accept_failed_post", to: "brand" });
+    await accepting.money.brandAccepted(accepted);
+    expect(await accepting.money.view(accepted)).toMatchObject({ stage: "captured", approval: { by: "brand_accepted" } });
+
+    const silent = setUp();
+    const ignored = await published(silent, "del_2");
+    await silent.money.liveCheckResult(ignored, "failed_not_fixable");
+    silent.timeIs("2026-10-18T09:40:00Z");
+    await silent.runJobs();
+    expect(await silent.money.view(ignored)).toMatchObject({ stage: "released", release: { reason: "not_accepted" } });
+    expect(silent.paypal.capturedCents()).toBe(0);
+  });
+});
+
+describe("MP-FR-22 and MP-FR-23 the deadline and day 28", () => {
+  test("with no approved post published by the deadline, the hold is released", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+
+    world.timeIs("2026-10-24T22:59:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "released", release: { reason: "deadline" } });
+    expect(holdReference(world)).toBeUndefined();
+  });
+
+  test("a post the live check finds was published in time keeps its hold, and is recorded", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    world.postPublished(deliverableId, "2026-10-24T22:50:00Z");
+
+    world.timeIs("2026-10-24T22:59:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", publishedAt: at("2026-10-24T22:50:00Z") });
+    expect(holdReference(world)).toBeDefined();
+  });
+
+  test("a hold still undecided on day 28 is released", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    await world.money.liveCheckResult(deliverableId, "cannot_decide");
+    await world.money.brandObjected(deliverableId, "The link goes to the wrong page.");
+
+    world.timeIs("2026-11-07T09:05:10Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "released", release: { reason: "day_28" } });
+    expect(world.paypal.capturedCents()).toBe(0);
+  });
+});
+
+describe("MP-FR-25 and MP-FR-26 a capture that does not go through", () => {
+  test("a refused capture tells both sides once and is tried again 6 hours later", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    world.paypal.next("captureHold", "refused");
+
+    await world.money.liveCheckResult(deliverableId, "passed");
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", capture: { status: "refused" } });
+    expect(await notices()).toEqual(
+      expect.arrayContaining([
+        { about: "capture_failed", to: "creator" },
+        { about: "payment_failed", to: "brand" },
+      ]),
+    );
+
+    world.timeIs("2026-10-16T15:40:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured" });
+    expect(world.paypal.capturedCents()).toBe(120_000);
+    const sent = callsTo(world, "captureHold");
+    expect(sent).toHaveLength(2);
+    // A new try after a clear refusal goes under a new request id (MP-BR-06).
+    expect(sent[1]!.requestId).not.toBe(sent[0]!.requestId!);
+  });
+
+  test("a capture PayPal did not clearly answer is followed up under the same request id, and takes the money once", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    world.paypal.next("captureHold", "timeout_after");
+
+    await world.money.liveCheckResult(deliverableId, "passed");
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "held", capture: { status: "started" } });
+
+    world.timeIs("2026-10-16T09:41:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured" });
+    expect(world.paypal.capturedCents()).toBe(120_000);
+    const sent = callsTo(world, "captureHold");
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.requestId).toBe(sent[0]!.requestId!);
+  });
+});
+
+describe("MP-FR-29 and MP-FR-30 a payout that does not arrive", () => {
+  test("an unclaimed payout stays captured and the creator is told to accept it", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    world.paypal.payoutEnds(payoutReference(world), "unclaimed");
+
+    world.timeIs("2026-10-16T09:41:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", payout: { status: "unclaimed" } });
+    expect(await notices()).toContainEqual({ about: "payout_unclaimed", to: "creator" });
+  });
+
+  test("an unclaimed payout is cancelled before a new one goes to the creator's corrected email", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    world.paypal.payoutEnds(payoutReference(world), "unclaimed");
+    world.timeIs("2026-10-16T09:41:00Z");
+    await world.runJobs();
+
+    await world.money.changePayoutEmail(deliverableId, "right@example.com");
+    expect(await world.money.payoutRetry(deliverableId)).toMatchObject({ ok: true });
+
+    expect(world.paypal.payouts()).toMatchObject([
+      { email: "creator@example.com", status: { outcome: "returned" } },
+      { email: "right@example.com", amountCents: 114_000, status: { outcome: "pending" } },
+    ]);
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", payout: { status: "sending" } });
+  });
+
+  test("a failed payout tells the creator, and can be sent again", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+    world.paypal.payoutEnds(payoutReference(world), "failed");
+    world.timeIs("2026-10-16T09:41:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ payout: { status: "failed", why: "failed" } });
+    expect(await notices()).toContainEqual({ about: "payout_failed", to: "creator" });
+
+    expect(await world.money.payoutRetry(deliverableId)).toMatchObject({ ok: true });
+    expect(world.paypal.payouts()).toHaveLength(2);
+  });
+
+  test("the creator cannot have a payout sent again while one is still being sent", async () => {
+    const world = setUp();
+    const deliverableId = await captured(world);
+
+    expect(await world.money.payoutRetry(deliverableId)).toEqual({ ok: false, reason: "payout_in_progress" });
+    expect(world.paypal.payouts()).toHaveLength(1);
+  });
+
+  test("a payout PayPal did not clearly accept is followed up under the same request id, and is sent once", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    world.paypal.next("sendPayout", "timeout_after");
+
+    await world.money.liveCheckResult(deliverableId, "passed");
+    world.timeIs("2026-10-16T09:41:00Z");
+    await world.runJobs();
+
+    expect(world.paypal.payouts()).toHaveLength(1);
+    const sent = callsTo(world, "sendPayout");
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.requestId).toBe(sent[0]!.requestId!);
+  });
+});
+
+describe("MP-FR-45 a payout PayPal will not send", () => {
+  test("it stays captured, Cleared and the creator are told, and it is sent again 6 hours later under the same id", async () => {
+    const world = setUp();
+    const deliverableId = await published(world);
+    world.paypal.next("sendPayout", "refused");
+
+    await world.money.liveCheckResult(deliverableId, "passed");
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", payout: { status: "not_sent" } });
+    expect(await notices()).toEqual(
+      expect.arrayContaining([
+        { about: "payout_not_sent", to: "cleared" },
+        { about: "payout_delayed", to: "creator" },
+      ]),
+    );
+    expect(world.paypal.payouts()).toHaveLength(0);
+
+    world.timeIs("2026-10-16T15:40:00Z");
+    await world.runJobs();
+
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", payout: { status: "sending" } });
+    expect(world.paypal.payouts()).toHaveLength(1);
+    const sent = callsTo(world, "sendPayout");
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.requestId).toBe(sent[0]!.requestId!);
+  });
+});
+
+describe("MP-FR-33 and MP-FR-34 cancelling", () => {
+  test("either side can cancel a held deliverable, which gives the hold back", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    world.timeIs("2026-10-12T10:00:00Z");
+
+    expect(await world.money.cancel(deliverableId, "brand")).toMatchObject({ ok: true });
+
+    expect(await world.money.view(deliverableId)).toMatchObject({
+      stage: "released",
+      release: { reason: "cancelled", by: "brand", confirmedAt: at("2026-10-12T10:00:00Z") },
+    });
+    expect(holdReference(world)).toBeUndefined();
+  });
+
+  test("nobody can cancel while a go-ahead is running, or once a post is published", async () => {
+    const running = setUp();
+    const withGoAhead = await readyToPublish(running);
+    running.timeIs("2026-10-15T10:00:00Z");
+    await running.money.askGoAhead(withGoAhead);
+    expect(await running.money.cancel(withGoAhead, "brand")).toEqual({ ok: false, reason: "go_ahead_running" });
+
+    const live = setUp();
+    const posted = await published(live, "del_2");
+    expect(await live.money.cancel(posted, "creator")).toEqual({ ok: false, reason: "already_published" });
+    expect(holdReference(live)).toBeDefined();
+  });
+
+  test("cancelling before the hold closes the deliverable, and gives back a hold PayPal makes afterwards", async () => {
+    const world = setUp();
+    const { deliverableId, orderId } = await approvedWith(world, "pending");
+
+    expect(await world.money.cancel(deliverableId, "creator")).toMatchObject({ ok: true });
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "closed_not_held" });
+    expect(await world.money.startHold(deliverableId)).toEqual({ ok: false, reason: "cancelled" });
+
+    world.paypal.settlePending(orderId, "held");
+    world.timeIs("2026-10-10T10:00:00Z");
+    await world.runJobs();
+
+    expect(world.paypal.holds()).toMatchObject([{ status: "ended" }]);
+  });
+});
+
+describe("MP-FR-32 a release PayPal will not carry out", () => {
+  test("it is put in front of a person at Cleared", async () => {
+    const world = setUp();
+    const deliverableId = await readyToPublish(world);
+    // The hold is taken on PayPal's side without Cleared knowing, so it can no longer be given back.
+    await world.paypal.captureHold({ requestId: "outside", reference: holdReference(world)!, amountCents: 120_000 });
+
+    await world.money.cancel(deliverableId, "brand");
+
+    expect(await notices()).toContainEqual({ about: "release_failed", to: "cleared" });
+    expect(await world.money.view(deliverableId)).toMatchObject({ stage: "released", release: { reason: "cancelled" } });
   });
 });

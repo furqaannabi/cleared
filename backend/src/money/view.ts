@@ -23,6 +23,15 @@ export interface MoneyView {
   goAhead: GoAheadView;
   /** When the approved post was published, once the live check has reported it. */
   publishedAt: Date | null;
+  /** Whose move it is after publishing, when the live check alone did not settle it. */
+  waitingOn: MoneyState["waitingOn"];
+  approval: MoneyState["approval"];
+  capture: { status: "started" | "refused" | "completed"; reference?: string } | null;
+  /** Cleared's fee and the creator's payout, in cents, once the hold is captured. */
+  feeCents: number | null;
+  payoutCents: number | null;
+  payout: { status: NonNullable<MoneyState["payout"]>["status"]; why?: string; reference?: string } | null;
+  release: MoneyState["release"];
 }
 
 export function goAheadView(state: MoneyState): GoAheadView {
@@ -52,5 +61,18 @@ export function holdView(state: MoneyState): HoldView {
 }
 
 export function moneyView(state: MoneyState): MoneyView {
-  return { stage: state.stage, hold: holdView(state), goAhead: goAheadView(state), publishedAt: state.publishedAt };
+  const { capture, payout } = state;
+  return {
+    stage: state.stage,
+    hold: holdView(state),
+    goAhead: goAheadView(state),
+    publishedAt: state.publishedAt,
+    waitingOn: state.waitingOn,
+    approval: state.approval,
+    capture: capture && { status: capture.status, reference: capture.reference },
+    feeCents: state.feeCents,
+    payoutCents: state.payoutCents,
+    payout: payout && { status: payout.status, why: payout.why, reference: payout.reference },
+    release: state.release,
+  };
 }
