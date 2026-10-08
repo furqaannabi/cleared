@@ -1,5 +1,6 @@
 import type { Deliverable } from "@/lib/deliverable/types";
 import { resetCancel } from "./cancel";
+import { resetSession } from "./session";
 import { resetBrandDeals } from "./brand-deals";
 import { resetDealDrafts } from "./deal-drafts";
 import { deliverables } from "./fixtures/deliverables";
@@ -52,4 +53,5 @@ export function resetMockData() {
   resetBrandDeals();
   resetPublish();
   resetCancel();
+  resetSession();
 }

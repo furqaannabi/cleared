@@ -1,5 +1,6 @@
 import { brandData } from "./brand-deals";
 import { cancelData } from "./cancel";
+import { sessionData } from "./session";
 import { idCounter } from "./brief-reader";
 import { draftsData } from "./deal-drafts";
 import { invitesData } from "./invites";
@@ -12,8 +13,8 @@ import { deliverablesData } from "./store";
  * before each request. Never used by Vitest or a production build.
  */
 
-// 2: the held demo deal (RW 1.0) joined the seed. 3: posts cancelled before their hold (CN 1.0).
-const VERSION = 3;
+// 2: the held demo deal (RW 1.0) joined the seed. 3: posts cancelled before their hold (CN 1.0). 4: who is signed in, and a profile per account (SI 1.0).
+const VERSION = 4;
 
 /** Every mock module's data, as plain JSON-safe values. */
 export function snapshotMockData() {
@@ -25,6 +26,7 @@ export function snapshotMockData() {
     invites: invitesData.get(),
     brand: brandData.get(),
     cancel: cancelData.get(),
+    session: sessionData.get(),
   };
 }
 
@@ -39,9 +41,11 @@ const isSnapshot = (v: unknown): v is Snapshot => {
     typeof s.deliverables === "object" &&
     Array.isArray(s.drafts) &&
     Array.isArray(s.invites?.terms) &&
+    typeof s.invites?.profiles === "object" &&
     Array.isArray(s.brand?.sessions) &&
     Array.isArray(s.brand?.state) &&
-    Array.isArray(s.cancel)
+    Array.isArray(s.cancel) &&
+    typeof s.session === "object"
   );
 };
 
@@ -60,5 +64,6 @@ export function restoreMockData(saved: unknown): boolean {
   invitesData.set(saved.invites);
   brandData.set(saved.brand);
   cancelData.set(saved.cancel);
+  sessionData.set(saved.session);
   return true;
 }

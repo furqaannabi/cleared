@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./signed-in";
 
 // The next step's words: in the bar from md: up, in the What happens next panel on phones (DC-FR-30, DC-FR-47).
 const nextStep = (page: Page) => page.getByRole("region", { name: /^What (to do|happens) next$/ });

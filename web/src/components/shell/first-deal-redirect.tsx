@@ -8,7 +8,7 @@ import { useDeals } from "./use-deals";
 
 /**
  * `/deals`: opens the creator's first deal, at the deliverable that needs
- * them (the landing page's "See a deal in action" lands here). With no deals
+ * them (signing in lands here). With no deals
  * it says so; if the deals can't load it offers Try again. No deal id is
  * written into the landing page.
  *

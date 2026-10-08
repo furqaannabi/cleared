@@ -9,7 +9,7 @@ import "./landing.css";
 /**
  * The landing page at `/`, written for creators: what Cleared does, the
  * product itself, one deal from start to paid, the rules that protect the
- * creator, a note for the brand, and one way in ("See a deal in action").
+ * creator, a note for the brand, and two ways in ("Sign in with Google", "Try the demo account").
  * Static: no client JavaScript of its own; motion is CSS.
  *
  * @see docs/specs/landing-frd.md

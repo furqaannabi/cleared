@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./signed-in";
 
 test("CH: brand asks → creator replies, changes and sends → brand agrees and holds → creator opens the draft check", async ({ page }) => {
   // The creator's side, waiting for the brand.
@@ -70,8 +70,11 @@ test("Mocks: the brand's notes survive a reload and a typed address, and Reset d
   if (testInfo.project.name === "desktop-1280") {
     await page.getByRole("button", { name: "Reset demo data" }).click();
     await page.getByRole("button", { name: "Yes, reset" }).click();
-    await expect(page).toHaveURL(/\/deals/);
-    await page.goto("/deals/deal_maple/invite");
+    // SI-FR-14: resetting also signs out; sign back in to the demo to see the seed.
+    await page.waitForURL(/\/sign-in/);
+    await page.goto("/sign-in?next=%2Fdeals%2Fdeal_maple%2Finvite");
+    await page.getByRole("button", { name: "Try the demo account" }).click();
+    await page.waitForURL(/\/deals\/deal_maple\/invite$/);
     await expect(page.getByText(/^Sent to Maple & Moss · waiting/)).toBeVisible();
     await expect(page.getByRole("heading", { name: /asked for/ })).toHaveCount(0);
   }

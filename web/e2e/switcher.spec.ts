@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./signed-in";
 
 test("DC-FR-33: switching posts keeps the tabs on screen and the pill glides to the new tab", async ({ page }) => {
   await page.goto("/deals/deal_juniper/deliverables/del_juniper_video");

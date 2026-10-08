@@ -306,6 +306,10 @@ export const dealInviteSchema = z.object({
 /** IN-FR-10, IN-FR-12: the creator's own details. Only the creator ever sees the PayPal email (IN-BR-05). */
 export const creatorProfileSchema = z.object({
   name: z.string().min(1).max(120),
+  // SI-FR-04: the signed-in email, whether this is the demo account, and whether the welcome was seen.
+  email: z.email().max(254).optional(),
+  demo: z.boolean().optional(),
+  welcomed: z.boolean().optional(),
   paypalEmail: z.email().max(254).optional(),
   // Connected accounts only.
   accounts: z.array(z.object({ platform: z.enum(["youtube", "instagram"]), name: z.string().min(1).max(120) })),

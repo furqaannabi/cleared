@@ -1,7 +1,8 @@
-import { DemoButton, DemoNote } from "./demo-button";
+import { SignInButtons } from "@/components/session/sign-in-buttons";
+import { DemoNote } from "./demo-button";
 
 /**
- * The closing band: the one action again before the footer.
+ * The closing band: the two ways in again before the footer (LP 1.2).
  *
  * @see docs/specs/landing-frd.md LP-FR-17
  */
@@ -12,8 +13,8 @@ export function Closing() {
         <h2 id="close-heading" className="font-head text-[28px] leading-[1.1] font-extrabold tracking-[-0.015em] md:text-[38px]">
           See a whole deal clear.
         </h2>
-        <div className="mt-[18px]">
-          <DemoButton tone="marigold" />
+        <div className="mt-[18px] flex justify-center">
+          <SignInButtons onDark />
         </div>
         <DemoNote onDark />
       </section>

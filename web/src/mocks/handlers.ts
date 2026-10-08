@@ -3,6 +3,7 @@ import { apiBaseUrl } from "@/lib/api";
 import { brandDealHandlers } from "./brand-deals";
 import { brandReviewHandlers, creatorView } from "./brand-review";
 import { cancelHandlers, dealCancelled } from "./cancel";
+import { currentAccount, sessionHandlers } from "./session";
 import { publishHandlers } from "./publish";
 import { dealDraftHandlers, draftSummaries } from "./deal-drafts";
 import { deals } from "./fixtures/deals";
@@ -20,7 +21,10 @@ export const handlers: RequestHandler[] = [
   // DC-FR-31, DC-FR-37
   // CN-FR-12: a fully cancelled deal reads Cancelled and sits at the bottom.
   http.get(`${apiBaseUrl}/deals`, () => {
-    const all = [...deals, ...draftSummaries()].map((d) => (dealCancelled(d.id) ? { ...d, status: "Cancelled" } : d));
+    // SI-FR-04, SI-BR-03: signed out answers 401; each account sees its own deals (the seed is the demo's).
+    const account = currentAccount();
+    if (!account) return HttpResponse.json({ message: "Not signed in" }, { status: 401 });
+    const all = [...(account === "demo" ? deals : []), ...draftSummaries(account)].map((d) => (dealCancelled(d.id) ? { ...d, status: "Cancelled" } : d));
     return HttpResponse.json([...all.filter((d) => d.status !== "Cancelled"), ...all.filter((d) => d.status === "Cancelled")]);
   }),
   // BC FRD: deals at the brief → checklist step.
@@ -32,6 +36,7 @@ export const handlers: RequestHandler[] = [
   // PP FRD: the go-ahead, posting, the live check, the brand's decisions after posting, the payout.
   ...publishHandlers,
   ...cancelHandlers,
+  ...sessionHandlers,
   // CH FRD: the brand's side of confirm and hold.
   ...brandDealHandlers,
 

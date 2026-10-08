@@ -1,4 +1,5 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
+import { currentAccount, isWelcomed, markWelcomed, type Account } from "./session";
 import { dealCancelled, postCancel } from "./cancel";
 import type { z } from "zod";
 import { apiBaseUrl } from "@/lib/api";
@@ -18,27 +19,31 @@ type Terms = Pick<Invite["posts"][number], "amount" | "deadlineDays">;
  * (IN-FR-03). Connecting an account succeeds at once with a synthetic one: no
  * real sign-in (IN-FR-11). Links are synthetic and open nothing yet.
  */
-const DEMO_PROFILE: Profile = { name: "Ada Okafor", paypalEmail: "ada@example.com", accounts: [{ platform: "youtube", name: "Ada Okafor" }] };
+const DEMO_PROFILE: Profile = { name: "Ada Okafor", email: "ada.okafor@example.com", paypalEmail: "ada@example.com", accounts: [{ platform: "youtube", name: "Ada Okafor" }] };
 const DEMO_ACCOUNT = { youtube: "Ada Okafor", instagram: "ada.makes" } as const;
 const ORDER = ["youtube", "instagram"];
 // The frontend's assumption until Furqaan sets the real length (IN-FR-17).
 const LINK_DAYS = 7;
 
-let profile: Profile = structuredClone(DEMO_PROFILE);
+// SI-FR-14: one profile per mock account; the new creator starts with nothing connected.
+const NEW_PROFILE: Profile = { name: "Sam Rivera", email: "sam.rivera@example.com", accounts: [] };
+let profiles: Record<Account, Profile> = { demo: structuredClone(DEMO_PROFILE), new: structuredClone(NEW_PROFILE) };
+/** The signed-in account's profile (the demo's when nobody is, for brand-side reads). */
+const me = () => profiles[currentAccount() ?? "demo"];
 let terms = new Map<string, { posts: Record<string, Terms>; brandEmail?: string; link?: Invite["link"] }>();
 
 /** The mock profile and invite terms, for keeping the mock data in the browser. */
 export const invitesData = {
-  get: () => ({ profile, terms: [...terms.entries()] }),
-  set: (d: { profile: Profile; terms: [string, NonNullable<ReturnType<typeof terms.get>>][] }) => {
-    profile = d.profile;
+  get: () => ({ profiles, terms: [...terms.entries()] }),
+  set: (d: { profiles: Record<Account, Profile>; terms: [string, NonNullable<ReturnType<typeof terms.get>>][] }) => {
+    profiles = d.profiles;
     terms = new Map(d.terms);
   },
 };
 
 /** Restores the demo profile and every deal's invite terms to the seed: only the demo deal already sent to its brand (CH 1.0). */
 export function resetInvites() {
-  profile = structuredClone(DEMO_PROFILE);
+  profiles = { demo: structuredClone(DEMO_PROFILE), new: structuredClone(NEW_PROFILE) };
   terms = new Map();
   seedSentDeal();
 }
@@ -111,8 +116,12 @@ export function inviteFor(dealId: string): Invite | undefined {
   });
 }
 
+/** The profile as `GET /me` answers it: with whether it's the demo and has seen the welcome (SI-FR-04). */
+const profileOf = (a: Account): Profile => ({ ...profiles[a], demo: a === "demo", welcomed: isWelcomed(a) });
+const signedOut = () => HttpResponse.json({ message: "Not signed in" }, { status: 401 });
+
 /** Where the creator is paid, for the draft checks the mock starts once every hold is in. */
-export const payoutEmail = () => profile.paypalEmail ?? "ada@example.com";
+export const payoutEmail = () => me().paypalEmail ?? "ada@example.com";
 
 /** Restarts the link's expiry when updated terms are sent (CH-FR-24). */
 export function restartLink(dealId: string) {
@@ -125,8 +134,8 @@ export function canCreate(invite: Invite): boolean {
   const needs = new Set(invite.posts.map((p) => (p.platform === "instagram_reel" ? "instagram" : "youtube")));
   return (
     invite.posts.every((p) => p.amount && p.deadlineDays) &&
-    [...needs].every((n) => profile.accounts.some((a) => a.platform === n)) &&
-    !!profile.paypalEmail
+    [...needs].every((n) => me().accounts.some((a) => a.platform === n)) &&
+    !!me().paypalEmail
   );
 }
 
@@ -209,20 +218,32 @@ export const inviteHandlers: RequestHandler[] = [
   }),
 
   // IN-FR-10, IN-FR-12
-  http.get(`${apiBaseUrl}/me`, () => HttpResponse.json(profile)),
+  // SI-FR-04: who is signed in; 401 when nobody is.
+  http.get(`${apiBaseUrl}/me`, () => {
+    const a = currentAccount();
+    return a ? HttpResponse.json(profileOf(a)) : signedOut();
+  }),
+  // SI-FR-10
+  http.post(`${apiBaseUrl}/me/welcomed`, () => {
+    const a = currentAccount();
+    if (!a) return signedOut();
+    markWelcomed();
+    return HttpResponse.json(profileOf(a));
+  }),
   http.put(`${apiBaseUrl}/me/paypal-email`, async ({ request }) => {
     const { email } = (await request.json()) as { email?: string };
     if (!isEmail(email)) return refused();
-    profile.paypalEmail = email;
-    return HttpResponse.json(profile);
+    me().paypalEmail = email;
+    return HttpResponse.json(profileOf(currentAccount() ?? "demo"));
   }),
 
   // IN-FR-11: provisional; the real flow is a sign-in redirect.
   http.post(`${apiBaseUrl}/me/accounts/:platform`, ({ params }) => {
     const platform = params.platform;
     if (platform !== "youtube" && platform !== "instagram") return notFound();
-    if (!profile.accounts.some((a) => a.platform === platform)) profile.accounts.push({ platform, name: DEMO_ACCOUNT[platform] });
-    profile.accounts.sort((a, b) => ORDER.indexOf(a.platform) - ORDER.indexOf(b.platform));
-    return HttpResponse.json(profile);
+    const p = me();
+    if (!p.accounts.some((a) => a.platform === platform)) p.accounts.push({ platform, name: currentAccount() === "new" ? "Sam Rivera" : DEMO_ACCOUNT[platform] });
+    p.accounts.sort((a, b) => ORDER.indexOf(a.platform) - ORDER.indexOf(b.platform));
+    return HttpResponse.json(profileOf(currentAccount() ?? "demo"));
   }),
 ];

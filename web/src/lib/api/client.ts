@@ -1,8 +1,8 @@
-import type { z } from "zod";
+import { z } from "zod";
 import { brandDealSchema, brandDeliverableSchema, brandSessionSchema, holdStartSchema, creatorProfileSchema, dealDraftSchema, dealInviteSchema, dealsSchema, deliverableSchema, draftSchema } from "./schemas";
 
 /** `rejected`: the API refused a change (the item changed, say); the others are as for reads. */
-export type ApiError = "not_found" | "invalid_response" | "unavailable" | "rejected";
+export type ApiError = "not_found" | "invalid_response" | "unavailable" | "rejected" | "signed_out";
 type BrandNoteAbout = z.infer<typeof brandDealSchema>["notes"][number]["about"];
 type DraftPlatform = "youtube_video" | "youtube_short" | "instagram_reel";
 type DraftItemKind = "said" | "shown_as_text" | "shown" | "timing" | "written" | "disclosure" | "publication";
@@ -37,6 +37,8 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
       return { ok: false, error: "unavailable" };
     }
     // DC-FR-38: a deal that doesn't exist and one that isn't yours look the same.
+    // SI-FR-06, SI-FR-07: nobody is signed in, or the session ended.
+    if (res.status === 401) return { ok: false, error: "signed_out" };
     if (res.status === 404 || res.status === 403) return { ok: false, error: "not_found" };
     if (res.status === 400 || res.status === 409 || res.status === 422) return { ok: false, error: "rejected" };
     if (!res.ok) return { ok: false, error: "unavailable" };
@@ -145,6 +147,13 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
 
     /** IN-FR-10, IN-FR-12: the creator's name, PayPal email and connected accounts. */
     getProfile: () => request("GET", "/me", creatorProfileSchema),
+    /** SI-FR-10: the welcome page was seen; it never shows again for this account. */
+    markWelcomeSeen: () => request("POST", "/me/welcomed", creatorProfileSchema),
+    /** SI-FR-12: ends the session. */
+    signOut: () => request("POST", "/auth/sign-out", z.object({})),
+    /** Mock builds only (SI-FR-14): the two ways in, answering where to go; a real build links to the backend's sign-in. */
+    mockSignIn: (kind: "google" | "demo", next?: string) =>
+      request("POST", `/__demo/sign-in/${kind}${next ? `?next=${encodeURIComponent(next)}` : ""}`, z.object({ location: z.string().startsWith("/") })),
     /** IN-FR-12: save the PayPal email payments go to. */
     setPaypalEmail: (email: string) => request("PUT", "/me/paypal-email", creatorProfileSchema, { email }),
     /** IN-FR-11: connect an account. Provisional: the real flow is a sign-in redirect (Requests for Furqaan). */

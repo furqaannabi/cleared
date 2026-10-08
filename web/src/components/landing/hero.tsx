@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { StatusSeal } from "@/components/checklist/status-seal";
 import { MoneyCard } from "@/components/money/money-card";
-import { DemoButton, DemoNote } from "./demo-button";
+import { InstagramOnlyNote, SignInButtons } from "@/components/session/sign-in-buttons";
+import { DemoNote } from "./demo-button";
 import { exampleDeliverable, exampleItems } from "./example";
 
 /**
@@ -25,7 +26,11 @@ export function Hero() {
         <p className="mt-[18px] mb-6 max-w-[34ch] text-lg text-ink-2">
           The brand’s money is held in PayPal, AI checks your video against the brief, and you’re paid when the approved post is live.
         </p>
-        <DemoButton />
+        {/* LP-FR-03 (1.2): the two ways in (SI-FR-01, SI-FR-02). */}
+        <SignInButtons />
+        <div className="mt-2.5 grid gap-1">
+          <InstagramOnlyNote />
+        </div>
         <DemoNote />
       </div>
       <HeroPhone />

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AccountMenu } from "@/components/session/account-menu";
+import { SignedIn } from "@/components/session/signed-in";
+import { SessionProvider } from "@/components/session/use-session";
 import { Sheet } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { DealsNav } from "./deals-nav";
@@ -20,11 +23,16 @@ import { DealsProvider, useDeals, type DealsLoad } from "./use-deals";
  */
 export function AppShell(props: { currentDealId: string | null; children: ReactNode }) {
   return (
-    <DealsProvider>
-      <Frame {...props} />
-    </DealsProvider>
+    <SessionProvider>
+      <DealsProvider>
+        <Frame {...props} currentDealId={props.currentDealId}>
+          <SignedIn>{props.children}</SignedIn>
+        </Frame>
+      </DealsProvider>
+    </SessionProvider>
   );
 }
+
 
 function Frame({ currentDealId, children }: { currentDealId: string | null; children: ReactNode }) {
   const desktop = useMediaQuery("(min-width: 1024px)");
@@ -46,6 +54,10 @@ function Frame({ currentDealId, children }: { currentDealId: string | null; chil
             Deals
           </p>
           <DealsBody load={deals} currentDealId={currentDealId} tone="rail" />
+          {/* SI-FR-11: the creator's name, with Sign out, at the foot of the rail. */}
+          <div className="mt-auto pt-4">
+            <AccountMenu tone="rail" />
+          </div>
         </aside>
         <div className="min-w-0">{children}</div>
       </div>
@@ -72,6 +84,9 @@ function Frame({ currentDealId, children }: { currentDealId: string | null; chil
             <NewDealLink tone="sheet" />
           </div>
           <DealsBody load={deals} currentDealId={currentDealId} tone="sheet" />
+          <div className="mt-6">
+            <AccountMenu tone="sheet" />
+          </div>
         </Sheet>
       </header>
       {children}

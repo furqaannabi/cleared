@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./signed-in";
 
 const journey = (page: Page) => page.getByRole("region", { name: "From approved to paid" });
 const review = (page: Page) => page.getByRole("region", { name: "Your review" });

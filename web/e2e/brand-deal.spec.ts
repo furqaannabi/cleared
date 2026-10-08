@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./signed-in";
 
 test("CH-FR-01 to CH-FR-09: the brand opens the demo link and reads the terms and where each item came from", async ({ page }) => {
   await page.goto("/b/demo_maple");

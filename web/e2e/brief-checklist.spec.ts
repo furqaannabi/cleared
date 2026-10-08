@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./signed-in";
 
 const BRIEF = [
   "Thanks for partnering with Glow Theory on the Dew Drop serum launch!",

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./signed-in";
 
 const BRIEF = [
   "In the YouTube video, say “Glow Theory” in the first 60 seconds.",
