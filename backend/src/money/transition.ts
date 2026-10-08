@@ -84,7 +84,8 @@ export function transition(
     case "payout_started":
     case "payout_retry_requested":
     case "payout_answered":
-      return payoutTransition(state, event);
+    case "payout_resend_due":
+      return payoutTransition(state, event, settings);
     case "cancel_requested":
       return cancelTransition(state, event);
   }

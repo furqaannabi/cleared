@@ -241,6 +241,17 @@ describe("the fake PayPal: paying out", () => {
     expect(paypal.paidOutCents()).toBe(0);
   });
 
+  test("it can refuse to send a payout, and the same request sent again later goes through (MP-FR-45)", async () => {
+    const paypal = new FakePayPal();
+
+    paypal.next("sendPayout", "refused");
+    expect(await paypal.sendPayout(payout)).toEqual({ outcome: "refused" });
+    expect(paypal.payouts()).toHaveLength(0);
+
+    expect(await paypal.sendPayout(payout)).toEqual({ outcome: "accepted", payoutReference: expect.any(String) });
+    expect(paypal.payouts()).toHaveLength(1);
+  });
+
   test("only an unclaimed payout can be cancelled", async () => {
     const paypal = new FakePayPal();
     const sent = await paypal.sendPayout(payout);

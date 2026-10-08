@@ -49,8 +49,11 @@ export interface Payout {
   /**
    * sending: PayPal has not reported a result. unclaimed: waiting for the creator to accept the money.
    * failed: finished without paying. cancelling: an unclaimed payout is being cancelled so `nextId` can be sent.
+   * not_sent: PayPal will not send it, for a reason on Cleared's side; it is sent again on a timer (MP-FR-45).
    */
-  status: "sending" | "unclaimed" | "failed" | "cancelling" | "paid";
+  status: "sending" | "not_sent" | "unclaimed" | "failed" | "cancelling" | "paid";
+  /** How many times PayPal has refused to send it. It is sent again under the same id each time (MP-FR-45). */
+  refusals?: number;
   /** How a failed payout ended. */
   why?: "failed" | "returned" | "blocked" | "denied";
   /** The payout to send once this one's cancellation is confirmed. */
@@ -198,9 +201,11 @@ export type MoneyEvent =
   | {
       type: "payout_answered";
       payoutId: string;
-      outcome: "unclaimed" | "failed" | "returned" | "blocked" | "denied" | "unknown" | "cancelled";
+      outcome: "unclaimed" | "failed" | "returned" | "blocked" | "denied" | "unknown" | "cancelled" | "refused";
       at: Date;
     }
+  /** Time to send again a payout PayPal would not send (MP-FR-45). */
+  | { type: "payout_resend_due"; payoutId: string; at: Date }
   | { type: "cancel_requested"; by: "creator" | "brand"; at: Date }
   /** PayPal's answer to ending a released hold (MP-FR-32). */
   | { type: "hold_cancel_answered"; outcome: "cancelled" | "already_ended" | "unknown" | "failed"; at: Date }
@@ -234,6 +239,7 @@ export type MoneyEffect =
   | { type: "check_payout"; payoutId: string }
   | { type: "cancel_payout"; payoutId: string }
   | { type: "schedule_job"; job: "attempt_stuck"; attemptId: string; at: Date }
+  | { type: "schedule_job"; job: "payout_resend"; payoutId: string; at: Date }
   | {
       type: "schedule_job";
       job:
@@ -259,6 +265,8 @@ export type Notice =
   | "payment_failed"
   | "payout_unclaimed"
   | "payout_failed"
+  | "payout_not_sent"
+  | "payout_delayed"
   | "release_failed";
 
 /** Why an event was refused. The routes built later turn each into its own message (MP-FR-02). */
@@ -315,6 +323,8 @@ export interface MoneySettings {
   feeBasisPoints: number;
   /** How long after a refused capture the next try is made (MP-FR-25). */
   captureRetryHours: number;
+  /** How long after PayPal refuses to send a payout it is sent again (MP-FR-45). */
+  payoutResendHours: number;
 }
 
 /** The values in the signed spec. */
@@ -329,6 +339,7 @@ export const defaultSettings: MoneySettings = {
   fixWindowHours: 24,
   feeBasisPoints: 500,
   captureRetryHours: 6,
+  payoutResendHours: 6,
 };
 
 /** A deliverable's money before the brand has agreed anything. */

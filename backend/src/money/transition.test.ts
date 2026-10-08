@@ -1631,3 +1631,88 @@ describe("MP-FR-24 the first capture and the guarantee (revision 1.2)", () => {
     });
   });
 });
+
+describe("MP-FR-45 a payout PayPal will not send (revision 1.3)", () => {
+  const refusedAt = (time: string, payoutId = "pay_1"): MoneyEvent => ({
+    type: "payout_answered",
+    payoutId,
+    outcome: "refused",
+    at: at(time),
+  });
+  const resendDue = (time: string, payoutId = "pay_1"): MoneyEvent => ({ type: "payout_resend_due", payoutId, at: at(time) });
+  /** Captured, and PayPal refused to send the payout at 09:40:10 on 17 October. */
+  const notSent = () => after(captured(), payoutStarted(), refusedAt("2026-10-17T09:40:10Z"));
+
+  test("it stays captured, is tried again in 6 hours, and Cleared and the creator are told", () => {
+    expect(transition(after(captured(), payoutStarted()), refusedAt("2026-10-17T09:40:10Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "captured", payout: { id: "pay_1", status: "not_sent" } },
+      effects: [
+        { type: "schedule_job", job: "payout_resend", payoutId: "pay_1", at: at("2026-10-17T15:40:10Z") },
+        { type: "notify", to: "cleared", about: "payout_not_sent" },
+        { type: "notify", to: "creator", about: "payout_delayed" },
+      ],
+    });
+  });
+
+  test("the next try sends the same payout under the same id, so it can never be sent twice", () => {
+    expect(transition(notSent(), resendDue("2026-10-17T15:40:10Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "captured", payout: { id: "pay_1", status: "sending" } },
+      effects: [{ type: "send_payout", payoutId: "pay_1", amountCents: 114_000 }],
+    });
+  });
+
+  test("a second refusal schedules another try without telling anyone again", () => {
+    const retrying = after(notSent(), resendDue("2026-10-17T15:40:10Z"));
+
+    const result = transition(retrying, refusedAt("2026-10-17T15:40:20Z"));
+
+    expect(result).toMatchObject({
+      ok: true,
+      state: { payout: { id: "pay_1", status: "not_sent" } },
+      effects: [{ type: "schedule_job", job: "payout_resend", payoutId: "pay_1", at: at("2026-10-17T21:40:20Z") }],
+    });
+    expect(result).toMatchObject({ effects: expect.not.arrayContaining([expect.objectContaining({ type: "notify" })]) });
+  });
+
+  test("there is no end date: it is still tried long after day 28", () => {
+    expect(transition(notSent(), resendDue("2026-12-01T00:00:00Z"))).toMatchObject({
+      ok: true,
+      effects: [{ type: "send_payout", payoutId: "pay_1" }],
+    });
+  });
+
+  test("a retry that goes through is paid", () => {
+    const retrying = after(notSent(), resendDue("2026-10-17T15:40:10Z"));
+
+    expect(transition(retrying, payoutSucceeded("pay_1", "2026-10-17T15:45:00Z"))).toMatchObject({
+      ok: true,
+      state: { stage: "paid", payout: { id: "pay_1", status: "paid" } },
+    });
+  });
+
+  test("the creator cannot ask for it to be sent again meanwhile (MP-FR-30)", () => {
+    expect(
+      transition(notSent(), { type: "payout_retry_requested", payoutId: "pay_2", at: at("2026-10-17T10:00:00Z") }),
+    ).toEqual({ ok: false, reason: "payout_in_progress" });
+  });
+
+  test("the resend job does nothing unless that payout is waiting to be sent again", () => {
+    const sending = after(captured(), payoutStarted());
+    const waiting = notSent();
+
+    expect(transition(sending, resendDue("2026-10-17T15:40:10Z"))).toEqual({ ok: true, state: sending, effects: [] });
+    expect(transition(waiting, resendDue("2026-10-17T15:40:10Z", "pay_other"))).toEqual({
+      ok: true,
+      state: waiting,
+      effects: [],
+    });
+  });
+
+  test("a refusal about a payout PayPal already accepted changes nothing", () => {
+    const unclaimed = after(captured(), payoutStarted(), payoutAnswered("unclaimed"));
+
+    expect(transition(unclaimed, refusedAt("2026-10-17T09:50:00Z"))).toEqual({ ok: true, state: unclaimed, effects: [] });
+  });
+});

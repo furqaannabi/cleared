@@ -144,6 +144,18 @@ export function payoutAlreadySent(answer: unknown): string | undefined {
 }
 
 /**
+ * True when PayPal will not send a payout at all: a 400, 403 or 422 that names an error (MP-FR-45).
+ * An answer about a payout already sent under that id is never a refusal, whether or not it says which.
+ * A rejected log-in, a rate limit, a server error and no answer are not refusals either.
+ */
+export function payoutRefused(status: number, answer: unknown): boolean {
+  if (status !== 400 && status !== 403 && status !== 422) return false;
+  const { name, details } = (answer ?? {}) as { name?: unknown; details?: { field?: unknown }[] };
+  if (typeof name !== "string") return false;
+  return !(Array.isArray(details) && details.some((detail) => detail?.field === "SENDER_BATCH_ID"));
+}
+
+/**
  * True only when PayPal understood the request and said it will not do it. Anything else (no answer, a
  * server error, a rejected login, a rate limit) is not a refusal, and nothing may be retried as new on it.
  */

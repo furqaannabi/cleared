@@ -1,6 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { ApiError } from "@paypal/paypal-server-sdk";
-import { captureOutcome, dollars, holdStatus, orderOutcome, payoutStatus, refusedClearly, renewOutcome } from "./answers";
+import {
+  captureOutcome,
+  dollars,
+  holdStatus,
+  orderOutcome,
+  payoutRefused,
+  payoutStatus,
+  refusedClearly,
+  renewOutcome,
+} from "./answers";
 import { PAYPAL_API } from "./sandbox-paypal";
 
 describe("MP-BR-05 amounts sent to PayPal", () => {
@@ -140,6 +149,35 @@ describe("MP-FR-29 reading a payout", () => {
       outcome: "unknown",
     });
     expect(payoutStatus({})).toEqual({ outcome: "unknown" });
+  });
+});
+
+describe("MP-FR-45 telling a payout PayPal will not send", () => {
+  test.each<[number, unknown]>([
+    [403, { name: "PAYOUT_NOT_AVAILABLE" }],
+    [422, { name: "INSUFFICIENT_FUNDS" }],
+    [400, { name: "USER_BUSINESS_ERROR", details: [{ field: "AMOUNT", issue: "Insufficient funds" }] }],
+  ])("a %i that names an error is a refusal", (status, answer) => {
+    expect(payoutRefused(status, answer)).toBe(true);
+  });
+
+  test("an answer about a payout already sent under that id is not a refusal, with or without a pointer to it", () => {
+    const duplicate = (link: unknown[]) => ({ name: "USER_BUSINESS_ERROR", details: [{ field: "SENDER_BATCH_ID", link }] });
+
+    expect(payoutRefused(400, duplicate([{ href: "https://api.sandbox.paypal.com/v1/payments/payouts/BATCH-1" }]))).toBe(false);
+    expect(payoutRefused(400, duplicate([]))).toBe(false);
+  });
+
+  test.each<[number, unknown]>([
+    [400, {}],
+    [400, undefined],
+    [401, { name: "AUTHENTICATION_FAILURE" }],
+    [429, { name: "RATE_LIMIT_REACHED" }],
+    [500, { name: "INTERNAL_SERVER_ERROR" }],
+    [0, undefined],
+    [201, { name: "ODD" }],
+  ])("a %i with %p is not a refusal: it is checked, not acted on", (status, answer) => {
+    expect(payoutRefused(status, answer)).toBe(false);
   });
 });
 

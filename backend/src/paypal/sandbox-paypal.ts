@@ -19,6 +19,7 @@ import {
   holdStatus,
   orderOutcome,
   payoutAlreadySent,
+  payoutRefused,
   payoutStatus,
   refusedClearly,
   renewOutcome,
@@ -276,8 +277,8 @@ export function createSandboxPayPal(config: SandboxPayPalConfig): PayPalPort {
       // PayPal does not repeat a payout sent again under the same id: it refuses and points at the first one.
       const alreadySent = status === 400 ? payoutAlreadySent(json) : undefined;
       if (alreadySent) return { outcome: "accepted", payoutReference: alreadySent };
-      // Anything else is unknown. A refusal is never assumed here: acting on one sends a second payout.
-      return { outcome: "unknown" };
+      // A refusal has to be named by PayPal. Anything else is unknown and is checked, never acted on.
+      return { outcome: payoutRefused(status, json) ? "refused" : "unknown" };
     },
 
     async readPayout(payoutReference) {

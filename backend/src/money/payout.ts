@@ -1,9 +1,12 @@
-/** Paying the creator (MP-FR-28 to MP-FR-31). */
+/** Paying the creator (MP-FR-28 to MP-FR-31, MP-FR-45). */
 
 import { refuse, unchanged } from "./outcomes";
-import type { EventOf, MoneyState, TransitionResult } from "./types";
+import { hoursAfter } from "./time";
+import type { EventOf, MoneySettings, MoneyState, TransitionResult } from "./types";
 
-export type PayoutEvent = EventOf<"payout_started" | "payout_retry_requested" | "payout_answered">;
+export type PayoutEvent = EventOf<
+  "payout_started" | "payout_retry_requested" | "payout_answered" | "payout_resend_due"
+>;
 
 /** Sends a new payout for what the creator is owed. */
 function sendPayout(state: MoneyState, payoutId: string): TransitionResult {
@@ -15,8 +18,19 @@ function sendPayout(state: MoneyState, payoutId: string): TransitionResult {
   };
 }
 
-export function payoutTransition(state: MoneyState, event: PayoutEvent): TransitionResult {
+export function payoutTransition(state: MoneyState, event: PayoutEvent, settings: MoneySettings): TransitionResult {
   switch (event.type) {
+    case "payout_resend_due": {
+      const payout = state.payout;
+      if (state.stage !== "captured" || state.payoutCents === null) return unchanged(state);
+      if (payout?.status !== "not_sent" || payout.id !== event.payoutId) return unchanged(state);
+      // The same payout id, so the same request id: if an earlier try did reach PayPal, it is not sent twice.
+      return {
+        ok: true,
+        state: { ...state, payout: { ...payout, status: "sending" } },
+        effects: [{ type: "send_payout", payoutId: payout.id, amountCents: state.payoutCents }],
+      };
+    }
     case "payout_started":
       if (state.stage !== "captured") return refuse("not_captured");
       // The first payout only. Another is sent only when the creator asks, after this one ends unpaid.
@@ -63,6 +77,30 @@ export function payoutTransition(state: MoneyState, event: PayoutEvent): Transit
         case "cancelled":
           if (payout.status !== "cancelling" || !payout.nextId) return unchanged(state);
           return sendPayout(state, payout.nextId);
+        case "refused": {
+          // Nothing was sent, and the reason is on Cleared's side, so the creator is not asked to fix anything.
+          if (payout.status !== "sending") return unchanged(state);
+          const refusals = (payout.refusals ?? 0) + 1;
+          return {
+            ok: true,
+            state: { ...state, payout: { ...payout, status: "not_sent", refusals } },
+            effects: [
+              {
+                type: "schedule_job",
+                job: "payout_resend",
+                payoutId: payout.id,
+                at: hoursAfter(event.at, settings.payoutResendHours),
+              },
+              // Both are told once, when the trouble starts, not on every try.
+              ...(refusals === 1
+                ? ([
+                    { type: "notify", to: "cleared", about: "payout_not_sent" },
+                    { type: "notify", to: "creator", about: "payout_delayed" },
+                  ] as const)
+                : []),
+            ],
+          };
+        }
         default:
           return {
             ok: true,

@@ -64,7 +64,11 @@ export type CaptureResult = { outcome: "completed"; reference: string } | { outc
 /** failed: PayPal would not end the hold, for example because it was already captured. */
 export type CancelHoldResult = "cancelled" | "already_ended" | "failed" | "unknown";
 
-export type SendPayoutResult = { outcome: "accepted"; payoutReference: string } | { outcome: "unknown" };
+/** refused: PayPal will not send it and nothing was sent. The same request can be sent again later (MP-FR-45). */
+export type SendPayoutResult =
+  | { outcome: "accepted"; payoutReference: string }
+  | { outcome: "refused" }
+  | { outcome: "unknown" };
 
 export type PayoutStatus =
   | { outcome: "succeeded"; reference: string }

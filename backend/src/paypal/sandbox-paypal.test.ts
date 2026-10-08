@@ -94,7 +94,6 @@ describe("MP-FR-28 sending a payout", () => {
   });
 
   test.each<[string, unknown]>([
-    ["another business error", { name: "USER_BUSINESS_ERROR", details: [{ field: "AMOUNT", issue: "Insufficient funds" }] }],
     ["a duplicate that names no batch", { name: "USER_BUSINESS_ERROR", details: [{ field: "SENDER_BATCH_ID", link: [] }] }],
     [
       "a duplicate whose link is not a PayPal payout",
@@ -104,6 +103,15 @@ describe("MP-FR-28 sending a payout", () => {
     const { paypal } = standIn(() => ({ status: 400, json }));
 
     expect(await paypal.sendPayout(payout)).toEqual({ outcome: "unknown" });
+  });
+
+  test.each<[number, string]>([
+    [403, "PAYOUT_NOT_AVAILABLE"],
+    [422, "INSUFFICIENT_FUNDS"],
+  ])("a %i naming %s is a payout PayPal will not send (MP-FR-45)", async (status, name) => {
+    const { paypal } = standIn(() => ({ status, json: { name, debug_id: "DEBUG-1" } }));
+
+    expect(await paypal.sendPayout(payout)).toEqual({ outcome: "refused" });
   });
 
   test("a failure is logged with PayPal's ids, and never the creator's email (MP-BR-11)", async () => {

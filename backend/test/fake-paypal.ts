@@ -150,7 +150,8 @@ export class FakePayPal implements PayPalPort {
 
   async sendPayout(input: { requestId: string; email: string; amountCents: number }): Promise<SendPayoutResult> {
     this.calls.push({ method: "sendPayout", requestId: input.requestId, amountCents: input.amountCents });
-    return this.once("sendPayout", input.requestId, () => {
+    const sent = this.once<SendPayoutResult>("sendPayout", input.requestId, (misbehaviour) => {
+      if (misbehaviour === "refused") return { outcome: "refused" };
       const payoutReference = this.id("PAYOUT");
       this.payoutsByReference.set(payoutReference, {
         payoutReference,
@@ -159,6 +160,9 @@ export class FakePayPal implements PayPalPort {
       });
       return { outcome: "accepted", payoutReference };
     });
+    // PayPal keeps nothing of a payout it refused, so the same request can be sent again later (MP-FR-45).
+    if (sent.outcome === "refused") this.answers.delete(input.requestId);
+    return sent;
   }
 
   async readPayout(payoutReference: string): Promise<PayoutStatus> {
