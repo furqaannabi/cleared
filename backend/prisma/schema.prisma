@@ -250,6 +250,8 @@ model ChecklistItem {
   exact          String?
   /// How it will be checked. Decided by code, never by the model (DS-FR-20).
   checkedBy      String
+  /// The question whose answer made this item, so re-answering it takes the item away (DS-FR-23).
+  questionId     String?
   position       Int
 
   deal        Deal        @relation(fields: [dealId], references: [id], onDelete: Cascade)

@@ -545,3 +545,329 @@ describe("DS-FR-26 to DS-FR-28 limits on reading", () => {
     expect(await prisma.briefRead.count({ where: { modelCalled: false } })).toBe(0);
   });
 });
+
+/** A deal whose brief has been read: one item on each post, and one question about line 3. */
+async function readChecklist(world: ReturnType<typeof setUp>, browser: Browser) {
+  const deal = await startDeal(browser);
+  await sendBrief(browser, deal.id);
+  await world.runJobs();
+  return readDeal(browser, deal.id);
+}
+
+const answer = (browser: Browser, deal: Draft, body: unknown, question = deal.questions[0]!.id) =>
+  browser.send("PUT", `/deals/${deal.id}/questions/${question}`, { body });
+
+describe("DS-FR-23 answer a question", () => {
+  test("picking a suggested answer adds the item it carries, on every post it applies to, citing the line", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+
+    const response = await answer(sam, deal, { kind: "suggestion", text: "In the first 30 seconds" });
+
+    expect(response.status).toBe(200);
+    const after = (await response.json()) as Draft;
+    expect(after.questions[0]!.answer).toEqual({ kind: "suggestion", text: "In the first 30 seconds" });
+    expect(after.items.filter((item) => item.briefLine === 3)).toEqual([
+      { id: expect.any(String), deliverableId: deal.deliverables[0]!.id, name: "Mention Glow in the first 30 seconds", kind: "timing", briefLine: 3, addedByCreator: false, checkedBy: "ai_timestamp" },
+      { id: expect.any(String), deliverableId: deal.deliverables[1]!.id, name: "Mention Glow in the first 30 seconds", kind: "timing", briefLine: 3, addedByCreator: false, checkedBy: "ai_timestamp" },
+    ]);
+    // Answering did not ask the model again.
+    expect(world.model.asked).toHaveLength(1);
+  });
+
+  test("the creator's own words become the item, citing that line", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+
+    const after = (await (await answer(sam, deal, { kind: "own_words", text: "  Mention Glow before the intro ends  " })).json()) as Draft;
+
+    expect(after.questions[0]!.answer).toEqual({ kind: "own_words", text: "Mention Glow before the intro ends" });
+    expect(after.items.filter((item) => item.briefLine === 3).map((item) => [item.name, item.kind, item.addedByCreator])).toEqual([
+      ["Mention Glow before the intro ends", "timing", false],
+      ["Mention Glow before the intro ends", "timing", false],
+    ]);
+    expect(world.model.asked).toHaveLength(1);
+  });
+
+  test("leaving the line out adds nothing, and records that it was left out", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+
+    const after = (await (await answer(sam, deal, { kind: "left_out" })).json()) as Draft;
+
+    expect(after.questions[0]!.answer).toEqual({ kind: "left_out" });
+    expect(after.items.filter((item) => item.briefLine === 3)).toEqual([]);
+  });
+
+  test("answering again replaces the first answer and its item", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    await answer(sam, deal, { kind: "suggestion", text: "In the first 30 seconds" });
+
+    const after = (await (await answer(sam, deal, { kind: "suggestion", text: "In the first 60 seconds" })).json()) as Draft;
+
+    expect(after.items.filter((item) => item.briefLine === 3).map((item) => item.name)).toEqual([
+      "Mention Glow in the first 60 seconds",
+      "Mention Glow in the first 60 seconds",
+    ]);
+  });
+
+  test("an answered question can be reopened, which takes its item away", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    await answer(sam, deal, { kind: "suggestion", text: "In the first 30 seconds" });
+
+    const response = await sam.send("DELETE", `/deals/${deal.id}/questions/${deal.questions[0]!.id}`);
+
+    const after = (await response.json()) as Draft;
+    expect(response.status).toBe(200);
+    expect(after.questions[0]).not.toHaveProperty("answer");
+    expect(after.items.filter((item) => item.briefLine === 3)).toEqual([]);
+    expect(after.items).toHaveLength(2);
+  });
+
+  test.each<[string, unknown, string]>([
+    ["a suggestion the question never offered", { kind: "suggestion", text: "Whenever you like" }, "text"],
+    ["own words that are empty", { kind: "own_words", text: "   " }, "text"],
+    ["own words over 200 characters", { kind: "own_words", text: "x".repeat(201) }, "text"],
+    ["a kind of answer that does not exist", { kind: "maybe" }, "kind"],
+  ])("%s is refused, naming the field, and nothing changes", async (_, body, field) => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+
+    const response = await answer(sam, deal, body);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: { field } });
+    expect(await readDeal(sam, deal.id)).toEqual(deal);
+  });
+
+  test("a question from another deal, or another creator's deal, is not found", async () => {
+    const world = setUp();
+    const sam = await world.creator("Sam Rivera");
+    const mo = await world.creator("Mo Adeyemi");
+    const sams = await readChecklist(world, sam);
+    const mos = await readChecklist(world, mo);
+
+    expect((await answer(mo, sams, { kind: "left_out" })).status).toBe(404);
+    expect((await answer(sam, sams, { kind: "left_out" }, mos.questions[0]!.id)).status).toBe(404);
+    expect(await readDeal(sam, sams.id)).toEqual(sams);
+  });
+});
+
+describe("DS-FR-24 edit the checklist", () => {
+  test("an item can be reworded, and keeps the line it cites", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    const item = deal.items[0]!;
+
+    const response = await sam.send("PATCH", `/deals/${deal.id}/items/${item.id}`, { body: { name: "  Say GLOW20 clearly  " } });
+
+    expect(response.status).toBe(200);
+    expect(((await response.json()) as Draft).items[0]).toEqual({ ...item, name: "Say GLOW20 clearly" });
+  });
+
+  test("an item can be removed", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+
+    const after = (await (await sam.send("DELETE", `/deals/${deal.id}/items/${deal.items[0]!.id}`)).json()) as Draft;
+
+    expect(after.items).toEqual([deal.items[1]!]);
+  });
+
+  test("an item can be copied to another post, keeping its line and how it is checked", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    const [video, short] = deal.deliverables;
+    await sam.send("DELETE", `/deals/${deal.id}/items/${deal.items[1]!.id}`);
+
+    const response = await sam.send("POST", `/deals/${deal.id}/items/${deal.items[0]!.id}/copy`, { body: { deliverableId: short!.id } });
+
+    const after = (await response.json()) as Draft;
+    expect(after.items).toHaveLength(2);
+    expect(after.items[0]).toEqual(deal.items[0]!);
+    expect(after.items[1]).toMatchObject({ deliverableId: short!.id, name: "Say the code GLOW20", briefLine: 2, checkedBy: "exact_match", addedByCreator: false });
+    expect(after.items[1]!.id).not.toBe(deal.items[0]!.id);
+    expect(after.items[0]!.deliverableId).toBe(video!.id);
+  });
+
+  test("an item can be moved to another post", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    const short = deal.deliverables[1]!;
+
+    const after = (await (
+      await sam.send("POST", `/deals/${deal.id}/items/${deal.items[0]!.id}/move`, { body: { deliverableId: short.id } })
+    ).json()) as Draft;
+
+    expect(after.items.map((item) => item.deliverableId)).toEqual([short.id, short.id]);
+    expect(after.items[0]!.id).toBe(deal.items[0]!.id);
+  });
+
+  test("the creator can add an item of their own, which is marked as not from the brief", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    const video = deal.deliverables[0]!;
+
+    const response = await sam.send("POST", `/deals/${deal.id}/items`, { body: { deliverableId: video.id, name: " Wear the Glow cap ", kind: "shown" } });
+
+    expect(response.status).toBe(200);
+    const added = ((await response.json()) as Draft).items.at(-1)!;
+    expect(added).toEqual({ id: expect.any(String), deliverableId: video.id, name: "Wear the Glow cap", kind: "shown", addedByCreator: true, checkedBy: "ai_timestamp" });
+    expect(added).not.toHaveProperty("briefLine");
+  });
+
+  test.each([
+    ["written", "at_live_check"],
+    ["disclosure", "at_live_check"],
+    ["said", "ai_timestamp"],
+  ])("how an added %s item is checked is decided by code: %s", async (kind, checkedBy) => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+
+    const after = (await (
+      await sam.send("POST", `/deals/${deal.id}/items`, { body: { deliverableId: deal.deliverables[0]!.id, name: "An item", kind } })
+    ).json()) as Draft;
+
+    expect(after.items.at(-1)).toMatchObject({ kind, checkedBy });
+  });
+
+  test.each<[string, (deal: Draft) => [string, string, unknown], string]>([
+    ["a new name that is empty", (d) => ["PATCH", `/deals/${d.id}/items/${d.items[0]!.id}`, { name: "  " }], "name"],
+    ["a new name over 200 characters", (d) => ["PATCH", `/deals/${d.id}/items/${d.items[0]!.id}`, { name: "x".repeat(201) }], "name"],
+    ["an added item of a kind that does not exist", (d) => ["POST", `/deals/${d.id}/items`, { deliverableId: d.deliverables[0]!.id, name: "Dance", kind: "danced" }], "kind"],
+    ["an added item on a post that is not this deal's", (d) => ["POST", `/deals/${d.id}/items`, { deliverableId: "someone-elses-post", name: "Dance", kind: "shown" }], "deliverableId"],
+    ["a copy to a post that is not this deal's", (d) => ["POST", `/deals/${d.id}/items/${d.items[0]!.id}/copy`, { deliverableId: "someone-elses-post" }], "deliverableId"],
+    ["a move to a post that is not this deal's", (d) => ["POST", `/deals/${d.id}/items/${d.items[0]!.id}/move`, { deliverableId: "someone-elses-post" }], "deliverableId"],
+  ])("%s is refused, naming the field, and nothing changes", async (_, request, field) => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    const [method, path, body] = request(deal);
+
+    const response = await sam.send(method, path, { body });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: { field } });
+    expect(await readDeal(sam, deal.id)).toEqual(deal);
+  });
+
+  test("an item that is not this deal's, or a deal that is not this creator's, is not found", async () => {
+    const world = setUp();
+    const sam = await world.creator("Sam Rivera");
+    const mo = await world.creator("Mo Adeyemi");
+    const sams = await readChecklist(world, sam);
+    const mos = await readChecklist(world, mo);
+
+    expect((await mo.send("DELETE", `/deals/${sams.id}/items/${sams.items[0]!.id}`)).status).toBe(404);
+    expect((await sam.send("DELETE", `/deals/${sams.id}/items/${mos.items[0]!.id}`)).status).toBe(404);
+    expect((await sam.send("PATCH", `/deals/${sams.id}/items/${mos.items[0]!.id}`, { body: { name: "Mine now" } })).status).toBe(404);
+    expect(await readDeal(mo, mos.id)).toEqual(mos);
+    expect(await readDeal(sam, sams.id)).toEqual(sams);
+  });
+
+  test("the checklist cannot be edited before the brief has been read", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await startDeal(sam);
+
+    const response = await sam.send("POST", `/deals/${deal.id}/items`, { body: { deliverableId: deal.deliverables[0]!.id, name: "Wear the cap", kind: "shown" } });
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "not_editable" } });
+  });
+
+  test("the creator's wording is kept as plain text (DS-BR-04)", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+
+    const after = (await (
+      await sam.send("PATCH", `/deals/${deal.id}/items/${deal.items[0]!.id}`, { body: { name: '<img src=x onerror="alert(1)">' } })
+    ).json()) as Draft;
+
+    expect(after.items[0]!.name).toBe('<img src=x onerror="alert(1)">');
+  });
+});
+
+describe("DS-FR-25 checklist ready", () => {
+  const ready = (browser: Browser, deal: Draft) => browser.send("POST", `/deals/${deal.id}/checklist/ready`);
+
+  test("with every question answered and an item on every post, the deal moves to the invite step", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    await answer(sam, deal, { kind: "left_out" });
+
+    const response = await ready(sam, deal);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ step: "invite", ready: true });
+    expect(await (await sam.send("GET", "/deals")).json()).toMatchObject([{ step: "invite", status: "Invite" }]);
+  });
+
+  test("it is refused while a question is unanswered (DS-BR-08)", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+
+    const response = await ready(sam, deal);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "questions_unanswered" } });
+    expect(await readDeal(sam, deal.id)).toMatchObject({ step: "checklist", ready: false });
+  });
+
+  test("it is refused while a post has no item", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    await answer(sam, deal, { kind: "left_out" });
+    await sam.send("DELETE", `/deals/${deal.id}/items/${deal.items[1]!.id}`);
+
+    const response = await ready(sam, deal);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "post_without_items" } });
+  });
+
+  test("once ready, the checklist cannot be edited, until it is reopened", async () => {
+    const world = setUp();
+    const sam = await world.creator();
+    const deal = await readChecklist(world, sam);
+    await answer(sam, deal, { kind: "left_out" });
+    await ready(sam, deal);
+
+    const edit = () => sam.send("PATCH", `/deals/${deal.id}/items/${deal.items[0]!.id}`, { body: { name: "Changed" } });
+    expect((await edit()).status).toBe(409);
+
+    const reopened = await sam.send("POST", `/deals/${deal.id}/checklist/reopen`);
+    expect(reopened.status).toBe(200);
+    expect(await reopened.json()).toMatchObject({ step: "checklist", ready: false });
+    expect((await edit()).status).toBe(200);
+  });
+
+  test("a checklist that is not ready cannot be reopened, and another creator can do neither", async () => {
+    const world = setUp();
+    const sam = await world.creator("Sam Rivera");
+    const mo = await world.creator("Mo Adeyemi");
+    const deal = await readChecklist(world, sam);
+
+    expect((await sam.send("POST", `/deals/${deal.id}/checklist/reopen`)).status).toBe(409);
+    expect((await ready(mo, deal)).status).toBe(404);
+    expect((await mo.send("POST", `/deals/${deal.id}/checklist/reopen`)).status).toBe(404);
+  });
+});

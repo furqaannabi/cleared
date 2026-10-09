@@ -2,7 +2,17 @@
  * Deals (deal set-up spec DS-FR-13 to DS-FR-28). Every function takes the creator who is asking, and a
  * deal that is not theirs is treated exactly as one that does not exist (DS-BR-01).
  */
-import { numberLines, readBrief, type BriefLine, type BriefModel, type CheckedBy, type ItemKind, type ReadQuestion } from "../briefs/reader";
+import {
+  checkedBy,
+  numberLines,
+  readBrief,
+  type BriefLine,
+  type BriefModel,
+  type CheckedBy,
+  type ItemKind,
+  type ProposedItem,
+  type ReadQuestion,
+} from "../briefs/reader";
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import { enqueue, type JobHandlers } from "../jobs/jobs";
 
@@ -104,6 +114,23 @@ export type BriefRefused =
   /** A limit on reading was reached (DS-FR-28). `resetsAt` is when a daily one lifts. */
   | { refused: "read_limit"; limit: "demo" | "creator" | "overall"; resetsAt?: Date };
 
+/** Why a change to a deal's checklist was refused. */
+export type EditRefused =
+  | { refused: "not_found" }
+  /** The checklist cannot be changed at this point: its brief is not read yet, or the deal has moved on. */
+  | { refused: "not_editable" }
+  /** The answer picked is not one the question offered. */
+  | { refused: "unknown_suggestion" }
+  /** The post named is not one of this deal's. */
+  | { refused: "unknown_post" }
+  /** The checklist cannot be marked ready yet (DS-FR-25). */
+  | { refused: "questions_unanswered" | "post_without_items" }
+  /** The checklist is not marked ready, so there is nothing to reopen. */
+  | { refused: "not_ready" };
+
+/** How a creator answers a question (DS-FR-23). */
+export type Answer = { kind: "suggestion"; text: string } | { kind: "own_words"; text: string } | { kind: "left_out" };
+
 const whole = {
   deliverables: { orderBy: { position: "asc" } },
   items: { orderBy: { position: "asc" } },
@@ -186,6 +213,46 @@ export function createDeals(deps: {
       return { refused: "read_limit", limit: "overall", resetsAt: await resets(everyones) };
     }
     return undefined;
+  }
+
+  /**
+   * Makes one change to a deal's checklist, in a transaction, if the deal is this creator's and its
+   * checklist can be edited now. Returns the deal as it then stands.
+   */
+  async function editChecklist(
+    creatorId: string,
+    dealId: string,
+    change: (tx: Prisma.TransactionClient, deal: Row) => Promise<EditRefused | void>,
+  ): Promise<DealDraft | EditRefused> {
+    return prisma.$transaction(async (tx) => {
+      const deal = await tx.deal.findFirst({ where: { id: dealId, creatorId }, include: whole });
+      if (!deal) return { refused: "not_found" };
+      if (deal.step !== "checklist" || deal.reading !== "done") return { refused: "not_editable" };
+      const refused = await change(tx, deal);
+      if (refused) return refused;
+      return draftOf(await tx.deal.findUniqueOrThrow({ where: { id: dealId }, include: whole }));
+    });
+  }
+
+  /** Adds a proposed item to every post it applies to, after the items already there. */
+  async function addProposed(tx: Prisma.TransactionClient, deal: Row, item: ProposedItem, from: { briefLine: number; questionId: string }) {
+    let position = Math.max(-1, ...deal.items.map((existing) => existing.position)) + 1;
+    for (const post of deal.deliverables) {
+      if (item.appliesTo !== "all" && item.appliesTo !== post.platform) continue;
+      await tx.checklistItem.create({
+        data: {
+          dealId: deal.id,
+          deliverableId: post.id,
+          name: item.name,
+          kind: item.kind,
+          exact: item.exact,
+          checkedBy: checkedBy(item.kind, item.exact),
+          briefLine: from.briefLine,
+          questionId: from.questionId,
+          position: position++,
+        },
+      });
+    }
   }
 
   /** The jobs this module schedules. */
@@ -344,6 +411,117 @@ export function createDeals(deps: {
           include: whole,
         });
         return draftOf(reading);
+      });
+    },
+
+    /**
+     * Answers a question (DS-FR-23). A suggested answer adds the item it carries. The creator's own
+     * words become the item's name, citing the same line. Left out adds nothing. Answering again
+     * replaces the earlier answer and its item. The model is never asked again.
+     */
+    answerQuestion(creatorId: string, dealId: string, questionId: string, answer: Answer) {
+      return editChecklist(creatorId, dealId, async (tx, deal) => {
+        const question = deal.questions.find((candidate) => candidate.id === questionId);
+        if (!question) return { refused: "not_found" };
+        const suggestions = question.suggestions as unknown as ReadQuestion["suggestions"];
+
+        let item: ProposedItem | undefined;
+        if (answer.kind === "suggestion") {
+          item = suggestions.find((suggestion) => suggestion.text === answer.text)?.item;
+          if (!item) return { refused: "unknown_suggestion" };
+        } else if (answer.kind === "own_words") {
+          // The kind of item and the posts it applies to are the ones the model proposed for this line.
+          const like = suggestions[0]?.item;
+          item = { name: answer.text, kind: like?.kind ?? "said", appliesTo: like?.appliesTo ?? "all" };
+        }
+
+        await tx.checklistItem.deleteMany({ where: { dealId, questionId } });
+        const remaining = { ...deal, items: deal.items.filter((existing) => existing.questionId !== questionId) };
+        if (item) await addProposed(tx, remaining, item, { briefLine: question.briefLine, questionId });
+        await tx.question.update({
+          where: { id: questionId },
+          data: { answerKind: answer.kind, answerText: answer.kind === "left_out" ? null : answer.text },
+        });
+      });
+    },
+
+    /** Reopens an answered question, taking away the item its answer made (DS-FR-23). */
+    reopenQuestion(creatorId: string, dealId: string, questionId: string) {
+      return editChecklist(creatorId, dealId, async (tx, deal) => {
+        if (!deal.questions.some((candidate) => candidate.id === questionId)) return { refused: "not_found" };
+        await tx.checklistItem.deleteMany({ where: { dealId, questionId } });
+        await tx.question.update({ where: { id: questionId }, data: { answerKind: null, answerText: null } });
+      });
+    },
+
+    /** Rewords an item. The line it cites stays (DS-FR-24). */
+    renameItem(creatorId: string, dealId: string, itemId: string, name: string) {
+      return editChecklist(creatorId, dealId, async (tx, deal) => {
+        if (!deal.items.some((item) => item.id === itemId)) return { refused: "not_found" };
+        await tx.checklistItem.update({ where: { id: itemId }, data: { name } });
+      });
+    },
+
+    removeItem(creatorId: string, dealId: string, itemId: string) {
+      return editChecklist(creatorId, dealId, async (tx, deal) => {
+        if (!deal.items.some((item) => item.id === itemId)) return { refused: "not_found" };
+        await tx.checklistItem.delete({ where: { id: itemId } });
+      });
+    },
+
+    /** Copies an item to another of the deal's posts, or moves it there (DS-FR-24). */
+    placeItem(creatorId: string, dealId: string, itemId: string, deliverableId: string, how: "copy" | "move") {
+      return editChecklist(creatorId, dealId, async (tx, deal) => {
+        const item = deal.items.find((candidate) => candidate.id === itemId);
+        if (!item) return { refused: "not_found" };
+        if (!deal.deliverables.some((post) => post.id === deliverableId)) return { refused: "unknown_post" };
+        if (how === "move") {
+          await tx.checklistItem.update({ where: { id: itemId }, data: { deliverableId } });
+          return;
+        }
+        const { id: _id, ...copy } = item;
+        const position = Math.max(...deal.items.map((existing) => existing.position)) + 1;
+        await tx.checklistItem.create({ data: { ...copy, deliverableId, position } });
+      });
+    },
+
+    /** Adds an item of the creator's own. It cites no line and is marked as theirs (DS-FR-24, DS-BR-06). */
+    addItem(creatorId: string, dealId: string, item: { deliverableId: string; name: string; kind: ItemKind }) {
+      return editChecklist(creatorId, dealId, async (tx, deal) => {
+        if (!deal.deliverables.some((post) => post.id === item.deliverableId)) return { refused: "unknown_post" };
+        await tx.checklistItem.create({
+          data: {
+            dealId,
+            ...item,
+            addedByCreator: true,
+            // Decided by code from its kind, like every other item (DS-FR-20).
+            checkedBy: checkedBy(item.kind, undefined),
+            position: Math.max(-1, ...deal.items.map((existing) => existing.position)) + 1,
+          },
+        });
+      });
+    },
+
+    /**
+     * Marks the checklist ready, which moves the deal to the invite step (DS-FR-25). Every question
+     * must be answered or left out, and every post must have at least one item (DS-BR-08).
+     */
+    markReady(creatorId: string, dealId: string) {
+      return editChecklist(creatorId, dealId, async (tx, deal) => {
+        if (deal.questions.some((question) => question.answerKind === null)) return { refused: "questions_unanswered" };
+        const withItems = new Set(deal.items.map((item) => item.deliverableId));
+        if (deal.deliverables.some((post) => !withItems.has(post.id))) return { refused: "post_without_items" };
+        await tx.deal.update({ where: { id: dealId }, data: { step: "invite" } });
+      });
+    },
+
+    /** Takes the deal back to the checklist step, so the checklist can be edited again (DS-FR-25). */
+    async reopenChecklist(creatorId: string, dealId: string): Promise<DealDraft | EditRefused> {
+      return prisma.$transaction(async (tx) => {
+        const deal = await tx.deal.findFirst({ where: { id: dealId, creatorId } });
+        if (!deal) return { refused: "not_found" };
+        if (deal.step !== "invite") return { refused: "not_ready" };
+        return draftOf(await tx.deal.update({ where: { id: dealId }, data: { step: "checklist" }, include: whole }));
       });
     },
 

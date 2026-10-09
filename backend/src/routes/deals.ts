@@ -1,7 +1,8 @@
 /** The creator's deals (deal set-up spec DS-FR-13 to DS-FR-16). */
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
+import type { Context } from "hono";
 import { ITEM_KINDS } from "../briefs/reader";
-import { PLATFORMS, type Deals, type Platform } from "../deals/deals";
+import { PLATFORMS, type Answer, type Deals, type EditRefused, type Platform } from "../deals/deals";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Sessions } from "../sessions/sessions";
 
@@ -189,5 +190,162 @@ export function registerDealRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: S
           return c.json({ error: { code: "read_limit", field: sent.limit, resetsAt: sent.resetsAt?.toISOString() } }, 429);
       }
     },
+  );
+
+  /** Answers every checklist route gives when the change was refused. */
+  const refused = (c: Context<AppEnv>, why: EditRefused) => {
+    switch (why.refused) {
+      case "not_found":
+        return fail(c, 404, "not_found");
+      case "not_editable":
+        return fail(c, 409, "not_editable");
+      case "unknown_suggestion":
+        return fail(c, 400, "unknown_suggestion", "text");
+      case "unknown_post":
+        return fail(c, 400, "unknown_post", "deliverableId");
+      case "questions_unanswered":
+      case "post_without_items":
+      case "not_ready":
+        return fail(c, 409, why.refused);
+    }
+  };
+  const checklistResponses = {
+    200: json(DealDraftSchema, "The deal as it now stands"),
+    ...refusals,
+    409: json(ErrorSchema, "The checklist cannot be changed now"),
+  };
+  const questionId = { params: z.object({ dealId: z.string().min(1).max(64), questionId: z.string().min(1).max(64) }) };
+
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/deals/{dealId}/questions/{questionId}",
+      summary: "Answer a question about an unclear line of the brief (DS-FR-23)",
+      middleware: [creator] as const,
+      request: {
+        ...questionId,
+        ...body(z.object({ kind: z.enum(["suggestion", "own_words", "left_out"]), text: z.string().trim().max(200).optional() })),
+      },
+      responses: checklistResponses,
+    }),
+    async (c) => {
+      const { dealId: deal, questionId: question } = c.req.valid("param");
+      const sent = c.req.valid("json");
+      // A suggestion and the creator's own words both need their text.
+      if (sent.kind !== "left_out" && !sent.text) return fail(c, 400, "invalid", "text");
+      const answer: Answer = sent.kind === "left_out" ? { kind: "left_out" } : { kind: sent.kind, text: sent.text ?? "" };
+      const changed = await deals.answerQuestion(c.get("creatorId"), deal, question, answer);
+      return "refused" in changed ? refused(c, changed) : c.json(changed, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "delete",
+      path: "/deals/{dealId}/questions/{questionId}",
+      summary: "Reopen an answered question (DS-FR-23)",
+      middleware: [creator] as const,
+      request: questionId,
+      responses: checklistResponses,
+    }),
+    async (c) => {
+      const { dealId: deal, questionId: question } = c.req.valid("param");
+      const changed = await deals.reopenQuestion(c.get("creatorId"), deal, question);
+      return "refused" in changed ? refused(c, changed) : c.json(changed, 200);
+    },
+  );
+
+  const itemId = { params: z.object({ dealId: z.string().min(1).max(64), itemId: z.string().min(1).max(64) }) };
+  /** An item's wording: plain text, trimmed, 1 to 200 characters. */
+  const itemName = z.string().trim().min(1).max(200);
+  const toPost = body(z.object({ deliverableId: z.string().min(1).max(64) }));
+  /** Answers with the deal as changed, or with why the change was refused. */
+  const done = (c: Context<AppEnv>, changed: Awaited<ReturnType<Deals["markReady"]>>) =>
+    "refused" in changed ? refused(c, changed) : c.json(changed, 200);
+
+  app.openapi(
+    createRoute({
+      method: "patch",
+      path: "/deals/{dealId}/items/{itemId}",
+      summary: "Reword an item; its citation stays (DS-FR-24)",
+      middleware: [creator] as const,
+      request: { ...itemId, ...body(z.object({ name: itemName })) },
+      responses: checklistResponses,
+    }),
+    async (c) => {
+      const { dealId: deal, itemId: item } = c.req.valid("param");
+      return done(c, await deals.renameItem(c.get("creatorId"), deal, item, c.req.valid("json").name));
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "delete",
+      path: "/deals/{dealId}/items/{itemId}",
+      summary: "Remove an item (DS-FR-24)",
+      middleware: [creator] as const,
+      request: itemId,
+      responses: checklistResponses,
+    }),
+    async (c) => {
+      const { dealId: deal, itemId: item } = c.req.valid("param");
+      return done(c, await deals.removeItem(c.get("creatorId"), deal, item));
+    },
+  );
+
+  for (const how of ["copy", "move"] as const) {
+    app.openapi(
+      createRoute({
+        method: "post",
+        path: `/deals/{dealId}/items/{itemId}/${how}`,
+        summary: `${how === "copy" ? "Copy" : "Move"} an item to another of the deal's posts (DS-FR-24)`,
+        middleware: [creator] as const,
+        request: { ...itemId, ...toPost },
+        responses: checklistResponses,
+      }),
+      async (c) => {
+        const { dealId: deal, itemId: item } = c.req.valid("param");
+        return done(c, await deals.placeItem(c.get("creatorId"), deal, item, c.req.valid("json").deliverableId, how));
+      },
+    );
+  }
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deals/{dealId}/items",
+      summary: "Add an item of the creator's own, not from the brief (DS-FR-24)",
+      middleware: [creator] as const,
+      request: {
+        ...dealId,
+        ...body(z.object({ deliverableId: z.string().min(1).max(64), name: itemName, kind: z.enum(ITEM_KINDS) })),
+      },
+      responses: checklistResponses,
+    }),
+    async (c) => done(c, await deals.addItem(c.get("creatorId"), c.req.valid("param").dealId, c.req.valid("json"))),
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deals/{dealId}/checklist/ready",
+      summary: "Mark the checklist ready; the deal moves to the invite step (DS-FR-25)",
+      middleware: [creator] as const,
+      request: dealId,
+      responses: checklistResponses,
+    }),
+    async (c) => done(c, await deals.markReady(c.get("creatorId"), c.req.valid("param").dealId)),
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deals/{dealId}/checklist/reopen",
+      summary: "Go back to the checklist step, to edit it again (DS-FR-25)",
+      middleware: [creator] as const,
+      request: dealId,
+      responses: checklistResponses,
+    }),
+    async (c) => done(c, await deals.reopenChecklist(c.get("creatorId"), c.req.valid("param").dealId)),
   );
 }
