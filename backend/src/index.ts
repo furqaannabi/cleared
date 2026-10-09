@@ -1,3 +1,4 @@
+import { createAccounts } from "./accounts/accounts";
 import { createApp } from "./app";
 import { prisma } from "./db";
 import { env } from "./env";
@@ -7,7 +8,9 @@ import { createMoney } from "./money/money";
 import { recordedPosts } from "./money/published-post";
 import { createSandboxPayPal } from "./paypal/sandbox-paypal";
 
-let app = createApp({ prisma });
+const accounts = createAccounts({ prisma, now: () => new Date() });
+const base = { prisma, accounts, appOrigin: env.appOrigin };
+let app = createApp(base);
 
 if (env.paypal) {
   // A failed PayPal call is logged with its status and PayPal's own id, never a payload.
@@ -21,9 +24,10 @@ if (env.paypal) {
     posts: recordedPosts(prisma),
     log: (message, details) => console.warn(message, JSON.stringify(details)),
   });
-  app = createApp({ prisma, money });
+  app = createApp({ ...base, money });
   // The money path's timers and follow-ups (deadlines, review windows, calls PayPal has not answered).
-  const worker = startWorker({ pass: () => runDueJobs(prisma, money.handlers, { now: new Date() }) });
+  const handlers = { ...money.handlers, ...accounts.handlers };
+  const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: new Date() }) });
   for (const signal of ["SIGTERM", "SIGINT"] as const) {
     process.once(signal, async () => {
       // Let the job in flight finish, so nothing is left half done.

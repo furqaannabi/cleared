@@ -139,3 +139,58 @@ enum PayPalEventStatus {
   received
   done
 }
+
+// A creator: the person who starts deals and is paid (deal set-up spec DS-FR-02, DS-FR-06).
+model Creator {
+  id          String  @id @default(uuid())
+  /// Google's id for the account they sign in with. Null for a demo creator.
+  googleId    String? @unique
+  name        String
+  email       String?
+  /// A per-visit demo account: made-up data, on the PayPal sandbox (DS-BR-17).
+  demo        Boolean @default(false)
+  /// A hash of the address a demo account was made from, to limit how many one address makes (DS-FR-07).
+  madeFrom    String?
+  welcomedAt  DateTime?
+  /// Where payouts go. Shown to the creator only (DS-BR-13).
+  paypalEmail String?
+  createdAt   DateTime
+
+  sessions Session[]
+  accounts ConnectedAccount[]
+
+  @@index([demo, madeFrom, createdAt])
+}
+
+// A signed-in browser (DS-BR-02). Only a hash of its token is kept.
+model Session {
+  id         String   @id @default(uuid())
+  tokenHash  String   @unique
+  creatorId  String
+  createdAt  DateTime
+  lastUsedAt DateTime
+  expiresAt  DateTime
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId])
+}
+
+// A platform account a creator has connected (DS-FR-11). Read-only access, and its token is
+// kept encrypted (DS-BR-14).
+model ConnectedAccount {
+  id                    String  @id @default(uuid())
+  creatorId             String
+  platform              String
+  /// The platform's own id for the channel or account.
+  externalId            String
+  name                  String
+  /// Made up, for a demo account. It has no token and reaches no platform.
+  synthetic             Boolean @default(false)
+  refreshTokenEncrypted String?
+  connectedAt           DateTime
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, platform])
+}

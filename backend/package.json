@@ -17,6 +17,7 @@
     "db:migrate": "bun --env-file=.env --bun prisma migrate dev"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.6.3",
     "@paypal/paypal-server-sdk": "2.5.0",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",

@@ -28,5 +28,7 @@ function paypal(): { clientId: string; clientSecret: string; webhookId?: string 
 export const env = {
   databaseUrl: required("DATABASE_URL"),
   port: Number(process.env.PORT ?? 4000),
+  /** The address of Cleared's own app: the only origin that may make changing requests (DS-BR-03). */
+  appOrigin: process.env.APP_ORIGIN ?? "http://localhost:3000",
   paypal: paypal(),
 };
