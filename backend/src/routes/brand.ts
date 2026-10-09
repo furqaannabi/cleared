@@ -1,11 +1,12 @@
-/** The brand's way in, its view of the deal, asking for changes and agreeing (deal set-up spec DS-FR-34 to DS-FR-42). */
+/** The brand's way in, its view of the deal, asking for changes, agreeing and the holds (deal set-up spec DS-FR-34 to DS-FR-45). */
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
-import type { Brand } from "../brand/brand";
+import type { Context } from "hono";
+import type { Brand, HoldRefused } from "../brand/brand";
 import { PLATFORMS } from "../deals/deals";
 import { ErrorSchema, fail, letBrandIn, requireBrand, type AppEnv } from "../http/http";
 import type { Invites } from "../invites/invites";
 import type { Sessions } from "../sessions/sessions";
-import { NoteAboutSchema, NoteSchema, NoteTextSchema } from "./shared";
+import { HoldSchema, NoteAboutSchema, NoteSchema, NoteTextSchema } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
@@ -20,6 +21,7 @@ const BrandDealSchema = z
     step: z.enum(["waiting_for_brand", "changes_requested", "agreed"]),
     version: z.number().int(),
     agreedAt: z.string().optional(),
+    paypalClientId: z.string().optional(),
     posts: z.array(
       z.object({
         deliverableId: z.string(),
@@ -27,7 +29,7 @@ const BrandDealSchema = z
         amount: z.string(),
         deadlineDays: z.number().int(),
         changed: z.array(z.enum(["amount", "deadline"])).optional(),
-        hold: z.object({ state: z.enum(["not_started"]) }),
+        hold: HoldSchema,
       }),
     ),
     items: z.array(
@@ -154,4 +156,70 @@ export function registerBrandRoutes(
       return agreed.refused === "not_set_up" ? fail(c, 503, "not_set_up") : fail(c, 409, agreed.refused);
     },
   );
+
+  const post = { params: z.object({ dealId: z.string().min(1).max(64), deliverableId: z.string().min(1).max(64) }) };
+  const order = { body: { required: true, content: { "application/json": { schema: z.object({ orderId: z.string().min(1).max(64) }) } } } };
+  const holdRefusals = {
+    400: json(ErrorSchema, "The request is not valid"),
+    401: json(ErrorSchema, "No session for this deal, whether or not it exists (DS-FR-37)"),
+    404: json(ErrorSchema, "The post is not one of this deal's"),
+    409: json(ErrorSchema, "The money path refused, with its reason as the code (MP-FR-02, MP-FR-03)"),
+    503: json(ErrorSchema, "PayPal gave no clear answer, or this service is not set up to hold money. Try again"),
+  };
+  /** Answers a hold route gives when it was refused. The money path's own reason is passed on as the code. */
+  const holdRefused = (c: Context<AppEnv>, why: HoldRefused) => {
+    switch (why.refused) {
+      case "unknown_post":
+        return fail(c, 404, "not_found");
+      case "not_set_up":
+        return fail(c, 503, "not_set_up");
+      case "money":
+        return why.reason === "paypal_unclear" ? fail(c, 503, "paypal_unclear") : fail(c, 409, why.reason);
+    }
+  };
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/brand/deals/{dealId}/posts/{deliverableId}/hold",
+      summary: "Start one post's hold: a PayPal order for its amount, for the page's PayPal button (DS-FR-43)",
+      middleware: [session] as const,
+      request: post,
+      responses: {
+        200: json(z.object({ orderId: z.string() }).openapi("HoldStart"), "The PayPal order to approve"),
+        401: holdRefusals[401],
+        404: holdRefusals[404],
+        409: holdRefusals[409],
+        503: holdRefusals[503],
+      },
+    }),
+    async (c) => {
+      const { dealId, deliverableId } = c.req.valid("param");
+      const started = await brand.startHold(dealId, deliverableId);
+      if (!started) return fail(c, 401, "signed_out");
+      return "refused" in started ? holdRefused(c, started) : c.json(started, 200);
+    },
+  );
+
+  for (const what of ["approved", "closed"] as const) {
+    app.openapi(
+      createRoute({
+        method: "post",
+        path: `/brand/deals/{dealId}/posts/{deliverableId}/hold/${what}`,
+        summary:
+          what === "approved"
+            ? "PayPal approved the order: it is authorized, and the post's hold is reported as it now stands (DS-FR-44)"
+            : "The brand closed PayPal without approving: nothing is held (DS-FR-44)",
+        middleware: [session] as const,
+        request: { ...post, ...order },
+        responses: { 200: json(BrandDealSchema, "The deal, with the post's hold as it now stands"), ...holdRefusals },
+      }),
+      async (c) => {
+        const { dealId, deliverableId } = c.req.valid("param");
+        const reported = await brand.holdReported(dealId, deliverableId, c.req.valid("json").orderId, what);
+        if (!reported) return fail(c, 401, "signed_out");
+        return "refused" in reported ? holdRefused(c, reported) : c.json(reported, 200);
+      },
+    );
+  }
 }

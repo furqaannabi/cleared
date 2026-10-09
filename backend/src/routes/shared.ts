@@ -22,3 +22,16 @@ export const NoteSchema = z
     version: z.number().int(),
   })
   .openapi("Note");
+
+/**
+ * A post's hold, as the money path has it (DS-FR-44). `deadline` is the date the creator must post by,
+ * fixed when the hold is approved and read in the creator's timezone.
+ */
+export const HoldSchema = z
+  .object({
+    state: z.enum(["not_started", "closed", "declined", "pending", "unknown", "held"]),
+    reference: z.string().optional(),
+    deadline: z.string().optional(),
+  })
+  .openapi("Hold");
+

@@ -67,7 +67,10 @@ export interface DealSummary {
   brandName: string;
   /** One short line of plain text for the list. */
   status: string;
-  step: Step;
+  /** Where setting the deal up stands. Absent once every post is held: the deal has left set-up (DS-FR-46). */
+  step?: Step;
+  /** The post to open for a deal that has left set-up: the one whose next step is the creator's. */
+  openDeliverableId?: string;
   deliverables: { id: string; platform: Platform; state: "no_draft" }[];
 }
 
@@ -101,6 +104,9 @@ const STATUS: Record<Step, string> = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The money path's stages for a post that has no hold: not held yet, or closed without ever being held. */
+const NOT_HELD = ["not_held", "closed_not_held"];
 
 export type ChangeRefused =
   | { refused: "not_found" }
@@ -341,14 +347,26 @@ export function createDeals(deps: {
         orderBy: { createdAt: "desc" },
         include: { deliverables: whole.deliverables },
       });
-      return deals.map((deal) => ({
-        id: deal.id,
-        brandName: deal.brandName,
-        // While the brand's changes are being answered the deal says so, whichever page the creator is on.
-        status: deal.revising ? STATUS.changes_requested : STATUS[deal.step as Step],
-        step: deal.step as Step,
-        deliverables: deal.deliverables.map((post) => ({ id: post.id, platform: post.platform as Platform, state: "no_draft" })),
-      }));
+      // Which agreed posts have a hold, read from the stage the money path records. Nothing is decided here.
+      const agreedPosts = deals.filter((deal) => deal.step === "agreed").flatMap((deal) => deal.deliverables.map((post) => post.id));
+      const withMoney = await prisma.deliverableMoney.findMany({ where: { deliverableId: { in: agreedPosts } }, select: { deliverableId: true, stage: true } });
+      const held = new Set(withMoney.filter((money) => !NOT_HELD.includes(money.stage)).map((money) => money.deliverableId));
+
+      return deals.map((deal) => {
+        const posts = deal.deliverables.map((post) => ({ id: post.id, platform: post.platform as Platform, state: "no_draft" as const }));
+        const summary = { id: deal.id, brandName: deal.brandName };
+        if (deal.step !== "agreed") {
+          // While the brand's changes are being answered the deal says so, whichever page the creator is on.
+          const status = deal.revising ? STATUS.changes_requested : STATUS[deal.step as Step];
+          return { ...summary, status, step: deal.step as Step, deliverables: posts };
+        }
+        const heldCount = posts.filter((post) => held.has(post.id)).length;
+        if (heldCount < posts.length) {
+          return { ...summary, status: `${STATUS.agreed} · ${heldCount} of ${posts.length} held`, step: "agreed", deliverables: posts };
+        }
+        // Every post is held: set-up is over, and the next step is the creator's first draft.
+        return { ...summary, status: "Waiting for your draft", openDeliverableId: posts[0]?.id, deliverables: posts };
+      });
     },
 
     /** One deal, if it is this creator's (DS-FR-15). */

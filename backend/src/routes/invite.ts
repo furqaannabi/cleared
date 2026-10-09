@@ -6,7 +6,7 @@ import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Invite, Invites, LinkRefused, TermsRefused } from "../invites/invites";
 import { cents } from "../invites/terms";
 import type { Sessions } from "../sessions/sessions";
-import { NoteSchema, NoteTextSchema } from "./shared";
+import { HoldSchema, NoteSchema, NoteTextSchema } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
@@ -33,6 +33,7 @@ const InviteSchema = z
         itemCount: z.number().int(),
         amount: AmountSchema.optional(),
         deadlineDays: DeadlineDaysSchema.optional(),
+        hold: HoldSchema.optional(),
       }),
     ),
     brandEmail: z.email().optional(),

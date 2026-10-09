@@ -56,6 +56,8 @@ const app = createApp({
   google: env.google && createGoogle({ ...env.google, log }),
   secrets: localSecrets(env.tokenKey),
   linkKeys: localLinkKeys(env.tokenKey),
+  // Public by design: PayPal's button on the brand's page needs it. The secret never leaves the service.
+  paypalClientId: env.paypal?.clientId,
 });
 
 // Timers and follow-ups: reading briefs, deleting demo accounts, and the money path's deadlines and

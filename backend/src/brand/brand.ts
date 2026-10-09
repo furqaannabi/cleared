@@ -1,6 +1,6 @@
 /**
- * The deal as its brand sees it, and what the brand does with it: ask for changes, or agree (deal set-up
- * spec DS-FR-36, DS-FR-38, DS-FR-41, DS-FR-42). Everything shown comes from the latest version sent to
+ * The deal as its brand sees it, and what the brand does with it: ask for changes, agree, and approve
+ * each post's hold (deal set-up spec DS-FR-36, DS-FR-38, DS-FR-41 to DS-FR-45). Everything shown comes from the latest version sent to
  * the brand, so it sees exactly what it is asked to agree to (DS-BR-10), not what the creator is in the
  * middle of editing. Nothing returned here carries the creator's PayPal email, their own email or their
  * accounts (DS-BR-13).
@@ -10,9 +10,10 @@
 import type { BriefLine } from "../briefs/reader";
 import type { Platform } from "../deals/deals";
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
+import { holdOf, type DealHold } from "../invites/hold";
 import { inOrder, noteOf, type DealNote, type NoteAbout } from "../invites/notes";
 import { whatChanged, type TermsSnapshot } from "../invites/terms";
-import type { Money } from "../money/money";
+import type { Money, MoneyRefusal } from "../money/money";
 import { decimal } from "../money/view";
 
 export interface BrandDeal {
@@ -24,6 +25,8 @@ export interface BrandDeal {
   version: number;
   /** When the brand agreed, once it has. */
   agreedAt?: string;
+  /** The sandbox app's public client id, for PayPal's button. Nothing secret (DS-FR-45). */
+  paypalClientId?: string;
   posts: {
     deliverableId: string;
     platform: Platform;
@@ -32,8 +35,8 @@ export interface BrandDeal {
     deadlineDays: number;
     /** What differs from the version before this one (DS-FR-40). */
     changed?: ("amount" | "deadline")[];
-    /** No hold can be started before the brand agrees (DS-BR-10). */
-    hold: { state: "not_started" };
+    /** The post's hold as the money path has it. None can be started before the brand agrees (DS-BR-10). */
+    hold: DealHold;
   }[];
   items: {
     id: string;
@@ -68,6 +71,13 @@ export type AgreeRefused =
   /** The service has no PayPal set up, so it cannot open the money an agreement needs. */
   | { refused: "not_set_up" };
 
+export type HoldRefused =
+  /** The post is not one of this deal's. */
+  | { refused: "unknown_post" }
+  | { refused: "not_set_up" }
+  /** The money path refused, with its own reason (MP-FR-02, MP-FR-03). */
+  | { refused: "money"; reason: MoneyRefusal };
+
 // The latest version sent, and the one before it to say what changed.
 const shown = {
   creator: { select: { name: true } },
@@ -82,16 +92,24 @@ export type Brand = ReturnType<typeof createBrand>;
 export function createBrand(deps: {
   prisma: PrismaClient;
   now: () => Date;
-  /** The money path, which an agreement opens each post's money in. Without it nothing can be agreed. */
-  money?: Pick<Money, "openAgreed">;
+  /** The money path, which an agreement opens each post's money in. Without it nothing can be agreed or held. */
+  money?: Pick<Money, "openAgreed" | "view" | "startHold" | "holdApproved" | "holdClosed">;
+  /** The sandbox app's public client id, for PayPal's button on the brand's page (DS-FR-45). */
+  paypalClientId?: string;
 }) {
-  const { prisma, now, money } = deps;
+  const { prisma, now, money, paypalClientId } = deps;
 
-  function dealOf(deal: Row): BrandDeal | undefined {
+  async function dealOf(deal: Row): Promise<BrandDeal | undefined> {
     const [version, before] = deal.versions;
     if (!version) return undefined;
     const sent = version.terms as unknown as TermsSnapshot;
     const changed = whatChanged(before?.terms as unknown as TermsSnapshot | undefined, sent);
+    // Only an agreed deal's posts have money, so only then is the money path asked.
+    const holds = new Map<string, DealHold>();
+    for (const post of sent.posts) {
+      const view = deal.step === "agreed" ? await money?.view(post.deliverableId) : undefined;
+      holds.set(post.deliverableId, holdOf(view?.hold, deal.timezone));
+    }
 
     return {
       dealId: deal.id,
@@ -101,13 +119,14 @@ export function createBrand(deps: {
       step: deal.revising ? "changes_requested" : (deal.step as BrandDeal["step"]),
       version: version.number,
       ...(deal.agreedAt ? { agreedAt: deal.agreedAt.toISOString() } : {}),
+      ...(paypalClientId ? { paypalClientId } : {}),
       posts: sent.posts.map((post) => ({
         deliverableId: post.deliverableId,
         platform: post.platform as Platform,
         amount: decimal(post.amountCents),
         deadlineDays: post.deadlineDays,
         ...(changed.posts[post.deliverableId] ? { changed: changed.posts[post.deliverableId] } : {}),
-        hold: { state: "not_started" },
+        hold: holds.get(post.deliverableId) ?? { state: "not_started" },
       })),
       items: sent.items.map((item) => ({
         id: item.id,
@@ -136,6 +155,22 @@ export function createBrand(deps: {
       case "deal":
         return true;
     }
+  }
+
+  /**
+   * Why a hold cannot be started or reported for this post of this deal, or "holdable". A post is the
+   * deal's only if it is in the version the brand agreed to, so a session for one deal reaches no other
+   * deal's money (DS-BR-01).
+   */
+  async function notHoldable(dealId: string, deliverableId: string): Promise<"holdable" | HoldRefused | undefined> {
+    const deal = await prisma.deal.findUnique({ where: { id: dealId }, include: shown });
+    const version = deal?.versions[0];
+    if (!deal || !version) return undefined;
+    const sent = version.terms as unknown as TermsSnapshot;
+    if (!sent.posts.some((post) => post.deliverableId === deliverableId)) return { refused: "unknown_post" };
+    if (deal.step !== "agreed") return { refused: "money", reason: "not_agreed" };
+    if (!money) return { refused: "not_set_up" };
+    return "holdable";
   }
 
   return {
@@ -189,12 +224,12 @@ export function createBrand(deps: {
      */
     async agree(dealId: string, versionShown: number): Promise<BrandDeal | AgreeRefused | undefined> {
       if (!money) return { refused: "not_set_up" };
-      return prisma.$transaction(async (tx) => {
+      const refused = await prisma.$transaction(async (tx): Promise<AgreeRefused | "no_deal" | undefined> => {
         // One at a time for a deal, so two people with the link cannot both agree.
         await tx.$queryRaw`SELECT 1 FROM "Deal" WHERE "id" = ${dealId} FOR UPDATE`;
         const deal = await tx.deal.findUnique({ where: { id: dealId }, include: shown });
         const version = deal?.versions[0];
-        if (!deal || !version) return undefined;
+        if (!deal || !version) return "no_deal";
         if (deal.step === "agreed") return { refused: "already_agreed" };
         if (deal.step !== "waiting_for_brand") return { refused: "not_waiting_for_brand" };
         if (versionShown !== version.number) return { refused: "out_of_date" };
@@ -219,8 +254,41 @@ export function createBrand(deps: {
           );
         }
         await tx.deal.update({ where: { id: dealId }, data: { step: "agreed", agreedAt: at, agreedVersion: version.number } });
-        return dealOf(await tx.deal.findUniqueOrThrow({ where: { id: dealId }, include: shown }));
+        return undefined;
       });
+      if (refused === "no_deal") return undefined;
+      return refused ?? this.deal(dealId);
+    },
+
+    /**
+     * Starts a hold for one post of an agreed deal (DS-FR-43): the money path makes a PayPal order for
+     * the post's amount, and the page's PayPal button is given its id. This module decides nothing
+     * about money; it only checks the post is this deal's.
+     */
+    async startHold(dealId: string, deliverableId: string): Promise<{ orderId: string } | HoldRefused | undefined> {
+      const refused = await notHoldable(dealId, deliverableId);
+      if (refused !== "holdable") return refused;
+      const started = await money!.startHold(deliverableId);
+      return started.ok ? { orderId: started.orderId } : { refused: "money", reason: started.reason };
+    },
+
+    /**
+     * The page reports what the brand did in PayPal's window (DS-FR-44): approved the order, which the
+     * money path then authorizes, or closed the window. Returns the deal, with the post's hold as the
+     * money path now has it.
+     */
+    async holdReported(
+      dealId: string,
+      deliverableId: string,
+      orderId: string,
+      what: "approved" | "closed",
+    ): Promise<BrandDeal | HoldRefused | undefined> {
+      const refused = await notHoldable(dealId, deliverableId);
+      if (refused !== "holdable") return refused;
+      const done = what === "approved" ? await money!.holdApproved(deliverableId, orderId) : await money!.holdClosed(deliverableId, orderId);
+      if (!done.ok) return { refused: "money", reason: done.reason };
+      const deal = await prisma.deal.findUnique({ where: { id: dealId }, include: shown });
+      return deal ? dealOf(deal) : undefined;
     },
   };
 }

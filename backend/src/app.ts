@@ -45,6 +45,8 @@ export interface AppDeps {
   secrets?: Secrets;
   /** Works out an invite link's token (DS-FR-32). Without it no link can be made. */
   linkKeys?: LinkKeys;
+  /** The PayPal sandbox app's public client id, for the button on the brand's page (DS-FR-45). */
+  paypalClientId?: string;
 }
 
 /** The address a request came from, as the connection reports it. */
@@ -101,9 +103,9 @@ export function createApp(deps: AppDeps) {
     madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
   });
   registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }) });
-  const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys });
+  const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
   registerInviteRoutes(app, { sessions, invites });
-  registerBrandRoutes(app, { sessions, invites, brand: createBrand({ prisma, now, money }), appOrigin, now });
+  registerBrandRoutes(app, { sessions, invites, brand: createBrand({ prisma, now, money, paypalClientId: deps.paypalClientId }), appOrigin, now });
   registerGoogleRoutes(app, {
     google: deps.google,
     secrets: deps.secrets,

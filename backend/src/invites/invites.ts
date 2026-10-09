@@ -5,8 +5,10 @@
  */
 import type { Platform, Step } from "../deals/deals";
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
+import type { Money } from "../money/money";
 import { defaultSettings as moneySettings } from "../money/types";
 import { decimal } from "../money/view";
+import { holdOf, type DealHold } from "./hold";
 import type { LinkKeys } from "./link-keys";
 import { inOrder, noteOf, type DealNote } from "./notes";
 import { takeSnapshot } from "./terms";
@@ -25,6 +27,8 @@ export interface Invite {
     amount?: string;
     /** How many days after the hold the post is due. */
     deadlineDays?: number;
+    /** The post's hold as the money path has it, once the brand has agreed (DS-FR-46). */
+    hold?: DealHold;
   }[];
   /** The brand's email, if the creator gave one. Nothing is sent to it (DS-FR-30). */
   brandEmail?: string;
@@ -97,9 +101,11 @@ export function createInvites(deps: {
   appOrigin: string;
   /** Works out a link's token from its salt. Without it no link is made or shown. */
   linkKeys?: LinkKeys;
+  /** The money path, read to show each agreed post's hold. */
+  money?: Pick<Money, "view">;
   settings?: InviteSettings;
 }) {
-  const { prisma, now, appOrigin, linkKeys } = deps;
+  const { prisma, now, appOrigin, linkKeys, money } = deps;
   const settings = deps.settings ?? defaultInviteSettings;
 
   /** The link as its creator sees it. The token is worked out again each time; it is stored nowhere (DS-FR-32). */
@@ -130,8 +136,12 @@ export function createInvites(deps: {
   const inviteOf = async (deal: Row): Promise<Invite> => {
     const link = await linkOf(deal);
     const version = deal.step === "invite" ? undefined : deal.versions[0]?.number;
+    const terms = termsOf(deal);
+    if (deal.step === "agreed") {
+      for (const post of terms.posts) post.hold = holdOf((await money?.view(post.deliverableId))?.hold, deal.timezone);
+    }
     return {
-      ...termsOf(deal),
+      ...terms,
       ...(version === undefined ? {} : { version }),
       ...(link ? { link } : {}),
       ...(deal.notes.length ? { notes: deal.notes.map(noteOf) } : {}),

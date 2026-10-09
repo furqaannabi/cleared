@@ -1,4 +1,4 @@
-/** The brand's way in, its view of the deal, and asking for changes, through the app (deal set-up spec DS-FR-33 to DS-FR-42). */
+/** The brand's way in, its view of the deal, and asking for changes, through the app (deal set-up spec DS-FR-33 to DS-FR-46). */
 import { beforeEach, describe, expect, test } from "bun:test";
 import { browserFor, type Browser } from "../test/browser";
 import { FakePayPal } from "../test/fake-paypal";
@@ -61,7 +61,7 @@ function setUp(options: { money?: false } = {}) {
   const accounts = createAccounts({ prisma, now: clock });
   const paypal = new FakePayPal();
   const money = createMoney({ prisma, paypal, posts: recordedPosts(prisma), now: clock });
-  const app = createApp({ prisma, appOrigin: APP, now: clock, deals, money: options.money === false ? undefined : money, linkKeys: localLinkKeys(Buffer.alloc(32, 1).toString("base64")) });
+  const app = createApp({ prisma, appOrigin: APP, now: clock, deals, money: options.money === false ? undefined : money, paypalClientId: "sandbox-public-client-id", linkKeys: localLinkKeys(Buffer.alloc(32, 1).toString("base64")) });
   const json = async <Body>(response: Response) => (await response.json()) as Body;
 
   /** A browser signed in as a creator with YouTube connected and a PayPal email saved. */
@@ -299,6 +299,8 @@ describe("DS-FR-36 the brand's deal", () => {
       brandName: "Glow Skincare",
       step: "waiting_for_brand",
       version: 1,
+      // Public: PayPal's button needs it (DS-FR-45).
+      paypalClientId: "sandbox-public-client-id",
       posts: [{ deliverableId: post, platform: "youtube_video", amount: "1200.00", deadlineDays: 14, hold: { state: "not_started" } }],
       items: [
         // From a line of the brief.
@@ -776,7 +778,7 @@ describe("DS-FR-42 agreed", () => {
     expect(await again.json()).toEqual({ error: { code: "already_agreed" } });
     expect(await prisma.deliverableMoney.count()).toBe(2);
     expect(await readInvite(sam, deal.id)).toMatchObject({ step: "agreed", version: 1, posts: [{ amount: "1200.00" }, { amount: "300.50" }] });
-    expect(await (await sam.send("GET", "/deals")).json()).toMatchObject([{ id: deal.id, step: "agreed", status: "Agreed" }]);
+    expect(await (await sam.send("GET", "/deals")).json()).toMatchObject([{ id: deal.id, step: "agreed", status: "Agreed · 0 of 2 held" }]);
   });
 
   test("the brand keeps its way in after agreeing, to approve the holds", async () => {
@@ -827,3 +829,248 @@ describe("DS-FR-42 agreed", () => {
     expect(await readBrand(maya, deal.id)).toMatchObject({ step: "waiting_for_brand" });
   });
 });
+
+interface Hold {
+  state: string;
+  reference?: string;
+  deadline?: string;
+}
+type WithHolds = { posts: { deliverableId: string; hold: Hold }[] };
+
+/** A deal of a video ($1,200.00, 14 days) and a Short ($300.50, 7 days) that its brand has agreed to. */
+async function agreedDeal(world: ReturnType<typeof setUp>, brandName = "Glow Skincare") {
+  const sam = await world.creator(brandName === "Glow Skincare" ? "Sam Rivera" : "Ada Okafor");
+  const { deal, token } = await world.sentDeal(sam, brandName, ["youtube_video", "youtube_short"]);
+  const maya = world.visitor();
+  await open(maya, token);
+  await agree(maya, deal.id);
+  return { sam, maya, deal, video: deal.deliverables[0]!.id, short: deal.deliverables[1]!.id };
+}
+
+const holdPath = (dealId: string, post: string) => `/brand/deals/${dealId}/posts/${post}/hold`;
+const startHold = (browser: Browser, dealId: string, post: string) => browser.send("POST", holdPath(dealId, post));
+const holdApproved = (browser: Browser, dealId: string, post: string, orderId: unknown) =>
+  browser.send("POST", `${holdPath(dealId, post)}/approved`, { body: { orderId } });
+const holdClosed = (browser: Browser, dealId: string, post: string, orderId: unknown) =>
+  browser.send("POST", `${holdPath(dealId, post)}/closed`, { body: { orderId } });
+const holdsOf = (deal: WithHolds) => Object.fromEntries(deal.posts.map((post) => [post.deliverableId, post.hold]));
+
+/** Starts a post's hold and has the brand approve it in PayPal's window. Returns the order id. */
+async function approvedInPayPal(world: ReturnType<typeof setUp>, browser: Browser, dealId: string, post: string) {
+  const { orderId } = (await (await startHold(browser, dealId, post)).json()) as { orderId: string };
+  world.paypal.brandApproves(orderId);
+  return orderId;
+}
+
+describe("DS-FR-43 start a hold", () => {
+  test("for a post of an agreed deal, a PayPal order is made for that post's amount and its id returned", async () => {
+    const world = setUp();
+    const { maya, deal, short } = await agreedDeal(world);
+
+    const response = await startHold(maya, deal.id, short);
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { orderId: string };
+    expect(body).toEqual({ orderId: expect.any(String) });
+    expect(world.paypal.calls).toMatchObject([{ method: "createOrder", amountCents: 30_050 }]);
+  });
+
+  test("before the brand agrees no hold can be started, and nothing is asked of PayPal", async () => {
+    const world = setUp();
+    const { maya, deal, post } = await opened(world);
+
+    const response = await startHold(maya, deal.id, post);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "not_agreed" } });
+    expect(world.paypal.calls).toEqual([]);
+  });
+
+  test("a post that is not one of this deal's is not found, even if it is agreed in another deal", async () => {
+    const world = setUp();
+    const glow = await agreedDeal(world);
+    const pine = await agreedDeal(world, "Pine Outdoors");
+
+    const response = await startHold(glow.maya, glow.deal.id, pine.video);
+
+    expect(response.status).toBe(404);
+    expect((await startHold(glow.maya, glow.deal.id, "no-such-post")).status).toBe(404);
+    expect(world.paypal.calls).toEqual([]);
+    expect(await world.money.view(pine.video)).toMatchObject({ hold: { state: "not_started" } });
+  });
+
+  test("the money path's refusals are passed on with their reasons", async () => {
+    const world = setUp();
+    const { maya, deal, video, short } = await agreedDeal(world);
+    await holdApproved(maya, deal.id, video, await approvedInPayPal(world, maya, deal.id, video));
+    world.paypal.next("authorizeOrder", "pending");
+    await holdApproved(maya, deal.id, short, await approvedInPayPal(world, maya, deal.id, short));
+
+    const held = await startHold(maya, deal.id, video);
+    const pending = await startHold(maya, deal.id, short);
+
+    expect(held.status).toBe(409);
+    expect(await held.json()).toEqual({ error: { code: "already_held" } });
+    expect(pending.status).toBe(409);
+    expect(await pending.json()).toEqual({ error: { code: "attempt_in_progress" } });
+  });
+
+  test("when PayPal does not clearly make the order, the page is told to try again and gets no order", async () => {
+    const world = setUp();
+    const { maya, deal, video } = await agreedDeal(world);
+    world.paypal.next("createOrder", "timeout_after");
+
+    const response = await startHold(maya, deal.id, video);
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: { code: "paypal_unclear" } });
+  });
+
+  test("only someone with a session for this deal can start one", async () => {
+    const world = setUp();
+    const { sam, deal, video } = await agreedDeal(world);
+
+    expect((await startHold(world.visitor(), deal.id, video)).status).toBe(401);
+    expect((await startHold(sam, deal.id, video)).status).toBe(401);
+    expect(world.paypal.calls).toEqual([]);
+  });
+});
+
+describe("DS-FR-44 approved or closed", () => {
+  test("an approved order is authorized, and the answer is the deal with that post held: its PayPal reference and its deadline date", async () => {
+    const world = setUp();
+    const { maya, deal, video, short } = await agreedDeal(world);
+    const orderId = await approvedInPayPal(world, maya, deal.id, video);
+    // 22:00 on 9 October in New York, where the creator is: 14 days on is the 23rd there, though the 24th in UTC.
+    world.timeIs("2026-10-10T02:00:00Z");
+
+    const response = await holdApproved(maya, deal.id, video, orderId);
+
+    expect(response.status).toBe(200);
+    const holds = holdsOf((await response.json()) as WithHolds);
+    expect(holds[video]).toEqual({ state: "held", reference: expect.any(String), deadline: "2026-10-23" });
+    expect(holds[short]).toEqual({ state: "not_started" });
+    expect(world.paypal.holds()).toHaveLength(1);
+    expect(holdsOf((await (await brandDeal(maya, deal.id)).json()) as WithHolds)).toEqual(holds);
+  });
+
+  test.each([
+    ["declined", "declined"],
+    ["pending", "pending"],
+    ["timeout_after", "unknown"],
+  ] as const)("a hold PayPal answers %s for shows as %s", async (misbehaviour, state) => {
+    const world = setUp();
+    const { maya, deal, video } = await agreedDeal(world);
+    const orderId = await approvedInPayPal(world, maya, deal.id, video);
+    world.paypal.next("authorizeOrder", misbehaviour);
+
+    const response = await holdApproved(maya, deal.id, video, orderId);
+
+    expect(response.status).toBe(200);
+    expect(holdsOf((await response.json()) as WithHolds)[video]).toEqual({ state });
+  });
+
+  test("a brand that closes PayPal has nothing held, and can start again", async () => {
+    const world = setUp();
+    const { maya, deal, video } = await agreedDeal(world);
+    const { orderId } = (await (await startHold(maya, deal.id, video)).json()) as { orderId: string };
+
+    const response = await holdClosed(maya, deal.id, video, orderId);
+
+    expect(response.status).toBe(200);
+    expect(holdsOf((await response.json()) as WithHolds)[video]).toEqual({ state: "closed" });
+    expect(world.paypal.holds()).toEqual([]);
+    expect((await startHold(maya, deal.id, video)).status).toBe(200);
+  });
+
+  test("an order that belongs to another post is refused, and nothing is held", async () => {
+    const world = setUp();
+    const { maya, deal, video, short } = await agreedDeal(world);
+    const videoOrder = await approvedInPayPal(world, maya, deal.id, video);
+    await approvedInPayPal(world, maya, deal.id, short);
+
+    const response = await holdApproved(maya, deal.id, short, videoOrder);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "wrong_order" } });
+    expect(world.paypal.holds()).toEqual([]);
+  });
+
+  test("the order id is needed, the post must be this deal's, and only someone with a session for the deal can report", async () => {
+    const world = setUp();
+    const glow = await agreedDeal(world);
+    const pine = await agreedDeal(world, "Pine Outdoors");
+    const pineOrder = await approvedInPayPal(world, pine.maya, pine.deal.id, pine.video);
+
+    for (const report of [holdApproved, holdClosed]) {
+      expect((await report(glow.maya, glow.deal.id, glow.video, undefined)).status).toBe(400);
+      expect((await report(glow.maya, glow.deal.id, glow.video, "")).status).toBe(400);
+      expect((await report(glow.maya, glow.deal.id, pine.video, pineOrder)).status).toBe(404);
+      expect((await report(world.visitor(), pine.deal.id, pine.video, pineOrder)).status).toBe(401);
+      expect((await report(pine.sam, pine.deal.id, pine.video, pineOrder)).status).toBe(401);
+    }
+    expect(world.paypal.holds()).toEqual([]);
+    expect(await world.money.view(pine.video)).toMatchObject({ hold: { state: "not_started" } });
+  });
+});
+
+describe("DS-FR-45 what the page needs to show PayPal's button", () => {
+  test("the brand's deal carries the sandbox app's public client id", async () => {
+    const world = setUp();
+    const { maya, deal } = await opened(world);
+
+    expect(await (await brandDeal(maya, deal.id)).json()).toMatchObject({ paypalClientId: "sandbox-public-client-id" });
+  });
+});
+
+describe("DS-FR-46 the creator's side", () => {
+  test("the creator's deal shows each post's hold the same way the brand's does", async () => {
+    const world = setUp();
+    const { sam, maya, deal, video, short } = await agreedDeal(world);
+    world.timeIs("2026-10-10T02:00:00Z");
+    await holdApproved(maya, deal.id, video, await approvedInPayPal(world, maya, deal.id, video));
+
+    const invite = (await (await sam.send("GET", `/deals/${deal.id}/invite`)).json()) as WithHolds;
+
+    expect(holdsOf(invite)).toEqual(holdsOf((await (await brandDeal(maya, deal.id)).json()) as WithHolds));
+    expect(holdsOf(invite)).toEqual({
+      [video]: { state: "held", reference: expect.any(String), deadline: "2026-10-23" },
+      [short]: { state: "not_started" },
+    });
+  });
+
+  test("before the brand agrees, a post has no hold to show the creator", async () => {
+    const world = setUp();
+    const { sam, deal } = await opened(world);
+
+    const invite = (await (await sam.send("GET", `/deals/${deal.id}/invite`)).json()) as { posts: object[] };
+
+    expect(invite.posts[0]).not.toHaveProperty("hold");
+  });
+
+  test("the deals list says how many posts are held, and once every post is held the deal has left set-up", async () => {
+    const world = setUp();
+    const { sam, maya, deal, video, short } = await agreedDeal(world);
+    const list = async () => (await (await sam.send("GET", "/deals")).json()) as object[];
+
+    expect(await list()).toMatchObject([{ id: deal.id, step: "agreed", status: "Agreed · 0 of 2 held" }]);
+    await holdApproved(maya, deal.id, video, await approvedInPayPal(world, maya, deal.id, video));
+    expect(await list()).toMatchObject([{ id: deal.id, step: "agreed", status: "Agreed · 1 of 2 held" }]);
+
+    await holdApproved(maya, deal.id, short, await approvedInPayPal(world, maya, deal.id, short));
+
+    const [summary] = await list();
+    expect(summary).toEqual({
+      id: deal.id,
+      brandName: "Glow Skincare",
+      status: "Waiting for your draft",
+      // The post whose next step is the creator's: the first, as neither has a draft yet.
+      openDeliverableId: video,
+      deliverables: [
+        { id: video, platform: "youtube_video", state: "no_draft" },
+        { id: short, platform: "youtube_short", state: "no_draft" },
+      ],
+    });
+  });
+});
+

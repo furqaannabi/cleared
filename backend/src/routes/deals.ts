@@ -55,7 +55,8 @@ const DealSummarySchema = z
     id: z.string(),
     brandName: z.string(),
     status: z.string(),
-    step: StepSchema,
+    step: StepSchema.optional(),
+    openDeliverableId: z.string().optional(),
     deliverables: z.array(z.object({ id: z.string(), platform: PlatformSchema, state: z.enum(["no_draft"]) })),
   })
   .openapi("DealSummary");
