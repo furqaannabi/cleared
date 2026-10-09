@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { cents, takeSnapshot } from "./terms";
+import { cents, takeSnapshot, whatChanged, type TermsSnapshot } from "./terms";
 
 describe("DS-BR-12 an amount is whole cents, never a floating-point number", () => {
   test("a decimal string with two places becomes whole cents exactly", () => {
@@ -58,3 +58,49 @@ describe("DS-FR-31 a version is the terms and the checklist as they were sent", 
     expect(() => takeSnapshot({ deliverables: [{ ...post, deadlineDays: null }], items: [item], questions: [] })).toThrow();
   });
 });
+
+describe("DS-FR-40 what changed between two versions", () => {
+  const version = (over: { posts?: Partial<TermsSnapshot["posts"][number]>[]; items?: Partial<TermsSnapshot["items"][number]>[] } = {}): TermsSnapshot => ({
+    posts: (over.posts ?? [{}]).map((post, index) => ({ deliverableId: `post-${index + 1}`, platform: "youtube_video", amountCents: 120_000, deadlineDays: 14, ...post })),
+    items: (over.items ?? [{}]).map((item, index) => ({
+      id: `item-${index + 1}`,
+      deliverableId: "post-1",
+      name: "Say the code GLOW20",
+      kind: "said",
+      briefLine: 2,
+      checkedBy: "exact_match",
+      source: "brief" as const,
+      ...item,
+    })),
+    answers: [],
+  });
+
+  test("nothing changed between two versions that say the same", () => {
+    expect(whatChanged(version(), version())).toEqual({ posts: {}, items: [] });
+  });
+
+  test("a post's amount and its deadline are each marked when they differ", () => {
+    const after = version({ posts: [{ amountCents: 150_000 }, { deadlineDays: 10 }, { amountCents: 2_000, deadlineDays: 1 }, {}] });
+
+    expect(whatChanged(version({ posts: [{}, {}, {}, {}] }), after)).toEqual({
+      posts: { "post-1": ["amount"], "post-2": ["deadline"], "post-3": ["amount", "deadline"] },
+      items: [],
+    });
+  });
+
+  test("an item is marked when it is reworded, moved to another post, or new", () => {
+    const before = version({ items: [{}, {}, {}] });
+    const after = version({ items: [{ name: "Say the code GLOW25" }, { deliverableId: "post-2" }, {}, { id: "item-9", name: "Wear the cap" }] });
+
+    expect(whatChanged(before, after).items).toEqual(["item-1", "item-2", "item-9"]);
+  });
+
+  test("an item taken away is in no list: there is nothing left to mark", () => {
+    expect(whatChanged(version({ items: [{}, {}] }), version({ items: [{}] }))).toEqual({ posts: {}, items: [] });
+  });
+
+  test("the first version has nothing before it, so nothing in it is marked", () => {
+    expect(whatChanged(undefined, version())).toEqual({ posts: {}, items: [] });
+  });
+});
+

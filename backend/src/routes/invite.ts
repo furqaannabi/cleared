@@ -6,6 +6,7 @@ import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Invite, Invites, LinkRefused, TermsRefused } from "../invites/invites";
 import { cents } from "../invites/terms";
 import type { Sessions } from "../sessions/sessions";
+import { NoteSchema, NoteTextSchema } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
@@ -37,6 +38,7 @@ const InviteSchema = z
     brandEmail: z.email().optional(),
     version: z.number().int().optional(),
     link: z.object({ url: z.string(), expiresAt: z.string(), expired: z.boolean() }).optional(),
+    notes: z.array(NoteSchema).optional(),
   })
   .openapi("Invite");
 
@@ -88,6 +90,7 @@ export function registerInviteRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions:
         return fail(c, 404, "not_found");
       case "not_at_invite":
       case "no_link":
+      case "no_changes_asked":
       case "youtube_not_connected":
       case "paypal_email_missing":
         return fail(c, 409, changed.refused);
@@ -183,5 +186,32 @@ export function registerInviteRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions:
       responses: { 200: responses[200], 401: refusals[401], 404: refusals[404], 409: refusals[409], 503: linkResponses[503] },
     }),
     async (c) => link(c, await invites.turnOffLink(c.get("creatorId"), c.req.valid("param").dealId)),
+  );
+
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/deals/{dealId}/notes/{noteId}/reply",
+      summary: "Reply to one of the brand's notes, in plain text (DS-FR-39)",
+      middleware: [creator] as const,
+      request: { params: z.object({ dealId: id, noteId: id }), ...body(z.object({ reply: NoteTextSchema })) },
+      responses,
+    }),
+    async (c) => {
+      const { dealId: deal, noteId: note } = c.req.valid("param");
+      return terms(c, await invites.replyToNote(c.get("creatorId"), deal, note, c.req.valid("json").reply));
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deals/{dealId}/invite/send",
+      summary: "Send updated terms: a new version to the same link, which gets 7 more days (DS-FR-40)",
+      middleware: [creator] as const,
+      request: dealId,
+      responses: { 200: responses[200], 401: refusals[401], 404: refusals[404], 409: refusals[409], 503: linkResponses[503] },
+    }),
+    async (c) => link(c, await invites.sendUpdatedTerms(c.get("creatorId"), c.req.valid("param").dealId)),
   );
 }

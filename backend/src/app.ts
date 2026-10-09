@@ -103,7 +103,7 @@ export function createApp(deps: AppDeps) {
   registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }) });
   const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys });
   registerInviteRoutes(app, { sessions, invites });
-  registerBrandRoutes(app, { sessions, invites, brand: createBrand({ prisma }), appOrigin, now });
+  registerBrandRoutes(app, { sessions, invites, brand: createBrand({ prisma, now }), appOrigin, now });
   registerGoogleRoutes(app, {
     google: deps.google,
     secrets: deps.secrets,

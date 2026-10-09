@@ -14,6 +14,7 @@ import {
   type ReadQuestion,
 } from "../briefs/reader";
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
+import { inOrder, noteOf, type DealNote } from "../invites/notes";
 import { enqueue, type JobHandlers } from "../jobs/jobs";
 
 /** The posts a deal can have for now. Reels wait for Instagram to be connected. */
@@ -56,6 +57,8 @@ export interface DealDraft {
   questions: DraftQuestion[];
   /** Whether the creator has marked the checklist ready. */
   ready: boolean;
+  /** The brand's notes, once it has asked for changes (DS-FR-38). */
+  notes?: DealNote[];
 }
 
 /** One line of the deals list. */
@@ -135,6 +138,7 @@ const whole = {
   deliverables: { orderBy: { position: "asc" } },
   items: { orderBy: { position: "asc" } },
   questions: { orderBy: { position: "asc" } },
+  notes: inOrder,
 } as const;
 
 type Row = Prisma.DealGetPayload<{ include: typeof whole }>;
@@ -180,6 +184,7 @@ export function createDeals(deps: {
         : {}),
     })),
     ready: deal.step !== "checklist",
+    ...(deal.notes.length ? { notes: deal.notes.map(noteOf) } : {}),
   });
 
   /**
@@ -339,7 +344,8 @@ export function createDeals(deps: {
       return deals.map((deal) => ({
         id: deal.id,
         brandName: deal.brandName,
-        status: STATUS[deal.step as Step],
+        // While the brand's changes are being answered the deal says so, whichever page the creator is on.
+        status: deal.revising ? STATUS.changes_requested : STATUS[deal.step as Step],
         step: deal.step as Step,
         deliverables: deal.deliverables.map((post) => ({ id: post.id, platform: post.platform as Platform, state: "no_draft" })),
       }));
@@ -504,23 +510,27 @@ export function createDeals(deps: {
 
     /**
      * Marks the checklist ready, which moves the deal to the invite step (DS-FR-25). Every question
-     * must be answered or left out, and every post must have at least one item (DS-BR-08).
+     * must be answered or left out, and every post must have at least one item (DS-BR-08). A creator
+     * answering the brand's notes goes back to those changes, not to a new invite (DS-FR-39).
      */
     markReady(creatorId: string, dealId: string) {
       return editChecklist(creatorId, dealId, async (tx, deal) => {
         if (deal.questions.some((question) => question.answerKind === null)) return { refused: "questions_unanswered" };
         const withItems = new Set(deal.items.map((item) => item.deliverableId));
         if (deal.deliverables.some((post) => !withItems.has(post.id))) return { refused: "post_without_items" };
-        await tx.deal.update({ where: { id: dealId }, data: { step: "invite" } });
+        await tx.deal.update({ where: { id: dealId }, data: { step: deal.revising ? "changes_requested" : "invite" } });
       });
     },
 
-    /** Takes the deal back to the checklist step, so the checklist can be edited again (DS-FR-25). */
+    /**
+     * Takes the deal back to the checklist step, so the checklist can be edited again: before a link
+     * exists (DS-FR-25), or while answering the brand's notes (DS-FR-39).
+     */
     async reopenChecklist(creatorId: string, dealId: string): Promise<DealDraft | EditRefused> {
       return prisma.$transaction(async (tx) => {
         const deal = await tx.deal.findFirst({ where: { id: dealId, creatorId } });
         if (!deal) return { refused: "not_found" };
-        if (deal.step !== "invite") return { refused: "not_ready" };
+        if (deal.step !== "invite" && deal.step !== "changes_requested") return { refused: "not_ready" };
         return draftOf(await tx.deal.update({ where: { id: dealId }, data: { step: "checklist" }, include: whole }));
       });
     },

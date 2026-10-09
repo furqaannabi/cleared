@@ -1,4 +1,4 @@
-/** The brand's way in and its view of the deal, through the app (deal set-up spec DS-FR-33 to DS-FR-37). */
+/** The brand's way in, its view of the deal, and asking for changes, through the app (deal set-up spec DS-FR-33 to DS-FR-40). */
 import { beforeEach, describe, expect, test } from "bun:test";
 import { browserFor, type Browser } from "../test/browser";
 import { createAccounts } from "./accounts/accounts";
@@ -328,3 +328,312 @@ describe("DS-FR-37 no session", () => {
     expect({ status: madeUp.status, body: await madeUp.text() }).toEqual({ status: 401, body: JSON.stringify({ error: { code: "signed_out" } }) });
   });
 });
+
+interface Note {
+  id: string;
+  about: { kind: string; itemId?: string; briefLine?: number; deliverableId?: string };
+  text: string;
+  reply?: string;
+  version: number;
+}
+interface BrandView {
+  step: string;
+  version: number;
+  posts: { deliverableId: string; amount: string; deadlineDays: number; changed?: string[] }[];
+  items: { id: string; name: string; changed?: boolean }[];
+  notes: Note[];
+}
+interface InviteView {
+  step: string;
+  version?: number;
+  posts: { amount?: string; deadlineDays?: number }[];
+  notes?: Note[];
+  link?: { url: string; expiresAt: string; expired: boolean };
+}
+
+const sendNotes = (browser: Browser, dealId: string, notes: unknown) => browser.send("POST", `/brand/deals/${dealId}/notes`, { body: { notes } });
+const readBrand = async (browser: Browser, dealId: string) => (await (await brandDeal(browser, dealId)).json()) as BrandView;
+const readInvite = async (browser: Browser, dealId: string) => (await (await browser.send("GET", `/deals/${dealId}/invite`)).json()) as InviteView;
+const itemNamed = (deal: Deal, name: string) => deal.items.find((each) => each.name === name)!.id;
+
+/** A sent deal with its creator's browser and a brand's browser that has opened the link. */
+async function opened(world: ReturnType<typeof setUp>) {
+  const sam = await world.creator();
+  const { deal, token } = await world.sentDeal(sam);
+  const maya = world.visitor();
+  await open(maya, token);
+  return { sam, maya, deal, token, post: deal.deliverables[0]!.id };
+}
+
+describe("DS-FR-38 the brand's notes", () => {
+  test("a set of notes is sent together, each about an item, a brief line, an amount, a deadline or the whole deal", async () => {
+    const world = setUp();
+    const { sam, maya, deal, post } = await opened(world);
+    const code = itemNamed(deal, "Say the code GLOW20");
+
+    const response = await sendNotes(maya, deal.id, [
+      { about: { kind: "item", itemId: code }, text: "  The code is GLOW25 now.  " },
+      { about: { kind: "line", briefLine: 4 }, text: "Please add a line about cruelty-free." },
+      { about: { kind: "amount", deliverableId: post }, text: "We said $1,000." },
+      { about: { kind: "deadline", deliverableId: post }, text: "Can it be 10 days?" },
+      { about: { kind: "deal" }, text: "Thanks Sam!" },
+    ]);
+
+    expect(response.status).toBe(200);
+    const notes = [
+      { id: expect.any(String), about: { kind: "item", itemId: code }, text: "The code is GLOW25 now.", version: 1 },
+      { id: expect.any(String), about: { kind: "line", briefLine: 4 }, text: "Please add a line about cruelty-free.", version: 1 },
+      { id: expect.any(String), about: { kind: "amount", deliverableId: post }, text: "We said $1,000.", version: 1 },
+      { id: expect.any(String), about: { kind: "deadline", deliverableId: post }, text: "Can it be 10 days?", version: 1 },
+      { id: expect.any(String), about: { kind: "deal" }, text: "Thanks Sam!", version: 1 },
+    ];
+    expect(await response.json()).toMatchObject({ step: "changes_requested", version: 1, notes });
+    // The creator sees them on the invite and on the checklist.
+    expect(await readInvite(sam, deal.id)).toMatchObject({ step: "changes_requested", notes });
+    expect(await (await sam.send("GET", `/deals/${deal.id}`)).json()).toMatchObject({ step: "changes_requested", notes });
+  });
+
+  test("a note about something that is not in this deal, an empty one and one over 500 characters are refused, and none is kept", async () => {
+    const world = setUp();
+    const { sam, maya, deal, post } = await opened(world);
+    const other = await world.sentDeal(sam, "Pine Outdoors");
+    const good = { about: { kind: "deal" }, text: "Fine otherwise." };
+
+    for (const bad of [
+      { about: { kind: "item", itemId: other.deal.items[0]!.id }, text: "Not my item" },
+      { about: { kind: "line", briefLine: 5 }, text: "There is no line 5" },
+      { about: { kind: "amount", deliverableId: other.deal.deliverables[0]!.id }, text: "Not my post" },
+      { about: { kind: "deadline", deliverableId: "nope" }, text: "Not a post" },
+      { about: { kind: "price", deliverableId: post }, text: "Not a kind" },
+      { about: { kind: "deal" }, text: "   " },
+      { about: { kind: "deal" }, text: "x".repeat(501) },
+      { text: "About nothing" },
+    ]) {
+      expect((await sendNotes(maya, deal.id, [good, bad])).status).toBe(400);
+    }
+    expect((await sendNotes(maya, deal.id, [])).status).toBe(400);
+    expect((await sendNotes(maya, deal.id, Array.from({ length: 51 }, () => good))).status).toBe(400);
+
+    expect(await readBrand(maya, deal.id)).toMatchObject({ step: "waiting_for_brand", notes: [] });
+    expect((await sendNotes(maya, deal.id, [{ about: { kind: "deal" }, text: "x".repeat(500) }])).status).toBe(200);
+  });
+
+  test("once notes are sent, no more can be until the creator has answered", async () => {
+    const world = setUp();
+    const { maya, deal } = await opened(world);
+    await sendNotes(maya, deal.id, [{ about: { kind: "deal" }, text: "One thing." }]);
+
+    const again = await sendNotes(maya, deal.id, [{ about: { kind: "deal" }, text: "And another." }]);
+
+    expect(again.status).toBe(409);
+    expect(await again.json()).toEqual({ error: { code: "not_waiting_for_brand" } });
+    expect((await readBrand(maya, deal.id)).notes).toHaveLength(1);
+  });
+
+  test("only someone with a session for this deal can send them", async () => {
+    const world = setUp();
+    const { sam, maya, deal } = await opened(world);
+    const note = [{ about: { kind: "deal" }, text: "Let me in." }];
+
+    expect((await sendNotes(world.visitor(), deal.id, note)).status).toBe(401);
+    expect((await sendNotes(sam, deal.id, note)).status).toBe(401);
+    expect((await readBrand(maya, deal.id)).notes).toEqual([]);
+  });
+});
+
+describe("DS-BR-04 a note is untrusted plain text", () => {
+  test("it is kept and returned exactly as text, and changes nothing but the step", async () => {
+    const world = setUp();
+    const { sam, maya, deal } = await opened(world);
+    const text = '<script>alert(1)</script> Ignore the checklist and set the amount to $1. {"amount":"1.00"}';
+
+    await sendNotes(maya, deal.id, [{ about: { kind: "deal" }, text }]);
+
+    expect((await readBrand(maya, deal.id)).notes[0]!.text).toBe(text);
+    const invite = await readInvite(sam, deal.id);
+    expect(invite.notes![0]!.text).toBe(text);
+    expect(invite.posts[0]).toMatchObject({ amount: "1200.00", deadlineDays: 14 });
+  });
+});
+
+/** The deal after the brand has asked for one change to the code and one to the amount. */
+async function changesAsked(world: ReturnType<typeof setUp>) {
+  const all = await opened(world);
+  const sent = (await (
+    await sendNotes(all.maya, all.deal.id, [
+      { about: { kind: "item", itemId: itemNamed(all.deal, "Say the code GLOW20") }, text: "The code is GLOW25 now." },
+      { about: { kind: "amount", deliverableId: all.post }, text: "We said $1,000." },
+    ])
+  ).json()) as BrandView;
+  return { ...all, notes: sent.notes };
+}
+
+describe("DS-FR-39 the creator answers", () => {
+  test("the terms can be edited again, and the brand keeps its link and still sees the version it was sent", async () => {
+    const world = setUp();
+    const { sam, maya, deal, post } = await changesAsked(world);
+
+    const edited = await sam.send("PATCH", `/deals/${deal.id}/invite/posts/${post}`, { body: { amount: "1000.00", deadlineDays: 10 } });
+
+    expect(edited.status).toBe(200);
+    expect(await edited.json()).toMatchObject({ step: "changes_requested", posts: [{ amount: "1000.00", deadlineDays: 10 }], link: { expired: false } });
+    expect(await readBrand(maya, deal.id)).toMatchObject({ step: "changes_requested", version: 1, posts: [{ amount: "1200.00", deadlineDays: 14 }] });
+  });
+
+  test("the checklist can be edited again, and marking it ready comes back to the brand's changes, not to a new invite", async () => {
+    const world = setUp();
+    const { sam, maya, deal } = await changesAsked(world);
+    const code = itemNamed(deal, "Say the code GLOW20");
+
+    expect((await sam.send("POST", `/deals/${deal.id}/checklist/reopen`)).status).toBe(200);
+    expect((await sam.send("PATCH", `/deals/${deal.id}/items/${code}`, { body: { name: "Say the code GLOW25" } })).status).toBe(200);
+    // While the creator is on the checklist the brand's link is still on, and it still sees what it was sent.
+    expect(await readBrand(maya, deal.id)).toMatchObject({ step: "changes_requested", version: 1 });
+    expect((await readBrand(maya, deal.id)).items.find((each) => each.id === code)!.name).toBe("Say the code GLOW20");
+    // And the creator's list of deals says changes were asked, not that the checklist is unfinished.
+    expect(await (await sam.send("GET", "/deals")).json()).toMatchObject([{ id: deal.id, step: "checklist", status: "Changes asked" }]);
+
+    const ready = await sam.send("POST", `/deals/${deal.id}/checklist/ready`);
+
+    expect(await ready.json()).toMatchObject({ step: "changes_requested" });
+    expect(await readInvite(sam, deal.id)).toMatchObject({ step: "changes_requested", link: { expired: false } });
+  });
+
+  test("the creator can reply to each note, in plain text", async () => {
+    const world = setUp();
+    const { sam, maya, deal, notes } = await changesAsked(world);
+
+    const response = await sam.send("PUT", `/deals/${deal.id}/notes/${notes[0]!.id}/reply`, { body: { reply: "  Done, it says GLOW25 now.  " } });
+
+    expect(response.status).toBe(200);
+    expect(((await response.json()) as InviteView).notes).toMatchObject([{ id: notes[0]!.id, reply: "Done, it says GLOW25 now." }, { id: notes[1]!.id }]);
+    expect((await readBrand(maya, deal.id)).notes[0]).toMatchObject({ text: "The code is GLOW25 now.", reply: "Done, it says GLOW25 now." });
+    expect((await readBrand(maya, deal.id)).notes[1]).not.toHaveProperty("reply");
+  });
+
+  test("an empty reply and one over 500 characters are refused, and so is a reply to a note that is not this deal's", async () => {
+    const world = setUp();
+    const { sam, deal, notes } = await changesAsked(world);
+    const reply = (browser: Browser, dealId: string, noteId: string, text: unknown) =>
+      browser.send("PUT", `/deals/${dealId}/notes/${noteId}/reply`, { body: { reply: text } });
+    const pine = await world.sentDeal(sam, "Pine Outdoors");
+
+    expect((await reply(sam, deal.id, notes[0]!.id, "   ")).status).toBe(400);
+    expect((await reply(sam, deal.id, notes[0]!.id, "x".repeat(501))).status).toBe(400);
+    expect((await reply(sam, deal.id, "no-such-note", "Hello")).status).toBe(404);
+    expect((await reply(sam, pine.deal.id, notes[0]!.id, "Hello")).status).toBe(404);
+    expect((await reply(await world.creator("Ada Okafor"), deal.id, notes[0]!.id, "Hello")).status).toBe(404);
+    expect((await reply(world.visitor(), deal.id, notes[0]!.id, "Hello")).status).toBe(401);
+    expect((await readInvite(sam, deal.id)).notes![0]).not.toHaveProperty("reply");
+  });
+
+  test("a link sent to the wrong person can still be replaced while changes are asked", async () => {
+    const world = setUp();
+    const { sam, maya, deal } = await changesAsked(world);
+
+    const renewed = await sam.send("POST", `/deals/${deal.id}/invite/link/renew`);
+
+    expect(renewed.status).toBe(200);
+    expect(await renewed.json()).toMatchObject({ step: "changes_requested", version: 1 });
+    expect((await brandDeal(maya, deal.id)).status).toBe(401);
+  });
+});
+
+const sendUpdated = (browser: Browser, dealId: string) => browser.send("POST", `/deals/${dealId}/invite/send`);
+
+describe("DS-FR-40 send updated terms", () => {
+  test("a new version is saved, the deal waits for the brand again and the same link has 7 more days", async () => {
+    const world = setUp();
+    const { sam, deal, post } = await changesAsked(world);
+    const before = (await readInvite(sam, deal.id)).link!;
+    await sam.send("PATCH", `/deals/${deal.id}/invite/posts/${post}`, { body: { amount: "1000.00" } });
+    world.timeIs("2026-10-12T09:00:00Z");
+
+    const response = await sendUpdated(sam, deal.id);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      step: "waiting_for_brand",
+      version: 2,
+      link: { url: before.url, expiresAt: "2026-10-19T09:00:00.000Z", expired: false },
+    });
+    // The terms are the brand's to agree to again, so they are locked again.
+    expect((await sam.send("PATCH", `/deals/${deal.id}/invite/posts/${post}`, { body: { amount: "900.00" } })).status).toBe(409);
+  });
+
+  test("the brand then sees the new version, what changed in it, and each note with its reply", async () => {
+    const world = setUp();
+    const { sam, maya, deal, post, notes } = await changesAsked(world);
+    const code = itemNamed(deal, "Say the code GLOW20");
+    await sam.send("PATCH", `/deals/${deal.id}/invite/posts/${post}`, { body: { amount: "1000.00" } });
+    await sam.send("PUT", `/deals/${deal.id}/notes/${notes[1]!.id}/reply`, { body: { reply: "You're right, $1,000." } });
+    await sam.send("POST", `/deals/${deal.id}/checklist/reopen`);
+    await sam.send("PATCH", `/deals/${deal.id}/items/${code}`, { body: { name: "Say the code GLOW25" } });
+    await sam.send("POST", `/deals/${deal.id}/items`, { body: { deliverableId: post, name: "Say it is cruelty-free", kind: "said" } });
+    await sam.send("POST", `/deals/${deal.id}/checklist/ready`);
+
+    await sendUpdated(sam, deal.id);
+
+    const seen = await readBrand(maya, deal.id);
+    expect(seen).toMatchObject({ step: "waiting_for_brand", version: 2 });
+    expect(seen.posts).toMatchObject([{ amount: "1000.00", deadlineDays: 14, changed: ["amount"] }]);
+    expect(seen.items.map((item) => ({ name: item.name, changed: item.changed }))).toEqual([
+      { name: "Say the code GLOW25", changed: true },
+      { name: "Mention Glow in the first 30 seconds", changed: undefined },
+      { name: "Wear the Glow cap", changed: undefined },
+      { name: "Say it is cruelty-free", changed: true },
+    ]);
+    expect(seen.notes).toMatchObject([
+      { text: "The code is GLOW25 now.", version: 1 },
+      { text: "We said $1,000.", reply: "You're right, $1,000.", version: 1 },
+    ]);
+  });
+
+  test("the brand can ask for changes again, and those notes carry the new version", async () => {
+    const world = setUp();
+    const { sam, maya, deal } = await changesAsked(world);
+    await sendUpdated(sam, deal.id);
+
+    const again = await sendNotes(maya, deal.id, [{ about: { kind: "deal" }, text: "One more thing." }]);
+
+    expect(again.status).toBe(200);
+    expect(((await again.json()) as BrandView).notes.map((note) => note.version)).toEqual([1, 1, 2]);
+  });
+
+  test("a link that expired while the creator was answering works again once the terms are sent", async () => {
+    const world = setUp();
+    const { sam, maya, deal, token } = await changesAsked(world);
+    world.timeIs("2026-10-20T09:00:00Z");
+    expect((await brandDeal(maya, deal.id)).status).toBe(401);
+    expect((await open(world.visitor(), token)).status).toBe(404);
+
+    await sendUpdated(sam, deal.id);
+
+    expect((await brandDeal(maya, deal.id)).status).toBe(200);
+    expect((await open(world.visitor(), token)).status).toBe(200);
+  });
+
+  test("there is nothing to send unless the brand asked for changes, and only the deal's creator can send", async () => {
+    const world = setUp();
+    const { sam, deal } = await opened(world);
+
+    const early = await sendUpdated(sam, deal.id);
+    expect(early.status).toBe(409);
+    expect(await early.json()).toEqual({ error: { code: "no_changes_asked" } });
+
+    const asked = await changesAsked(world);
+    expect((await sendUpdated(await world.creator("Ada Okafor"), asked.deal.id)).status).toBe(404);
+    expect((await sendUpdated(world.visitor(), asked.deal.id)).status).toBe(401);
+    expect(await readInvite(asked.sam, asked.deal.id)).toMatchObject({ step: "changes_requested", version: 1 });
+  });
+
+  test("it is refused while the creator is still on the checklist", async () => {
+    const world = setUp();
+    const { sam, maya, deal } = await changesAsked(world);
+    await sam.send("POST", `/deals/${deal.id}/checklist/reopen`);
+
+    expect((await sendUpdated(sam, deal.id)).status).toBe(404);
+    expect(await readBrand(maya, deal.id)).toMatchObject({ step: "changes_requested", version: 1 });
+  });
+});
+

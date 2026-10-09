@@ -71,3 +71,30 @@ export function takeSnapshot(deal: {
     ),
   };
 }
+
+/** What differs in a version from the one before it: per post, and the items to mark (DS-FR-40). */
+export interface TermsChange {
+  posts: Record<string, ("amount" | "deadline")[]>;
+  /** The ids of items that are reworded, moved to another post, or new. */
+  items: string[];
+}
+
+/** Says what changed from one version to the next. The first version has none before it, so nothing is marked. */
+export function whatChanged(before: TermsSnapshot | undefined, after: TermsSnapshot): TermsChange {
+  const change: TermsChange = { posts: {}, items: [] };
+  if (!before) return change;
+
+  for (const post of after.posts) {
+    const was = before.posts.find((each) => each.deliverableId === post.deliverableId);
+    const kinds = [
+      ...(was?.amountCents !== post.amountCents ? (["amount"] as const) : []),
+      ...(was?.deadlineDays !== post.deadlineDays ? (["deadline"] as const) : []),
+    ];
+    if (kinds.length) change.posts[post.deliverableId] = kinds;
+  }
+  for (const item of after.items) {
+    const was = before.items.find((each) => each.id === item.id);
+    if (!was || was.name !== item.name || was.deliverableId !== item.deliverableId) change.items.push(item.id);
+  }
+  return change;
+}

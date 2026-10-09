@@ -5,6 +5,7 @@ import { ITEM_KINDS } from "../briefs/reader";
 import { PLATFORMS, type Answer, type Deals, type EditRefused, type Platform } from "../deals/deals";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Sessions } from "../sessions/sessions";
+import { NoteSchema } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
@@ -45,6 +46,7 @@ const DealDraftSchema = z
       }),
     ),
     ready: z.boolean(),
+    notes: z.array(NoteSchema).optional(),
   })
   .openapi("DealDraft");
 

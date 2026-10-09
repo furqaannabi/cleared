@@ -8,6 +8,7 @@ import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import { defaultSettings as moneySettings } from "../money/types";
 import { decimal } from "../money/view";
 import type { LinkKeys } from "./link-keys";
+import { inOrder, noteOf, type DealNote } from "./notes";
 import { takeSnapshot } from "./terms";
 
 /** A deal at the invite step or after it, in the shape the creator's page expects. */
@@ -31,6 +32,8 @@ export interface Invite {
   version?: number;
   /** The brand's link, while there is one. For the deal's creator only (DS-FR-32, DS-BR-11). */
   link?: { url: string; expiresAt: string; expired: boolean };
+  /** The brand's notes, once it has asked for changes, each with the creator's reply (DS-FR-38, DS-FR-39). */
+  notes?: DealNote[];
 }
 
 export interface InviteSettings {
@@ -66,6 +69,8 @@ export type LinkRefused =
   | { refused: "youtube_not_connected" | "paypal_email_missing" }
   /** The brand has no link to replace or turn off: none is made yet, or the deal has moved on. */
   | { refused: "no_link" }
+  /** Updated terms are sent in answer to the brand's notes, and there are none to answer. */
+  | { refused: "no_changes_asked" }
   /** The service has no key to work links out from, so it makes none. */
   | { refused: "not_set_up" };
 
@@ -76,6 +81,7 @@ const whole = {
   // The link that is on, if there is one, and the latest version sent.
   links: { where: { turnedOffAt: null }, orderBy: { createdAt: "desc" }, take: 1 },
   versions: { orderBy: { number: "desc" }, take: 1 },
+  notes: inOrder,
 } as const;
 
 type Row = Prisma.DealGetPayload<{ include: typeof whole }>;
@@ -124,7 +130,12 @@ export function createInvites(deps: {
   const inviteOf = async (deal: Row): Promise<Invite> => {
     const link = await linkOf(deal);
     const version = deal.step === "invite" ? undefined : deal.versions[0]?.number;
-    return { ...termsOf(deal), ...(version === undefined ? {} : { version }), ...(link ? { link } : {}) };
+    return {
+      ...termsOf(deal),
+      ...(version === undefined ? {} : { version }),
+      ...(link ? { link } : {}),
+      ...(deal.notes.length ? { notes: deal.notes.map(noteOf) } : {}),
+    };
   };
 
   /** The creator's deal, if it has an invite: one still at the checklist step has none. */
@@ -154,6 +165,27 @@ export function createInvites(deps: {
     await tx.session.deleteMany({ where: { link: { dealId } } });
   }
 
+  /** Why the terms cannot go to the brand yet, if they cannot: the same for a first link and for updated terms. */
+  async function notSendable(tx: Prisma.TransactionClient, deal: Row): Promise<LinkRefused | undefined> {
+    const unfinished = deal.deliverables.findIndex((post) => post.amountCents === null || post.deadlineDays === null);
+    if (unfinished !== -1) return { refused: "terms_incomplete", index: unfinished };
+    const creator = await tx.creator.findUniqueOrThrow({ where: { id: deal.creatorId }, include: { accounts: true } });
+    if (!creator.accounts.some((account) => account.platform === "youtube")) return { refused: "youtube_not_connected" };
+    if (!creator.paypalEmail) return { refused: "paypal_email_missing" };
+    return undefined;
+  }
+
+  /** Saves the terms and the checklist as they stand as the deal's next version. */
+  const saveVersion = (tx: Prisma.TransactionClient, deal: Row, at: Date) =>
+    tx.termsVersion.create({
+      data: {
+        dealId: deal.id,
+        number: (deal.versions[0]?.number ?? 0) + 1,
+        terms: takeSnapshot(deal) as unknown as Prisma.InputJsonValue,
+        createdAt: at,
+      },
+    });
+
   /** Holds the deal's row until the transaction ends, so two changes to one invite happen one after the other. */
   const lock = (tx: Prisma.TransactionClient, dealId: string) => tx.$queryRaw`SELECT 1 FROM "Deal" WHERE "id" = ${dealId} FOR UPDATE`;
 
@@ -170,7 +202,8 @@ export function createInvites(deps: {
       await lock(tx, dealId);
       const deal = await find(tx, creatorId, dealId);
       if (!deal) return { refused: "not_found" };
-      if (deal.step !== "invite") return { refused: "not_editable" };
+      // Before the brand has the link, or while answering the changes it asked for (DS-FR-39).
+      if (deal.step !== "invite" && deal.step !== "changes_requested") return { refused: "not_editable" };
       const refused = await change(tx, deal);
       if (refused) return refused;
       return inviteOf(await tx.deal.findUniqueOrThrow({ where: { id: dealId }, include: whole }));
@@ -219,23 +252,50 @@ export function createInvites(deps: {
         const deal = await find(tx, creatorId, dealId);
         if (!deal) return { refused: "not_found" };
         if (deal.step !== "invite") return { refused: "not_at_invite" };
-        const unfinished = deal.deliverables.findIndex((post) => post.amountCents === null || post.deadlineDays === null);
-        if (unfinished !== -1) return { refused: "terms_incomplete", index: unfinished };
-        const creator = await tx.creator.findUniqueOrThrow({ where: { id: creatorId }, include: { accounts: true } });
-        if (!creator.accounts.some((account) => account.platform === "youtube")) return { refused: "youtube_not_connected" };
-        if (!creator.paypalEmail) return { refused: "paypal_email_missing" };
+        const notReady = await notSendable(tx, deal);
+        if (notReady) return notReady;
 
         const at = now();
-        await tx.termsVersion.create({
-          data: {
-            dealId,
-            number: (deal.versions[0]?.number ?? 0) + 1,
-            terms: takeSnapshot(deal) as unknown as Prisma.InputJsonValue,
-            createdAt: at,
-          },
-        });
+        await saveVersion(tx, deal, at);
         await saveLink(tx, dealId, link, at);
         await tx.deal.update({ where: { id: dealId }, data: { step: "waiting_for_brand", timezone } });
+        return inviteOf(await tx.deal.findUniqueOrThrow({ where: { id: dealId }, include: whole }));
+      });
+    },
+
+    /** The creator's reply to one of the brand's notes, while its changes are being answered (DS-FR-39). */
+    async replyToNote(creatorId: string, dealId: string, noteId: string, reply: string): Promise<Invite | TermsRefused> {
+      return prisma.$transaction(async (tx) => {
+        await lock(tx, dealId);
+        const deal = await find(tx, creatorId, dealId);
+        // A note that is not this deal's is not there at all, whatever step the deal is at.
+        if (!deal || !deal.notes.some((note) => note.id === noteId)) return { refused: "not_found" };
+        if (deal.step !== "changes_requested") return { refused: "not_editable" };
+        await tx.note.update({ where: { id: noteId }, data: { reply } });
+        return inviteOf(await tx.deal.findUniqueOrThrow({ where: { id: dealId }, include: whole }));
+      });
+    },
+
+    /**
+     * "Send updated terms" (DS-FR-40): the terms and the checklist are saved as a new version, the deal
+     * waits for the brand again, and the same link gets 7 more days from now.
+     */
+    async sendUpdatedTerms(creatorId: string, dealId: string): Promise<Invite | LinkRefused> {
+      return prisma.$transaction(async (tx) => {
+        await lock(tx, dealId);
+        const deal = await find(tx, creatorId, dealId);
+        if (!deal) return { refused: "not_found" };
+        if (deal.step !== "changes_requested") return { refused: "no_changes_asked" };
+        const notReady = await notSendable(tx, deal);
+        if (notReady) return notReady;
+
+        const at = now();
+        await saveVersion(tx, deal, at);
+        await tx.inviteLink.updateMany({
+          where: { dealId, turnedOffAt: null },
+          data: { expiresAt: new Date(at.getTime() + settings.linkDays * DAY_MS) },
+        });
+        await tx.deal.update({ where: { id: dealId }, data: { step: "waiting_for_brand", revising: false } });
         return inviteOf(await tx.deal.findUniqueOrThrow({ where: { id: dealId }, include: whole }));
       });
     },
@@ -262,7 +322,8 @@ export function createInvites(deps: {
         await lock(tx, dealId);
         const deal = await find(tx, creatorId, dealId);
         if (!deal) return { refused: "not_found" };
-        if (deal.step !== "waiting_for_brand") return { refused: "no_link" };
+        // Whenever the brand has a link: also while changes are asked, and after it has agreed.
+        if (deal.step === "invite") return { refused: "no_link" };
         const at = now();
         await turnOff(tx, dealId, at);
         await saveLink(tx, dealId, link, at);

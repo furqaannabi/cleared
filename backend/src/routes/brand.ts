@@ -1,34 +1,16 @@
-/** The brand's way in and its view of the deal (deal set-up spec DS-FR-34 to DS-FR-37). */
+/** The brand's way in, its view of the deal, and asking for changes (deal set-up spec DS-FR-34 to DS-FR-38). */
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import type { Brand } from "../brand/brand";
 import { PLATFORMS } from "../deals/deals";
 import { ErrorSchema, fail, letBrandIn, requireBrand, type AppEnv } from "../http/http";
 import type { Invites } from "../invites/invites";
 import type { Sessions } from "../sessions/sessions";
+import { NoteAboutSchema, NoteSchema, NoteTextSchema } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
   content: { "application/json": { schema } },
 });
-
-/**
- * A brand's note and the creator's reply, as plain text (DS-FR-38, DS-BR-04). None can be sent yet, so
- * the list is always empty; the shape is here so the pages and the contract already know it.
- */
-const NoteSchema = z
-  .object({
-    id: z.string(),
-    about: z.discriminatedUnion("kind", [
-      z.object({ kind: z.literal("item"), itemId: z.string() }),
-      z.object({ kind: z.literal("line"), briefLine: z.number().int() }),
-      z.object({ kind: z.enum(["amount", "deadline"]), deliverableId: z.string() }),
-      z.object({ kind: z.literal("deal") }),
-    ]),
-    text: z.string(),
-    reply: z.string().optional(),
-    version: z.number().int(),
-  })
-  .openapi("Note");
 
 const BrandDealSchema = z
   .object({
@@ -43,6 +25,7 @@ const BrandDealSchema = z
         platform: z.enum(PLATFORMS),
         amount: z.string(),
         deadlineDays: z.number().int(),
+        changed: z.array(z.enum(["amount", "deadline"])).optional(),
         hold: z.object({ state: z.enum(["not_started"]) }),
       }),
     ),
@@ -53,6 +36,7 @@ const BrandDealSchema = z
         name: z.string(),
         briefLine: z.number().int().optional(),
         addedByCreator: z.boolean(),
+        changed: z.boolean().optional(),
       }),
     ),
     brief: z.array(z.object({ number: z.number().int(), text: z.string() })),
@@ -108,6 +92,39 @@ export function registerBrandRoutes(
       const deal = await brand.deal(c.req.valid("param").dealId);
       // A session for a deal that has gone is no session at all.
       return deal ? c.json(deal, 200) : fail(c, 401, "signed_out");
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/brand/deals/{dealId}/notes",
+      summary: "Ask for changes: a set of notes sent together, in plain text (DS-FR-38)",
+      middleware: [session] as const,
+      request: {
+        params: z.object({ dealId: z.string().min(1).max(64) }),
+        body: {
+          required: true,
+          content: { "application/json": { schema: z.object({ notes: z.array(z.object({ about: NoteAboutSchema, text: NoteTextSchema })).min(1).max(50) }) } },
+        },
+      },
+      responses: {
+        200: json(BrandDealSchema, "The deal, now with changes asked"),
+        400: json(ErrorSchema, "A note is not valid, or is about something that is not in this deal"),
+        401: json(ErrorSchema, "No session for this deal, whether or not it exists (DS-FR-37)"),
+        409: json(ErrorSchema, "Notes cannot be sent now: the creator has not answered the last ones, or the deal is agreed"),
+      },
+    }),
+    async (c) => {
+      const sent = await brand.sendNotes(c.req.valid("param").dealId, c.req.valid("json").notes);
+      if (!sent) return fail(c, 401, "signed_out");
+      if (!("refused" in sent)) return c.json(sent, 200);
+      switch (sent.refused) {
+        case "not_waiting_for_brand":
+          return fail(c, 409, "not_waiting_for_brand");
+        case "unknown_subject":
+          return fail(c, 400, "unknown_subject", `notes.${sent.index}.about`);
+      }
     },
   );
 }
