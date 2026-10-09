@@ -207,10 +207,14 @@ model Deal {
   step      String @default("checklist")
   /// Where reading the brief stands: idle, reading, done or failed.
   reading   String @default("idle")
+  /// The brief as numbered lines of plain text. Untrusted: shown as text, never acted on (DS-BR-04).
+  briefLines Json?
   createdAt DateTime
 
-  creator      Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator      Creator         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   deliverables Deliverable[]
+  items        ChecklistItem[]
+  questions    Question[]
 
   @@index([creatorId, createdAt])
 }
@@ -224,7 +228,63 @@ model Deliverable {
   /// Its place among the deal's posts, as the creator ordered them.
   position Int
 
+  deal  Deal            @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  items ChecklistItem[]
+
+  @@index([dealId, position])
+}
+
+// One thing a post is checked against (DS-FR-19). It cites a line of the brief unless the creator
+// added it (DS-BR-06).
+model ChecklistItem {
+  id             String  @id @default(uuid())
+  dealId         String
+  deliverableId  String
+  name           String
+  /// said, shown_as_text, shown, timing, written, disclosure or publication.
+  kind           String
+  /// The brief line it came from. Null only for an item the creator added.
+  briefLine      Int?
+  addedByCreator Boolean @default(false)
+  /// A code, link or hashtag that must appear exactly.
+  exact          String?
+  /// How it will be checked. Decided by code, never by the model (DS-FR-20).
+  checkedBy      String
+  position       Int
+
+  deal        Deal        @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  deliverable Deliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  @@index([dealId, position])
+}
+
+// A line of the brief the model found ambiguous (DS-FR-21).
+model Question {
+  id          String  @id @default(uuid())
+  dealId      String
+  briefLine   Int
+  text        String
+  /// The suggested answers, each with the item it would make. The items stay on the backend.
+  suggestions Json
+  /// suggestion, own_words or left_out, once answered.
+  answerKind  String?
+  answerText  String?
+  position    Int
+
   deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
 
   @@index([dealId, position])
+}
+
+// One brief sent to be read, kept to enforce the limits on reading (DS-FR-26, DS-FR-27). It is not
+// tied to the creator's row, so a deleted demo account still counts towards the day's total.
+model BriefRead {
+  id          String   @id @default(uuid())
+  creatorId   String
+  at          DateTime
+  /// False until the model is about to be called. A read that never called it is removed (DS-BR-16).
+  modelCalled Boolean  @default(false)
+
+  @@index([creatorId, at])
+  @@index([at])
 }

@@ -1,5 +1,6 @@
 /** The creator's deals (deal set-up spec DS-FR-13 to DS-FR-16). */
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
+import { ITEM_KINDS } from "../briefs/reader";
 import { PLATFORMS, type Deals, type Platform } from "../deals/deals";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Sessions } from "../sessions/sessions";
@@ -20,9 +21,28 @@ const DealDraftSchema = z
     brandName: z.string(),
     step: StepSchema,
     deliverables: z.array(z.object({ id: z.string(), platform: PlatformSchema })),
+    brief: z.object({ lines: z.array(z.object({ number: z.number().int(), text: z.string() })) }).optional(),
     reading: z.enum(["idle", "reading", "done", "failed"]),
-    items: z.array(z.never()),
-    questions: z.array(z.never()),
+    items: z.array(
+      z.object({
+        id: z.string(),
+        deliverableId: z.string(),
+        name: z.string(),
+        kind: z.enum(ITEM_KINDS),
+        briefLine: z.number().int().optional(),
+        addedByCreator: z.boolean(),
+        checkedBy: z.enum(["exact_match", "ai_timestamp", "at_live_check"]),
+      }),
+    ),
+    questions: z.array(
+      z.object({
+        id: z.string(),
+        briefLine: z.number().int(),
+        text: z.string(),
+        suggestions: z.array(z.string()),
+        answer: z.object({ kind: z.enum(["suggestion", "own_words", "left_out"]), text: z.string().optional() }).optional(),
+      }),
+    ),
     ready: z.boolean(),
   })
   .openapi("DealDraft");
@@ -134,6 +154,39 @@ export function registerDealRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: S
           return fail(c, 409, "reading_started");
         case "unknown_post":
           return fail(c, 400, "unknown_post", `deliverables.${changed.index}.id`);
+      }
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deals/{dealId}/brief",
+      summary: "Send the brief; reading starts as a job (DS-FR-17)",
+      middleware: [creator] as const,
+      // The length is checked by the deals module, which owns the limits and trims the text first.
+      request: { ...dealId, ...body(z.object({ text: z.string().max(200_000) })) },
+      responses: {
+        200: json(DealDraftSchema, "The deal, with its brief as numbered lines, being read"),
+        ...refusals,
+        409: json(ErrorSchema, "The brief is being read or has been read"),
+        429: json(ErrorSchema, "A limit on reading briefs was reached"),
+      },
+    }),
+    async (c) => {
+      const sent = await deals.sendBrief(c.get("creatorId"), c.req.valid("param").dealId, c.req.valid("json").text);
+      if (!("refused" in sent)) return c.json(sent, 200);
+      switch (sent.refused) {
+        case "not_found":
+          return fail(c, 404, "not_found");
+        case "reading_started":
+          return fail(c, 409, "reading_started");
+        case "too_short":
+        case "too_long":
+          return fail(c, 400, sent.refused, "text");
+        case "read_limit":
+          // Which limit, and when a daily one lifts (DS-FR-28).
+          return c.json({ error: { code: "read_limit", field: sent.limit, resetsAt: sent.resetsAt?.toISOString() } }, 429);
       }
     },
   );

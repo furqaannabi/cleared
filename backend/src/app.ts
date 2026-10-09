@@ -8,7 +8,7 @@ import type { PrismaClient } from "./generated/prisma/client";
 import { fail, ownAppOnly, type AppEnv } from "./http/http";
 import type { Money } from "./money/money";
 import type { GooglePort } from "./google/port";
-import { createDeals } from "./deals/deals";
+import { createDeals, type Deals } from "./deals/deals";
 import { registerAccountRoutes } from "./routes/account";
 import { registerDealRoutes } from "./routes/deals";
 import { registerGoogleRoutes } from "./routes/google";
@@ -30,6 +30,8 @@ export interface AppDeps {
   clientAddress?: (c: Context) => string;
   /** The creators module. The service passes its own, so its jobs and its routes share one. */
   accounts?: Accounts;
+  /** The deals module. The service passes its own, so its jobs and its routes share one. */
+  deals?: Deals;
   /** The API's own address, which Google sends the browser back to. */
   apiOrigin?: string;
   /** Google, for signing in and connecting YouTube. Left out when it is not set up. */
@@ -91,7 +93,7 @@ export function createApp(deps: AppDeps) {
     // Only a hash of the address is kept.
     madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
   });
-  registerDealRoutes(app, { sessions, deals: createDeals({ prisma, now }) });
+  registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }) });
   registerGoogleRoutes(app, {
     google: deps.google,
     secrets: deps.secrets,

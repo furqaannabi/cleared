@@ -14,7 +14,14 @@ export const SESSION_COOKIE = "cleared_session";
 
 /** One shape for every error (DS-FR-48): a code, and the field it is about where there is one. */
 export const ErrorSchema = z
-  .object({ error: z.object({ code: z.string(), field: z.string().optional() }) })
+  .object({
+    error: z.object({
+      code: z.string(),
+      field: z.string().optional(),
+      /** When a daily limit lifts, for a refusal that is about one (DS-FR-28). */
+      resetsAt: z.string().optional(),
+    }),
+  })
   .openapi("Error");
 
 export const fail = <Status extends ContentfulStatusCode>(c: Context, status: Status, code: string, field?: string) =>
