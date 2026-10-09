@@ -221,6 +221,9 @@ model Deal {
   /// True from the brand sending notes until the creator sends updated terms (DS-FR-38, DS-FR-40).
   /// The brand's link stays on meanwhile, whichever step the creator is editing at.
   revising   Boolean @default(false)
+  /// When the brand agreed, and to which version of the terms (DS-FR-41, DS-FR-42).
+  agreedAt      DateTime?
+  agreedVersion Int?
   createdAt DateTime
 
   creator      Creator         @relation(fields: [creatorId], references: [id], onDelete: Cascade)

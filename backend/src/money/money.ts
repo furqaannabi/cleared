@@ -143,69 +143,78 @@ export function createMoney(deps: MoneyDeps) {
     cause: Cause,
     settle?: { callId: string; reference?: string },
   ): Promise<{ ok: true; started: Call[]; changed: boolean } | Refused> {
-    return prisma.$transaction(async (tx) => {
-      const [row] = await tx.$queryRaw<{ state: unknown }[]>`
-        SELECT "state" FROM "DeliverableMoney" WHERE "deliverableId" = ${deliverableId} FOR UPDATE`;
-      if (!row) return { ok: false, reason: "unknown_deliverable" };
-      // PayPal's answer is final whatever the rules make of it, so the call is settled either way.
-      if (settle) await settleCall(tx, settle.callId, event.at, settle.reference);
-      const before = decodeState(row.state);
-      const first = transition(before, event, settings);
-      if (!first.ok) return first;
-      if (first.state === before && first.effects.length === 0) return { ok: true, started: [], changed: false };
+    return prisma.$transaction((tx) => applyIn(tx, deliverableId, event, cause, settle));
+  }
 
-      let state = first.state;
-      const record = (entry: { kind: string; name: string; reference?: string; details?: Prisma.InputJsonObject }) =>
-        tx.moneyRecord.create({ data: { deliverableId, at: event.at, cause, stage: state.stage, ...entry } });
-      await record({ kind: "event", name: event.type, reference: referenceOf(event), details: detailsOf(event) });
+  /** `apply`, inside a transaction that is already open. */
+  async function applyIn(
+    tx: Prisma.TransactionClient,
+    deliverableId: string,
+    event: MoneyEvent,
+    cause: Cause,
+    settle?: { callId: string; reference?: string },
+  ): Promise<{ ok: true; started: Call[]; changed: boolean } | Refused> {
+    const [row] = await tx.$queryRaw<{ state: unknown }[]>`
+      SELECT "state" FROM "DeliverableMoney" WHERE "deliverableId" = ${deliverableId} FOR UPDATE`;
+    if (!row) return { ok: false, reason: "unknown_deliverable" };
+    // PayPal's answer is final whatever the rules make of it, so the call is settled either way.
+    if (settle) await settleCall(tx, settle.callId, event.at, settle.reference);
+    const before = decodeState(row.state);
+    const first = transition(before, event, settings);
+    if (!first.ok) return first;
+    if (first.state === before && first.effects.length === 0) return { ok: true, started: [], changed: false };
 
-      const effects = [...first.effects];
-      /**
-       * Applies a step that follows at once from the last one, in this same transaction: an approval and
-       * the start of its capture, or a capture and the start of its payout, are recorded together.
-       */
-      const follow = async (next: MoneyEvent) => {
-        const result = transition(state, next, settings);
-        if (!result.ok) throw new Error(`"${next.type}" could not follow "${event.type}": ${result.reason}`);
-        state = result.state;
-        await record({ kind: "event", name: next.type, details: detailsOf(next) });
-        effects.push(...result.effects);
-      };
+    let state = first.state;
+    const record = (entry: { kind: string; name: string; reference?: string; details?: Prisma.InputJsonObject }) =>
+      tx.moneyRecord.create({ data: { deliverableId, at: event.at, cause, stage: state.stage, ...entry } });
+    await record({ kind: "event", name: event.type, reference: referenceOf(event), details: detailsOf(event) });
 
-      const started: Call[] = [];
-      for (let effect = effects.shift(); effect; effect = effects.shift()) {
-        switch (effect.type) {
-          case "schedule_job": {
-            const { type: _type, job, at, ...ids } = effect;
-            await enqueue(tx, { name: job, payload: { deliverableId, ...ids }, runAt: at });
-            break;
-          }
-          case "notify":
-            await record({ kind: "notice", name: effect.about, details: { to: effect.to } });
-            break;
-          case "start_capture":
-            await follow({ type: "capture_started", captureId: newId(), at: event.at });
-            break;
-          case "start_payout":
-            await follow({ type: "payout_started", payoutId: newId(), at: event.at });
-            break;
-          case "check_attempt":
-          case "check_capture":
-          case "check_payout":
-          case "check_hold_cancelled":
-            // Nothing to add: the call that got no clear answer is still started, and its follow-up job keeps asking.
-            break;
-          default:
-            started.push(await startCall(tx, deliverableId, effect, event.at));
-            await record({ kind: "paypal_call", name: effect.type });
+    const effects = [...first.effects];
+    /**
+     * Applies a step that follows at once from the last one, in this same transaction: an approval and
+     * the start of its capture, or a capture and the start of its payout, are recorded together.
+     */
+    const follow = async (next: MoneyEvent) => {
+      const result = transition(state, next, settings);
+      if (!result.ok) throw new Error(`"${next.type}" could not follow "${event.type}": ${result.reason}`);
+      state = result.state;
+      await record({ kind: "event", name: next.type, details: detailsOf(next) });
+      effects.push(...result.effects);
+    };
+
+    const started: Call[] = [];
+    for (let effect = effects.shift(); effect; effect = effects.shift()) {
+      switch (effect.type) {
+        case "schedule_job": {
+          const { type: _type, job, at, ...ids } = effect;
+          await enqueue(tx, { name: job, payload: { deliverableId, ...ids }, runAt: at });
+          break;
         }
+        case "notify":
+          await record({ kind: "notice", name: effect.about, details: { to: effect.to } });
+          break;
+        case "start_capture":
+          await follow({ type: "capture_started", captureId: newId(), at: event.at });
+          break;
+        case "start_payout":
+          await follow({ type: "payout_started", payoutId: newId(), at: event.at });
+          break;
+        case "check_attempt":
+        case "check_capture":
+        case "check_payout":
+        case "check_hold_cancelled":
+          // Nothing to add: the call that got no clear answer is still started, and its follow-up job keeps asking.
+          break;
+        default:
+          started.push(await startCall(tx, deliverableId, effect, event.at));
+          await record({ kind: "paypal_call", name: effect.type });
       }
-      await tx.deliverableMoney.update({
-        where: { deliverableId },
-        data: { state: encodeState(state), stage: state.stage, version: { increment: 1 } },
-      });
-      return { ok: true, started, changed: true };
+    }
+    await tx.deliverableMoney.update({
+      where: { deliverableId },
+      data: { state: encodeState(state), stage: state.stage, version: { increment: 1 } },
     });
+    return { ok: true, started, changed: true };
   }
 
   /**
@@ -779,6 +788,20 @@ export function createMoney(deps: MoneyDeps) {
     },
 
     /** The brand agreed the terms. From now a hold can be started (MP-FR-01). */
+    /**
+     * Opens a deliverable's money with the brand's agreement already recorded, inside the caller's
+     * transaction: a deal is agreed and its posts' money is opened together, or not at all (deal set-up
+     * spec DS-FR-42). It calls PayPal for nothing; the hold comes later, from the brand.
+     */
+    async openAgreed(tx: Prisma.TransactionClient, input: MoneyTerms & { deliverableId: string; payoutEmail: string }, at: Date): Promise<void> {
+      const { deliverableId, payoutEmail, ...terms } = input;
+      const state = newMoney(terms);
+      await tx.deliverableMoney.create({
+        data: { deliverableId, payoutEmail, state: encodeState(state), stage: state.stage, amountCents: state.amountCents },
+      });
+      const agreed = await applyIn(tx, deliverableId, { type: "brand_agreed", at }, "call");
+      if (!agreed.ok) throw new Error(`A deliverable's money could not be opened as agreed: ${agreed.reason}`);
+    },
     async brandAgreed(deliverableId: string): Promise<{ ok: true } | Refused> {
       const done = await dispatch(deliverableId, { type: "brand_agreed", at: now() }, "call");
       return done.ok ? { ok: true } : done;

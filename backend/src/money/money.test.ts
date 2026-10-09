@@ -1437,3 +1437,46 @@ describe("MP-FR-39 money taken back after a capture", () => {
     expect(await notices()).toContainEqual({ about: "money_taken_back", to: "cleared" });
   });
 });
+
+describe("DS-FR-42 money is opened as agreed inside the caller's transaction", () => {
+  const terms = { deliverableId: "del_1", amountCents: 120_000, deadlineDays: 14, creatorTimeZone: "Africa/Lagos", payoutEmail: "creator@example.com" };
+
+  test("the deliverable's money is opened with the brand's agreement recorded, and the wait for a hold starts", async () => {
+    const world = setUp("2026-10-10T08:00:00Z");
+
+    await prisma.$transaction((tx) => world.money.openAgreed(tx, terms, at("2026-10-10T08:00:00Z")));
+
+    expect(await world.money.view("del_1")).toMatchObject({ stage: "not_held", amounts: { amount: "1200.00" }, hold: { state: "not_started" } });
+    expect((await world.money.creatorView("del_1"))?.payoutEmail).toBe("creator@example.com");
+    expect(await recordNames()).toEqual(["event:brand_agreed"]);
+    expect(await jobs()).toEqual([{ name: "never_held", runAt: at("2026-10-17T08:00:00Z") }]);
+    expect(world.paypal.calls).toEqual([]);
+    // It is agreed, so a hold can be started at once.
+    expect(await world.money.startHold("del_1")).toMatchObject({ ok: true });
+  });
+
+  test("if the caller's transaction fails, nothing of it is left: no money, no record, no job", async () => {
+    const world = setUp("2026-10-10T08:00:00Z");
+
+    const failed = prisma.$transaction(async (tx) => {
+      await world.money.openAgreed(tx, terms, at("2026-10-10T08:00:00Z"));
+      throw new Error("the deal could not be marked agreed");
+    });
+
+    await expect(failed).rejects.toThrow("the deal could not be marked agreed");
+    expect(await world.money.view("del_1")).toBeUndefined();
+    expect(await recordNames()).toEqual([]);
+    expect(await jobs()).toEqual([]);
+  });
+
+  test("a deliverable whose money is already open is not opened twice", async () => {
+    const world = setUp("2026-10-10T08:00:00Z");
+    await prisma.$transaction((tx) => world.money.openAgreed(tx, terms, at("2026-10-10T08:00:00Z")));
+
+    const again = prisma.$transaction((tx) => world.money.openAgreed(tx, { ...terms, amountCents: 5_000 }, at("2026-10-11T08:00:00Z")));
+
+    await expect(again).rejects.toThrow();
+    expect(await world.money.view("del_1")).toMatchObject({ amounts: { amount: "1200.00" } });
+    expect(await jobs()).toHaveLength(1);
+  });
+});

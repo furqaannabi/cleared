@@ -1,6 +1,7 @@
-/** The brand's way in, its view of the deal, and asking for changes, through the app (deal set-up spec DS-FR-33 to DS-FR-40). */
+/** The brand's way in, its view of the deal, and asking for changes, through the app (deal set-up spec DS-FR-33 to DS-FR-42). */
 import { beforeEach, describe, expect, test } from "bun:test";
 import { browserFor, type Browser } from "../test/browser";
+import { FakePayPal } from "../test/fake-paypal";
 import { createAccounts } from "./accounts/accounts";
 import { createApp } from "./app";
 import type { ModelReply } from "./briefs/reader";
@@ -8,12 +9,17 @@ import { prisma } from "./db";
 import { createDeals } from "./deals/deals";
 import { localLinkKeys } from "./invites/link-keys";
 import { runDueJobs } from "./jobs/jobs";
+import { createMoney } from "./money/money";
+import { recordedPosts } from "./money/published-post";
 import { createSessions } from "./sessions/sessions";
 
 const APP = "https://app.cleared.test";
 const at = (iso: string) => new Date(iso);
 
 beforeEach(async () => {
+  await prisma.moneyRecord.deleteMany();
+  await prisma.payPalCall.deleteMany();
+  await prisma.deliverableMoney.deleteMany();
   await prisma.briefRead.deleteMany();
   await prisma.deal.deleteMany();
   await prisma.session.deleteMany();
@@ -48,12 +54,14 @@ interface Deal {
   items: { id: string; name: string }[];
 }
 
-function setUp() {
+function setUp(options: { money?: false } = {}) {
   let now = at("2026-10-09T09:00:00Z");
   const clock = () => now;
   const deals = createDeals({ prisma, now: clock, model: { read: async () => answer } });
   const accounts = createAccounts({ prisma, now: clock });
-  const app = createApp({ prisma, appOrigin: APP, now: clock, deals, linkKeys: localLinkKeys(Buffer.alloc(32, 1).toString("base64")) });
+  const paypal = new FakePayPal();
+  const money = createMoney({ prisma, paypal, posts: recordedPosts(prisma), now: clock });
+  const app = createApp({ prisma, appOrigin: APP, now: clock, deals, money: options.money === false ? undefined : money, linkKeys: localLinkKeys(Buffer.alloc(32, 1).toString("base64")) });
   const json = async <Body>(response: Response) => (await response.json()) as Body;
 
   /** A browser signed in as a creator with YouTube connected and a PayPal email saved. */
@@ -69,14 +77,18 @@ function setUp() {
 
   return {
     creator,
+    money,
+    paypal,
     /** A browser nobody has signed in to: a brand's, before it opens its link. */
     visitor: () => browserFor(app, APP),
     /**
      * A deal of one YouTube video that its creator has sent to the brand: the vague line answered, an
      * item of the creator's own added, the terms set and the link made. Returns the deal and the link.
      */
-    async sentDeal(browser: Browser, brandName = "Glow Skincare") {
-      const started = await json<Deal>(await browser.send("POST", "/deals", { body: { brandName, deliverables: [{ platform: "youtube_video" }] } }));
+    async sentDeal(browser: Browser, brandName = "Glow Skincare", platforms = ["youtube_video"]) {
+      const started = await json<Deal>(
+        await browser.send("POST", "/deals", { body: { brandName, deliverables: platforms.map((platform) => ({ platform })) } }),
+      );
       await browser.send("POST", `/deals/${started.id}/brief`, { body: { text: brief.join("\n") } });
       await runDueJobs(prisma, deals.handlers, { now, log: () => {} });
       const read = await json<Deal>(await browser.send("GET", `/deals/${started.id}`));
@@ -84,6 +96,10 @@ function setUp() {
       await browser.send("POST", `/deals/${started.id}/items`, { body: { deliverableId: started.deliverables[0]!.id, name: "Wear the Glow cap", kind: "shown" } });
       await browser.send("POST", `/deals/${started.id}/checklist/ready`);
       await browser.send("PATCH", `/deals/${started.id}/invite/posts/${started.deliverables[0]!.id}`, { body: { amount: "1200.00", deadlineDays: 14 } });
+      // Any further post is $300.50, due in 7 days.
+      for (const post of started.deliverables.slice(1)) {
+        await browser.send("PATCH", `/deals/${started.id}/invite/posts/${post.id}`, { body: { amount: "300.50", deadlineDays: 7 } });
+      }
       const invite = await json<{ link: { url: string } }>(
         await browser.send("POST", `/deals/${started.id}/invite/link`, { body: { timezone: "America/New_York" } }),
       );
@@ -637,3 +653,177 @@ describe("DS-FR-40 send updated terms", () => {
   });
 });
 
+const agree = (browser: Browser, dealId: string, version: unknown = 1) => browser.send("POST", `/brand/deals/${dealId}/agree`, { body: { version } });
+
+describe("DS-FR-41 agree to a version", () => {
+  test("the brand agrees by naming the version it was shown", async () => {
+    const world = setUp();
+    const { maya, deal } = await opened(world);
+    world.timeIs("2026-10-10T15:30:00Z");
+
+    const response = await agree(maya, deal.id, 1);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ step: "agreed", version: 1, agreedAt: "2026-10-10T15:30:00.000Z" });
+    expect(await readBrand(maya, deal.id)).toMatchObject({ step: "agreed", version: 1, agreedAt: "2026-10-10T15:30:00.000Z" });
+  });
+
+  test("a version that is not the latest is refused as out of date, and nothing changes", async () => {
+    const world = setUp();
+    const { sam, maya, deal, post } = await changesAsked(world);
+    await sam.send("PATCH", `/deals/${deal.id}/invite/posts/${post}`, { body: { amount: "1000.00" } });
+    await sendUpdated(sam, deal.id);
+
+    // The brand's page still shows version 1; the creator has sent version 2.
+    for (const version of [1, 3]) {
+      const response = await agree(maya, deal.id, version);
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: { code: "out_of_date" } });
+    }
+    expect(await readBrand(maya, deal.id)).toMatchObject({ step: "waiting_for_brand", version: 2 });
+    expect(await world.money.view(post)).toBeUndefined();
+
+    expect((await agree(maya, deal.id, 2)).status).toBe(200);
+    expect(await world.money.view(post)).toMatchObject({ amounts: { amount: "1000.00" } });
+  });
+
+  test("nothing can be agreed while the creator is answering the brand's changes", async () => {
+    const world = setUp();
+    const { maya, deal, post } = await changesAsked(world);
+
+    const response = await agree(maya, deal.id, 1);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "not_waiting_for_brand" } });
+    expect(await world.money.view(post)).toBeUndefined();
+  });
+
+  test("the version must be a whole number from 1, and only someone with a session for this deal can agree", async () => {
+    const world = setUp();
+    const { sam, maya, deal, post } = await opened(world);
+
+    for (const version of [0, -1, 1.5, "1", null]) {
+      const response = await agree(maya, deal.id, version);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: { code: "invalid", field: "version" } });
+    }
+    expect((await agree(world.visitor(), deal.id)).status).toBe(401);
+    expect((await agree(sam, deal.id)).status).toBe(401);
+    expect(await readBrand(maya, deal.id)).toMatchObject({ step: "waiting_for_brand" });
+    expect(await world.money.view(post)).toBeUndefined();
+  });
+});
+
+describe("DS-FR-42 agreed", () => {
+  /** A sent deal of a video and a Short, with the brand's browser in. */
+  async function twoPosts(world: ReturnType<typeof setUp>) {
+    const sam = await world.creator();
+    const { deal, token } = await world.sentDeal(sam, "Glow Skincare", ["youtube_video", "youtube_short"]);
+    const maya = world.visitor();
+    await open(maya, token);
+    return { sam, maya, deal, token, video: deal.deliverables[0]!.id, short: deal.deliverables[1]!.id };
+  }
+
+  test("each post's money is opened with its amount, its deadline, the creator's timezone and PayPal email", async () => {
+    const world = setUp();
+    const { maya, deal, video, short } = await twoPosts(world);
+    world.timeIs("2026-10-10T15:30:00Z");
+
+    await agree(maya, deal.id);
+
+    expect(await world.money.creatorView(video)).toMatchObject({ stage: "not_held", amounts: { amount: "1200.00" }, hold: { state: "not_started" }, payoutEmail: "sam.pay@example.com" });
+    expect(await world.money.creatorView(short)).toMatchObject({ stage: "not_held", amounts: { amount: "300.50" }, hold: { state: "not_started" }, payoutEmail: "sam.pay@example.com" });
+    const opened = await prisma.deliverableMoney.findMany({ orderBy: { amountCents: "desc" } });
+    expect(opened.map((each) => each.state)).toMatchObject([
+      { amountCents: 120_000, deadlineDays: 14, creatorTimeZone: "America/New_York" },
+      { amountCents: 30_050, deadlineDays: 7, creatorTimeZone: "America/New_York" },
+    ]);
+    // Each post now has 7 days to be held (MP-FR-08), and nothing has been asked of PayPal.
+    expect((await prisma.job.findMany({ where: { name: "never_held" } })).map((job) => job.runAt)).toEqual([
+      at("2026-10-17T15:30:00Z"),
+      at("2026-10-17T15:30:00Z"),
+    ]);
+    expect(world.paypal.calls).toEqual([]);
+  });
+
+  test("a hold can be started for an agreed post, and not before", async () => {
+    const world = setUp();
+    const { maya, deal, video } = await twoPosts(world);
+    expect(await world.money.startHold(video)).toMatchObject({ ok: false });
+
+    await agree(maya, deal.id);
+
+    expect(await world.money.startHold(video)).toMatchObject({ ok: true });
+  });
+
+  test("from then the terms and the checklist cannot be changed, no more notes are accepted, and it cannot be agreed again", async () => {
+    const world = setUp();
+    const { sam, maya, deal, video } = await twoPosts(world);
+    await agree(maya, deal.id);
+
+    for (const response of [
+      await sam.send("PATCH", `/deals/${deal.id}/invite/posts/${video}`, { body: { amount: "5000.00" } }),
+      await sam.send("PATCH", `/deals/${deal.id}/invite`, { body: { brandEmail: "maya@glow.example" } }),
+      await sam.send("POST", `/deals/${deal.id}/checklist/reopen`),
+      await sam.send("DELETE", `/deals/${deal.id}/invite/link`),
+      await sendUpdated(sam, deal.id),
+      await sendNotes(maya, deal.id, [{ about: { kind: "deal" }, text: "One more thing." }]),
+    ]) {
+      expect(response.status).toBe(409);
+    }
+    const again = await agree(maya, deal.id);
+    expect(again.status).toBe(409);
+    expect(await again.json()).toEqual({ error: { code: "already_agreed" } });
+    expect(await prisma.deliverableMoney.count()).toBe(2);
+    expect(await readInvite(sam, deal.id)).toMatchObject({ step: "agreed", version: 1, posts: [{ amount: "1200.00" }, { amount: "300.50" }] });
+    expect(await (await sam.send("GET", "/deals")).json()).toMatchObject([{ id: deal.id, step: "agreed", status: "Agreed" }]);
+  });
+
+  test("the brand keeps its way in after agreeing, to approve the holds", async () => {
+    const world = setUp();
+    const { maya, deal, token } = await twoPosts(world);
+
+    await agree(maya, deal.id);
+
+    expect((await brandDeal(maya, deal.id)).status).toBe(200);
+    expect((await open(world.visitor(), token)).status).toBe(200);
+  });
+
+  test("two people agreeing at the same moment agree once, and each post's money is opened once", async () => {
+    const world = setUp();
+    const { maya, deal, token } = await twoPosts(world);
+    const colleague = world.visitor();
+    await open(colleague, token);
+
+    const answers = await Promise.all([agree(maya, deal.id), agree(colleague, deal.id)]);
+
+    expect(answers.map((response) => response.status).sort()).toEqual([200, 409]);
+    expect(await prisma.deliverableMoney.count()).toBe(2);
+    expect(await prisma.job.count({ where: { name: "never_held" } })).toBe(2);
+  });
+
+  test("it is all or nothing: if one post's money cannot be opened, the deal is not agreed and no post's money is", async () => {
+    const world = setUp();
+    const { maya, deal, video, short } = await twoPosts(world);
+    // Something has already opened money under the second post's id, so opening it again must fail.
+    await world.money.open({ deliverableId: short, amountCents: 5_000, deadlineDays: 3, creatorTimeZone: "UTC", payoutEmail: "someone@example.com" });
+
+    const response = await agree(maya, deal.id);
+
+    expect(response.status).toBe(500);
+    expect(await readBrand(maya, deal.id)).toMatchObject({ step: "waiting_for_brand" });
+    expect(await world.money.view(video)).toBeUndefined();
+    expect(await prisma.job.count({ where: { name: "never_held" } })).toBe(0);
+  });
+
+  test("a service with no PayPal set up agrees nothing, because it could not open the money", async () => {
+    const world = setUp({ money: false });
+    const { maya, deal } = await opened(world);
+
+    const response = await agree(maya, deal.id);
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: { code: "not_set_up" } });
+    expect(await readBrand(maya, deal.id)).toMatchObject({ step: "waiting_for_brand" });
+  });
+});

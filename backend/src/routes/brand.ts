@@ -1,4 +1,4 @@
-/** The brand's way in, its view of the deal, and asking for changes (deal set-up spec DS-FR-34 to DS-FR-38). */
+/** The brand's way in, its view of the deal, asking for changes and agreeing (deal set-up spec DS-FR-34 to DS-FR-42). */
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import type { Brand } from "../brand/brand";
 import { PLATFORMS } from "../deals/deals";
@@ -19,6 +19,7 @@ const BrandDealSchema = z
     brandName: z.string(),
     step: z.enum(["waiting_for_brand", "changes_requested", "agreed"]),
     version: z.number().int(),
+    agreedAt: z.string().optional(),
     posts: z.array(
       z.object({
         deliverableId: z.string(),
@@ -125,6 +126,32 @@ export function registerBrandRoutes(
         case "unknown_subject":
           return fail(c, 400, "unknown_subject", `notes.${sent.index}.about`);
       }
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/brand/deals/{dealId}/agree",
+      summary: "Agree to the version shown; each post's money is opened, ready for its hold (DS-FR-41, DS-FR-42)",
+      middleware: [session] as const,
+      request: {
+        params: z.object({ dealId: z.string().min(1).max(64) }),
+        body: { required: true, content: { "application/json": { schema: z.object({ version: z.number().int().positive() }) } } },
+      },
+      responses: {
+        200: json(BrandDealSchema, "The deal, agreed"),
+        400: json(ErrorSchema, "The request is not valid"),
+        401: json(ErrorSchema, "No session for this deal, whether or not it exists (DS-FR-37)"),
+        409: json(ErrorSchema, "Not agreed: the version is out of date, changes are being answered, or it is already agreed"),
+        503: json(ErrorSchema, "This service is not set up to hold money, so nothing can be agreed"),
+      },
+    }),
+    async (c) => {
+      const agreed = await brand.agree(c.req.valid("param").dealId, c.req.valid("json").version);
+      if (!agreed) return fail(c, 401, "signed_out");
+      if (!("refused" in agreed)) return c.json(agreed, 200);
+      return agreed.refused === "not_set_up" ? fail(c, 503, "not_set_up") : fail(c, 409, agreed.refused);
     },
   );
 }
