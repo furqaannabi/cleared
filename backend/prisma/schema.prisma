@@ -163,18 +163,23 @@ model Creator {
   @@index([demo, madeFrom, createdAt])
 }
 
-// A signed-in browser (DS-BR-02). Only a hash of its token is kept.
+// A signed-in browser (DS-BR-02). Only a hash of its token is kept. It is either a creator's, or a
+// brand's: made from one invite link and good for that link's deal alone (DS-FR-34).
 model Session {
   id         String   @id @default(uuid())
   tokenHash  String   @unique
-  creatorId  String
+  creatorId  String?
+  /// The invite link a brand's session was made from. It ends with the link (DS-FR-33).
+  linkId     String?
   createdAt  DateTime
   lastUsedAt DateTime
   expiresAt  DateTime
 
-  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator Creator?    @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  link    InviteLink? @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@index([creatorId])
+  @@index([linkId])
 }
 
 // A platform account a creator has connected (DS-FR-11). Read-only access, and its token is
@@ -300,7 +305,8 @@ model InviteLink {
   /// Set when the creator replaces the link or changes the terms. A link turned off never works again.
   turnedOffAt DateTime?
 
-  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  deal     Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  sessions Session[]
 
   @@index([dealId, createdAt])
 }

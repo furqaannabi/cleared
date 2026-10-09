@@ -72,6 +72,7 @@ export type LinkRefused =
 const whole = {
   deliverables: { orderBy: { position: "asc" } },
   items: { orderBy: { position: "asc" } },
+  questions: { orderBy: { position: "asc" } },
   // The link that is on, if there is one, and the latest version sent.
   links: { where: { turnedOffAt: null }, orderBy: { createdAt: "desc" }, take: 1 },
   versions: { orderBy: { number: "desc" }, take: 1 },
@@ -144,9 +145,14 @@ export function createInvites(deps: {
       data: { dealId, ...link, createdAt: at, expiresAt: new Date(at.getTime() + settings.linkDays * DAY_MS) },
     });
 
-  /** Turns off every link the deal has. A link turned off never works again (DS-FR-33). */
-  const turnOff = (tx: Prisma.TransactionClient, dealId: string, at: Date) =>
-    tx.inviteLink.updateMany({ where: { dealId, turnedOffAt: null }, data: { turnedOffAt: at } });
+  /**
+   * Turns off every link the deal has, and ends every brand session made from them. A link turned off
+   * never works again (DS-FR-33).
+   */
+  async function turnOff(tx: Prisma.TransactionClient, dealId: string, at: Date) {
+    await tx.inviteLink.updateMany({ where: { dealId, turnedOffAt: null }, data: { turnedOffAt: at } });
+    await tx.session.deleteMany({ where: { link: { dealId } } });
+  }
 
   /** Holds the deal's row until the transaction ends, so two changes to one invite happen one after the other. */
   const lock = (tx: Prisma.TransactionClient, dealId: string) => tx.$queryRaw`SELECT 1 FROM "Deal" WHERE "id" = ${dealId} FOR UPDATE`;
@@ -232,6 +238,16 @@ export function createInvites(deps: {
         await tx.deal.update({ where: { id: dealId }, data: { step: "waiting_for_brand", timezone } });
         return inviteOf(await tx.deal.findUniqueOrThrow({ where: { id: dealId }, include: whole }));
       });
+    },
+
+    /**
+     * The link a token is for, if it is on and has not expired (DS-FR-34). Looked up by the token's
+     * hash. An unknown, an expired and a turned-off link are all simply not there (DS-FR-35).
+     */
+    async openLink(token: string): Promise<{ id: string; dealId: string; expiresAt: Date } | undefined> {
+      const link = await prisma.inviteLink.findUnique({ where: { tokenHash: hash(token) } });
+      if (!link || link.turnedOffAt !== null || link.expiresAt <= now()) return undefined;
+      return { id: link.id, dealId: link.dealId, expiresAt: link.expiresAt };
     },
 
     /**

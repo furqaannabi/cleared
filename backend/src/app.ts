@@ -4,6 +4,7 @@ import { bodyLimit } from "hono/body-limit";
 import { getConnInfo } from "hono/bun";
 import { cors } from "hono/cors";
 import { createAccounts, type Accounts } from "./accounts/accounts";
+import { createBrand } from "./brand/brand";
 import type { PrismaClient } from "./generated/prisma/client";
 import { fail, ownAppOnly, type AppEnv } from "./http/http";
 import type { Money } from "./money/money";
@@ -12,6 +13,7 @@ import { createDeals, type Deals } from "./deals/deals";
 import { createInvites } from "./invites/invites";
 import type { LinkKeys } from "./invites/link-keys";
 import { registerAccountRoutes } from "./routes/account";
+import { registerBrandRoutes } from "./routes/brand";
 import { registerDealRoutes } from "./routes/deals";
 import { registerGoogleRoutes } from "./routes/google";
 import { registerInviteRoutes } from "./routes/invite";
@@ -99,7 +101,9 @@ export function createApp(deps: AppDeps) {
     madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
   });
   registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }) });
-  registerInviteRoutes(app, { sessions, invites: createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys }) });
+  const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys });
+  registerInviteRoutes(app, { sessions, invites });
+  registerBrandRoutes(app, { sessions, invites, brand: createBrand({ prisma }), appOrigin, now });
   registerGoogleRoutes(app, {
     google: deps.google,
     secrets: deps.secrets,

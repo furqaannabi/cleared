@@ -29,6 +29,8 @@ export interface TermsSnapshot {
     checkedBy: string;
     source: ItemSource;
   }[];
+  /** How the creator read each unclear line of the brief: the answer they picked, their own words, or left out. */
+  answers: { briefLine: number; kind: string; text?: string }[];
 }
 
 /** Takes a version of a deal's terms and checklist. Every post must have its amount and its deadline. */
@@ -45,6 +47,7 @@ export function takeSnapshot(deal: {
     checkedBy: string;
     questionId: string | null;
   }[];
+  questions: { briefLine: number; answerKind: string | null; answerText: string | null }[];
 }): TermsSnapshot {
   return {
     posts: deal.deliverables.map((post) => {
@@ -61,5 +64,10 @@ export function takeSnapshot(deal: {
       checkedBy: item.checkedBy,
       source: item.addedByCreator ? "creator" : item.questionId ? "answer" : "brief",
     })),
+    answers: deal.questions.flatMap((question) =>
+      question.answerKind === null
+        ? []
+        : [{ briefLine: question.briefLine, kind: question.answerKind, ...(question.answerText === null ? {} : { text: question.answerText }) }],
+    ),
   };
 }

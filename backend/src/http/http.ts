@@ -12,6 +12,11 @@ export interface AppEnv {
 
 export const SESSION_COOKIE = "cleared_session";
 
+/** A brand's session cookie has the deal in its name, so one browser can hold several deals' sessions. */
+const brandCookie = (dealId: string) => `cleared_brand_${dealId}`;
+/** The only routes a brand's cookie is sent to: its own deal's. */
+const brandPath = (dealId: string) => `/brand/deals/${dealId}`;
+
 /** One shape for every error (DS-FR-48): a code, and the field it is about where there is one. */
 export const ErrorSchema = z
   .object({
@@ -43,6 +48,14 @@ export function signOut(c: Context, appOrigin: string) {
 }
 
 export const sessionToken = (c: Context) => getCookie(c, SESSION_COOKIE);
+
+/**
+ * Gives a brand's browser its session for one deal (DS-FR-34). The cookie is sent to that deal's routes
+ * only, and the browser drops it after `seconds`, when the link it came from expires.
+ */
+export function letBrandIn(c: Context, dealId: string, token: string, appOrigin: string, seconds: number) {
+  setCookie(c, brandCookie(dealId), token, { ...cookieOptions(appOrigin), path: brandPath(dealId), maxAge: seconds });
+}
 
 /**
  * Refuses a changing request unless it comes from Cleared's own app (DS-BR-03): its origin must be the
@@ -80,6 +93,19 @@ export function requireCreator(sessions: Sessions): MiddlewareHandler<AppEnv> {
     const session = token ? await sessions.find(token) : undefined;
     if (!session) return fail(c, 401, "signed_out");
     c.set("creatorId", session.creatorId);
+    await next();
+  };
+}
+
+/**
+ * Lets a request through only with a brand's session for the deal in its path (DS-BR-01). Anything
+ * else is "not signed in", whether or not the deal exists (DS-FR-37).
+ */
+export function requireBrand(sessions: Sessions): MiddlewareHandler<AppEnv> {
+  return async (c, next) => {
+    const dealId = c.req.param("dealId");
+    const token = dealId ? getCookie(c, brandCookie(dealId)) : undefined;
+    if (!dealId || !token || !(await sessions.isBrandOf(token, dealId))) return fail(c, 401, "signed_out");
     await next();
   };
 }
