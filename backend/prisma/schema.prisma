@@ -158,6 +158,7 @@ model Creator {
 
   sessions Session[]
   accounts ConnectedAccount[]
+  deals    Deal[]
 
   @@index([demo, madeFrom, createdAt])
 }
@@ -193,4 +194,37 @@ model ConnectedAccount {
   creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@unique([creatorId, platform])
+}
+
+// One sponsorship between a creator and a brand (deal set-up spec DS-FR-13). Only its creator can
+// read or change it (DS-BR-01).
+model Deal {
+  id        String @id @default(uuid())
+  creatorId String
+  /// The brand's name, as the creator typed it. Plain text.
+  brandName String
+  /// checklist, invite, waiting_for_brand, changes_requested or agreed.
+  step      String @default("checklist")
+  /// Where reading the brief stands: idle, reading, done or failed.
+  reading   String @default("idle")
+  createdAt DateTime
+
+  creator      Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  deliverables Deliverable[]
+
+  @@index([creatorId, createdAt])
+}
+
+// One post on one platform. Its id is the id its money goes by in the money path.
+model Deliverable {
+  id       String @id @default(uuid())
+  dealId   String
+  /// youtube_video or youtube_short.
+  platform String
+  /// Its place among the deal's posts, as the creator ordered them.
+  position Int
+
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId, position])
 }

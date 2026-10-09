@@ -8,7 +8,9 @@ import type { PrismaClient } from "./generated/prisma/client";
 import { fail, ownAppOnly, type AppEnv } from "./http/http";
 import type { Money } from "./money/money";
 import type { GooglePort } from "./google/port";
+import { createDeals } from "./deals/deals";
 import { registerAccountRoutes } from "./routes/account";
+import { registerDealRoutes } from "./routes/deals";
 import { registerGoogleRoutes } from "./routes/google";
 import type { Secrets } from "./secrets/secrets";
 import { createSessions, defaultSessionSettings } from "./sessions/sessions";
@@ -89,6 +91,7 @@ export function createApp(deps: AppDeps) {
     // Only a hash of the address is kept.
     madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
   });
+  registerDealRoutes(app, { sessions, deals: createDeals({ prisma, now }) });
   registerGoogleRoutes(app, {
     google: deps.google,
     secrets: deps.secrets,
