@@ -5,6 +5,7 @@ import { prisma } from "./db";
 import { createDeals } from "./deals/deals";
 import { env } from "./env";
 import { createGoogle } from "./google/google";
+import { localLinkKeys } from "./invites/link-keys";
 import { runDueJobs, type JobHandlers } from "./jobs/jobs";
 import { startWorker } from "./jobs/worker";
 import { createMoney } from "./money/money";
@@ -16,6 +17,10 @@ const now = () => new Date();
 // What is logged about a call to another service: a status, counts and that service's own ids. Never a
 // brief, a code, a token, an email or a payload.
 const log = (message: string, details: Record<string, unknown>) => console.error(message, JSON.stringify(details));
+
+if (!env.tokenKey) {
+  throw new Error("Missing environment variable TOKEN_KEY. Make one with: openssl rand -base64 32. See backend/.env.example.");
+}
 
 const accounts = createAccounts({ prisma, now });
 // Briefs are read by Claude on Amazon Bedrock, with the AWS credentials the service runs under.
@@ -49,7 +54,8 @@ const app = createApp({
   appOrigin: env.appOrigin,
   apiOrigin: env.apiOrigin,
   google: env.google && createGoogle({ ...env.google, log }),
-  secrets: env.google && localSecrets(env.google.tokenKey),
+  secrets: localSecrets(env.tokenKey),
+  linkKeys: localLinkKeys(env.tokenKey),
 });
 
 // Timers and follow-ups: reading briefs, deleting demo accounts, and the money path's deadlines and

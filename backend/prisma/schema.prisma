@@ -209,12 +209,18 @@ model Deal {
   reading   String @default("idle")
   /// The brief as numbered lines of plain text. Untrusted: shown as text, never acted on (DS-BR-04).
   briefLines Json?
+  /// The brand's email, if the creator gave one. Nothing is sent to it (DS-FR-30).
+  brandEmail String?
+  /// The creator's timezone when the link was made, which a deadline's date is read in (DS-FR-31).
+  timezone   String?
   createdAt DateTime
 
   creator      Creator         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   deliverables Deliverable[]
   items        ChecklistItem[]
   questions    Question[]
+  links        InviteLink[]
+  versions     TermsVersion[]
 
   @@index([creatorId, createdAt])
 }
@@ -227,6 +233,10 @@ model Deliverable {
   platform String
   /// Its place among the deal's posts, as the creator ordered them.
   position Int
+  /// What the brand pays for this post, in whole cents (DS-FR-29, DS-BR-12).
+  amountCents  Int?
+  /// How many days after the hold the post is due, 1 to 21 (DS-FR-29).
+  deadlineDays Int?
 
   deal  Deal            @relation(fields: [dealId], references: [id], onDelete: Cascade)
   items ChecklistItem[]
@@ -276,6 +286,38 @@ model Question {
   deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
 
   @@index([dealId, position])
+}
+
+// The brand's way in to one deal (DS-FR-31). Only a hash of its token is kept, with the salt the token
+// is worked out from again when its creator asks (DS-FR-32, DS-BR-11).
+model InviteLink {
+  id          String    @id @default(uuid())
+  dealId      String
+  tokenHash   String    @unique
+  salt        String
+  createdAt   DateTime
+  expiresAt   DateTime
+  /// Set when the creator replaces the link or changes the terms. A link turned off never works again.
+  turnedOffAt DateTime?
+
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId, createdAt])
+}
+
+// The terms and the checklist exactly as they were sent to the brand (DS-FR-31). The brand agrees to
+// one of these by its number (DS-BR-10).
+model TermsVersion {
+  id        String   @id @default(uuid())
+  dealId    String
+  number    Int
+  /// Each post's amount and deadline, and every item, as they stood.
+  terms     Json
+  createdAt DateTime
+
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@unique([dealId, number])
 }
 
 // One brief sent to be read, kept to enforce the limits on reading (DS-FR-26, DS-FR-27). It is not

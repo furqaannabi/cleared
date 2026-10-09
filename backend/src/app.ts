@@ -9,9 +9,12 @@ import { fail, ownAppOnly, type AppEnv } from "./http/http";
 import type { Money } from "./money/money";
 import type { GooglePort } from "./google/port";
 import { createDeals, type Deals } from "./deals/deals";
+import { createInvites } from "./invites/invites";
+import type { LinkKeys } from "./invites/link-keys";
 import { registerAccountRoutes } from "./routes/account";
 import { registerDealRoutes } from "./routes/deals";
 import { registerGoogleRoutes } from "./routes/google";
+import { registerInviteRoutes } from "./routes/invite";
 import type { Secrets } from "./secrets/secrets";
 import { createSessions, defaultSessionSettings } from "./sessions/sessions";
 
@@ -38,6 +41,8 @@ export interface AppDeps {
   google?: GooglePort;
   /** Encrypts Google's refresh token before it is stored (DS-BR-14). */
   secrets?: Secrets;
+  /** Works out an invite link's token (DS-FR-32). Without it no link can be made. */
+  linkKeys?: LinkKeys;
 }
 
 /** The address a request came from, as the connection reports it. */
@@ -94,6 +99,7 @@ export function createApp(deps: AppDeps) {
     madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
   });
   registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }) });
+  registerInviteRoutes(app, { sessions, invites: createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys }) });
   registerGoogleRoutes(app, {
     google: deps.google,
     secrets: deps.secrets,

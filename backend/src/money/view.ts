@@ -129,7 +129,7 @@ export interface MoneyView {
 export type CreatorMoneyView = MoneyView & { payoutEmail: string };
 
 /** Whole cents as a decimal string with two places: 120000 is "1200.00". */
-function decimal(amountCents: number): string {
+export function decimal(amountCents: number): string {
   const text = String(amountCents).padStart(3, "0");
   return `${text.slice(0, -2)}.${text.slice(-2)}`;
 }

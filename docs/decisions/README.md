@@ -70,3 +70,4 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-09 | [The app and the API share one domain, on two subdomains](2026-10-09-app-and-api-on-one-domain.md) | Accepted |
 | 2026-10-09 | [The API contract is an OpenAPI document generated from the backend's Zod schemas](2026-10-09-api-contract-generated-from-zod.md) | Accepted |
 | 2026-10-09 | [Briefs are read by Claude Opus 5.5 on Bedrock, in one call, with limits](2026-10-09-briefs-read-by-claude-opus-on-bedrock.md) | Accepted |
+| 2026-10-09 | [An invite link is worked out again each time, never stored](2026-10-09-an-invite-link-is-worked-out-again.md) | Accepted |
