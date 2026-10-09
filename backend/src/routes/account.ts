@@ -4,6 +4,7 @@ import type { Context } from "hono";
 import type { Accounts } from "../accounts/accounts";
 import { ErrorSchema, fail, ownPath, requireCreator, sessionToken, signIn, signOut, type AppEnv } from "../http/http";
 import type { Sessions } from "../sessions/sessions";
+import { NextSchema } from "./shared";
 
 const ProfileSchema = z
   .object({
@@ -34,6 +35,16 @@ export function registerAccountRoutes(
 ) {
   const { sessions, accounts, appOrigin } = deps;
   const creator = requireCreator(sessions);
+
+  // A page the browser is sent to has no JSON answer to check, so it is described for the contract and
+  // handled as a plain route (DS-FR-47).
+  app.openAPIRegistry.registerPath({
+    method: "post",
+    path: "/auth/demo",
+    summary: "Try the demo account: a form the page posts, answered with a redirect into the app (DS-FR-06)",
+    request: { query: NextSchema },
+    responses: { 303: { description: "Signed in to a new demo account and sent to `next` or /deals; or to /sign-in?problem=demo_limit" } },
+  });
 
   // "Try the demo account" is a form posted by the page, so the answer is a redirect into the app (DS-FR-06).
   app.post("/auth/demo", async (c) => {

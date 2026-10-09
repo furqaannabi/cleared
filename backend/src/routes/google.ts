@@ -12,6 +12,7 @@ import type { GooglePort, GoogleScope } from "../google/port";
 import { cookieOptions, ownPath, sessionToken, signIn, type AppEnv } from "../http/http";
 import type { Secrets } from "../secrets/secrets";
 import type { Sessions } from "../sessions/sessions";
+import { NextSchema } from "./shared";
 
 const PENDING_COOKIE = "cleared_pending";
 /** How long a visitor has at Google's screen before the trip has to be started again. */
@@ -112,6 +113,25 @@ export function registerGoogleRoutes(
   }
 
   const signInCallback = `${apiOrigin}/auth/google/callback`;
+
+  // Pages the browser is sent to have no JSON answer to check, so they are described for the contract
+  // and handled as plain routes (DS-FR-47). The two callbacks are Google's to call, and are not in it.
+  app.openAPIRegistry.registerPath({
+    method: "get",
+    path: "/auth/google",
+    summary: "Sign in with Google: the browser is sent here, on to Google, and back into the app (DS-FR-01)",
+    request: { query: NextSchema },
+    responses: { 302: { description: "To Google; afterwards to `next`, /deals or /welcome, or to /sign-in?problem=… if it did not work" } },
+  });
+  app.openAPIRegistry.registerPath({
+    method: "get",
+    path: "/connect/youtube",
+    summary: "Connect the creator's YouTube channel, read-only: the browser is sent here, on to Google, and back (DS-FR-11)",
+    request: { query: NextSchema },
+    responses: {
+      302: { description: "To Google; afterwards to `next` or /deals with `connected=youtube`, or `connect=failed`, `declined` or `no_channel`" },
+    },
+  });
 
   app.get("/auth/google", (c) => {
     if (!google) return toApp(c, "/sign-in?problem=not_configured");

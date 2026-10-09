@@ -1,0 +1,13 @@
+{
+  "name": "contract",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cleared's API contract: the OpenAPI document generated from the backend, and TypeScript types generated from it. Nothing here is written by hand.",
+  "types": "./api.d.ts",
+  "exports": {
+    ".": {
+      "types": "./api.d.ts"
+    },
+    "./openapi.json": "./openapi.json"
+  }
+}

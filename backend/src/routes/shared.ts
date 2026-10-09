@@ -35,3 +35,9 @@ export const HoldSchema = z
   })
   .openapi("Hold");
 
+/**
+ * Where on Cleared's own app to send the browser afterwards (DS-FR-04). Anything that is not a path on
+ * the app is ignored.
+ */
+export const NextSchema = z.object({ next: z.string().optional() });
+

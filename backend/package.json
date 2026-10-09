@@ -10,6 +10,7 @@
     "test": "bun test",
     "test:sandbox": "bun test ./sandbox/paypal.sandbox.ts",
     "test:bedrock": "bun test ./sandbox/bedrock.sandbox.ts",
+    "contract": "bun src/contract/contract.ts",
     "sandbox:hold": "bun sandbox/make-hold.ts",
     "sandbox:money": "bun sandbox/money.ts",
     "db:up": "docker compose up -d --wait",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
+    "openapi-typescript": "7.13.0",
     "prisma": "7.10.0",
     "typescript": "^5"
   }
