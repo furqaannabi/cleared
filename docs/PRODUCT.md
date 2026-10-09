@@ -62,7 +62,7 @@ Each deliverable is checked twice: as a draft, while a mistake can still be fixe
 | Step | What happens | Runs on |
 | --- | --- | --- |
 | 1. Brief | The creator pastes or uploads the brief the brand sent. AI turns it into a checklist, cites the line of the brief each item came from, and asks about anything ambiguous. | Claude on Amazon Bedrock, S3 |
-| 2. Invite | The creator sets the amount and deadline for each deliverable, connects their YouTube or Instagram account, gives the PayPal email they want to be paid at, and sends the brand a link. | Cognito, Google and Instagram sign-in |
+| 2. Invite | The creator sets the amount and deadline for each deliverable, connects their YouTube or Instagram account, gives the PayPal email they want to be paid at, and sends the brand a link. | Google and Instagram sign-in |
 | 3. Confirm and hold | The brand reviews the checklist and can ask the creator for changes ([decision](decisions/2026-10-08-brand-asks-for-changes-not-edits.md)). Once both sides accept the same checklist, amounts and release rule, the brand approves one PayPal hold per deliverable. | PayPal Orders |
 | 4. Draft check | The creator uploads the video file. AI checks every item and shows timestamped evidence. The creator fixes any failures and resubmits. | S3, a backend job, Amazon Bedrock |
 | 5. Brand review | From a fully passing draft, the brand has 48 hours to approve it or to object to a specific item. Silence clears it. | A backend timer, AG Grid |
@@ -171,11 +171,11 @@ The frontend is hosted on Vercel. Everything behind it uses AWS services or the 
 | What was said, on-screen text and logos, all timestamped | Amazon Bedrock Data Automation |
 | What is shown, such as the product in use | A video model on Amazon Bedrock: TwelveLabs Pegasus or Amazon Nova, chosen after a test |
 | Frontend | Next.js on Vercel |
-| API | Hono on Bun, described with OpenAPI |
+| API | Hono on Bun, described with an OpenAPI document generated from its own schemas ([decision](decisions/2026-10-09-api-contract-generated-from-zod.md)); on its own subdomain beside the app's ([decision](decisions/2026-10-09-app-and-api-on-one-domain.md)) |
 | Pipeline and timers | A job queue kept in Postgres, run by the same backend service |
 | Data | PostgreSQL on Amazon RDS, through Prisma |
 | Backend hosting | One container on Amazon ECS Fargate |
-| Sign-in | Cognito, with Google and Instagram sign-in for connecting accounts |
+| Sign-in | Google sign-in, run by the backend, which also connects a YouTube channel; Instagram sign-in for connecting an account. No Cognito ([decision](decisions/2026-10-09-creators-sign-in-with-google-directly.md)) |
 | Files and secrets | S3, KMS |
 | Evidence table and brand dashboard | AG Grid and AG Studio |
 | PayPal coding help | APIMatic's Context Plugin for PayPal |
