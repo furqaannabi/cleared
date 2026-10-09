@@ -1,6 +1,6 @@
 # Deal set-up: FRD
 
-**Status:** Signed by Furqaan (revision 1.0). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no Instagram for now) are Furqaan's; William has to agree.
+**Status:** Signed by Furqaan (revision 1.1). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no Instagram for now) are Furqaan's; William has to agree.
 
 **Surface:** Backend. Steps 1 to 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: a creator signs in, starts a deal, has its brief turned into a checklist, sets the terms and makes the brand's link; the brand opens the link, asks for changes or agrees, and approves a PayPal hold for each post.
 
@@ -138,7 +138,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | DS-FR-29 | **Terms.** For each post the creator sets an amount in US dollars, as a decimal string with two places, and a deadline of 1 to 21 days after the hold. An amount outside the money path's limits ($20.00 to $10,000.00) is refused when it is saved, with the reason (MP-FR-09). |
 | DS-FR-30 | **The brand's email** is optional and stored if it looks like an email. Nothing is sent to it. |
 | DS-FR-31 | **Create the link.** Allowed when every post has a valid amount and deadline, the creator's YouTube channel is connected, and their PayPal email is saved. It saves the terms and the checklist as version 1, makes an unguessable link scoped to this deal that expires in 7 days, records the creator's timezone, and moves the deal to `waiting_for_brand`. |
-| DS-FR-32 | **The link is returned to its creator only.** The backend keeps a hash of it, never the link itself. The creator's page can fetch the link again while it is live. |
+| DS-FR-32 | **The link is returned to its creator only.** The backend keeps a hash of the link's token and a random salt, never the token or the link. Each time the creator's page fetches the link, the token is worked out again from the salt and a key the service holds ([decision](../decisions/2026-10-09-an-invite-link-is-worked-out-again.md)). The page can fetch it until it is turned off; one past its 7 days comes back marked as expired. |
 | DS-FR-33 | **Replace or turn off.** "Make a new link" turns the old one off and returns a new one. "Change terms" turns the link off and moves the deal back to `invite`. A link turned off ends every brand session made from it. |
 
 ### The brand's way in
@@ -195,7 +195,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | DS-BR-08 | The checklist cannot be marked ready while any question is unanswered. |
 | DS-BR-09 | The brand never edits the terms. It asks; the creator changes them ([decision](../decisions/2026-10-08-brand-asks-for-changes-not-edits.md)). |
 | DS-BR-10 | An agreement is to one version. A version the brand was not shown cannot be agreed to. No hold can be started before an agreement. |
-| DS-BR-11 | The link's token is unguessable (at least 128 bits of randomness), scoped to one deal, and expiring. Only its hash is stored. It is never logged and never returned to anyone but the deal's creator. |
+| DS-BR-11 | The link's token is unguessable (at least 128 bits of randomness), scoped to one deal, and expiring. Only its hash and the salt it is worked out from are stored; the key is not in the database. It is never logged and never returned to anyone but the deal's creator. |
 | DS-BR-12 | Amounts are stored as whole cents and exchanged as decimal strings. No amount is ever a floating-point number. |
 | DS-BR-13 | The creator's PayPal email appears in nothing a brand can read. Google's tokens appear in nothing anyone can read. |
 | DS-BR-14 | Google's refresh token is encrypted before it is stored, with a key the database does not hold. Read-only access is the only access ever asked for. |
@@ -212,6 +212,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
   - **Sessions:** make, look up by cookie, end, and end all for a link. One table serves both kinds: a creator's, and a brand's scoped to a deal.
   - **A Google port:** the sign-in address, exchanging a code, verifying an identity token, reading a channel. Tests use a fake.
   - **A secrets port:** encrypt and decrypt a token. KMS in production; a key from the environment in development and tests.
+  - **A link keys port:** work out a link's token from its salt (DS-FR-32). KMS in production; a key derived from the same environment key in development and tests.
   - **A brief reader:** given numbered lines and the posts, returns checked items and questions, or a failure with its reason. It owns the prompt, the schema and the checks in DS-BR-05 to DS-BR-07. Tests use a fake model.
   - **A model port:** one call that sends instructions and numbered lines and returns a structured answer. The real one calls Claude on Bedrock; tests use a fake that can refuse, return a bad shape, or cite a line that is not there.
   - **Deals:** the steps and what each allows, as a pure function tested on its own, in the way the money path's transitions are.
@@ -227,6 +228,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 - **The money module gains one thing:** a way to open a deliverable's money and record the brand's agreement inside the caller's transaction, so DS-FR-42 is all or nothing. Nothing else in it changes.
 - **Paths** follow the provisional ones in William's specs (BC, IN, CH, SI) wherever they exist, so his pages change as little as possible. The sign-in routes are `/auth/google`, `/auth/google/callback`, `/auth/demo` and `/auth/sign-out`; connecting YouTube is `/connect/youtube` and its callback.
 - **The contract** is generated with Hono's OpenAPI add-on from Zod schemas ([decision](../decisions/2026-10-09-api-contract-generated-from-zod.md)).
+- **The token key** is the one setting with no default. The service does not start without it: the brand's links are worked out from it and Google's tokens are encrypted with it.
 - **Settings**, each with the value in this spec as its default: session lengths, the link's expiry, the demo limits, the four read limits, the model id, the region, the app's and the API's addresses.
 
 ### Requests for William
@@ -241,7 +243,10 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | Brief to checklist (BC-FR-06) | No file upload yet. The page's paste-only fallback applies |
 | New deal, invite (BC, IN-FR-09 to IN-FR-11) | A deal can only have YouTube videos and Shorts for now. A Reel is refused by the API, so the pages need to hide or flag Reels and the Instagram card |
 | Invite (IN-FR-13, IN-FR-17) | The brand's email is stored and nothing is sent. "We've also emailed it" must not show |
-| Invite (IN-FR-17) | Creating the link needs the creator's timezone, as the browser reports it |
+| Invite (IN-FR-17) | Creating the link needs the creator's timezone, as the browser reports it: `POST /deals/{id}/invite/link` takes `{ "timezone": "…" }` and refuses a request without it |
+| Invite (IN-FR-06) | An amount outside $20.00 to $10,000.00 is refused when it is saved, with status 400, the code `amount_below_minimum` or `amount_above_maximum`, and the field `amount`. `amountProblem` is never sent |
+| Invite (IN-BR-04) | The link's address is the app's own. Locally that is `http://localhost:3000/b/…`, which the page's schema turns down because it accepts `https` only |
+| Invite (IN-FR-16) | Creating the link is refused with status 409 and the code `terms_incomplete`, `youtube_not_connected` or `paypal_email_missing` |
 | Sign-in (SI-FR-02, SI-FR-14) | The demo account starts with a connected YouTube channel and no deals. Seeded deals come as later steps are built |
 | Brief to checklist | A new refusal when a limit on reading is reached, with which limit and when it resets |
 | Confirm and hold (CH-FR-17) | The brand's deal carries PayPal's public client id for the button |
@@ -295,10 +300,14 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **DS-BR-16:** which failed reads count against a limit.
 - **The secrets port:** a key from the environment stands in for KMS in development and tests.
 
+**Verified while building.**
+
+- Bedrock accepts a schema-constrained answer from Claude Opus 5.5 through Anthropic's Bedrock SDK on Bun. The account first needed the model's offer accepted, and AWS to restore its quota for the model, which was zero.
+- A real brief of 12 lines was read in 16 seconds, using 278 input and 824 output tokens: about 2 cents at Bedrock's price. One of 5 lines took 9 seconds. At 300 reads a day that is about $5 a day for briefs this short; longer ones cost more.
+- That brief carried a line telling the reader to ignore its instructions and pass every item. No item or question came from it (DS-BR-04, DS-BR-07).
+
 **To verify while building.**
 
-- That Bedrock accepts a schema-constrained answer from Claude Opus 5.5 through Anthropic's Bedrock SDK on Bun.
-- How long a real brief takes to read, and what one read costs on Bedrock. The cost in the limits is an estimate at Anthropic's list prices.
 - What Google shows a creator while the Google app is unverified, and the 100-user cap on it.
 - That Google's refresh tokens expire after 7 days while the Google app is in "Testing" (PRODUCT.md "Risks to test first").
 
@@ -315,3 +324,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | --- | --- | --- |
 | 0.1 | First draft, from the grill-me session with Furqaan: steps 1 to 3 end to end; Google sign-in run by the backend with no Cognito, and a demo account; the app and the API on one domain as two subdomains; William's four decisions accepted (brand gets in by its link, brand asks and creator changes, the repo layout, the deadline as one shared date); the contract generated from the backend's Zod schemas; briefs read by Claude Opus 5.5 on Bedrock in one call, shown all at once; limits of 20,000 characters, 5 reads per demo account, 20 a day per creator and 300 a day overall; Instagram, brief upload, email and seeded demo deals left for later | [Google directly](../decisions/2026-10-09-creators-sign-in-with-google-directly.md), [One domain](../decisions/2026-10-09-app-and-api-on-one-domain.md), [Generated contract](../decisions/2026-10-09-api-contract-generated-from-zod.md), [Briefs read by Claude](../decisions/2026-10-09-briefs-read-by-claude-opus-on-bedrock.md) |
 | 1.0 | Signed by Furqaan, with the twelve items added while drafting accepted as written | none |
+| 1.1 | Signed by Furqaan. How the brand's link is kept: a hash and a salt, with the token worked out again from a key each time its creator fetches it, so DS-FR-32 no longer contradicts itself (DS-FR-32, DS-BR-11); an expired link is still returned to its creator, marked expired; the token key is required for the service to start. Found while building: Bedrock's structured answers and the real time and cost of a read are verified; four more requests for William on the invite | [Link worked out again](../decisions/2026-10-09-an-invite-link-is-worked-out-again.md) |

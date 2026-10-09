@@ -18,4 +18,4 @@ A spec is signed only when William or Furqaan says so after reading it. No code 
 | [Publish and pay](publish-and-pay-frd.md) | PP | Both sides of steps 6 to 8: the go-ahead, posting, the live check, capture and payout, the brand's decisions after publishing | William | Signed by William (1.2) |
 | [Cancel](cancel-frd.md) | CN | Both sides, from the invite until the go-ahead: cancelling a post or the deal, the note to the other side, and the cancelled and closed states | William | Signed by William (1.1) |
 | [Sign-in and welcome](sign-in-frd.md) | SI | Creator app: Sign in with Google, Try the demo account, the welcome page, the sign-in page, the account menu | William | Signed by William (1.0) |
-| [Deal set-up](deal-setup-frd.md) | DS | Backend: steps 1 to 3 as an API (sign-in, deals, brief to checklist, the invite and the brand's link, change requests, agreeing, and the hold routes) | Furqaan | Signed by Furqaan (1.0) |
+| [Deal set-up](deal-setup-frd.md) | DS | Backend: steps 1 to 3 as an API (sign-in, deals, brief to checklist, the invite and the brand's link, change requests, agreeing, and the hold routes) | Furqaan | Signed by Furqaan (1.1) |
