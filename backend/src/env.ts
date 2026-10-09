@@ -24,10 +24,34 @@ function paypal(): { clientId: string; clientSecret: string; webhookId?: string 
   return undefined;
 }
 
+/**
+ * Google's OAuth client, for signing in and connecting YouTube, and the key that encrypts the refresh
+ * tokens it gives. In development the API starts without them and only the demo account can sign in.
+ * In production they are required. With a Google client, the key is always required.
+ */
+function google(): { clientId: string; clientSecret: string; tokenKey: string } | undefined {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const tokenKey = process.env.TOKEN_KEY;
+  if (clientId && clientSecret) {
+    if (!tokenKey) throw new Error("Missing TOKEN_KEY, which encrypts Google's tokens. See backend/.env.example.");
+    return { clientId, clientSecret, tokenKey };
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET. See backend/.env.example.");
+  }
+  return undefined;
+}
+
+const port = Number(process.env.PORT ?? 4000);
+
 /** The service's configuration, read once at start-up. */
 export const env = {
   databaseUrl: required("DATABASE_URL"),
-  port: Number(process.env.PORT ?? 4000),
+  port,
+  /** The API's own address, which Google sends the browser back to. */
+  apiOrigin: process.env.API_ORIGIN ?? `http://localhost:${port}`,
+  google: google(),
   /** The address of Cleared's own app: the only origin that may make changing requests (DS-BR-03). */
   appOrigin: process.env.APP_ORIGIN ?? "http://localhost:3000",
   paypal: paypal(),

@@ -21,7 +21,7 @@ export const fail = <Status extends ContentfulStatusCode>(c: Context, status: St
   c.json({ error: { code, field } }, status);
 
 /** The cookie's attributes. The page cannot read it, and it is only ever sent over HTTPS (DS-BR-02). */
-function cookieOptions(appOrigin: string) {
+export function cookieOptions(appOrigin: string) {
   // Browsers other than Chrome refuse a Secure cookie on plain http://localhost, so it is relaxed there only.
   const local = appOrigin.startsWith("http://localhost");
   return { httpOnly: true, secure: !local, sameSite: "Lax", path: "/" } as const;

@@ -2,14 +2,28 @@ import { createAccounts } from "./accounts/accounts";
 import { createApp } from "./app";
 import { prisma } from "./db";
 import { env } from "./env";
+import { createGoogle } from "./google/google";
 import { runDueJobs } from "./jobs/jobs";
 import { startWorker } from "./jobs/worker";
 import { createMoney } from "./money/money";
 import { recordedPosts } from "./money/published-post";
 import { createSandboxPayPal } from "./paypal/sandbox-paypal";
+import { localSecrets } from "./secrets/secrets";
 
 const accounts = createAccounts({ prisma, now: () => new Date() });
-const base = { prisma, accounts, appOrigin: env.appOrigin };
+// A failed call is logged with its status only, never a code, a token or an email.
+const logFailure = (message: string, details: Record<string, unknown>) => console.error(message, JSON.stringify(details));
+const base = {
+  prisma,
+  accounts,
+  appOrigin: env.appOrigin,
+  apiOrigin: env.apiOrigin,
+  google: env.google && createGoogle({ ...env.google, log: logFailure }),
+  secrets: env.google && localSecrets(env.google.tokenKey),
+};
+if (!env.google) {
+  console.warn("Google is not configured, so only the demo account can sign in. See backend/.env.example.");
+}
 let app = createApp(base);
 
 if (env.paypal) {

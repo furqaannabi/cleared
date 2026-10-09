@@ -95,6 +95,22 @@ export function createAccounts(deps: { prisma: PrismaClient; now: () => Date; se
       return { creatorId: creator.id };
     },
 
+    /**
+     * Stores the YouTube channel a creator connected, replacing any they had (DS-FR-11). The refresh
+     * token arrives already encrypted; this module never sees it in the clear.
+     */
+    async connectYouTube(
+      creatorId: string,
+      channel: { externalId: string; name: string; refreshTokenEncrypted: string },
+    ): Promise<void> {
+      const account = { ...channel, synthetic: false, connectedAt: now() };
+      await prisma.connectedAccount.upsert({
+        where: { creatorId_platform: { creatorId, platform: "youtube" } },
+        create: { creatorId, platform: "youtube", ...account },
+        update: account,
+      });
+    },
+
     /** Records that the creator has seen the welcome page (DS-FR-09). */
     async markWelcomed(creatorId: string): Promise<void> {
       await prisma.creator.updateMany({ where: { id: creatorId, welcomedAt: null }, data: { welcomedAt: now() } });

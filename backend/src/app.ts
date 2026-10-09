@@ -7,7 +7,10 @@ import { createAccounts, type Accounts } from "./accounts/accounts";
 import type { PrismaClient } from "./generated/prisma/client";
 import { fail, ownAppOnly, type AppEnv } from "./http/http";
 import type { Money } from "./money/money";
+import type { GooglePort } from "./google/port";
 import { registerAccountRoutes } from "./routes/account";
+import { registerGoogleRoutes } from "./routes/google";
+import type { Secrets } from "./secrets/secrets";
 import { createSessions, defaultSessionSettings } from "./sessions/sessions";
 
 /** No PayPal event comes near this size. Anything larger is turned away before it is read. */
@@ -25,6 +28,12 @@ export interface AppDeps {
   clientAddress?: (c: Context) => string;
   /** The creators module. The service passes its own, so its jobs and its routes share one. */
   accounts?: Accounts;
+  /** The API's own address, which Google sends the browser back to. */
+  apiOrigin?: string;
+  /** Google, for signing in and connecting YouTube. Left out when it is not set up. */
+  google?: GooglePort;
+  /** Encrypts Google's refresh token before it is stored (DS-BR-14). */
+  secrets?: Secrets;
 }
 
 /** The address a request came from, as the connection reports it. */
@@ -79,6 +88,15 @@ export function createApp(deps: AppDeps) {
     sessionDays: defaultSessionSettings.creatorDays,
     // Only a hash of the address is kept.
     madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
+  });
+  registerGoogleRoutes(app, {
+    google: deps.google,
+    secrets: deps.secrets,
+    sessions,
+    accounts,
+    appOrigin,
+    apiOrigin: deps.apiOrigin ?? "http://localhost:4000",
+    sessionDays: defaultSessionSettings.creatorDays,
   });
 
   /** Reports whether the service is up and can reach Postgres. Used by the load balancer. */
