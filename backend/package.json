@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:sandbox": "bun test ./sandbox/paypal.sandbox.ts",
+    "test:bedrock": "bun test ./sandbox/bedrock.sandbox.ts",
     "sandbox:hold": "bun sandbox/make-hold.ts",
     "sandbox:money": "bun sandbox/money.ts",
     "db:up": "docker compose up -d --wait",
@@ -17,6 +18,8 @@
     "db:migrate": "bun --env-file=.env --bun prisma migrate dev"
   },
   "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "^0.34.4",
+    "@anthropic-ai/sdk": "^0.132.1",
     "@hono/zod-openapi": "^1.6.3",
     "@paypal/paypal-server-sdk": "2.5.0",
     "@prisma/adapter-pg": "7.10.0",

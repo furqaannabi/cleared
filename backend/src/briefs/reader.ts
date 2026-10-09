@@ -74,7 +74,8 @@ const Proposed = z.strictObject({
   name: z.string().trim().min(1),
   kind: z.enum(ITEM_KINDS),
   appliesTo: z.enum(["all", "youtube_video", "youtube_short"]),
-  exact: z.string().trim().min(1).nullish(),
+  // Null, missing and empty all mean "no exact value".
+  exact: z.string().trim().nullish(),
 });
 
 /**

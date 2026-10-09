@@ -52,6 +52,9 @@ export const env = {
   /** The API's own address, which Google sends the browser back to. */
   apiOrigin: process.env.API_ORIGIN ?? `http://localhost:${port}`,
   google: google(),
+  /** Bedrock's id for the model that reads briefs, and the AWS region it is called in. */
+  briefModel: process.env.BRIEF_MODEL ?? "anthropic.claude-opus-5-5",
+  awsRegion: process.env.AWS_REGION ?? "us-east-1",
   /** The address of Cleared's own app: the only origin that may make changing requests (DS-BR-03). */
   appOrigin: process.env.APP_ORIGIN ?? "http://localhost:3000",
   paypal: paypal(),
