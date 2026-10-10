@@ -67,7 +67,7 @@ export class ServiceFailed extends Error {
 const HINT_MAX = 280;
 
 /** A suggestion as one line of plain text, or nothing if there is none or it is too long (DR-FR-24). */
-function plainHint(text: string | undefined): string | undefined {
+export function plainHint(text: string | undefined): string | undefined {
   const line = (text ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/ {2,}/g, " ").trim();
   return line && line.length <= HINT_MAX ? line : undefined;
 }
@@ -122,7 +122,7 @@ async function reach(what: string, ask: () => Promise<ModelReply>): Promise<Excl
  * entries at all, so every item asked about is unsure. Entries about items that were not asked about
  * are ignored, a repeated entry does not replace the first, and a malformed entry is dropped (DR-BR-08).
  */
-async function answersFor<Shape extends z.ZodType<{ id: string }>>(what: string, asked: AskedItem[], shape: Shape, ask: () => Promise<ModelReply>) {
+export async function answersFor<Shape extends z.ZodType<{ id: string }>>(what: string, asked: AskedItem[], shape: Shape, ask: () => Promise<ModelReply>) {
   const byId = new Map<string, z.infer<Shape>>();
   if (asked.length === 0) return byId;
   const ids = new Set(asked.map((item) => item.id));
