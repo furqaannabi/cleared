@@ -85,6 +85,50 @@
           "error"
         ]
       },
+      "ProfileAfterEmail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Profile"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "postsKeepingEmail": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PostKeepingEmail"
+                }
+              }
+            },
+            "required": [
+              "postsKeepingEmail"
+            ]
+          }
+        ]
+      },
+      "PostKeepingEmail": {
+        "type": "object",
+        "properties": {
+          "deliverableId": {
+            "type": "string"
+          },
+          "dealId": {
+            "type": "string"
+          },
+          "brandName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deliverableId",
+          "dealId",
+          "brandName",
+          "email"
+        ]
+      },
       "DealDraft": {
         "type": "object",
         "properties": {
@@ -433,6 +477,10 @@
                     "objected",
                     "approved",
                     "posting",
+                    "published",
+                    "captured",
+                    "paid",
+                    "approved_not_paid",
                     "released"
                   ]
                 }
@@ -920,6 +968,10 @@
               "objected",
               "approved",
               "posting",
+              "published",
+              "captured",
+              "paid",
+              "approved_not_paid",
               "released"
             ]
           },
@@ -1016,9 +1068,7 @@
                   },
                   "required": [
                     "label",
-                    "text",
-                    "startSec",
-                    "endSec"
+                    "text"
                   ]
                 },
                 "checkedBy": {
@@ -1170,6 +1220,259 @@
                   "state"
                 ]
               }
+            ]
+          },
+          "post": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "publishedAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "url",
+              "publishedAt"
+            ]
+          },
+          "liveCheck": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "checking",
+                      "passed",
+                      "reconnect_youtube",
+                      "video_not_found"
+                    ]
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "approved"
+                    ]
+                  },
+                  "by": {
+                    "type": "string",
+                    "enum": [
+                      "brand_confirmed",
+                      "brand_silence",
+                      "brand_accepted",
+                      "cleared"
+                    ]
+                  }
+                },
+                "required": [
+                  "state",
+                  "by"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "fixable"
+                    ]
+                  },
+                  "fixBy": {
+                    "type": "string"
+                  },
+                  "checking": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                },
+                "required": [
+                  "state",
+                  "fixBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "not_fixable"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "not_your_channel",
+                      "not_the_approved_file"
+                    ]
+                  },
+                  "brandBy": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "reason",
+                  "brandBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "undecided"
+                    ]
+                  },
+                  "what": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "file_record",
+                        "paid_promotion",
+                        "written_item"
+                      ]
+                    }
+                  },
+                  "brandBy": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "what",
+                  "brandBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "objected"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "ruleBy": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "reason",
+                  "ruleBy"
+                ]
+              }
+            ]
+          },
+          "capture": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "reference": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string"
+                  },
+                  "fee": {
+                    "type": "string"
+                  },
+                  "payout": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reference",
+                  "at",
+                  "amount",
+                  "fee",
+                  "payout"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "refused": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "retryUntil": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "refused",
+                  "retryUntil"
+                ]
+              }
+            ]
+          },
+          "payout": {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "sending",
+                  "cancelling",
+                  "delayed",
+                  "unclaimed",
+                  "failed",
+                  "paid"
+                ]
+              },
+              "email": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "failed",
+                  "returned",
+                  "blocked",
+                  "denied"
+                ]
+              },
+              "reference": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string"
+              },
+              "canSendAgain": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "state",
+              "email",
+              "canSendAgain"
             ]
           },
           "reviewWindowEndsAt": {
@@ -1697,7 +2000,7 @@
     },
     "/me/paypal-email": {
       "put": {
-        "summary": "Save the PayPal email the creator is paid at (DS-FR-10)",
+        "summary": "Save the PayPal email the creator is paid at. It reaches every post of theirs whose payout is not with PayPal (DS-FR-10, PT-FR-27)",
         "requestBody": {
           "required": true,
           "content": {
@@ -1720,11 +2023,11 @@
         },
         "responses": {
           "200": {
-            "description": "The creator's profile",
+            "description": "The creator's profile, and the posts whose payout is already with PayPal and keeps the email it went to",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Profile"
+                  "$ref": "#/components/schemas/ProfileAfterEmail"
                 }
               }
             }
@@ -4840,6 +5143,65 @@
           },
           "503": {
             "description": "This service is not set up to read YouTube",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deliverables/{deliverableId}/payout/again": {
+      "post": {
+        "summary": "Have a payout that ended unpaid sent again, to the creator's PayPal email as it now stands (PT-FR-26)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post: a new payout is on its way, or the unclaimed one is being cancelled first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatorPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post, or it is not this creator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The money path refused, with its reason: there is no payout that ended unpaid",
             "content": {
               "application/json": {
                 "schema": {

@@ -74,29 +74,57 @@ export interface DealSummary {
   deliverables: { id: string; platform: Platform; state: PostState }[];
 }
 
-/** A post's state at the draft check, and whether its next step is the creator's. Read from the posts module. */
-type PostState = "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "released";
+/** A post's state from the draft check to paid, and whether its next step is the creator's. Read from the posts module. */
+type PostState =
+  | "no_draft"
+  | "checking"
+  | "check_failed"
+  | "results"
+  | "fully_passing"
+  | "objected"
+  | "approved"
+  | "posting"
+  | "published"
+  | "captured"
+  | "paid"
+  | "approved_not_paid"
+  | "released";
 export type DescribePosts = (deliverableIds: string[]) => Promise<Map<string, { state: PostState; needsCreator: boolean }>>;
 
 /**
- * The one-line status of a deal whose posts are all held, and the post to open (DR-FR-28). Released
- * posts are left out of it unless every post is released.
+ * The one-line status of a deal whose posts are all held, and the post to open (DR-FR-28, PT-FR-25).
+ * Released posts are left out of it unless every post is released, and finished posts unless every
+ * post is finished.
  */
 function afterSetUp(brandName: string, posts: { id: string; state: PostState; needsCreator: boolean }[]) {
   const live = posts.filter((post) => post.state !== "released");
-  const states = live.map((post) => post.state);
+  const open = live.filter((post) => post.state !== "paid" && post.state !== "approved_not_paid");
+  const states = open.map((post) => post.state);
+  const needs = (state: PostState) => open.some((post) => post.state === state && post.needsCreator);
   const status =
     live.length === 0
       ? "Released"
-      : states.includes("objected")
-        ? `${brandName} objected`
-        : states.includes("approved") || states.includes("posting")
-          ? "Ready to post"
-          : states.every((state) => state === "no_draft")
-            ? "Waiting for your draft"
-            : states.includes("checking") || live.some((post) => post.needsCreator)
-              ? "Draft check"
-              : "Brand review";
+      : open.length === 0
+        ? live.some((post) => post.state === "paid")
+          ? "Paid"
+          : "Approved, not paid"
+        : states.includes("objected")
+          ? `${brandName} objected`
+          : needs("captured")
+            ? "Payout needs you"
+            : needs("published")
+              ? "Fix your live post"
+              : states.includes("approved") || states.includes("posting")
+                ? "Ready to post"
+                : states.includes("published")
+                  ? "Live check"
+                  : states.every((state) => state === "captured")
+                    ? "Captured"
+                    : states.every((state) => state === "no_draft")
+                      ? "Waiting for your draft"
+                      : states.includes("checking") || open.some((post) => post.needsCreator)
+                        ? "Draft check"
+                        : "Brand review";
   // The post whose next step is the creator's, else the first.
   return { status, openDeliverableId: (live.find((post) => post.needsCreator) ?? posts[0])?.id };
 }

@@ -14,6 +14,7 @@ import { defaultDraftSettings, type Drafts } from "./drafts/drafts";
 import { createInvites } from "./invites/invites";
 import type { LinkKeys } from "./invites/link-keys";
 import { createPosts } from "./posts/posts";
+import { createPayouts } from "./payouts/payouts";
 import type { Publishing } from "./publish/publishing";
 import { createReviewLinks, type ReviewLinks } from "./review/links";
 import { createReview, type Review } from "./review/review";
@@ -119,9 +120,11 @@ export function createApp(deps: AppDeps) {
 
   const sessions = createSessions({ prisma, now });
   const accounts = deps.accounts ?? createAccounts({ prisma, now });
+  const payouts = createPayouts({ prisma, money });
   registerAccountRoutes(app, {
     sessions,
     accounts,
+    payouts,
     appOrigin,
     sessionDays: defaultSessionSettings.creatorDays,
     // Only a hash of the address is kept.
@@ -134,7 +137,7 @@ export function createApp(deps: AppDeps) {
   registerInviteRoutes(app, { sessions, invites });
   const review = deps.review ?? createReview({ prisma, now, money, links: reviewLinks });
   registerBrandReviewRoutes(app, { sessions, posts, review });
-  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, review, links: reviewLinks, publishing: deps.publishing, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
+  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, review, links: reviewLinks, publishing: deps.publishing, payouts, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
   registerBrandRoutes(app, {
     sessions,
     invites,

@@ -171,7 +171,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Save the PayPal email the creator is paid at (DS-FR-10) */
+        /** Save the PayPal email the creator is paid at. It reaches every post of theirs whose payout is not with PayPal (DS-FR-10, PT-FR-27) */
         put: {
             parameters: {
                 query?: never;
@@ -188,13 +188,13 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description The creator's profile */
+                /** @description The creator's profile, and the posts whose payout is already with PayPal and keeps the email it went to */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Profile"];
+                        "application/json": components["schemas"]["ProfileAfterEmail"];
                     };
                 };
                 /** @description The email is not valid */
@@ -2989,6 +2989,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deliverables/{deliverableId}/payout/again": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Have a payout that ended unpaid sent again, to the creator's PayPal email as it now stands (PT-FR-26) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post: a new payout is on its way, or the unclaimed one is being cancelled first */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreatorPost"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post, or it is not this creator's */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The money path refused, with its reason: there is no payout that ended unpaid */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/b/{token}/session": {
         parameters: {
             query?: never;
@@ -3604,6 +3669,15 @@ export interface components {
                 lengthCapSec?: number;
             };
         };
+        ProfileAfterEmail: components["schemas"]["Profile"] & {
+            postsKeepingEmail: components["schemas"]["PostKeepingEmail"][];
+        };
+        PostKeepingEmail: {
+            deliverableId: string;
+            dealId: string;
+            brandName: string;
+            email: string;
+        };
         DealDraft: {
             id: string;
             brandName: string;
@@ -3681,7 +3755,7 @@ export interface components {
                 /** @enum {string} */
                 platform: "youtube_video" | "youtube_short";
                 /** @enum {string} */
-                state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "released";
+                state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "published" | "captured" | "paid" | "approved_not_paid" | "released";
             }[];
         };
         Invite: {
@@ -3793,7 +3867,7 @@ export interface components {
             /** @enum {string} */
             platform: "youtube_video" | "youtube_short";
             /** @enum {string} */
-            state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "released";
+            state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "published" | "captured" | "paid" | "approved_not_paid" | "released";
             deadline: string;
             creatorTimeZone: string;
             run: number;
@@ -3813,8 +3887,8 @@ export interface components {
                 evidence?: {
                     label: string;
                     text: string;
-                    startSec: number;
-                    endSec: number;
+                    startSec?: number;
+                    endSec?: number;
                 };
                 /** @enum {string} */
                 checkedBy: "exact_match" | "ai_timestamp" | "from_timestamps" | "published_post" | "platform_record";
@@ -3850,6 +3924,62 @@ export interface components {
             } | {
                 /** @enum {string} */
                 state: "confirming" | "not_confirmed" | "ended";
+            };
+            post?: {
+                url: string;
+                publishedAt: string;
+            };
+            liveCheck?: {
+                /** @enum {string} */
+                state: "checking" | "passed" | "reconnect_youtube" | "video_not_found";
+            } | {
+                /** @enum {string} */
+                state: "approved";
+                /** @enum {string} */
+                by: "brand_confirmed" | "brand_silence" | "brand_accepted" | "cleared";
+            } | {
+                /** @enum {string} */
+                state: "fixable";
+                fixBy: string;
+                /** @enum {boolean} */
+                checking?: true;
+            } | {
+                /** @enum {string} */
+                state: "not_fixable";
+                /** @enum {string} */
+                reason: "not_your_channel" | "not_the_approved_file";
+                brandBy: string;
+            } | {
+                /** @enum {string} */
+                state: "undecided";
+                what: ("file_record" | "paid_promotion" | "written_item")[];
+                brandBy: string;
+            } | {
+                /** @enum {string} */
+                state: "objected";
+                reason: string;
+                ruleBy: string;
+            };
+            capture?: {
+                reference: string;
+                at: string;
+                amount: string;
+                fee: string;
+                payout: string;
+            } | {
+                /** @enum {boolean} */
+                refused: true;
+                retryUntil: string;
+            };
+            payout?: {
+                /** @enum {string} */
+                state: "sending" | "cancelling" | "delayed" | "unclaimed" | "failed" | "paid";
+                email: string;
+                /** @enum {string} */
+                reason?: "failed" | "returned" | "blocked" | "denied";
+                reference?: string;
+                at?: string;
+                canSendAgain: boolean;
             };
             reviewWindowEndsAt?: string;
             objectedAt?: string;

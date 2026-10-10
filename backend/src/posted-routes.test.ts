@@ -1,38 +1,10 @@
 /** Posting and the live check, through the app (publish to paid spec PT-FR-08 to PT-FR-17, PT-BR-01 to PT-BR-04). */
 import { beforeEach, describe, expect, test } from "bun:test";
-import type { Browser } from "../test/browser";
 import { heldWorld, resetDatabase, type HeldWorld } from "../test/held-post";
+import { GOOD, VIDEO, goAheadGiven, postedPublic } from "../test/live-post";
 import { prisma } from "./db";
 
 beforeEach(resetDatabase);
-
-const VIDEO = "dQw4w9WgXcQ";
-const file = { bytes: new Uint8Array(2_000).fill(7) };
-/** A description that meets the one written item every deal here has: the link. */
-const GOOD = "My two weeks with Glow Serum.\nhttps://glow.example/sam";
-
-/**
- * A held post whose draft the brand approved and whose creator has the go-ahead: the approved file is
- * on their channel as an unlisted video, with a description that meets the checklist.
- */
-async function goAheadGiven(world: HeldWorld) {
-  const held = await world.heldPost();
-  await held.sam.send("POST", `/deliverables/${held.post}/draft?fileName=glow-draft.mp4`, { file });
-  await world.finishChecks();
-  expect((await held.maya.send("POST", `/brand/deals/${held.deal.id}/deliverables/${held.post}/approve`)).status).toBe(200);
-  world.youtube.has(VIDEO, { description: GOOD, paidPromotion: true });
-  expect((await held.sam.send("POST", `/deliverables/${held.post}/go-ahead`, { body: { videoUrl: `https://youtu.be/${VIDEO}` } })).status).toBe(200);
-  world.youtube.reads.length = 0;
-  return {
-    ...held,
-    posted: (browser: Browser = held.sam) => browser.send("POST", `/deliverables/${held.post}/posted`),
-    again: (browser: Browser = held.sam) => browser.send("POST", `/deliverables/${held.post}/live-check/again`),
-    money: async () => (await world.money.view(held.post))!,
-    video: () => prisma.postVideo.findUniqueOrThrow({ where: { deliverableId: held.post } }),
-    check: () => prisma.liveCheck.findUnique({ where: { deliverableId: held.post } }),
-    results: () => prisma.liveCheckItem.findMany({ where: { deliverableId: held.post }, orderBy: { position: "asc" } }),
-  };
-}
 
 const waiting = () => prisma.job.count({ where: { name: "live_check", status: "pending" } });
 const paypalCalls = (world: HeldWorld) => world.paypal.calls.length;
@@ -128,16 +100,6 @@ describe("PT-FR-08 \"I've posted it\"", () => {
     expect(await post.check()).toBeNull();
   });
 });
-
-/** The creator has posted, and said so: the video is public and a live check is waiting to run. */
-async function postedPublic(world: HeldWorld, video: Parameters<HeldWorld["youtube"]["edit"]>[1] = {}) {
-  const post = await goAheadGiven(world);
-  world.youtube.edit(VIDEO, { privacy: "public", ...video });
-  world.timeIs("2026-10-09T12:00:00Z");
-  expect((await post.posted()).status).toBe(200);
-  world.youtube.reads.length = 0;
-  return post;
-}
 
 describe("PT-FR-11, PT-FR-14 the live check is a job that reads the video once and gives the money path its answer", () => {
   test("a post that meets the checklist passes: each item's result is recorded with its evidence, and the hold is captured", async () => {

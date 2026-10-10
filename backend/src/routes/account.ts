@@ -1,4 +1,5 @@
 /** Signing in and the creator's own account (deal set-up spec DS-FR-01 to DS-FR-12). */
+import type { Payouts } from "../payouts/payouts";
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import type { Accounts } from "../accounts/accounts";
@@ -17,6 +18,8 @@ const ProfileSchema = z
   })
   .openapi("Profile");
 
+const PostKeepingEmailSchema = z.object({ deliverableId: z.string(), dealId: z.string(), brandName: z.string(), email: z.string() }).openapi("PostKeepingEmail");
+
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
   content: { "application/json": { schema } },
@@ -31,9 +34,11 @@ export function registerAccountRoutes(
     sessionDays: number;
     /** The visitor's address, hashed, so demo accounts can be limited without keeping the address (DS-FR-07). */
     madeFrom: (c: Context) => string;
+    /** Carries a new PayPal email to the creator's posts that are not yet paid out (PT-FR-27). */
+    payouts?: Pick<Payouts, "emailChanged">;
   },
 ) {
-  const { sessions, accounts, appOrigin } = deps;
+  const { sessions, accounts, appOrigin, payouts } = deps;
   const creator = requireCreator(sessions);
 
   // A page the browser is sent to has no JSON answer to check, so it is described for the contract and
@@ -109,14 +114,21 @@ export function registerAccountRoutes(
     createRoute({
       method: "put",
       path: "/me/paypal-email",
-      summary: "Save the PayPal email the creator is paid at (DS-FR-10)",
+      summary: "Save the PayPal email the creator is paid at. It reaches every post of theirs whose payout is not with PayPal (DS-FR-10, PT-FR-27)",
       middleware: [creator] as const,
       request: { body: { required: true, content: { "application/json": { schema: z.object({ email: z.email().max(254) }) } } } },
-      responses: { ...profileResponses, 400: json(ErrorSchema, "The email is not valid") },
+      responses: {
+        200: json(ProfileSchema.extend({ postsKeepingEmail: z.array(PostKeepingEmailSchema) }).openapi("ProfileAfterEmail"), "The creator's profile, and the posts whose payout is already with PayPal and keeps the email it went to"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        400: json(ErrorSchema, "The email is not valid"),
+      },
     }),
     async (c) => {
-      await accounts.setPaypalEmail(c.get("creatorId"), c.req.valid("json").email);
-      return profileOf(c);
+      const { email } = c.req.valid("json");
+      await accounts.setPaypalEmail(c.get("creatorId"), email);
+      const postsKeepingEmail = (await payouts?.emailChanged(c.get("creatorId"), email)) ?? [];
+      const profile = await accounts.profile(c.get("creatorId"));
+      return profile ? c.json({ ...profile, postsKeepingEmail }, 200) : fail(c, 401, "signed_out");
     },
   );
 }

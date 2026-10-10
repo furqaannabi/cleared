@@ -5,6 +5,7 @@ import { PLATFORMS } from "../deals/deals";
 import type { Drafts } from "../drafts/drafts";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Posts } from "../posts/posts";
+import type { Payouts } from "../payouts/payouts";
 import type { Publishing } from "../publish/publishing";
 import type { ReviewLinks } from "../review/links";
 import type { Review } from "../review/review";
@@ -32,7 +33,7 @@ const CreatorPostSchema = z
     id: z.string(),
     brandName: z.string(),
     platform: z.enum(PLATFORMS),
-    state: z.enum(["no_draft", "checking", "check_failed", "results", "fully_passing", "objected", "approved", "posting", "released"]),
+    state: z.enum(["no_draft", "checking", "check_failed", "results", "fully_passing", "objected", "approved", "posting", "published", "captured", "paid", "approved_not_paid", "released"]),
     deadline: z.string(),
     creatorTimeZone: z.string(),
     run: z.number().int(),
@@ -44,7 +45,7 @@ const CreatorPostSchema = z
         status: PostItemStatus,
         previousStatus: PostItemStatus.optional(),
         briefLine: z.object({ number: z.number().int(), text: z.string() }).optional(),
-        evidence: z.object({ label: z.string(), text: z.string(), startSec: z.number(), endSec: z.number() }).optional(),
+        evidence: z.object({ label: z.string(), text: z.string(), startSec: z.number().optional(), endSec: z.number().optional() }).optional(),
         checkedBy: z.enum(["exact_match", "ai_timestamp", "from_timestamps", "published_post", "platform_record"]),
         askable: z.boolean().optional(),
         askedAt: z.string().optional(),
@@ -69,6 +70,33 @@ const CreatorPostSchema = z
         z.object({ state: z.literal("wait"), until: z.string() }),
         z.object({ state: z.enum(["confirming", "not_confirmed", "ended"]) }),
       ])
+      .optional(),
+    post: z.object({ url: z.string(), publishedAt: z.string() }).optional(),
+    liveCheck: z
+      .discriminatedUnion("state", [
+        z.object({ state: z.enum(["checking", "passed", "reconnect_youtube", "video_not_found"]) }),
+        z.object({ state: z.literal("approved"), by: z.enum(["brand_confirmed", "brand_silence", "brand_accepted", "cleared"]) }),
+        z.object({ state: z.literal("fixable"), fixBy: z.string(), checking: z.literal(true).optional() }),
+        z.object({ state: z.literal("not_fixable"), reason: z.enum(["not_your_channel", "not_the_approved_file"]), brandBy: z.string() }),
+        z.object({ state: z.literal("undecided"), what: z.array(z.enum(["file_record", "paid_promotion", "written_item"])), brandBy: z.string() }),
+        z.object({ state: z.literal("objected"), reason: z.string(), ruleBy: z.string() }),
+      ])
+      .optional(),
+    capture: z
+      .union([
+        z.object({ reference: z.string(), at: z.string(), amount: z.string(), fee: z.string(), payout: z.string() }),
+        z.object({ refused: z.literal(true), retryUntil: z.string() }),
+      ])
+      .optional(),
+    payout: z
+      .object({
+        state: z.enum(["sending", "cancelling", "delayed", "unclaimed", "failed", "paid"]),
+        email: z.string(),
+        reason: z.enum(["failed", "returned", "blocked", "denied"]).optional(),
+        reference: z.string().optional(),
+        at: z.string().optional(),
+        canSendAgain: z.boolean(),
+      })
       .optional(),
     reviewWindowEndsAt: z.string().optional(),
     objectedAt: z.string().optional(),
@@ -97,9 +125,9 @@ const CreatorPostSchema = z
 
 export function registerDeliverableRoutes(
   app: OpenAPIHono<AppEnv>,
-  deps: { sessions: Sessions; drafts?: Drafts; posts: Posts; review: Review; links?: ReviewLinks; publishing?: Publishing; maxBytes: number },
+  deps: { sessions: Sessions; drafts?: Drafts; posts: Posts; review: Review; links?: ReviewLinks; publishing?: Publishing; payouts?: Pick<Payouts, "sendAgain">; maxBytes: number },
 ) {
-  const { drafts, posts, review, links, publishing, maxBytes } = deps;
+  const { drafts, posts, review, links, publishing, payouts, maxBytes } = deps;
   const creator = requireCreator(deps.sessions);
 
   app.openapi(
@@ -415,6 +443,28 @@ export function registerDeliverableRoutes(
       const { deliverableId } = c.req.valid("param");
       const again = await publishing.checkAgain(c.get("creatorId"), deliverableId);
       if ("refused" in again) return again.refused === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, again.refused);
+      const post = await posts.creatorPost(c.get("creatorId"), deliverableId);
+      return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
+    },
+  );
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deliverables/{deliverableId}/payout/again",
+      summary: "Have a payout that ended unpaid sent again, to the creator's PayPal email as it now stands (PT-FR-26)",
+      middleware: [creator] as const,
+      request: postId,
+      responses: {
+        200: json(CreatorPostSchema, "The post: a new payout is on its way, or the unclaimed one is being cancelled first"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        404: json(ErrorSchema, "No such post, or it is not this creator's"),
+        409: json(ErrorSchema, "The money path refused, with its reason: there is no payout that ended unpaid"),
+      },
+    }),
+    async (c) => {
+      const { deliverableId } = c.req.valid("param");
+      const again = (await payouts?.sendAgain(c.get("creatorId"), deliverableId)) ?? { refused: "not_found" as const };
+      if ("refused" in again) return again.refused === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, again.reason);
       const post = await posts.creatorPost(c.get("creatorId"), deliverableId);
       return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
     },

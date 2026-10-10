@@ -15,6 +15,7 @@ import type { ReviewLink, ReviewLinks } from "../review/links";
 import { askable, brandReview, brandStatus, creatorStatus, newReview, postState, type BrandStatus, type CreatorStatus, type ReviewItem } from "../review/rules";
 import { holdEnded, loadReview } from "../review/store";
 import type { Storage } from "../storage/port";
+import { laterView, type Later, type PostCapture, type PostLiveCheck, type PostPayout } from "./later";
 
 /** How an item reads on the creator's page. Before a run it is not checked yet; during one it is being checked. */
 export type PostItemStatus = CreatorStatus | "not_checked" | "checking";
@@ -27,7 +28,8 @@ export interface PostItem {
   previousStatus?: CreatorStatus;
   /** The brief line it cites. Absent only for an item the creator added. */
   briefLine?: BriefLine;
-  evidence?: { label: string; text: string; startSec: number; endSec: number };
+  /** What was found. A moment in the draft has its seconds; evidence from the live post has none (PT-FR-12). */
+  evidence?: { label: string; text: string; startSec?: number; endSec?: number };
   checkedBy: CheckedBy;
   /** Whether the creator may ask the brand to accept it now. Present once it has a result. */
   askable?: boolean;
@@ -53,8 +55,11 @@ export type CheckFailure =
   | { kind: "ours"; retrying: boolean; fileName: string }
   | { kind: "file"; reason: FileFailure["reason"]; fileName: string; lengthSec?: number; lengthCapSec?: number };
 
-/** A post's state: as the review rules have it, or "posting" once the creator has a go-ahead to publish (PT-FR-25). */
-export type PostState = ReturnType<typeof postState> | "posting";
+/**
+ * A post's state: as the review rules have it until its draft is approved, then as the money path has
+ * it (PT-FR-25): posting while a go-ahead runs, published, captured, paid, or approved but not paid.
+ */
+export type PostState = ReturnType<typeof postState> | "posting" | NonNullable<Later["state"]>;
 
 /** The go-ahead as the money path has it, in the words the creator's page uses (PT-FR-24). */
 export type PostGoAhead = { state: "go"; endsAt: string } | { state: "wait"; until: string } | { state: "confirming" | "not_confirmed" | "ended" };
@@ -76,6 +81,12 @@ export interface CreatorPost {
   payoutEmail: string;
   /** Whether the creator may publish now, once they have asked. Absent before they ask. */
   goAhead?: PostGoAhead;
+  /** The published post: its link, made by code, and when Cleared first saw it public (PT-FR-10). */
+  post?: { url: string; publishedAt: string };
+  /** Where the live check stands, with the time that matters. */
+  liveCheck?: PostLiveCheck;
+  capture?: PostCapture;
+  payout?: PostPayout;
   reviewWindowEndsAt?: string;
   objectedAt?: string;
   approvedAt?: string;
@@ -181,10 +192,22 @@ export function createPosts(deps: {
     };
   }
 
-  /** Whether a post's next step is its creator's: nothing sent yet, something to fix or decide, or a draft to post. */
-  function needsCreator(state: PostState, items: ReviewItem[]): boolean {
+  /**
+   * Whether a post's next step is its creator's: nothing sent yet, something to fix or decide, a draft
+   * to post, a live post to fix, YouTube to reconnect, or a payout that needs them.
+   */
+  function needsCreator(state: PostState, items: ReviewItem[], later: Later = {}): boolean {
     if (state === "no_draft" || state === "objected" || state === "check_failed" || state === "approved" || state === "posting") return true;
+    if (later.liveCheck?.state === "fixable" || later.liveCheck?.state === "reconnect_youtube" || later.liveCheck?.state === "video_not_found") return true;
+    if (later.payout?.state === "unclaimed" || later.payout?.state === "failed") return true;
     return state === "results" && items.some((item) => ["fix_needed", "unsure"].includes(creatorStatus(item)));
+  }
+
+  /** The post after its draft is approved, from the money path's view and the live check's record (PT-FR-24). */
+  async function laterOf(deliverableId: string, view: Parameters<typeof laterView>[0]): Promise<Later> {
+    if (!view.publishedAt) return {};
+    const [video, check] = await Promise.all([prisma.postVideo.findUnique({ where: { deliverableId } }), prisma.liveCheck.findUnique({ where: { deliverableId } })]);
+    return laterView(view, { ...(video ? { video } : {}), ...(check ? { check } : {}) });
   }
 
   return {
@@ -208,6 +231,10 @@ export function createPosts(deps: {
       // While a newer draft is checked, every draft-check item reads as checking. Its results arrive together.
       const showResults = review.phase !== "checking" || released;
 
+      const later = await laterOf(deliverableId, view);
+      // The last finished live check's results. A check that has not finished shows nothing (PT-FR-16).
+      const live = new Map((later.post ? await prisma.liveCheckItem.findMany({ where: { deliverableId } }) : []).map((item) => [item.itemId, item]));
+
       const items = checklist.map((agreed): PostItem => {
         const kind = agreed.kind as ChecklistItem["kind"];
         const base = {
@@ -216,6 +243,17 @@ export function createPosts(deps: {
           kind,
           ...(agreed.briefLine === undefined ? {} : { briefLine: brief.find((line) => line.number === agreed.briefLine) ?? { number: agreed.briefLine, text: "" } }),
         };
+        if (LIVE_KINDS.includes(kind) && later.post) {
+          const result = live.get(agreed.id);
+          if (!result) return { ...base, status: later.liveCheck?.state === "checking" ? "checking" : "at_live_check", checkedBy: howChecked({ kind, exact: agreed.exact }) };
+          return {
+            ...base,
+            status: result.result as CreatorStatus,
+            ...(result.evidence ? { evidence: result.evidence as unknown as PostItem["evidence"] } : {}),
+            checkedBy: result.checkedBy as CheckedBy,
+            ...(result.hint ? { fixHint: result.hint } : {}),
+          };
+        }
         const found = results.get(agreed.id);
         const item = review.items.find((each) => each.id === agreed.id);
         if (!found || !item || !showResults) {
@@ -259,7 +297,7 @@ export function createPosts(deps: {
               ? undefined
               : { state: asked.state };
       // "Posting" only while the money path's go-ahead is running. It is the money path's word, shown as it is (PT-BR-05).
-      const state: PostState = reviewed === "approved" && goAhead?.state === "go" ? "posting" : reviewed;
+      const state: PostState = reviewed === "released" ? reviewed : (later.state ?? (reviewed === "approved" && goAhead?.state === "go" ? "posting" : reviewed));
       const reviewLink = await links?.current(deliverableId);
       const current = Math.max(0, STAGES.findIndex(([stage]) => stage === row?.stage));
       const release = view.release;
@@ -286,6 +324,10 @@ export function createPosts(deps: {
         },
         payoutEmail: view.payoutEmail,
         ...(goAhead ? { goAhead } : {}),
+        ...(later.post ? { post: later.post } : {}),
+        ...(later.liveCheck ? { liveCheck: later.liveCheck } : {}),
+        ...(later.capture ? { capture: later.capture } : {}),
+        ...(later.payout ? { payout: later.payout } : {}),
         ...(review.window ? { reviewWindowEndsAt: review.window.endsAt.toISOString() } : {}),
         ...(review.objectedAt ? { objectedAt: review.objectedAt.toISOString() } : {}),
         ...(review.approved ? { approvedAt: review.approved.at.toISOString(), approvedBy: review.approved.by } : {}),
@@ -420,8 +462,10 @@ export function createPosts(deps: {
         const released = isReleased(view?.stage);
         const review = (await loadReview(prisma, deliverableId, released))?.state ?? { ...newReview(), released };
         const reviewed = postState(review);
-        const state: PostState = reviewed === "approved" && view?.goAhead.state === "running" ? "posting" : reviewed;
-        found.set(deliverableId, { state, needsCreator: needsCreator(state, review.items) });
+        // The plain money view holds no PayPal email, and none is needed to say where a post stands.
+        const later = view ? await laterOf(deliverableId, { ...view, payoutEmail: "" }) : {};
+        const state: PostState = reviewed === "released" ? reviewed : (later.state ?? (reviewed === "approved" && view?.goAhead.state === "running" ? "posting" : reviewed));
+        found.set(deliverableId, { state, needsCreator: needsCreator(state, review.items, later) });
       }
       return found;
     },
