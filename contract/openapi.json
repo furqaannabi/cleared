@@ -425,7 +425,14 @@
                 "state": {
                   "type": "string",
                   "enum": [
-                    "no_draft"
+                    "no_draft",
+                    "checking",
+                    "check_failed",
+                    "results",
+                    "fully_passing",
+                    "objected",
+                    "approved",
+                    "released"
                   ]
                 }
               },
@@ -585,6 +592,376 @@
           "deliverableId",
           "state",
           "run"
+        ]
+      },
+      "CreatorPost": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "brandName": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "youtube_video",
+              "youtube_short"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "no_draft",
+              "checking",
+              "check_failed",
+              "results",
+              "fully_passing",
+              "objected",
+              "approved",
+              "released"
+            ]
+          },
+          "deadline": {
+            "type": "string"
+          },
+          "creatorTimeZone": {
+            "type": "string"
+          },
+          "run": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "said",
+                    "shown_as_text",
+                    "shown",
+                    "timing",
+                    "written",
+                    "disclosure",
+                    "publication"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "not_checked",
+                    "checking",
+                    "passed",
+                    "fix_needed",
+                    "unsure",
+                    "at_live_check",
+                    "waiting_for_brand",
+                    "accepted_by_brand",
+                    "objected_by_brand"
+                  ]
+                },
+                "previousStatus": {
+                  "type": "string",
+                  "enum": [
+                    "not_checked",
+                    "checking",
+                    "passed",
+                    "fix_needed",
+                    "unsure",
+                    "at_live_check",
+                    "waiting_for_brand",
+                    "accepted_by_brand",
+                    "objected_by_brand"
+                  ]
+                },
+                "briefLine": {
+                  "type": "object",
+                  "properties": {
+                    "number": {
+                      "type": "integer"
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "number",
+                    "text"
+                  ]
+                },
+                "evidence": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "text": {
+                      "type": "string"
+                    },
+                    "startSec": {
+                      "type": "number"
+                    },
+                    "endSec": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "text",
+                    "startSec",
+                    "endSec"
+                  ]
+                },
+                "checkedBy": {
+                  "type": "string",
+                  "enum": [
+                    "exact_match",
+                    "ai_timestamp",
+                    "from_timestamps",
+                    "published_post",
+                    "platform_record"
+                  ]
+                },
+                "askable": {
+                  "type": "boolean"
+                },
+                "declined": {
+                  "type": "boolean"
+                },
+                "fixHint": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "kind",
+                "status",
+                "checkedBy"
+              ]
+            }
+          },
+          "brief": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "type": "integer"
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "number",
+                "text"
+              ]
+            }
+          },
+          "draft": {
+            "$ref": "#/components/schemas/PostDraft"
+          },
+          "hold": {
+            "type": "object",
+            "properties": {
+              "amountMinor": {
+                "type": "integer"
+              },
+              "currency": {
+                "type": "string",
+                "enum": [
+                  "USD"
+                ]
+              },
+              "reference": {
+                "type": "string"
+              },
+              "heldAt": {
+                "type": "string"
+              },
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "held",
+                  "confirmed",
+                  "captured",
+                  "paid"
+                ]
+              }
+            },
+            "required": [
+              "amountMinor",
+              "currency",
+              "reference",
+              "heldAt",
+              "stage"
+            ]
+          },
+          "payoutEmail": {
+            "type": "string"
+          },
+          "reviewWindowEndsAt": {
+            "type": "string"
+          },
+          "objectedAt": {
+            "type": "string"
+          },
+          "approvedAt": {
+            "type": "string"
+          },
+          "approvedBy": {
+            "type": "string",
+            "enum": [
+              "brand",
+              "window"
+            ]
+          },
+          "checkFailure": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "ours"
+                    ]
+                  },
+                  "retrying": {
+                    "type": "boolean"
+                  },
+                  "fileName": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "retrying",
+                  "fileName"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "file"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "unreadable",
+                      "format",
+                      "too_long"
+                    ]
+                  },
+                  "fileName": {
+                    "type": "string"
+                  },
+                  "lengthSec": {
+                    "type": "number"
+                  },
+                  "lengthCapSec": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "reason",
+                  "fileName"
+                ]
+              }
+            ]
+          },
+          "checkStartedAt": {
+            "type": "string"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "done",
+                    "current",
+                    "waiting"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "status"
+              ]
+            }
+          },
+          "releasedAt": {
+            "type": "string"
+          },
+          "releaseReason": {
+            "type": "string",
+            "enum": [
+              "deadline",
+              "cancelled",
+              "day_28",
+              "fix_window_ended",
+              "not_accepted",
+              "ruled_not_to_pay",
+              "hold_not_confirmed"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "brandName",
+          "platform",
+          "state",
+          "deadline",
+          "creatorTimeZone",
+          "run",
+          "items",
+          "brief",
+          "hold",
+          "payoutEmail"
+        ]
+      },
+      "PostDraft": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string"
+          },
+          "durationSec": {
+            "type": "number"
+          },
+          "url": {
+            "type": "string"
+          },
+          "urlExpiresAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileName",
+          "durationSec",
+          "url",
+          "urlExpiresAt"
         ]
       },
       "BrandSession": {
@@ -2931,6 +3308,114 @@
           },
           "503": {
             "description": "This service is not set up to store drafts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deliverables/{deliverableId}": {
+      "get": {
+        "summary": "One post at the draft check: its checklist with results, its draft, its hold and where it stands (DR-FR-25)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatorPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post, or it is not this creator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The post has no hold yet, so there is nothing to check a draft for",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deliverables/{deliverableId}/draft-url": {
+      "post": {
+        "summary": "A fresh address that plays the latest draft for 15 minutes (DR-FR-27)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The latest draft, with a new address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostDraft"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post, it is not this creator's, or it has no draft",
             "content": {
               "application/json": {
                 "schema": {

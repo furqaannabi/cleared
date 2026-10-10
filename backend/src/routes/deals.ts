@@ -2,7 +2,7 @@
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { ITEM_KINDS } from "../briefs/reader";
-import { PLATFORMS, type Answer, type Deals, type EditRefused, type Platform } from "../deals/deals";
+import { PLATFORMS, type Answer, type Deals, type DescribePosts, type EditRefused, type Platform } from "../deals/deals";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Sessions } from "../sessions/sessions";
 import { NoteSchema } from "./shared";
@@ -57,7 +57,13 @@ const DealSummarySchema = z
     status: z.string(),
     step: StepSchema.optional(),
     openDeliverableId: z.string().optional(),
-    deliverables: z.array(z.object({ id: z.string(), platform: PlatformSchema, state: z.enum(["no_draft"]) })),
+    deliverables: z.array(
+      z.object({
+        id: z.string(),
+        platform: PlatformSchema,
+        state: z.enum(["no_draft", "checking", "check_failed", "results", "fully_passing", "objected", "approved", "released"]),
+      }),
+    ),
   })
   .openapi("DealSummary");
 
@@ -82,7 +88,7 @@ const refusals = {
   404: json(ErrorSchema, "No such deal, or it is not this creator's"),
 };
 
-export function registerDealRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; deals: Deals }) {
+export function registerDealRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; deals: Deals; describePosts?: DescribePosts }) {
   const { deals } = deps;
   const creator = requireCreator(deps.sessions);
 
@@ -115,7 +121,7 @@ export function registerDealRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: S
       middleware: [creator] as const,
       responses: { 200: json(z.array(DealSummarySchema), "The creator's own deals, newest first"), 401: refusals[401] },
     }),
-    async (c) => c.json(await deals.list(c.get("creatorId")), 200),
+    async (c) => c.json(await deals.list(c.get("creatorId"), deps.describePosts), 200),
   );
 
   app.openapi(

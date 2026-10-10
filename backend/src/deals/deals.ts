@@ -71,7 +71,34 @@ export interface DealSummary {
   step?: Step;
   /** The post to open for a deal that has left set-up: the one whose next step is the creator's. */
   openDeliverableId?: string;
-  deliverables: { id: string; platform: Platform; state: "no_draft" }[];
+  deliverables: { id: string; platform: Platform; state: PostState }[];
+}
+
+/** A post's state at the draft check, and whether its next step is the creator's. Read from the posts module. */
+type PostState = "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "released";
+export type DescribePosts = (deliverableIds: string[]) => Promise<Map<string, { state: PostState; needsCreator: boolean }>>;
+
+/**
+ * The one-line status of a deal whose posts are all held, and the post to open (DR-FR-28). Released
+ * posts are left out of it unless every post is released.
+ */
+function afterSetUp(brandName: string, posts: { id: string; state: PostState; needsCreator: boolean }[]) {
+  const live = posts.filter((post) => post.state !== "released");
+  const states = live.map((post) => post.state);
+  const status =
+    live.length === 0
+      ? "Released"
+      : states.includes("objected")
+        ? `${brandName} objected`
+        : states.includes("approved")
+          ? "Ready to post"
+          : states.every((state) => state === "no_draft")
+            ? "Waiting for your draft"
+            : states.includes("checking") || live.some((post) => post.needsCreator)
+              ? "Draft check"
+              : "Brand review";
+  // The post whose next step is the creator's, else the first.
+  return { status, openDeliverableId: (live.find((post) => post.needsCreator) ?? posts[0])?.id };
 }
 
 export interface DealSettings {
@@ -340,8 +367,11 @@ export function createDeals(deps: {
       return draftOf(deal);
     },
 
-    /** The creator's own deals, newest first (DS-FR-14). */
-    async list(creatorId: string): Promise<DealSummary[]> {
+    /**
+     * The creator's own deals, newest first (DS-FR-14). `describe` gives each held post's state at the
+     * draft check; without it every post reads as having no draft yet.
+     */
+    async list(creatorId: string, describe?: DescribePosts): Promise<DealSummary[]> {
       const deals = await prisma.deal.findMany({
         where: { creatorId },
         orderBy: { createdAt: "desc" },
@@ -352,8 +382,10 @@ export function createDeals(deps: {
       const withMoney = await prisma.deliverableMoney.findMany({ where: { deliverableId: { in: agreedPosts } }, select: { deliverableId: true, stage: true } });
       const held = new Set(withMoney.filter((money) => !NOT_HELD.includes(money.stage)).map((money) => money.deliverableId));
 
+      const described = (await describe?.(deals.flatMap((deal) => deal.deliverables.map((post) => post.id)).filter((id) => held.has(id)))) ?? new Map();
+
       return deals.map((deal) => {
-        const posts = deal.deliverables.map((post) => ({ id: post.id, platform: post.platform as Platform, state: "no_draft" as const }));
+        const posts = deal.deliverables.map((post) => ({ id: post.id, platform: post.platform as Platform, state: (described.get(post.id)?.state ?? "no_draft") as PostState }));
         const summary = { id: deal.id, brandName: deal.brandName };
         if (deal.step !== "agreed") {
           // While the brand's changes are being answered the deal says so, whichever page the creator is on.
@@ -364,8 +396,9 @@ export function createDeals(deps: {
         if (heldCount < posts.length) {
           return { ...summary, status: `${STATUS.agreed} · ${heldCount} of ${posts.length} held`, step: "agreed", deliverables: posts };
         }
-        // Every post is held: set-up is over, and the next step is the creator's first draft.
-        return { ...summary, status: "Waiting for your draft", openDeliverableId: posts[0]?.id, deliverables: posts };
+        // Every post is held: set-up is over, and the status follows the draft check (DR-FR-28).
+        const next = afterSetUp(deal.brandName, posts.map((post) => ({ ...post, needsCreator: described.get(post.id)?.needsCreator ?? true })));
+        return { ...summary, ...next, deliverables: posts };
       });
     },
 

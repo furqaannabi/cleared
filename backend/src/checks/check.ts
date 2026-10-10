@@ -34,6 +34,14 @@ export interface ItemResult {
   hint?: string;
 }
 
+/** How an item is checked, from its kind and whether it carries an exact value. Decided by code, never by a model. */
+export function howChecked(item: Pick<CheckItem, "kind" | "exact">): CheckedBy {
+  if (item.kind === "written" || item.kind === "disclosure") return "published_post";
+  if (item.kind === "publication") return "platform_record";
+  if (item.kind === "timing") return "from_timestamps";
+  return item.exact && item.kind !== "shown" ? "exact_match" : "ai_timestamp";
+}
+
 export type Stage = "said" | "shown" | "confirming";
 
 export interface CheckInput {

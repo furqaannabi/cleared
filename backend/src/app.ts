@@ -13,6 +13,7 @@ import { createDeals, type Deals } from "./deals/deals";
 import { defaultDraftSettings, type Drafts } from "./drafts/drafts";
 import { createInvites } from "./invites/invites";
 import type { LinkKeys } from "./invites/link-keys";
+import { createPosts } from "./posts/posts";
 import { registerAccountRoutes } from "./routes/account";
 import { registerBrandRoutes } from "./routes/brand";
 import { registerDealRoutes } from "./routes/deals";
@@ -21,6 +22,7 @@ import { registerGoogleRoutes } from "./routes/google";
 import { registerInviteRoutes } from "./routes/invite";
 import type { Secrets } from "./secrets/secrets";
 import { createSessions, defaultSessionSettings } from "./sessions/sessions";
+import type { Storage } from "./storage/port";
 
 /** No PayPal event comes near this size. Anything larger is turned away before it is read. */
 const WEBHOOK_BODY_LIMIT = 256 * 1024;
@@ -53,6 +55,8 @@ export interface AppDeps {
   paypalClientId?: string;
   /** Drafts, with the storage they are kept in. Left out when no storage is set up: no draft is then taken. */
   drafts?: Drafts;
+  /** Where drafts are kept, to hand out an address that plays one. */
+  storage?: Storage;
   /** The largest draft file taken, in bytes. The service's own size limit must allow it. */
   maxDraftBytes?: number;
 }
@@ -113,10 +117,11 @@ export function createApp(deps: AppDeps) {
     // Only a hash of the address is kept.
     madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
   });
-  registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }) });
+  const posts = createPosts({ prisma, now, storage: deps.storage, money });
+  registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }), describePosts: posts.summaries });
   const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
   registerInviteRoutes(app, { sessions, invites });
-  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
+  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
   registerBrandRoutes(app, { sessions, invites, brand: createBrand({ prisma, now, money, paypalClientId: deps.paypalClientId }), appOrigin, now });
   registerGoogleRoutes(app, {
     google: deps.google,

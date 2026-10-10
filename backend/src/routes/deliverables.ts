@@ -1,7 +1,10 @@
 /** The creator's post at the draft check (draft check and review spec DR-FR-01 to DR-FR-09). */
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
+import { ITEM_KINDS } from "../briefs/reader";
+import { PLATFORMS } from "../deals/deals";
 import type { Drafts } from "../drafts/drafts";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
+import type { Posts } from "../posts/posts";
 import type { Sessions } from "../sessions/sessions";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
@@ -14,8 +17,72 @@ export const DRAFT_UPLOAD = /^\/deliverables\/[^/]+\/draft$/;
 
 const DraftAcceptedSchema = z.object({ deliverableId: z.string(), state: z.enum(["checking"]), run: z.number().int() }).openapi("DraftAccepted");
 
-export function registerDeliverableRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; drafts?: Drafts; maxBytes: number }) {
-  const { drafts, maxBytes } = deps;
+const PostItemStatus = z.enum(["not_checked", "checking", "passed", "fix_needed", "unsure", "at_live_check", "waiting_for_brand", "accepted_by_brand", "objected_by_brand"]);
+
+const PostDraftSchema = z
+  .object({ fileName: z.string(), durationSec: z.number(), url: z.string(), urlExpiresAt: z.string() })
+  .openapi("PostDraft");
+
+/** One post as its creator sees it (DR-FR-25). Evidence, suggestions and the file's name are plain text. */
+const CreatorPostSchema = z
+  .object({
+    id: z.string(),
+    brandName: z.string(),
+    platform: z.enum(PLATFORMS),
+    state: z.enum(["no_draft", "checking", "check_failed", "results", "fully_passing", "objected", "approved", "released"]),
+    deadline: z.string(),
+    creatorTimeZone: z.string(),
+    run: z.number().int(),
+    items: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        kind: z.enum(ITEM_KINDS),
+        status: PostItemStatus,
+        previousStatus: PostItemStatus.optional(),
+        briefLine: z.object({ number: z.number().int(), text: z.string() }).optional(),
+        evidence: z.object({ label: z.string(), text: z.string(), startSec: z.number(), endSec: z.number() }).optional(),
+        checkedBy: z.enum(["exact_match", "ai_timestamp", "from_timestamps", "published_post", "platform_record"]),
+        askable: z.boolean().optional(),
+        declined: z.boolean().optional(),
+        fixHint: z.string().optional(),
+      }),
+    ),
+    brief: z.array(z.object({ number: z.number().int(), text: z.string() })),
+    draft: PostDraftSchema.optional(),
+    hold: z.object({
+      amountMinor: z.number().int(),
+      currency: z.enum(["USD"]),
+      reference: z.string(),
+      heldAt: z.string(),
+      stage: z.enum(["held", "confirmed", "captured", "paid"]),
+    }),
+    payoutEmail: z.string(),
+    reviewWindowEndsAt: z.string().optional(),
+    objectedAt: z.string().optional(),
+    approvedAt: z.string().optional(),
+    approvedBy: z.enum(["brand", "window"]).optional(),
+    checkFailure: z
+      .discriminatedUnion("kind", [
+        z.object({ kind: z.literal("ours"), retrying: z.boolean(), fileName: z.string() }),
+        z.object({
+          kind: z.literal("file"),
+          reason: z.enum(["unreadable", "format", "too_long"]),
+          fileName: z.string(),
+          lengthSec: z.number().optional(),
+          lengthCapSec: z.number().optional(),
+        }),
+      ])
+      .optional(),
+    checkStartedAt: z.string().optional(),
+    stages: z.array(z.object({ name: z.string(), status: z.enum(["done", "current", "waiting"]) })).optional(),
+    releasedAt: z.string().optional(),
+    releaseReason: z.enum(["deadline", "cancelled", "day_28", "fix_window_ended", "not_accepted", "ruled_not_to_pay", "hold_not_confirmed"]).optional(),
+  })
+  .openapi("CreatorPost");
+
+export function registerDeliverableRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; drafts?: Drafts; posts: Posts; maxBytes: number }) {
+  const { drafts, posts, maxBytes } = deps;
   const creator = requireCreator(deps.sessions);
 
   app.openapi(
@@ -93,6 +160,48 @@ export function registerDeliverableRoutes(app: OpenAPIHono<AppEnv>, deps: { sess
       const started = await drafts.retryCheck(c.get("creatorId"), c.req.valid("param").deliverableId);
       if (!("refused" in started)) return c.json(started, 200);
       return started.refused === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, started.refused);
+    },
+  );
+
+  const postId = { params: z.object({ deliverableId: z.string().min(1).max(64) }) };
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/deliverables/{deliverableId}",
+      summary: "One post at the draft check: its checklist with results, its draft, its hold and where it stands (DR-FR-25)",
+      middleware: [creator] as const,
+      request: postId,
+      responses: {
+        200: json(CreatorPostSchema, "The post"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        404: json(ErrorSchema, "No such post, or it is not this creator's"),
+        409: json(ErrorSchema, "The post has no hold yet, so there is nothing to check a draft for"),
+      },
+    }),
+    async (c) => {
+      const post = await posts.creatorPost(c.get("creatorId"), c.req.valid("param").deliverableId);
+      if (!("refused" in post)) return c.json(post, 200);
+      return post.refused === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, "not_held");
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deliverables/{deliverableId}/draft-url",
+      summary: "A fresh address that plays the latest draft for 15 minutes (DR-FR-27)",
+      middleware: [creator] as const,
+      request: postId,
+      responses: {
+        200: json(PostDraftSchema, "The latest draft, with a new address"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        404: json(ErrorSchema, "No such post, it is not this creator's, or it has no draft"),
+      },
+    }),
+    async (c) => {
+      const draft = await posts.draftAddress(c.get("creatorId"), c.req.valid("param").deliverableId);
+      return "refused" in draft ? fail(c, 404, draft.refused) : c.json(draft, 200);
     },
   );
 }

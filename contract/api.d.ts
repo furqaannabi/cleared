@@ -1975,6 +1975,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deliverables/{deliverableId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One post at the draft check: its checklist with results, its draft, its hold and where it stands (DR-FR-25) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreatorPost"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post, or it is not this creator's */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The post has no hold yet, so there is nothing to check a draft for */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deliverables/{deliverableId}/draft-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A fresh address that plays the latest draft for 15 minutes (DR-FR-27) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The latest draft, with a new address */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PostDraft"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post, it is not this creator's, or it has no draft */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/b/{token}/session": {
         parameters: {
             query?: never;
@@ -2667,7 +2788,7 @@ export interface components {
                 /** @enum {string} */
                 platform: "youtube_video" | "youtube_short";
                 /** @enum {string} */
-                state: "no_draft";
+                state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "released";
             }[];
         };
         Invite: {
@@ -2705,6 +2826,91 @@ export interface components {
             /** @enum {string} */
             state: "checking";
             run: number;
+        };
+        CreatorPost: {
+            id: string;
+            brandName: string;
+            /** @enum {string} */
+            platform: "youtube_video" | "youtube_short";
+            /** @enum {string} */
+            state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "released";
+            deadline: string;
+            creatorTimeZone: string;
+            run: number;
+            items: {
+                id: string;
+                name: string;
+                /** @enum {string} */
+                kind: "said" | "shown_as_text" | "shown" | "timing" | "written" | "disclosure" | "publication";
+                /** @enum {string} */
+                status: "not_checked" | "checking" | "passed" | "fix_needed" | "unsure" | "at_live_check" | "waiting_for_brand" | "accepted_by_brand" | "objected_by_brand";
+                /** @enum {string} */
+                previousStatus?: "not_checked" | "checking" | "passed" | "fix_needed" | "unsure" | "at_live_check" | "waiting_for_brand" | "accepted_by_brand" | "objected_by_brand";
+                briefLine?: {
+                    number: number;
+                    text: string;
+                };
+                evidence?: {
+                    label: string;
+                    text: string;
+                    startSec: number;
+                    endSec: number;
+                };
+                /** @enum {string} */
+                checkedBy: "exact_match" | "ai_timestamp" | "from_timestamps" | "published_post" | "platform_record";
+                askable?: boolean;
+                declined?: boolean;
+                fixHint?: string;
+            }[];
+            brief: {
+                number: number;
+                text: string;
+            }[];
+            draft?: components["schemas"]["PostDraft"];
+            hold: {
+                amountMinor: number;
+                /** @enum {string} */
+                currency: "USD";
+                reference: string;
+                heldAt: string;
+                /** @enum {string} */
+                stage: "held" | "confirmed" | "captured" | "paid";
+            };
+            payoutEmail: string;
+            reviewWindowEndsAt?: string;
+            objectedAt?: string;
+            approvedAt?: string;
+            /** @enum {string} */
+            approvedBy?: "brand" | "window";
+            checkFailure?: {
+                /** @enum {string} */
+                kind: "ours";
+                retrying: boolean;
+                fileName: string;
+            } | {
+                /** @enum {string} */
+                kind: "file";
+                /** @enum {string} */
+                reason: "unreadable" | "format" | "too_long";
+                fileName: string;
+                lengthSec?: number;
+                lengthCapSec?: number;
+            };
+            checkStartedAt?: string;
+            stages?: {
+                name: string;
+                /** @enum {string} */
+                status: "done" | "current" | "waiting";
+            }[];
+            releasedAt?: string;
+            /** @enum {string} */
+            releaseReason?: "deadline" | "cancelled" | "day_28" | "fix_window_ended" | "not_accepted" | "ruled_not_to_pay" | "hold_not_confirmed";
+        };
+        PostDraft: {
+            fileName: string;
+            durationSec: number;
+            url: string;
+            urlExpiresAt: string;
         };
         BrandSession: {
             dealId: string;

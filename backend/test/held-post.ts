@@ -66,7 +66,7 @@ interface Deal {
   items: { id: string; name: string; deliverableId: string }[];
 }
 
-export function heldWorld(options: { drafts?: Partial<DraftSettings> } = {}) {
+export function heldWorld(options: { drafts?: Partial<DraftSettings>; /** An item of the creator's own, added to every deal's first post. */ ownItem?: string } = {}) {
   let now = at("2026-10-09T09:00:00Z");
   const clock = () => now;
   const paypal = new FakePayPal();
@@ -97,6 +97,7 @@ export function heldWorld(options: { drafts?: Partial<DraftSettings> } = {}) {
     deals,
     money,
     drafts,
+    storage,
     paypalClientId: "sandbox-public-client-id",
     linkKeys: localLinkKeys(Buffer.alloc(32, 1).toString("base64")),
   });
@@ -131,6 +132,9 @@ export function heldWorld(options: { drafts?: Partial<DraftSettings> } = {}) {
     );
     await sam.send("POST", `/deals/${started.id}/brief`, { body: { text: brief.join("\n") } });
     await runDueJobs(prisma, deals.handlers, { now, log: () => {} });
+    if (options.ownItem) {
+      await sam.send("POST", `/deals/${started.id}/items`, { body: { deliverableId: started.deliverables[0]!.id, name: options.ownItem, kind: "shown" } });
+    }
     await sam.send("POST", `/deals/${started.id}/checklist/ready`);
     for (const post of started.deliverables) {
       await sam.send("PATCH", `/deals/${started.id}/invite/posts/${post.id}`, { body: { amount: "1200.00", deadlineDays: 14 } });

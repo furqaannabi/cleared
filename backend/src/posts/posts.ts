@@ -1,0 +1,250 @@
+/**
+ * One post as its creator sees it at the draft check (draft check and review spec DR-FR-25 to
+ * DR-FR-29). It reads and decides nothing: the checklist is the one the brand agreed to, each item's
+ * status comes from the review rules, and the hold is as the money path has it.
+ */
+import { howChecked, type CheckedBy, type CheckItem as ChecklistItem } from "../checks/check";
+import type { BriefLine } from "../briefs/reader";
+import type { Platform } from "../deals/deals";
+import type { FileFailure } from "../drafts/drafts";
+import type { PrismaClient } from "../generated/prisma/client";
+import { cents, type TermsSnapshot } from "../invites/terms";
+import type { Money } from "../money/money";
+import { askable, creatorStatus, newReview, postState, type CreatorStatus, type ReviewItem } from "../review/rules";
+import { loadReview } from "../review/store";
+import type { Storage } from "../storage/port";
+
+/** How an item reads on the creator's page. Before a run it is not checked yet; during one it is being checked. */
+export type PostItemStatus = CreatorStatus | "not_checked" | "checking";
+
+export interface PostItem {
+  id: string;
+  name: string;
+  kind: ChecklistItem["kind"];
+  status: PostItemStatus;
+  previousStatus?: CreatorStatus;
+  /** The brief line it cites. Absent only for an item the creator added. */
+  briefLine?: BriefLine;
+  evidence?: { label: string; text: string; startSec: number; endSec: number };
+  checkedBy: CheckedBy;
+  /** Whether the creator may ask the brand to accept it now. Present once it has a result. */
+  askable?: boolean;
+  /** The brand asked for it to be fixed, so it cannot be asked about again in this run. */
+  declined?: boolean;
+  /** One plain sentence saying what to change. Guidance only. */
+  fixHint?: string;
+}
+
+/** The latest draft, with an address that plays it for a short time (DR-FR-27). */
+export interface PostDraft {
+  fileName: string;
+  durationSec: number;
+  url: string;
+  urlExpiresAt: string;
+}
+
+export type CheckFailure =
+  | { kind: "ours"; retrying: boolean; fileName: string }
+  | { kind: "file"; reason: FileFailure["reason"]; fileName: string; lengthSec?: number; lengthCapSec?: number };
+
+export type PostState = ReturnType<typeof postState>;
+
+export interface CreatorPost {
+  id: string;
+  brandName: string;
+  platform: Platform;
+  state: PostState;
+  /** 23:59 on the deadline's day in the creator's timezone, fixed when the hold was approved. */
+  deadline: string;
+  creatorTimeZone: string;
+  run: number;
+  items: PostItem[];
+  brief: BriefLine[];
+  draft?: PostDraft;
+  hold: { amountMinor: number; currency: "USD"; reference: string; heldAt: string; stage: "held" | "confirmed" | "captured" | "paid" };
+  /** Where the payout goes. For the creator only (DR-BR-13). */
+  payoutEmail: string;
+  reviewWindowEndsAt?: string;
+  objectedAt?: string;
+  approvedAt?: string;
+  approvedBy?: "brand" | "window";
+  checkFailure?: CheckFailure;
+  checkStartedAt?: string;
+  stages?: { name: string; status: "done" | "current" | "waiting" }[];
+  releasedAt?: string;
+  releaseReason?: "deadline" | "cancelled" | "day_28" | "fix_window_ended" | "not_accepted" | "ruled_not_to_pay" | "hold_not_confirmed";
+}
+
+/** What the deals list needs of a post: its state, and whether its next step is the creator's (DR-FR-28). */
+export interface PostSummary {
+  state: PostState;
+  needsCreator: boolean;
+}
+
+/** The check's stages in order, in the words the page shows (DR-FR-10). */
+const STAGES = [
+  ["reading", "Reading the video"],
+  ["said", "Checking what was said and written on screen"],
+  ["shown", "Checking what is shown"],
+  ["confirming", "Confirming the evidence"],
+] as const;
+
+const LIVE_KINDS = ["written", "disclosure", "publication"];
+
+export type Posts = ReturnType<typeof createPosts>;
+
+export function createPosts(deps: {
+  prisma: PrismaClient;
+  now: () => Date;
+  /** Where drafts are kept. Without it no draft exists, so none is shown. */
+  storage?: Storage;
+  money?: Pick<Money, "creatorView" | "view">;
+  /** How long an address that plays a draft works for (DR-BR-12). */
+  addressSeconds?: number;
+}) {
+  const { prisma, now, storage, money } = deps;
+  const addressSeconds = deps.addressSeconds ?? 15 * 60;
+
+  const isReleased = (stage: string | undefined) => stage === "released" || stage === "closed_not_held";
+
+  /** The post's latest draft with a fresh address, if it has one. */
+  async function draftOf(draftId: string | null | undefined): Promise<PostDraft | undefined> {
+    if (!draftId || !storage) return undefined;
+    const draft = await prisma.draft.findUnique({ where: { id: draftId } });
+    if (!draft) return undefined;
+    const at = now();
+    return {
+      fileName: draft.fileName,
+      durationSec: draft.durationSec,
+      url: await storage.address(draft.storageKey, addressSeconds),
+      urlExpiresAt: new Date(at.getTime() + addressSeconds * 1000).toISOString(),
+    };
+  }
+
+  /** Whether a post's next step is its creator's: nothing sent yet, something to fix or decide, or a draft to post. */
+  function needsCreator(state: PostState, items: ReviewItem[]): boolean {
+    if (state === "no_draft" || state === "objected" || state === "check_failed" || state === "approved") return true;
+    return state === "results" && items.some((item) => ["fix_needed", "unsure"].includes(creatorStatus(item)));
+  }
+
+  return {
+    /** One post, for its creator (DR-FR-25). A post with no hold yet has no page: there is nothing to check a draft for. */
+    async creatorPost(creatorId: string, deliverableId: string): Promise<CreatorPost | { refused: "not_found" | "not_held" }> {
+      const post = await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } }, include: { deal: true } });
+      if (!post) return { refused: "not_found" };
+      const view = await money?.creatorView(deliverableId);
+      if (!view || view.hold.state !== "held") return { refused: "not_held" };
+      const { deal } = post;
+      const version = await prisma.termsVersion.findFirst({ where: { dealId: deal.id, number: deal.agreedVersion ?? -1 } });
+      if (!version) return { refused: "not_held" };
+      const checklist = (version.terms as unknown as TermsSnapshot).items.filter((item) => item.deliverableId === deliverableId);
+      const brief = (deal.briefLines ?? []) as unknown as BriefLine[];
+
+      const released = isReleased(view.stage);
+      const loaded = await loadReview(prisma, deliverableId, released);
+      const review = loaded?.state ?? { ...newReview(), released };
+      const row = loaded?.row;
+      const results = new Map((loaded?.items ?? []).map((item) => [item.itemId, item]));
+      // While a newer draft is checked, every draft-check item reads as checking. Its results arrive together.
+      const showResults = review.phase !== "checking" || released;
+
+      const items = checklist.map((agreed): PostItem => {
+        const kind = agreed.kind as ChecklistItem["kind"];
+        const base = {
+          id: agreed.id,
+          name: agreed.name,
+          kind,
+          ...(agreed.briefLine === undefined ? {} : { briefLine: brief.find((line) => line.number === agreed.briefLine) ?? { number: agreed.briefLine, text: "" } }),
+        };
+        const found = results.get(agreed.id);
+        const item = review.items.find((each) => each.id === agreed.id);
+        if (!found || !item || !showResults) {
+          const status = LIVE_KINDS.includes(kind) ? "at_live_check" : review.phase === "checking" ? "checking" : "not_checked";
+          return { ...base, status, checkedBy: howChecked({ kind, exact: agreed.exact }) };
+        }
+        return {
+          ...base,
+          status: creatorStatus(item),
+          ...(item.previous ? { previousStatus: item.previous } : {}),
+          ...(found.evidence ? { evidence: found.evidence as unknown as PostItem["evidence"] } : {}),
+          checkedBy: found.checkedBy as CheckedBy,
+          askable: askable(review, item),
+          ...(item.ask === "declined" ? { declined: true } : {}),
+          ...(found.hint ? { fixHint: found.hint } : {}),
+        };
+      });
+
+      const draft = await draftOf(row?.draftId);
+      const fileFailure = row?.fileFailure as unknown as FileFailure | null | undefined;
+      const fileName = draft?.fileName ?? "draft";
+      const checkFailure: CheckFailure | undefined =
+        review.phase === "check_failed"
+          ? { kind: "ours", retrying: false, fileName }
+          : review.phase === "checking" && (row?.failures ?? 0) > 0
+            ? { kind: "ours", retrying: true, fileName }
+            : fileFailure
+              ? { kind: "file", ...fileFailure }
+              : undefined;
+
+      const state = postState(review);
+      const current = Math.max(0, STAGES.findIndex(([stage]) => stage === row?.stage));
+      const release = view.release;
+      const { hold } = view;
+
+      return {
+        id: post.id,
+        brandName: deal.brandName,
+        platform: post.platform as Platform,
+        // A file that could not be checked, with no run before it, leaves nothing else to show but the failure.
+        state: state === "no_draft" && checkFailure?.kind === "file" ? "check_failed" : state,
+        deadline: hold.deadlineAt.toISOString(),
+        creatorTimeZone: deal.timezone ?? "UTC",
+        run: review.run,
+        items,
+        brief,
+        ...(draft ? { draft } : {}),
+        hold: {
+          amountMinor: cents(view.amounts.amount) ?? 0,
+          currency: "USD",
+          reference: hold.reference,
+          heldAt: hold.heldAt.toISOString(),
+          stage: view.stage === "paid" || view.stage === "captured" ? view.stage : view.goAhead.state === "running" ? "confirmed" : "held",
+        },
+        payoutEmail: view.payoutEmail,
+        ...(review.window ? { reviewWindowEndsAt: review.window.endsAt.toISOString() } : {}),
+        ...(review.objectedAt ? { objectedAt: review.objectedAt.toISOString() } : {}),
+        ...(review.approved ? { approvedAt: review.approved.at.toISOString(), approvedBy: review.approved.by } : {}),
+        ...(checkFailure ? { checkFailure } : {}),
+        ...(review.phase === "checking" && !released && row?.checkStartedAt
+          ? {
+              checkStartedAt: row.checkStartedAt.toISOString(),
+              stages: STAGES.map(([, name], index) => ({ name, status: index < current ? ("done" as const) : index === current ? ("current" as const) : ("waiting" as const) })),
+            }
+          : {}),
+        ...(released && release
+          ? { releasedAt: release.at.toISOString(), releaseReason: release.reason === "cleared_ruled" ? ("ruled_not_to_pay" as const) : release.reason }
+          : {}),
+      };
+    },
+
+    /** A fresh address for the latest draft (DR-FR-27). */
+    async draftAddress(creatorId: string, deliverableId: string): Promise<PostDraft | { refused: "not_found" | "no_draft" }> {
+      const post = await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } } });
+      if (!post) return { refused: "not_found" };
+      const row = await prisma.draftCheck.findUnique({ where: { deliverableId } });
+      return (await draftOf(row?.draftId)) ?? { refused: "no_draft" };
+    },
+
+    /** Each post's state, and whether its next step is the creator's, for the deals list (DR-FR-28). */
+    async summaries(deliverableIds: string[]): Promise<Map<string, PostSummary>> {
+      const found = new Map<string, PostSummary>();
+      for (const deliverableId of deliverableIds) {
+        const released = isReleased((await money?.view(deliverableId))?.stage);
+        const review = (await loadReview(prisma, deliverableId, released))?.state ?? { ...newReview(), released };
+        const state = postState(review);
+        found.set(deliverableId, { state, needsCreator: needsCreator(state, review.items) });
+      }
+      return found;
+    },
+  };
+}
