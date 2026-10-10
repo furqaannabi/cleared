@@ -1409,6 +1409,87 @@ export interface paths {
         };
         trace?: never;
     };
+    "/deals/{dealId}/invite/posts/{deliverableId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel one post of the deal, held or not, with an optional note in plain text; the answer is the invite (PT-FR-28 to PT-FR-30) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The invite as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Invite"];
+                    };
+                };
+                /** @description The request is not valid */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such deal, it is not this creator's, or it has not reached the invite step */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not cancelled, with the money path's reason as the code. `already_cancelled` says by whom */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deals/{dealId}/invite/link": {
         parameters: {
             query?: never;
@@ -2363,6 +2444,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a held post, with an optional note in plain text; the money path decides whether, and releases the hold (PT-FR-28, PT-FR-29) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The post's review as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandPost"];
+                    };
+                };
+                /** @description The request is not valid */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not cancelled, with the money path's reason as the code. `already_cancelled` says by whom */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deliverables/{deliverableId}/draft": {
         parameters: {
             query?: never;
@@ -3267,6 +3429,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deliverables/{deliverableId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a held post, with an optional note in plain text; the money path decides whether, and releases the hold (PT-FR-28, PT-FR-29) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The post, cancelled: its hold is released back to the brand */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreatorPost"];
+                    };
+                };
+                /** @description The note is too long */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post, or it is not this creator's */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not cancelled, with the money path's reason as the code: a go-ahead is running, the post is published, or it is finished. `already_cancelled` says by whom */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/b/{token}/session": {
         parameters: {
             query?: never;
@@ -3517,6 +3759,87 @@ export interface paths {
                 };
                 /** @description This service is not set up to hold money, so nothing can be agreed */
                 503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/brand/deals/{dealId}/posts/{deliverableId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel one post of the deal, held or not, agreed or not, with an optional note in plain text; the answer is the deal (PT-FR-28 to PT-FR-30) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The deal, with the post cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandDeal"];
+                    };
+                };
+                /** @description The note is too long */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists (DS-FR-37) */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not cancelled, with the money path's reason as the code. `already_cancelled` says by whom */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -3882,6 +4205,8 @@ export interface components {
                 resetsAt?: string;
                 lengthSec?: number;
                 lengthCapSec?: number;
+                /** @enum {string} */
+                by?: "creator" | "brand";
             };
         };
         ProfileAfterEmail: components["schemas"]["Profile"] & {
@@ -3970,7 +4295,7 @@ export interface components {
                 /** @enum {string} */
                 platform: "youtube_video" | "youtube_short";
                 /** @enum {string} */
-                state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "published" | "captured" | "paid" | "approved_not_paid" | "released";
+                state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "published" | "captured" | "paid" | "approved_not_paid" | "released" | "closed";
             }[];
         };
         Invite: {
@@ -3986,6 +4311,8 @@ export interface components {
                 amount?: string;
                 deadlineDays?: number;
                 hold?: components["schemas"]["Hold"];
+                cancel?: components["schemas"]["Cancel"];
+                cancelled?: components["schemas"]["Cancelled"];
             }[];
             /** Format: email */
             brandEmail?: string;
@@ -4003,6 +4330,23 @@ export interface components {
             reference?: string;
             deadline?: string;
         };
+        Cancel: {
+            /** @enum {boolean} */
+            allowed: true;
+            /** @enum {boolean} */
+            holdAttemptWaiting?: true;
+        } | {
+            /** @enum {boolean} */
+            allowed: false;
+            /** @enum {string} */
+            reason: "go_ahead_running" | "published" | "finished";
+        };
+        Cancelled: {
+            /** @enum {string} */
+            by: "creator" | "brand";
+            at: string;
+            note?: string;
+        };
         BrandPost: {
             dealId: string;
             deliverableId: string;
@@ -4016,6 +4360,8 @@ export interface components {
                 reference: string;
                 deadline: string;
             };
+            cancel?: components["schemas"]["Cancel"];
+            cancelled?: components["schemas"]["Cancelled"];
             review: {
                 /** @enum {string} */
                 state: "nothing_yet";
@@ -4251,6 +4597,8 @@ export interface components {
                 at?: string;
                 canSendAgain: boolean;
             };
+            cancel?: components["schemas"]["Cancel"];
+            cancelled?: components["schemas"]["Cancelled"];
             reviewWindowEndsAt?: string;
             objectedAt?: string;
             approvedAt?: string;
@@ -4359,6 +4707,8 @@ export interface components {
                     at: string;
                     creatorPaid: boolean;
                 };
+                cancel?: components["schemas"]["Cancel"];
+                cancelled?: components["schemas"]["Cancelled"];
             }[];
             items: {
                 id: string;

@@ -14,6 +14,7 @@ import { defaultDraftSettings, type Drafts } from "./drafts/drafts";
 import { createInvites } from "./invites/invites";
 import type { LinkKeys } from "./invites/link-keys";
 import { createPosts } from "./posts/posts";
+import { createCancelling } from "./cancel/cancelling";
 import { createPayouts } from "./payouts/payouts";
 import { createBrandDecisions } from "./publish/brand-decisions";
 import type { Publishing } from "./publish/publishing";
@@ -132,20 +133,22 @@ export function createApp(deps: AppDeps) {
     madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
   });
   const reviewLinks = deps.reviewLinks ?? createReviewLinks({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
-  const posts = createPosts({ prisma, now, storage: deps.storage, money, links: reviewLinks });
+  const cancelling = createCancelling({ prisma, now, money });
+  const posts = createPosts({ prisma, now, storage: deps.storage, money, links: reviewLinks, cancels: cancelling.describe });
   registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }), describePosts: posts.summaries });
-  const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
-  registerInviteRoutes(app, { sessions, invites });
+  const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money, cancels: cancelling.describe });
+  registerInviteRoutes(app, { sessions, invites, cancelling });
   const review = deps.review ?? createReview({ prisma, now, money, links: reviewLinks });
-  registerBrandReviewRoutes(app, { sessions, posts, review, decisions: createBrandDecisions({ prisma, money }) });
-  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, review, links: reviewLinks, publishing: deps.publishing, payouts, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
+  registerBrandReviewRoutes(app, { sessions, posts, review, decisions: createBrandDecisions({ prisma, money }), cancelling });
+  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, review, links: reviewLinks, publishing: deps.publishing, payouts, cancelling, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
   registerBrandRoutes(app, {
     sessions,
     invites,
-    brand: createBrand({ prisma, now, money, paypalClientId: deps.paypalClientId, describeReviews: posts.reviews }),
+    brand: createBrand({ prisma, now, money, paypalClientId: deps.paypalClientId, describeReviews: posts.reviews, cancels: cancelling.describe }),
     appOrigin,
     now,
     reviewNeeded: reviewLinks.needed,
+    cancelling,
   });
   registerGoogleRoutes(app, {
     google: deps.google,

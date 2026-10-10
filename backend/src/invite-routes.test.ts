@@ -109,8 +109,8 @@ describe("DS-FR-29 the invite", () => {
       brandName: "Glow Skincare",
       step: "invite",
       posts: [
-        { deliverableId: deal.deliverables[0]!.id, platform: "youtube_video", itemCount: 1 },
-        { deliverableId: deal.deliverables[1]!.id, platform: "youtube_short", itemCount: 1 },
+        { deliverableId: deal.deliverables[0]!.id, platform: "youtube_video", itemCount: 1, cancel: { allowed: true } },
+        { deliverableId: deal.deliverables[1]!.id, platform: "youtube_short", itemCount: 1, cancel: { allowed: true } },
       ],
     });
   });
@@ -140,8 +140,8 @@ describe("DS-FR-29 terms", () => {
     await setTerms(sam, deal, { amount: "300.50", deadlineDays: 7 }, 1);
 
     expect((await readInvite(sam, deal)).posts).toEqual([
-      { deliverableId: deal.deliverables[0]!.id, platform: "youtube_video", itemCount: 1, amount: "1200.00", deadlineDays: 14 },
-      { deliverableId: deal.deliverables[1]!.id, platform: "youtube_short", itemCount: 1, amount: "300.50", deadlineDays: 7 },
+      { deliverableId: deal.deliverables[0]!.id, platform: "youtube_video", itemCount: 1, amount: "1200.00", deadlineDays: 14, cancel: { allowed: true } },
+      { deliverableId: deal.deliverables[1]!.id, platform: "youtube_short", itemCount: 1, amount: "300.50", deadlineDays: 7, cancel: { allowed: true } },
     ]);
   });
 
@@ -163,6 +163,7 @@ describe("DS-FR-29 terms", () => {
       platform: "youtube_video",
       itemCount: 1,
       amount: "1200.00",
+      cancel: { allowed: true },
     });
   });
 

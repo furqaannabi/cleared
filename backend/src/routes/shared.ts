@@ -41,6 +41,20 @@ export const HoldSchema = z
  */
 export const NextSchema = z.object({ next: z.string().optional() });
 
+/** Whether a post can be cancelled now, or why not, and whether a hold attempt is waiting at PayPal (PT-FR-31). */
+export const CancelSchema = z
+  .union([
+    z.object({ allowed: z.literal(true), holdAttemptWaiting: z.literal(true).optional() }),
+    z.object({ allowed: z.literal(false), reason: z.enum(["go_ahead_running", "published", "finished"]) }),
+  ])
+  .openapi("Cancel");
+
+/** Who cancelled a post, when, and their note, which is plain text (PT-FR-32, PT-BR-10). */
+export const CancelledSchema = z.object({ by: z.enum(["creator", "brand"]), at: z.string(), note: z.string().optional() }).openapi("Cancelled");
+
+/** A cancel's optional note: plain text, up to 300 characters after trimming. */
+export const CancelBodySchema = z.object({ note: z.string().trim().max(300).optional() });
+
 /**
  * Where a post stands for the brand once its draft is approved (publish to paid spec PT-FR-23). It
  * never holds the creator's PayPal email or anything about a payout but whether it arrived (PT-BR-09).

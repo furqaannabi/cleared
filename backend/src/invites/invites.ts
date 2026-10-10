@@ -3,6 +3,7 @@
  * DS-FR-33). Every function takes the creator who is asking, and a deal that is not theirs is treated
  * exactly as one that does not exist (DS-BR-01).
  */
+import type { CancelField, Cancelled, Cancelling } from "../cancel/cancelling";
 import type { Platform, Step } from "../deals/deals";
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import type { Money } from "../money/money";
@@ -29,6 +30,9 @@ export interface Invite {
     deadlineDays?: number;
     /** The post's hold as the money path has it, once the brand has agreed (DS-FR-46). */
     hold?: DealHold;
+    /** Whether the post can be cancelled now, or why not; and who cancelled it (PT-FR-31, PT-FR-32). */
+    cancel?: CancelField;
+    cancelled?: Cancelled;
   }[];
   /** The brand's email, if the creator gave one. Nothing is sent to it (DS-FR-30). */
   brandEmail?: string;
@@ -102,6 +106,8 @@ export function createInvites(deps: {
   linkKeys?: LinkKeys;
   /** The money path, read to show each agreed post's hold. */
   money?: Pick<Money, "view">;
+  /** Whether each post can be cancelled, and who cancelled it (PT-FR-31, PT-FR-32). */
+  cancels?: Cancelling["describe"];
   settings?: InviteSettings;
 }) {
   const { prisma, now, appOrigin, linkKeys, money } = deps;
@@ -139,6 +145,8 @@ export function createInvites(deps: {
     if (deal.step === "agreed") {
       for (const post of terms.posts) post.hold = holdOf((await money?.view(post.deliverableId))?.hold, deal.timezone);
     }
+    const cancels = await deps.cancels?.(terms.posts.map((post) => post.deliverableId));
+    for (const post of terms.posts) Object.assign(post, cancels?.get(post.deliverableId) ?? {});
     return {
       ...terms,
       ...(version === undefined ? {} : { version }),
@@ -171,7 +179,10 @@ export function createInvites(deps: {
 
   /** Why the terms cannot go to the brand yet, if they cannot: the same for a first link and for updated terms. */
   async function notSendable(tx: Prisma.TransactionClient, deal: Row): Promise<LinkRefused | undefined> {
-    const unfinished = deal.deliverables.findIndex((post) => post.amountCents === null || post.deadlineDays === null);
+    // A cancelled post is not sent to the brand, so it needs no terms (PT-FR-30). A deal with no post left has nothing to send.
+    const gone = await cancelledIn(tx, deal);
+    if (gone.size === deal.deliverables.length) return { refused: "not_at_invite" };
+    const unfinished = deal.deliverables.findIndex((post) => !gone.has(post.id) && (post.amountCents === null || post.deadlineDays === null));
     if (unfinished !== -1) return { refused: "terms_incomplete", index: unfinished };
     const creator = await tx.creator.findUniqueOrThrow({ where: { id: deal.creatorId }, include: { accounts: true } });
     if (!creator.accounts.some((account) => account.platform === "youtube")) return { refused: "youtube_not_connected" };
@@ -179,16 +190,23 @@ export function createInvites(deps: {
     return undefined;
   }
 
-  /** Saves the terms and the checklist as they stand as the deal's next version. */
-  const saveVersion = (tx: Prisma.TransactionClient, deal: Row, at: Date) =>
-    tx.termsVersion.create({
+  /** The posts of a deal that were cancelled before the brand agreed. */
+  const cancelledIn = async (tx: Prisma.TransactionClient, deal: Row) =>
+    new Set((await tx.postCancel.findMany({ where: { deliverableId: { in: deal.deliverables.map((post) => post.id) } }, select: { deliverableId: true } })).map((row) => row.deliverableId));
+
+  /** Saves the terms and the checklist as they stand as the deal's next version. A post already cancelled is left out of it. */
+  const saveVersion = async (tx: Prisma.TransactionClient, deal: Row, at: Date) => {
+    const gone = await cancelledIn(tx, deal);
+    const left = { ...deal, deliverables: deal.deliverables.filter((post) => !gone.has(post.id)), items: deal.items.filter((item) => !gone.has(item.deliverableId)) };
+    return tx.termsVersion.create({
       data: {
         dealId: deal.id,
         number: (deal.versions[0]?.number ?? 0) + 1,
-        terms: takeSnapshot(deal) as unknown as Prisma.InputJsonValue,
+        terms: takeSnapshot(left) as unknown as Prisma.InputJsonValue,
         createdAt: at,
       },
     });
+  };
 
   /** Holds the deal's row until the transaction ends, so two changes to one invite happen one after the other. */
   const lock = (tx: Prisma.TransactionClient, dealId: string) => tx.$queryRaw`SELECT 1 FROM "Deal" WHERE "id" = ${dealId} FOR UPDATE`;

@@ -33,6 +33,7 @@ const at = (iso: string) => new Date(iso);
 
 /** Empties every table a deal touches. */
 export async function resetDatabase() {
+  await prisma.postCancel.deleteMany();
   await prisma.brandNotice.deleteMany();
   await prisma.liveCheckItem.deleteMany();
   await prisma.liveCheck.deleteMany();

@@ -3,7 +3,9 @@ import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import { ITEM_KINDS } from "../briefs/reader";
 import { PLATFORMS } from "../deals/deals";
 import type { Drafts } from "../drafts/drafts";
+import type { Cancelling } from "../cancel/cancelling";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
+import { CancelBodySchema, CancelSchema, CancelledSchema } from "./shared";
 import type { Posts } from "../posts/posts";
 import type { Payouts } from "../payouts/payouts";
 import type { Publishing } from "../publish/publishing";
@@ -98,6 +100,8 @@ const CreatorPostSchema = z
         canSendAgain: z.boolean(),
       })
       .optional(),
+    cancel: CancelSchema.optional(),
+    cancelled: CancelledSchema.optional(),
     reviewWindowEndsAt: z.string().optional(),
     objectedAt: z.string().optional(),
     approvedAt: z.string().optional(),
@@ -125,9 +129,9 @@ const CreatorPostSchema = z
 
 export function registerDeliverableRoutes(
   app: OpenAPIHono<AppEnv>,
-  deps: { sessions: Sessions; drafts?: Drafts; posts: Posts; review: Review; links?: ReviewLinks; publishing?: Publishing; payouts?: Pick<Payouts, "sendAgain">; maxBytes: number },
+  deps: { sessions: Sessions; drafts?: Drafts; posts: Posts; review: Review; links?: ReviewLinks; publishing?: Publishing; payouts?: Pick<Payouts, "sendAgain">; cancelling?: Pick<Cancelling, "cancel">; maxBytes: number },
 ) {
-  const { drafts, posts, review, links, publishing, payouts, maxBytes } = deps;
+  const { drafts, posts, review, links, publishing, payouts, cancelling, maxBytes } = deps;
   const creator = requireCreator(deps.sessions);
 
   app.openapi(
@@ -466,6 +470,34 @@ export function registerDeliverableRoutes(
       const again = (await payouts?.sendAgain(c.get("creatorId"), deliverableId)) ?? { refused: "not_found" as const };
       if ("refused" in again) return again.refused === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, again.reason);
       const post = await posts.creatorPost(c.get("creatorId"), deliverableId);
+      return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
+    },
+  );
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deliverables/{deliverableId}/cancel",
+      summary: "Cancel a held post, with an optional note in plain text; the money path decides whether, and releases the hold (PT-FR-28, PT-FR-29)",
+      middleware: [creator] as const,
+      request: { ...postId, body: { required: true, content: { "application/json": { schema: CancelBodySchema } } } },
+      responses: {
+        200: json(CreatorPostSchema, "The post, cancelled: its hold is released back to the brand"),
+        400: json(ErrorSchema, "The note is too long"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        404: json(ErrorSchema, "No such post, or it is not this creator's"),
+        409: json(ErrorSchema, "Not cancelled, with the money path's reason as the code: a go-ahead is running, the post is published, or it is finished. `already_cancelled` says by whom"),
+      },
+    }),
+    async (c) => {
+      const { deliverableId } = c.req.valid("param");
+      const creatorId = c.get("creatorId");
+      const owned = await posts.dealOf(creatorId, deliverableId);
+      const done = owned && cancelling ? await cancelling.cancel("creator", owned, deliverableId, c.req.valid("json").note) : ({ ok: false, reason: "not_found" } as const);
+      if (!done.ok) {
+        if (done.reason === "not_found") return fail(c, 404, "not_found");
+        return done.reason === "already_cancelled" ? c.json({ error: { code: done.reason, by: done.by } }, 409) : fail(c, 409, done.reason);
+      }
+      const post = await posts.creatorPost(creatorId, deliverableId);
       return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
     },
   );

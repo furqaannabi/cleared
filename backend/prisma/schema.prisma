@@ -510,6 +510,18 @@ model LiveCheck {
   runs          Int       @default(0)
 }
 
+// A post that was cancelled (publish to paid spec PT-FR-28 to PT-FR-32): who cancelled, when, and the
+// note they left. For a held post the money path released the hold and this row keeps the note beside
+// it. For a post cancelled before the brand agreed there is no money, and this row is the closing itself.
+model PostCancel {
+  deliverableId String   @id
+  /// creator or brand.
+  by            String
+  at            DateTime
+  /// Untrusted plain text, up to 300 characters. Shown as text, never logged, and it decides nothing (PT-BR-10).
+  note          String?
+}
+
 // A notice to the brand that its decision on a live post is wanted (publish to paid spec PT-FR-21):
 // one for each of its two 48-hour windows, sent once. It holds no address and no link (PT-BR-11).
 model BrandNotice {

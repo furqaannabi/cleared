@@ -74,6 +74,13 @@
               },
               "lengthCapSec": {
                 "type": "number"
+              },
+              "by": {
+                "type": "string",
+                "enum": [
+                  "creator",
+                  "brand"
+                ]
               }
             },
             "required": [
@@ -481,7 +488,8 @@
                     "captured",
                     "paid",
                     "approved_not_paid",
-                    "released"
+                    "released",
+                    "closed"
                   ]
                 }
               },
@@ -547,6 +555,12 @@
                 },
                 "hold": {
                   "$ref": "#/components/schemas/Hold"
+                },
+                "cancel": {
+                  "$ref": "#/components/schemas/Cancel"
+                },
+                "cancelled": {
+                  "$ref": "#/components/schemas/Cancelled"
                 }
               },
               "required": [
@@ -621,6 +635,75 @@
           "state"
         ]
       },
+      "Cancel": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "allowed": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              },
+              "holdAttemptWaiting": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              }
+            },
+            "required": [
+              "allowed"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "allowed": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "go_ahead_running",
+                  "published",
+                  "finished"
+                ]
+              }
+            },
+            "required": [
+              "allowed",
+              "reason"
+            ]
+          }
+        ]
+      },
+      "Cancelled": {
+        "type": "object",
+        "properties": {
+          "by": {
+            "type": "string",
+            "enum": [
+              "creator",
+              "brand"
+            ]
+          },
+          "at": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "by",
+          "at"
+        ]
+      },
       "BrandPost": {
         "type": "object",
         "properties": {
@@ -664,6 +747,12 @@
               "reference",
               "deadline"
             ]
+          },
+          "cancel": {
+            "$ref": "#/components/schemas/Cancel"
+          },
+          "cancelled": {
+            "$ref": "#/components/schemas/Cancelled"
           },
           "review": {
             "oneOf": [
@@ -1728,6 +1817,12 @@
               "canSendAgain"
             ]
           },
+          "cancel": {
+            "$ref": "#/components/schemas/Cancel"
+          },
+          "cancelled": {
+            "$ref": "#/components/schemas/Cancelled"
+          },
           "reviewWindowEndsAt": {
             "type": "string"
           },
@@ -2197,6 +2292,12 @@
                       ]
                     }
                   ]
+                },
+                "cancel": {
+                  "$ref": "#/components/schemas/Cancel"
+                },
+                "cancelled": {
+                  "$ref": "#/components/schemas/Cancelled"
                 }
               },
               "required": [
@@ -3878,6 +3979,101 @@
         }
       }
     },
+    "/deals/{dealId}/invite/posts/{deliverableId}/cancel": {
+      "post": {
+        "summary": "Cancel one post of the deal, held or not, with an optional note in plain text; the answer is the invite (PT-FR-28 to PT-FR-30)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The invite as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invite"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such deal, it is not this creator's, or it has not reached the invite step",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not cancelled, with the money path's reason as the code. `already_cancelled` says by whom",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/deals/{dealId}/invite/link": {
       "post": {
         "summary": "Make the brand's link; the terms are saved as a version and the deal waits for the brand (DS-FR-31)",
@@ -4958,6 +5154,101 @@
         }
       }
     },
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/cancel": {
+      "post": {
+        "summary": "Cancel a held post, with an optional note in plain text; the money path decides whether, and releases the hold (PT-FR-28, PT-FR-29)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The post's review as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not cancelled, with the money path's reason as the code. `already_cancelled` says by whom",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/deliverables/{deliverableId}/draft": {
       "post": {
         "summary": "Send a draft: the video file is the request's body, and its check starts as a job (DR-FR-01, DR-FR-02)",
@@ -5863,6 +6154,91 @@
         }
       }
     },
+    "/deliverables/{deliverableId}/cancel": {
+      "post": {
+        "summary": "Cancel a held post, with an optional note in plain text; the money path decides whether, and releases the hold (PT-FR-28, PT-FR-29)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The post, cancelled: its hold is released back to the brand",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatorPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The note is too long",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post, or it is not this creator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not cancelled, with the money path's reason as the code: a go-ahead is running, the post is published, or it is finished. `already_cancelled` says by whom",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/b/{token}/session": {
       "post": {
         "summary": "Swap an invite link's token for a session scoped to its deal (DS-FR-34)",
@@ -6193,6 +6569,101 @@
           },
           "503": {
             "description": "This service is not set up to hold money, so nothing can be agreed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand/deals/{dealId}/posts/{deliverableId}/cancel": {
+      "post": {
+        "summary": "Cancel one post of the deal, held or not, agreed or not, with an optional note in plain text; the answer is the deal (PT-FR-28 to PT-FR-30)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The deal, with the post cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandDeal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The note is too long",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists (DS-FR-37)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not cancelled, with the money path's reason as the code. `already_cancelled` says by whom",
             "content": {
               "application/json": {
                 "schema": {

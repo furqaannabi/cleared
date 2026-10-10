@@ -301,7 +301,7 @@ describe("DS-FR-36 the brand's deal", () => {
       version: 1,
       // Public: PayPal's button needs it (DS-FR-45).
       paypalClientId: "sandbox-public-client-id",
-      posts: [{ deliverableId: post, platform: "youtube_video", amount: "1200.00", deadlineDays: 14, hold: { state: "not_started" } }],
+      posts: [{ deliverableId: post, platform: "youtube_video", amount: "1200.00", deadlineDays: 14, hold: { state: "not_started" }, cancel: { allowed: true } }],
       items: [
         // From a line of the brief.
         { id: item("Say the code GLOW20"), deliverableId: post, name: "Say the code GLOW20", briefLine: 2, addedByCreator: false },

@@ -5,6 +5,7 @@
  */
 import { howChecked, type CheckedBy, type CheckItem as ChecklistItem } from "../checks/check";
 import type { BriefLine } from "../briefs/reader";
+import type { CancelField, Cancelled, Cancelling } from "../cancel/cancelling";
 import type { Platform } from "../deals/deals";
 import type { FileFailure } from "../drafts/drafts";
 import type { PrismaClient } from "../generated/prisma/client";
@@ -100,6 +101,10 @@ export interface CreatorPost {
   stages?: { name: string; status: "done" | "current" | "waiting" }[];
   releasedAt?: string;
   releaseReason?: "deadline" | "cancelled" | "day_28" | "fix_window_ended" | "not_accepted" | "ruled_not_to_pay" | "hold_not_confirmed";
+  /** Whether the post can be cancelled now, or why not (PT-FR-31). */
+  cancel?: CancelField;
+  /** Who cancelled it, when, and their note (PT-FR-32). */
+  cancelled?: Cancelled;
 }
 
 type ReleaseReason = NonNullable<CreatorPost["releaseReason"]>;
@@ -121,6 +126,8 @@ export interface BrandPost {
     | { state: "released"; releasedAt: string; reason: ReleaseReason }
     /** Past approval, as the money path has it (PT-FR-23). */
     | BrandLaterReview;
+  cancel?: CancelField;
+  cancelled?: Cancelled;
   /** The live post: its link, and each live-check item's result at the last finished check (PT-FR-12). No suggestion is in it. */
   post?: {
     url: string;
@@ -179,8 +186,11 @@ export function createPosts(deps: {
   links?: Pick<ReviewLinks, "current">;
   /** How long an address that plays a draft works for (DR-BR-12). */
   addressSeconds?: number;
+  /** Whether each post can be cancelled, and who cancelled it (PT-FR-31, PT-FR-32). */
+  cancels?: Cancelling["describe"];
 }) {
   const { prisma, now, storage, money, links } = deps;
+  const cancelOf = async (deliverableId: string) => (await deps.cancels?.([deliverableId]))?.get(deliverableId) ?? {};
   const addressSeconds = deps.addressSeconds ?? 15 * 60;
 
   const isReleased = holdEnded;
@@ -225,6 +235,11 @@ export function createPosts(deps: {
   }
 
   return {
+    /** The deal a post belongs to, if the post is this creator's (PT-BR-08). */
+    async dealOf(creatorId: string, deliverableId: string): Promise<string | undefined> {
+      return (await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } }, select: { dealId: true } }))?.dealId;
+    },
+
     /** One post, for its creator (DR-FR-25). A post with no hold yet has no page: there is nothing to check a draft for. */
     async creatorPost(creatorId: string, deliverableId: string): Promise<CreatorPost | { refused: "not_found" | "not_held" }> {
       const post = await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } }, include: { deal: true } });
@@ -357,6 +372,7 @@ export function createPosts(deps: {
         ...(released && release
           ? { releasedAt: release.at.toISOString(), releaseReason: reasonOf(release.reason) }
           : {}),
+        ...(await cancelOf(deliverableId)),
       };
     },
 
@@ -401,6 +417,7 @@ export function createPosts(deps: {
         platform: post.platform as Platform,
         creatorTimeZone: deal.timezone ?? "UTC",
         hold: { amount: view.amounts.amount, reference: view.hold.reference, deadline: view.hold.deadlineAt.toISOString() },
+        ...(await cancelOf(deliverableId)),
         review:
           where.state === "released"
             ? { state: "released", releasedAt: (view.release?.at ?? now()).toISOString(), reason: reasonOf(view.release?.reason ?? "cancelled") }

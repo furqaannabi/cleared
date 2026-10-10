@@ -61,6 +61,7 @@ describe("DR-FR-25 one post", () => {
       brief: brief.map((text, index) => ({ number: index + 1, text })),
       hold: { amountMinor: 120_000, currency: "USD", reference: expect.any(String), heldAt: "2026-10-09T09:00:00.000Z", stage: "held" },
       payoutEmail: "sam.pay@example.com",
+      cancel: { allowed: true },
     });
   });
 

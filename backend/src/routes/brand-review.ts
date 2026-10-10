@@ -8,7 +8,8 @@ import type { Posts } from "../posts/posts";
 import type { BrandDecisions, Decided } from "../publish/brand-decisions";
 import type { Acted, Review } from "../review/review";
 import type { Sessions } from "../sessions/sessions";
-import { BrandLaterStates, NoteTextSchema } from "./shared";
+import type { Cancelling } from "../cancel/cancelling";
+import { BrandLaterStates, CancelBodySchema, CancelSchema, CancelledSchema, NoteTextSchema } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
@@ -30,6 +31,8 @@ const BrandPostSchema = z
     platform: z.enum(PLATFORMS),
     creatorTimeZone: z.string(),
     hold: z.object({ amount: z.string(), reference: z.string(), deadline: z.string() }),
+    cancel: CancelSchema.optional(),
+    cancelled: CancelledSchema.optional(),
     review: z.discriminatedUnion("state", [
       z.object({ state: z.literal("nothing_yet") }),
       z.object({ state: z.literal("asked") }),
@@ -89,8 +92,8 @@ const responses = {
   409: json(ErrorSchema, "Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39)"),
 };
 
-export function registerBrandReviewRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; posts: Posts; review: Review; decisions?: BrandDecisions }) {
-  const { posts, review, decisions } = deps;
+export function registerBrandReviewRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; posts: Posts; review: Review; decisions?: BrandDecisions; cancelling?: Pick<Cancelling, "cancel"> }) {
+  const { posts, review, decisions, cancelling } = deps;
   const session = requireBrand(deps.sessions);
 
   /** Answers with the post's review, or with why it cannot be shown. */
@@ -233,6 +236,22 @@ export function registerBrandReviewRoutes(app: OpenAPIHono<AppEnv>, deps: { sess
     async (c) => {
       const { dealId, deliverableId } = c.req.valid("param");
       return done(c, (await decisions?.accept(dealId, deliverableId)) ?? NOT_FOUND, dealId, deliverableId);
+    },
+  );
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/brand/deals/{dealId}/deliverables/{deliverableId}/cancel",
+      summary: "Cancel a held post, with an optional note in plain text; the money path decides whether, and releases the hold (PT-FR-28, PT-FR-29)",
+      middleware: [session] as const,
+      request: { ...post, ...body(CancelBodySchema) },
+      responses: { ...livePost, 400: responses[400], 409: json(ErrorSchema, "Not cancelled, with the money path's reason as the code. `already_cancelled` says by whom") },
+    }),
+    async (c) => {
+      const { dealId, deliverableId } = c.req.valid("param");
+      const cancelled = (await cancelling?.cancel("brand", dealId, deliverableId, c.req.valid("json").note)) ?? NOT_FOUND;
+      if (!cancelled.ok && cancelled.reason === "already_cancelled") return c.json({ error: { code: cancelled.reason, by: cancelled.by } }, 409);
+      return done(c, cancelled, dealId, deliverableId);
     },
   );
 }

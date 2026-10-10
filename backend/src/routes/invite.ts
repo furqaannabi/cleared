@@ -1,4 +1,5 @@
 /** The creator's invite: terms, the brand's email and the brand's link (deal set-up spec DS-FR-29 to DS-FR-33). */
+import type { Cancelling } from "../cancel/cancelling";
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { PLATFORMS } from "../deals/deals";
@@ -6,7 +7,7 @@ import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Invite, Invites, LinkRefused, TermsRefused } from "../invites/invites";
 import { cents } from "../invites/terms";
 import type { Sessions } from "../sessions/sessions";
-import { HoldSchema, NoteSchema, NoteTextSchema } from "./shared";
+import { HoldSchema, NoteSchema, NoteTextSchema, CancelBodySchema, CancelSchema, CancelledSchema } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
@@ -34,6 +35,8 @@ const InviteSchema = z
         amount: AmountSchema.optional(),
         deadlineDays: DeadlineDaysSchema.optional(),
         hold: HoldSchema.optional(),
+        cancel: CancelSchema.optional(),
+        cancelled: CancelledSchema.optional(),
       }),
     ),
     brandEmail: z.email().optional(),
@@ -65,7 +68,7 @@ const refusals = {
 const responses = { 200: json(InviteSchema, "The invite as it now stands"), ...refusals };
 const linkResponses = { ...responses, 503: json(ErrorSchema, "This service is not set up to make links") };
 
-export function registerInviteRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; invites: Invites }) {
+export function registerInviteRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; invites: Invites; cancelling?: Pick<Cancelling, "cancel"> }) {
   const { invites } = deps;
   const creator = requireCreator(deps.sessions);
 
@@ -137,6 +140,29 @@ export function registerInviteRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions:
         ...(sent.deadlineDays === undefined ? {} : { deadlineDays: sent.deadlineDays }),
       };
       return terms(c, await invites.setPostTerms(c.get("creatorId"), deal, post, change));
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deals/{dealId}/invite/posts/{deliverableId}/cancel",
+      summary: "Cancel one post of the deal, held or not, with an optional note in plain text; the answer is the invite (PT-FR-28 to PT-FR-30)",
+      middleware: [creator] as const,
+      request: { params: z.object({ dealId: id, deliverableId: id }), ...body(CancelBodySchema) },
+      responses: { ...responses, 409: json(ErrorSchema, "Not cancelled, with the money path's reason as the code. `already_cancelled` says by whom") },
+    }),
+    async (c) => {
+      const { dealId: deal, deliverableId: post } = c.req.valid("param");
+      const before = await invites.get(c.get("creatorId"), deal);
+      if (!before || !deps.cancelling) return fail(c, 404, "not_found");
+      const done = await deps.cancelling.cancel("creator", deal, post, c.req.valid("json").note);
+      if (!done.ok) {
+        if (done.reason === "not_found") return fail(c, 404, "not_found");
+        return done.reason === "already_cancelled" ? c.json({ error: { code: done.reason, by: done.by } }, 409) : fail(c, 409, done.reason);
+      }
+      const after = await invites.get(c.get("creatorId"), deal);
+      return after ? c.json(after, 200) : fail(c, 404, "not_found");
     },
   );
 

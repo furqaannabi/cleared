@@ -1,4 +1,5 @@
 /** The brand's way in, its view of the deal, asking for changes, agreeing and the holds (deal set-up spec DS-FR-34 to DS-FR-45). */
+import type { Cancelling } from "../cancel/cancelling";
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import type { Brand, HoldRefused } from "../brand/brand";
@@ -6,7 +7,7 @@ import { PLATFORMS } from "../deals/deals";
 import { ErrorSchema, fail, letBrandIn, requireBrand, type AppEnv } from "../http/http";
 import type { Invites } from "../invites/invites";
 import type { Sessions } from "../sessions/sessions";
-import { HoldSchema, NoteAboutSchema, NoteSchema, NoteTextSchema, BrandLaterStates } from "./shared";
+import { HoldSchema, NoteAboutSchema, NoteSchema, NoteTextSchema, BrandLaterStates, CancelBodySchema, CancelSchema, CancelledSchema } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
@@ -38,6 +39,8 @@ const BrandDealSchema = z
             ...BrandLaterStates,
           ])
           .optional(),
+        cancel: CancelSchema.optional(),
+        cancelled: CancelledSchema.optional(),
       }),
     ),
     items: z.array(
@@ -68,6 +71,7 @@ export function registerBrandRoutes(
     now: () => Date;
     /** Whether the brand still has something to do on a post's draft. Without it no review link opens anything. */
     reviewNeeded?: (deliverableId: string) => Promise<boolean>;
+    cancelling?: Pick<Cancelling, "cancel" | "nothingLeft">;
   },
 ) {
   const { sessions, invites, brand, appOrigin, now } = deps;
@@ -92,6 +96,8 @@ export function registerBrandRoutes(
       const link = await invites.openLink(c.req.valid("param").token);
       // A review link works only while the brand has something to do on that post's draft (DR-FR-45).
       if (!link || (link.deliverableId && !(await deps.reviewNeeded?.(link.deliverableId)))) return fail(c, 404, "link_not_working");
+      // A deal with nothing left opens for nobody new, with the same answer as any dead link (PT-FR-33).
+      if (await deps.cancelling?.nothingLeft(link.dealId)) return fail(c, 404, "link_not_working");
       const token = await sessions.startForBrand(link);
       const seconds = Math.max(0, Math.floor((link.expiresAt.getTime() - now().getTime()) / 1000));
       letBrandIn(c, link.dealId, token, appOrigin, seconds);
@@ -179,6 +185,36 @@ export function registerBrandRoutes(
   );
 
   const post = { params: z.object({ dealId: z.string().min(1).max(64), deliverableId: z.string().min(1).max(64) }) };
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/brand/deals/{dealId}/posts/{deliverableId}/cancel",
+      summary: "Cancel one post of the deal, held or not, agreed or not, with an optional note in plain text; the answer is the deal (PT-FR-28 to PT-FR-30)",
+      middleware: [session] as const,
+      request: {
+        params: z.object({ dealId: z.string().min(1).max(64), deliverableId: z.string().min(1).max(64) }),
+        body: { required: true, content: { "application/json": { schema: CancelBodySchema } } },
+      },
+      responses: {
+        200: json(BrandDealSchema, "The deal, with the post cancelled"),
+        400: json(ErrorSchema, "The note is too long"),
+        401: json(ErrorSchema, "No session for this deal, whether or not it exists (DS-FR-37)"),
+        404: json(ErrorSchema, "No such post in this deal"),
+        409: json(ErrorSchema, "Not cancelled, with the money path's reason as the code. `already_cancelled` says by whom"),
+      },
+    }),
+    async (c) => {
+      const { dealId, deliverableId } = c.req.valid("param");
+      const done = (await deps.cancelling?.cancel("brand", dealId, deliverableId, c.req.valid("json").note)) ?? ({ ok: false, reason: "not_found" } as const);
+      if (!done.ok) {
+        if (done.reason === "not_found") return fail(c, 404, "not_found");
+        return done.reason === "already_cancelled" ? c.json({ error: { code: done.reason, by: done.by } }, 409) : fail(c, 409, done.reason);
+      }
+      const deal = await brand.deal(dealId);
+      return deal ? c.json(deal, 200) : fail(c, 401, "signed_out");
+    },
+  );
+
   const order = { body: { required: true, content: { "application/json": { schema: z.object({ orderId: z.string().min(1).max(64) }) } } } };
   const holdRefusals = {
     400: json(ErrorSchema, "The request is not valid"),

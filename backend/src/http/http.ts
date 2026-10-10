@@ -28,6 +28,8 @@ export const ErrorSchema = z
       /** For a draft that is too long: how long it is and how long it may be, in seconds (DR-FR-03). */
       lengthSec: z.number().optional(),
       lengthCapSec: z.number().optional(),
+      /** For a post that was already cancelled: who cancelled it (PT-FR-29). */
+      by: z.enum(["creator", "brand"]).optional(),
     }),
   })
   .openapi("Error");

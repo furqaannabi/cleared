@@ -7,6 +7,7 @@
  *
  * Every function is for a caller already known to hold a brand's session for the deal.
  */
+import type { CancelField, Cancelled, Cancelling } from "../cancel/cancelling";
 import type { BrandLaterReview } from "../posts/later";
 import type { BriefLine } from "../briefs/reader";
 import type { Platform } from "../deals/deals";
@@ -40,6 +41,9 @@ export interface BrandDeal {
     hold: DealHold;
     /** Where the post's draft review stands, once the post is held (DR-FR-49). */
     review?: PostReview;
+    /** Whether the post can be cancelled now, or why not; and who cancelled it (PT-FR-31, PT-FR-32). */
+    cancel?: CancelField;
+    cancelled?: Cancelled;
   }[];
   items: {
     id: string;
@@ -74,6 +78,8 @@ export type AgreeRefused =
   | { refused: "not_waiting_for_brand" }
   /** The version named is not the latest: the creator has sent a newer one (DS-FR-41). */
   | { refused: "out_of_date" }
+  /** Every post of the deal was cancelled, so there is nothing left to agree to (PT-FR-30). */
+  | { refused: "cancelled" }
   /** The service has no PayPal set up, so it cannot open the money an agreement needs. */
   | { refused: "not_set_up" };
 
@@ -104,6 +110,8 @@ export function createBrand(deps: {
   paypalClientId?: string;
   /** Where each held post's draft review stands, read from the posts module (DR-FR-49). */
   describeReviews?: (deliverableIds: string[]) => Promise<Map<string, PostReview>>;
+  /** Whether each post can be cancelled, and who cancelled it (PT-FR-31, PT-FR-32). */
+  cancels?: Cancelling["describe"];
 }) {
   const { prisma, now, money, paypalClientId, describeReviews } = deps;
 
@@ -119,6 +127,7 @@ export function createBrand(deps: {
       holds.set(post.deliverableId, holdOf(view?.hold, deal.timezone));
     }
     const reviews = deal.step === "agreed" ? await describeReviews?.(sent.posts.map((post) => post.deliverableId)) : undefined;
+    const cancels = await deps.cancels?.(sent.posts.map((post) => post.deliverableId));
 
     return {
       dealId: deal.id,
@@ -137,6 +146,7 @@ export function createBrand(deps: {
         ...(changed.posts[post.deliverableId] ? { changed: changed.posts[post.deliverableId] } : {}),
         hold: holds.get(post.deliverableId) ?? { state: "not_started" },
         ...(reviews?.get(post.deliverableId) ? { review: reviews.get(post.deliverableId) } : {}),
+        ...(cancels?.get(post.deliverableId) ?? {}),
       })),
       items: sent.items.map((item) => ({
         id: item.id,
@@ -180,6 +190,8 @@ export function createBrand(deps: {
     if (!sent.posts.some((post) => post.deliverableId === deliverableId)) return { refused: "unknown_post" };
     if (deal.step !== "agreed") return { refused: "money", reason: "not_agreed" };
     if (!money) return { refused: "not_set_up" };
+    // A post cancelled before the brand agreed has no money to hold (PT-FR-30).
+    if ((await prisma.postCancel.count({ where: { deliverableId } })) > 0) return { refused: "money", reason: "cancelled" };
     return "holdable";
   }
 
@@ -250,7 +262,11 @@ export function createBrand(deps: {
 
         const at = now();
         const sent = version.terms as unknown as TermsSnapshot;
+        // A post cancelled since this version was sent stays closed: no money is opened for it (PT-FR-30).
+        const gone = new Set((await tx.postCancel.findMany({ where: { deliverableId: { in: sent.posts.map((post) => post.deliverableId) } }, select: { deliverableId: true } })).map((row) => row.deliverableId));
+        if (gone.size === sent.posts.length) return { refused: "cancelled" };
         for (const post of sent.posts) {
+          if (gone.has(post.deliverableId)) continue;
           await money.openAgreed(
             tx,
             {

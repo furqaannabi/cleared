@@ -88,7 +88,9 @@ type PostState =
   | "captured"
   | "paid"
   | "approved_not_paid"
-  | "released";
+  | "released"
+  /** Cancelled, or closed, before it was ever held (PT-FR-32). */
+  | "closed";
 export type DescribePosts = (deliverableIds: string[]) => Promise<Map<string, { state: PostState; needsCreator: boolean }>>;
 
 /**
@@ -157,6 +159,9 @@ const STATUS: Record<Step, string> = {
   changes_requested: "Changes asked",
   agreed: "Agreed",
 };
+
+/** The status of a deal whose posts are all cancelled or closed (PT-FR-32). */
+const CANCELLED = "Cancelled";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -412,22 +417,40 @@ export function createDeals(deps: {
 
       const described = (await describe?.(deals.flatMap((deal) => deal.deliverables.map((post) => post.id)).filter((id) => held.has(id)))) ?? new Map();
 
-      return deals.map((deal) => {
-        const posts = deal.deliverables.map((post) => ({ id: post.id, platform: post.platform as Platform, state: (described.get(post.id)?.state ?? "no_draft") as PostState }));
+      // Posts that were cancelled, and posts closed without ever being held (PT-FR-32).
+      const everyPost = deals.flatMap((deal) => deal.deliverables.map((post) => post.id));
+      const cancelled = new Set((await prisma.postCancel.findMany({ where: { deliverableId: { in: everyPost } }, select: { deliverableId: true } })).map((row) => row.deliverableId));
+      const closedByMoney = new Set(withMoney.filter((money) => money.stage === "closed_not_held").map((money) => money.deliverableId));
+      const isClosed = (id: string) => closedByMoney.has(id) || (cancelled.has(id) && !held.has(id));
+
+      const listed = deals.map((deal): DealSummary => {
+        const posts = deal.deliverables.map((post) => ({
+          id: post.id,
+          platform: post.platform as Platform,
+          state: (isClosed(post.id) ? "closed" : (described.get(post.id)?.state ?? "no_draft")) as PostState,
+        }));
         const summary = { id: deal.id, brandName: deal.brandName };
+        // Every post is closed, or was cancelled after it was held: the deal is cancelled, whatever step it reached.
+        if (posts.length > 0 && posts.some((post) => cancelled.has(post.id)) && posts.every((post) => post.state === "closed" || (cancelled.has(post.id) && post.state === "released"))) {
+          return { ...summary, status: CANCELLED, ...(deal.step === "agreed" ? {} : { step: deal.step as Step }), deliverables: posts };
+        }
         if (deal.step !== "agreed") {
           // While the brand's changes are being answered the deal says so, whichever page the creator is on.
           const status = deal.revising ? STATUS.changes_requested : STATUS[deal.step as Step];
           return { ...summary, status, step: deal.step as Step, deliverables: posts };
         }
-        const heldCount = posts.filter((post) => held.has(post.id)).length;
-        if (heldCount < posts.length) {
-          return { ...summary, status: `${STATUS.agreed} · ${heldCount} of ${posts.length} held`, step: "agreed", deliverables: posts };
+        // A closed post is left out of the count and of the status: the deal follows the posts that are left.
+        const open = posts.filter((post) => post.state !== "closed");
+        const heldCount = open.filter((post) => held.has(post.id)).length;
+        if (heldCount < open.length) {
+          return { ...summary, status: `${STATUS.agreed} · ${heldCount} of ${open.length} held`, step: "agreed", deliverables: posts };
         }
         // Every post is held: set-up is over, and the status follows the draft check (DR-FR-28).
-        const next = afterSetUp(deal.brandName, posts.map((post) => ({ ...post, needsCreator: described.get(post.id)?.needsCreator ?? true })));
+        const next = afterSetUp(deal.brandName, open.map((post) => ({ ...post, needsCreator: described.get(post.id)?.needsCreator ?? true })));
         return { ...summary, ...next, deliverables: posts };
       });
+      // A cancelled deal sits below the ones still running, each group newest first.
+      return [...listed.filter((deal) => deal.status !== CANCELLED), ...listed.filter((deal) => deal.status === CANCELLED)];
     },
 
     /** One deal, if it is this creator's (DS-FR-15). */
