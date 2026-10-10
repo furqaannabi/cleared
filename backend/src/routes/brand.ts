@@ -30,6 +30,13 @@ const BrandDealSchema = z
         deadlineDays: z.number().int(),
         changed: z.array(z.enum(["amount", "deadline"])).optional(),
         hold: HoldSchema,
+        review: z
+          .discriminatedUnion("state", [
+            z.object({ state: z.enum(["nothing_yet", "approved", "released"]) }),
+            z.object({ state: z.enum(["asked", "objected"]), count: z.number().int() }),
+            z.object({ state: z.literal("window"), endsAt: z.string() }),
+          ])
+          .optional(),
       }),
     ),
     items: z.array(
@@ -52,7 +59,15 @@ const BrandDealSchema = z
 
 export function registerBrandRoutes(
   app: OpenAPIHono<AppEnv>,
-  deps: { sessions: Sessions; invites: Invites; brand: Brand; appOrigin: string; now: () => Date },
+  deps: {
+    sessions: Sessions;
+    invites: Invites;
+    brand: Brand;
+    appOrigin: string;
+    now: () => Date;
+    /** Whether the brand still has something to do on a post's draft. Without it no review link opens anything. */
+    reviewNeeded?: (deliverableId: string) => Promise<boolean>;
+  },
 ) {
   const { sessions, invites, brand, appOrigin, now } = deps;
   const session = requireBrand(sessions);
@@ -65,17 +80,21 @@ export function registerBrandRoutes(
       // Any text is taken as a token, so one that is malformed is answered exactly as one that is unknown.
       request: { params: z.object({ token: z.string().max(512) }) },
       responses: {
-        200: json(z.object({ dealId: z.string() }).openapi("BrandSession"), "The deal the link opens. The session is an HttpOnly cookie"),
+        200: json(
+          z.object({ dealId: z.string(), deliverableId: z.string().optional() }).openapi("BrandSession"),
+          "The deal the link opens, and for a review link the post to land on. The session is an HttpOnly cookie",
+        ),
         404: json(ErrorSchema, "The link does not work: expired, turned off or unknown, with no reason given (DS-FR-35)"),
       },
     }),
     async (c) => {
       const link = await invites.openLink(c.req.valid("param").token);
-      if (!link) return fail(c, 404, "link_not_working");
+      // A review link works only while the brand has something to do on that post's draft (DR-FR-45).
+      if (!link || (link.deliverableId && !(await deps.reviewNeeded?.(link.deliverableId)))) return fail(c, 404, "link_not_working");
       const token = await sessions.startForBrand(link);
       const seconds = Math.max(0, Math.floor((link.expiresAt.getTime() - now().getTime()) / 1000));
       letBrandIn(c, link.dealId, token, appOrigin, seconds);
-      return c.json({ dealId: link.dealId }, 200);
+      return c.json({ dealId: link.dealId, ...(link.deliverableId ? { deliverableId: link.deliverableId } : {}) }, 200);
     },
   );
 

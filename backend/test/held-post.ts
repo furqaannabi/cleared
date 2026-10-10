@@ -14,6 +14,7 @@ import { localLinkKeys } from "../src/invites/link-keys";
 import { runDueJobs } from "../src/jobs/jobs";
 import { createMoney } from "../src/money/money";
 import { recordedPosts } from "../src/money/published-post";
+import { createReviewLinks } from "../src/review/links";
 import { createReview } from "../src/review/review";
 import { createSessions } from "../src/sessions/sessions";
 import { browserFor, type Browser } from "./browser";
@@ -89,12 +90,15 @@ export function heldWorld(
   const money = createMoney({ prisma, paypal, posts: recordedPosts(prisma), now: clock });
   const deals = createDeals({ prisma, now: clock, model: { read: async () => checklist } });
   const accounts = createAccounts({ prisma, now: clock });
+  const linkKeys = localLinkKeys(Buffer.alloc(32, 1).toString("base64"));
+  const reviewLinks = createReviewLinks({ prisma, now: clock, appOrigin: APP, linkKeys, money });
   const drafts = createDrafts({
     prisma,
     now: clock,
     storage,
     media,
     money,
+    links: reviewLinks,
     checks: { speech, judge, videoModel },
     settings: { ...defaultDraftSettings, ...options.drafts },
     log: (...parts) => void logged.push(parts),
@@ -102,6 +106,7 @@ export function heldWorld(
   const review = createReview({
     prisma,
     now: clock,
+    links: reviewLinks,
     money: options.clearingFails
       ? {
           view: money.view,
@@ -119,9 +124,10 @@ export function heldWorld(
     money,
     drafts,
     review,
+    reviewLinks,
     storage,
     paypalClientId: "sandbox-public-client-id",
-    linkKeys: localLinkKeys(Buffer.alloc(32, 1).toString("base64")),
+    linkKeys,
   });
   const json = async <Body>(response: Response) => (await response.json()) as Body;
 

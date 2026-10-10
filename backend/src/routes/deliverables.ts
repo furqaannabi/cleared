@@ -5,6 +5,7 @@ import { PLATFORMS } from "../deals/deals";
 import type { Drafts } from "../drafts/drafts";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Posts } from "../posts/posts";
+import type { ReviewLinks } from "../review/links";
 import type { Review } from "../review/review";
 import type { Sessions } from "../sessions/sessions";
 
@@ -65,6 +66,8 @@ const CreatorPostSchema = z
     objectedAt: z.string().optional(),
     approvedAt: z.string().optional(),
     approvedBy: z.enum(["brand", "window"]).optional(),
+    reviewLink: z.object({ url: z.string(), expiresAt: z.string(), expired: z.boolean() }).optional(),
+    reviewOpenedAt: z.string().optional(),
     checkFailure: z
       .discriminatedUnion("kind", [
         z.object({ kind: z.literal("ours"), retrying: z.boolean(), fileName: z.string() }),
@@ -86,9 +89,9 @@ const CreatorPostSchema = z
 
 export function registerDeliverableRoutes(
   app: OpenAPIHono<AppEnv>,
-  deps: { sessions: Sessions; drafts?: Drafts; posts: Posts; review: Review; maxBytes: number },
+  deps: { sessions: Sessions; drafts?: Drafts; posts: Posts; review: Review; links?: ReviewLinks; maxBytes: number },
 ) {
-  const { drafts, posts, review, maxBytes } = deps;
+  const { drafts, posts, review, links, maxBytes } = deps;
   const creator = requireCreator(deps.sessions);
 
   app.openapi(
@@ -238,4 +241,30 @@ export function registerDeliverableRoutes(
       },
     );
   }
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deliverables/{deliverableId}/review-link",
+      summary: "Make a new review link for the brand: the old one expired, or went to the wrong person (DR-FR-45)",
+      middleware: [creator] as const,
+      request: postId,
+      responses: {
+        200: json(CreatorPostSchema, "The post, with its new link"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        404: json(ErrorSchema, "No such post, or it is not this creator's"),
+        409: json(ErrorSchema, "The brand has nothing to do on this post's draft, so there is no link to make"),
+        503: json(ErrorSchema, "This service is not set up to make links"),
+      },
+    }),
+    async (c) => {
+      const { deliverableId } = c.req.valid("param");
+      const made = links ? await links.renew(c.get("creatorId"), deliverableId) : { refused: "not_set_up" as const };
+      if (made !== "made") {
+        return made.refused === "not_found" ? fail(c, 404, "not_found") : made.refused === "not_set_up" ? fail(c, 503, "not_set_up") : fail(c, 409, made.refused);
+      }
+      const post = await posts.creatorPost(c.get("creatorId"), deliverableId);
+      return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
+    },
+  );
 }

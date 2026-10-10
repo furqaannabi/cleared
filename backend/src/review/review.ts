@@ -8,6 +8,7 @@
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import type { JobHandlers } from "../jobs/jobs";
 import type { Money } from "../money/money";
+import type { ReviewLinks } from "./links";
 import { defaultReviewSettings, review, type ReviewEvent, type ReviewRefusal, type ReviewSettings } from "./rules";
 import { applyEffects, holdEnded, loadReview, lockReview, saveItems, saveState } from "./store";
 
@@ -20,9 +21,11 @@ export function createReview(deps: {
   now: () => Date;
   /** The money path: read for whether the hold stands, and told when a draft is cleared. */
   money?: Pick<Money, "view" | "draftClearedIn">;
+  /** The brand's review links, made by the first ask of a run and closed when a draft is approved. */
+  links?: Pick<ReviewLinks, "make" | "close">;
   settings?: ReviewSettings;
 }) {
-  const { prisma, now, money } = deps;
+  const { prisma, now, money, links } = deps;
   const settings = deps.settings ?? defaultReviewSettings;
 
   /**
@@ -45,6 +48,8 @@ export function createReview(deps: {
       await saveItems(tx, deliverableId, result.state.items);
       await alongside?.(tx);
       await applyEffects(tx, deliverableId, result.effects, {
+        at: event.at,
+        links,
         clearDraft: async () => {
           if (!money) throw new Error("A draft was approved with no money path to tell");
           await money.draftClearedIn(tx, deliverableId, event.at);
@@ -78,6 +83,16 @@ export function createReview(deps: {
   } satisfies JobHandlers;
 
   return {
+    /**
+     * A brand session has read the post's review (DR-FR-46). The first time for a draft it is shown,
+     * the moment is kept, so the creator can see their draft was opened. A read before the brand is
+     * shown any draft is not an opening.
+     */
+    async opened(dealId: string, deliverableId: string): Promise<void> {
+      if (!(await isInDeal(dealId, deliverableId))) return;
+      await prisma.draftCheck.updateMany({ where: { deliverableId, shown: true, phase: "done", reviewOpenedAt: null }, data: { reviewOpenedAt: now() } });
+    },
+
     /** The creator asks the brand to accept an unsure item (DR-FR-30). */
     async ask(creatorId: string, deliverableId: string, itemId: string): Promise<Acted> {
       if (!(await isCreators(creatorId, deliverableId))) return { ok: false, reason: "not_found" };

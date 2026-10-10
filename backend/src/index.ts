@@ -11,6 +11,7 @@ import { runDueJobs, type JobHandlers } from "./jobs/jobs";
 import { startWorker } from "./jobs/worker";
 import { createMoney } from "./money/money";
 import { recordedPosts } from "./money/published-post";
+import { createReviewLinks } from "./review/links";
 import { createReview } from "./review/review";
 import { createSandboxPayPal } from "./paypal/sandbox-paypal";
 import { localSecrets } from "./secrets/secrets";
@@ -48,8 +49,10 @@ if (!money) {
   console.warn("PayPal is not configured, so no hold can be made and the money jobs do nothing. See backend/.env.example.");
 }
 
-// The review of drafts: asks, objections, approval and the review window's timer.
-const review = createReview({ prisma, now, money });
+// The review of drafts: asks, objections, approval and the review window's timer, and the brand's link to each review.
+const linkKeys = localLinkKeys(env.tokenKey);
+const reviewLinks = createReviewLinks({ prisma, now, appOrigin: env.appOrigin, linkKeys, money });
+const review = createReview({ prisma, now, money, links: reviewLinks });
 
 const app = createApp({
   prisma,
@@ -57,11 +60,12 @@ const app = createApp({
   deals,
   money,
   review,
+  reviewLinks,
   appOrigin: env.appOrigin,
   apiOrigin: env.apiOrigin,
   google: env.google && createGoogle({ ...env.google, log }),
   secrets: localSecrets(env.tokenKey),
-  linkKeys: localLinkKeys(env.tokenKey),
+  linkKeys,
   // Public by design: PayPal's button on the brand's page needs it. The secret never leaves the service.
   paypalClientId: env.paypal?.clientId,
 });

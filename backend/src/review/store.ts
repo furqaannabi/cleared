@@ -82,13 +82,17 @@ export const holdEnded = (stage: string | undefined) => stage === "released" || 
  * written here, so a restart cannot lose it (DR-FR-36). Telling the money path a draft is cleared is
  * done by `clearDraft`, in this same transaction (DR-FR-42); a change that asks for it where none was
  * given is a bug, and fails loudly so no approval is ever recorded without the money path knowing.
- * The brand's link arrives with the brand's review.
+ * The brand's review link is made and closed by `links`, where links are set up (DR-FR-44, DR-FR-45).
  */
 export async function applyEffects(
   tx: Prisma.TransactionClient,
   deliverableId: string,
   effects: ReviewEffect[],
-  actions: { clearDraft?: () => Promise<void> } = {},
+  actions: {
+    at: Date;
+    clearDraft?: () => Promise<void>;
+    links?: { make(tx: Prisma.TransactionClient, deliverableId: string, at: Date): Promise<void>; close(tx: Prisma.TransactionClient, deliverableId: string, at: Date): Promise<void> };
+  },
 ) {
   for (const effect of effects) {
     switch (effect.type) {
@@ -100,7 +104,10 @@ export async function applyEffects(
         await actions.clearDraft();
         break;
       case "make_review_link":
+        await actions.links?.make(tx, deliverableId, actions.at);
+        break;
       case "end_review_link":
+        await actions.links?.close(tx, deliverableId, actions.at);
         break;
     }
   }

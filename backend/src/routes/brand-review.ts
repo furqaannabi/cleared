@@ -98,6 +98,8 @@ export function registerBrandReviewRoutes(app: OpenAPIHono<AppEnv>, deps: { sess
     }),
     async (c) => {
       const { dealId, deliverableId } = c.req.valid("param");
+      // The creator is told their draft was opened (DR-FR-46).
+      await review.opened(dealId, deliverableId);
       return show(c, dealId, deliverableId);
     },
   );

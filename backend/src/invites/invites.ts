@@ -9,7 +9,7 @@ import type { Money } from "../money/money";
 import { defaultSettings as moneySettings } from "../money/types";
 import { decimal } from "../money/view";
 import { holdOf, type DealHold } from "./hold";
-import type { LinkKeys } from "./link-keys";
+import { freshLink, hashToken, type LinkKeys } from "./link-keys";
 import { inOrder, noteOf, type DealNote } from "./notes";
 import { takeSnapshot } from "./terms";
 
@@ -82,8 +82,9 @@ const whole = {
   deliverables: { orderBy: { position: "asc" } },
   items: { orderBy: { position: "asc" } },
   questions: { orderBy: { position: "asc" } },
-  // The link that is on, if there is one, and the latest version sent.
-  links: { where: { turnedOffAt: null }, orderBy: { createdAt: "desc" }, take: 1 },
+  // The deal's own invite link that is on, if there is one, and the latest version sent. A review link
+  // is for one post's draft and is not shown here (DR-FR-44).
+  links: { where: { turnedOffAt: null, deliverableId: null }, orderBy: { createdAt: "desc" }, take: 1 },
   versions: { orderBy: { number: "desc" }, take: 1 },
   notes: inOrder,
 } as const;
@@ -91,8 +92,6 @@ const whole = {
 type Row = Prisma.DealGetPayload<{ include: typeof whole }>;
 
 export type Invites = ReturnType<typeof createInvites>;
-
-const hash = (token: string) => new Bun.CryptoHasher("sha256").update(token).digest("hex");
 
 export function createInvites(deps: {
   prisma: PrismaClient;
@@ -154,12 +153,6 @@ export function createInvites(deps: {
     return deal && deal.step !== "checklist" ? deal : undefined;
   };
 
-  /** A link that has never existed: its salt, and the hash of the token that salt gives. */
-  async function freshLink(keys: LinkKeys) {
-    const salt = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("base64url");
-    return { salt, tokenHash: hash(await keys.token(salt)) };
-  }
-
   /** Records a link for the deal, good for the days in the settings from `at`. */
   const saveLink = (tx: Prisma.TransactionClient, dealId: string, link: { salt: string; tokenHash: string }, at: Date) =>
     tx.inviteLink.create({
@@ -171,8 +164,9 @@ export function createInvites(deps: {
    * never works again (DS-FR-33).
    */
   async function turnOff(tx: Prisma.TransactionClient, dealId: string, at: Date) {
-    await tx.inviteLink.updateMany({ where: { dealId, turnedOffAt: null }, data: { turnedOffAt: at } });
-    await tx.session.deleteMany({ where: { link: { dealId } } });
+    // The deal's invite link only. A review link has its own life (DR-FR-45).
+    await tx.inviteLink.updateMany({ where: { dealId, deliverableId: null, turnedOffAt: null }, data: { turnedOffAt: at } });
+    await tx.session.deleteMany({ where: { link: { dealId, deliverableId: null } } });
   }
 
   /** Why the terms cannot go to the brand yet, if they cannot: the same for a first link and for updated terms. */
@@ -302,7 +296,7 @@ export function createInvites(deps: {
         const at = now();
         await saveVersion(tx, deal, at);
         await tx.inviteLink.updateMany({
-          where: { dealId, turnedOffAt: null },
+          where: { dealId, deliverableId: null, turnedOffAt: null },
           data: { expiresAt: new Date(at.getTime() + settings.linkDays * DAY_MS) },
         });
         await tx.deal.update({ where: { id: dealId }, data: { step: "waiting_for_brand", revising: false } });
@@ -314,10 +308,11 @@ export function createInvites(deps: {
      * The link a token is for, if it is on and has not expired (DS-FR-34). Looked up by the token's
      * hash. An unknown, an expired and a turned-off link are all simply not there (DS-FR-35).
      */
-    async openLink(token: string): Promise<{ id: string; dealId: string; expiresAt: Date } | undefined> {
-      const link = await prisma.inviteLink.findUnique({ where: { tokenHash: hash(token) } });
-      if (!link || link.turnedOffAt !== null || link.expiresAt <= now()) return undefined;
-      return { id: link.id, dealId: link.dealId, expiresAt: link.expiresAt };
+    async openLink(token: string): Promise<{ id: string; dealId: string; expiresAt: Date; deliverableId?: string } | undefined> {
+      const link = await prisma.inviteLink.findUnique({ where: { tokenHash: hashToken(token) } });
+      // A review link that is closed opens nothing new, though sessions made from it earlier go on (DR-FR-45).
+      if (!link || link.turnedOffAt !== null || link.closedAt !== null || link.expiresAt <= now()) return undefined;
+      return { id: link.id, dealId: link.dealId, expiresAt: link.expiresAt, ...(link.deliverableId ? { deliverableId: link.deliverableId } : {}) };
     },
 
     /**

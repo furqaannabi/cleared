@@ -2577,6 +2577,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deliverables/{deliverableId}/review-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make a new review link for the brand: the old one expired, or went to the wrong person (DR-FR-45) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post, with its new link */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreatorPost"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post, or it is not this creator's */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The brand has nothing to do on this post's draft, so there is no link to make */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description This service is not set up to make links */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/b/{token}/session": {
         parameters: {
             query?: never;
@@ -2598,7 +2672,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description The deal the link opens. The session is an HttpOnly cookie */
+                /** @description The deal the link opens, and for a review link the post to land on. The session is an HttpOnly cookie */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -3432,6 +3506,12 @@ export interface components {
             approvedAt?: string;
             /** @enum {string} */
             approvedBy?: "brand" | "window";
+            reviewLink?: {
+                url: string;
+                expiresAt: string;
+                expired: boolean;
+            };
+            reviewOpenedAt?: string;
             checkFailure?: {
                 /** @enum {string} */
                 kind: "ours";
@@ -3464,6 +3544,7 @@ export interface components {
         };
         BrandSession: {
             dealId: string;
+            deliverableId?: string;
         };
         BrandDeal: {
             dealId: string;
@@ -3482,6 +3563,18 @@ export interface components {
                 deadlineDays: number;
                 changed?: ("amount" | "deadline")[];
                 hold: components["schemas"]["Hold"];
+                review?: {
+                    /** @enum {string} */
+                    state: "nothing_yet" | "approved" | "released";
+                } | {
+                    /** @enum {string} */
+                    state: "asked" | "objected";
+                    count: number;
+                } | {
+                    /** @enum {string} */
+                    state: "window";
+                    endsAt: string;
+                };
             }[];
             items: {
                 id: string;

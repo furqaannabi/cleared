@@ -14,6 +14,7 @@ import { defaultDraftSettings, type Drafts } from "./drafts/drafts";
 import { createInvites } from "./invites/invites";
 import type { LinkKeys } from "./invites/link-keys";
 import { createPosts } from "./posts/posts";
+import { createReviewLinks, type ReviewLinks } from "./review/links";
 import { createReview, type Review } from "./review/review";
 import { registerAccountRoutes } from "./routes/account";
 import { registerBrandRoutes } from "./routes/brand";
@@ -61,6 +62,8 @@ export interface AppDeps {
   storage?: Storage;
   /** The review of drafts. The service passes its own, so its jobs and its routes share one. */
   review?: Review;
+  /** The brand's review links. The service passes its own, the one its drafts and its review use. */
+  reviewLinks?: ReviewLinks;
   /** The largest draft file taken, in bytes. The service's own size limit must allow it. */
   maxDraftBytes?: number;
 }
@@ -121,14 +124,22 @@ export function createApp(deps: AppDeps) {
     // Only a hash of the address is kept.
     madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
   });
-  const posts = createPosts({ prisma, now, storage: deps.storage, money });
+  const reviewLinks = deps.reviewLinks ?? createReviewLinks({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
+  const posts = createPosts({ prisma, now, storage: deps.storage, money, links: reviewLinks });
   registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }), describePosts: posts.summaries });
   const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
   registerInviteRoutes(app, { sessions, invites });
-  const review = deps.review ?? createReview({ prisma, now, money });
+  const review = deps.review ?? createReview({ prisma, now, money, links: reviewLinks });
   registerBrandReviewRoutes(app, { sessions, posts, review });
-  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, review, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
-  registerBrandRoutes(app, { sessions, invites, brand: createBrand({ prisma, now, money, paypalClientId: deps.paypalClientId }), appOrigin, now });
+  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, review, links: reviewLinks, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
+  registerBrandRoutes(app, {
+    sessions,
+    invites,
+    brand: createBrand({ prisma, now, money, paypalClientId: deps.paypalClientId, describeReviews: posts.reviews }),
+    appOrigin,
+    now,
+    reviewNeeded: reviewLinks.needed,
+  });
   registerGoogleRoutes(app, {
     google: deps.google,
     secrets: deps.secrets,

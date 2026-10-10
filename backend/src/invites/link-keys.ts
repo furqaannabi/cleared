@@ -34,3 +34,12 @@ export function localLinkKeys(keyBase64: string): LinkKeys {
     },
   };
 }
+
+/** The hash a link's token is looked up by. Only this is stored, never the token (DS-BR-11). */
+export const hashToken = (token: string) => new Bun.CryptoHasher("sha256").update(token).digest("hex");
+
+/** A link that has never existed: its salt, and the hash of the token that salt gives. */
+export async function freshLink(keys: LinkKeys): Promise<{ salt: string; tokenHash: string }> {
+  const salt = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("base64url");
+  return { salt, tokenHash: hashToken(await keys.token(salt)) };
+}

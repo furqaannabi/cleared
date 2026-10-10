@@ -11,6 +11,7 @@ import type { PrismaClient } from "../generated/prisma/client";
 import { cents, type TermsSnapshot } from "../invites/terms";
 import type { Money } from "../money/money";
 import { decimal } from "../money/view";
+import type { ReviewLink, ReviewLinks } from "../review/links";
 import { askable, brandReview, brandStatus, creatorStatus, newReview, postState, type BrandStatus, type CreatorStatus, type ReviewItem } from "../review/rules";
 import { holdEnded, loadReview } from "../review/store";
 import type { Storage } from "../storage/port";
@@ -73,6 +74,10 @@ export interface CreatorPost {
   objectedAt?: string;
   approvedAt?: string;
   approvedBy?: "brand" | "window";
+  /** The brand's link to this draft's review, while the brand has something to do. For the creator only (DR-FR-45). */
+  reviewLink?: ReviewLink;
+  /** When the brand first opened this draft (DR-FR-46). */
+  reviewOpenedAt?: string;
   checkFailure?: CheckFailure;
   checkStartedAt?: string;
   stages?: { name: string; status: "done" | "current" | "waiting" }[];
@@ -115,6 +120,12 @@ export interface BrandPost {
   };
 }
 
+/** Where a post's review stands on the brand's deal page, with how many items wait on the brand or are objected to (DR-FR-49). */
+export type ReviewSummary =
+  | { state: "nothing_yet" | "approved" | "released" }
+  | { state: "asked" | "objected"; count: number }
+  | { state: "window"; endsAt: string };
+
 /** What the deals list needs of a post: its state, and whether its next step is the creator's (DR-FR-28). */
 export interface PostSummary {
   state: PostState;
@@ -139,10 +150,12 @@ export function createPosts(deps: {
   /** Where drafts are kept. Without it no draft exists, so none is shown. */
   storage?: Storage;
   money?: Pick<Money, "creatorView" | "view">;
+  /** The brand's review links, to show the creator the one for their draft. */
+  links?: Pick<ReviewLinks, "current">;
   /** How long an address that plays a draft works for (DR-BR-12). */
   addressSeconds?: number;
 }) {
-  const { prisma, now, storage, money } = deps;
+  const { prisma, now, storage, money, links } = deps;
   const addressSeconds = deps.addressSeconds ?? 15 * 60;
 
   const isReleased = holdEnded;
@@ -230,6 +243,7 @@ export function createPosts(deps: {
               : undefined;
 
       const state = postState(review);
+      const reviewLink = await links?.current(deliverableId);
       const current = Math.max(0, STAGES.findIndex(([stage]) => stage === row?.stage));
       const release = view.release;
       const { hold } = view;
@@ -257,6 +271,8 @@ export function createPosts(deps: {
         ...(review.window ? { reviewWindowEndsAt: review.window.endsAt.toISOString() } : {}),
         ...(review.objectedAt ? { objectedAt: review.objectedAt.toISOString() } : {}),
         ...(review.approved ? { approvedAt: review.approved.at.toISOString(), approvedBy: review.approved.by } : {}),
+        ...(reviewLink ? { reviewLink } : {}),
+        ...(row?.reviewOpenedAt && review.shown ? { reviewOpenedAt: row.reviewOpenedAt.toISOString() } : {}),
         ...(checkFailure ? { checkFailure } : {}),
         ...(review.phase === "checking" && !released && row?.checkStartedAt
           ? {
@@ -351,6 +367,31 @@ export function createPosts(deps: {
       if (!post) return { refused: "not_found" };
       const row = await prisma.draftCheck.findUnique({ where: { deliverableId } });
       return (await draftOf(row?.draftId)) ?? { refused: "no_draft" };
+    },
+
+    /**
+     * Where each held post's review stands, for the brand's deal page (DR-FR-49). A post with no hold
+     * yet has no review and is left out.
+     */
+    async reviews(deliverableIds: string[]): Promise<Map<string, ReviewSummary>> {
+      const found = new Map<string, ReviewSummary>();
+      for (const deliverableId of deliverableIds) {
+        const view = await money?.view(deliverableId);
+        if (!view || view.hold.state !== "held") continue;
+        const review = (await loadReview(prisma, deliverableId, isReleased(view.stage)))?.state ?? { ...newReview(), released: isReleased(view.stage) };
+        const where = brandReview(review);
+        found.set(
+          deliverableId,
+          where.state === "asked"
+            ? { state: "asked", count: review.items.filter((item) => item.ask === "waiting").length }
+            : where.state === "objected"
+              ? { state: "objected", count: review.items.filter((item) => item.objected).length }
+              : where.state === "window"
+                ? { state: "window", endsAt: where.endsAt.toISOString() }
+                : { state: where.state },
+        );
+      }
+      return found;
     },
 
     /** Each post's state, and whether its next step is the creator's, for the deals list (DR-FR-28). */

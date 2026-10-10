@@ -311,6 +311,11 @@ model InviteLink {
   expiresAt   DateTime
   /// Set when the creator replaces the link or changes the terms. A link turned off never works again.
   turnedOffAt DateTime?
+  /// For a review link: the post it lands on (DR-FR-44). Null for the deal's invite link.
+  deliverableId String?
+  /// Set when the brand has nothing left to do on the draft the link was made for (DR-FR-45). The link
+  /// then opens nothing new, but sessions already made from it last until it expires.
+  closedAt    DateTime?
 
   deal     Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
   sessions Session[]
@@ -403,6 +408,8 @@ model DraftCheck {
   approvedAt     DateTime?
   /// Whether the brand is shown this run's draft: from the first ask or the window's start (DR-FR-48).
   shown          Boolean   @default(false)
+  /// When a brand session first read this run's review (DR-FR-46).
+  reviewOpenedAt DateTime?
   /// The last file that could not be checked because of the file itself, until a draft is accepted (DR-FR-03).
   fileFailure    Json?
   /// Where a running check has got to: reading, said, shown or confirming (DR-FR-10).

@@ -11,6 +11,7 @@ import type { TermsSnapshot } from "../invites/terms";
 import { enqueue, type JobHandlers } from "../jobs/jobs";
 import type { Media } from "../media/port";
 import type { Money } from "../money/money";
+import type { ReviewLinks } from "../review/links";
 import { defaultReviewSettings, review, type ReviewSettings } from "../review/rules";
 import { applyEffects, loadReview, lockReview, saveItems, saveState } from "../review/store";
 import type { Storage } from "../storage/port";
@@ -102,13 +103,15 @@ export function createDrafts(deps: {
   storage: Storage;
   media: Media;
   checks?: CheckServices;
+  /** The brand's review links, made when a run opens the window and closed when a new draft starts. */
+  links?: Pick<ReviewLinks, "make" | "close">;
   /** The money path, read to know whether a post's hold is in place. Without it no post is held. */
   money?: Pick<Money, "view">;
   settings?: DraftSettings;
   /** Where a failed check is reported: ids, counts and the kind of error. Never anything from the video (DR-BR-18). */
   log?: (message: string, details: Record<string, unknown>) => void;
 }) {
-  const { prisma, now, storage, media, checks, money } = deps;
+  const { prisma, now, storage, media, checks, money, links } = deps;
   const settings = deps.settings ?? defaultDraftSettings;
   const log = deps.log ?? ((message, details) => console.error(message, JSON.stringify(details)));
 
@@ -189,7 +192,7 @@ export function createDrafts(deps: {
       });
       await saveState(tx, deliverableId, done.state);
       await tx.draftCheck.update({ where: { deliverableId }, data: { stage: null, failures: 0, speechJobId: null } });
-      await applyEffects(tx, deliverableId, done.effects);
+      await applyEffects(tx, deliverableId, done.effects, { at, links });
 
       const older = await tx.draft.findMany({ where: { deliverableId, id: { not: draftId } } });
       await tx.draft.deleteMany({ where: { id: { in: older.map((draft) => draft.id) } } });
@@ -352,9 +355,9 @@ export function createDrafts(deps: {
         await saveItems(tx, deliverableId, start.state.items);
         await tx.draftCheck.update({
           where: { deliverableId },
-          data: { draftId, checkStartedAt: at, stage: null, failures: 0, speechJobId: null, fileFailure: Prisma.DbNull },
+          data: { draftId, checkStartedAt: at, stage: null, failures: 0, speechJobId: null, fileFailure: Prisma.DbNull, reviewOpenedAt: null },
         });
-        await applyEffects(tx, deliverableId, start.effects);
+        await applyEffects(tx, deliverableId, start.effects, { at, links });
         await enqueue(tx, { name: "check_draft", payload: { deliverableId, draftId }, runAt: at });
         return undefined;
       });

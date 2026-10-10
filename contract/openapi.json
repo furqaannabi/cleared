@@ -1130,6 +1130,28 @@
               "window"
             ]
           },
+          "reviewLink": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "expiresAt": {
+                "type": "string"
+              },
+              "expired": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "url",
+              "expiresAt",
+              "expired"
+            ]
+          },
+          "reviewOpenedAt": {
+            "type": "string"
+          },
           "checkFailure": {
             "oneOf": [
               {
@@ -1273,6 +1295,9 @@
         "properties": {
           "dealId": {
             "type": "string"
+          },
+          "deliverableId": {
+            "type": "string"
           }
         },
         "required": [
@@ -1341,6 +1366,63 @@
                 },
                 "hold": {
                   "$ref": "#/components/schemas/Hold"
+                },
+                "review": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "nothing_yet",
+                            "approved",
+                            "released"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "state"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "asked",
+                            "objected"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "count"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "window"
+                          ]
+                        },
+                        "endsAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "endsAt"
+                      ]
+                    }
+                  ]
                 }
               },
               "required": [
@@ -4307,6 +4389,75 @@
         }
       }
     },
+    "/deliverables/{deliverableId}/review-link": {
+      "post": {
+        "summary": "Make a new review link for the brand: the old one expired, or went to the wrong person (DR-FR-45)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post, with its new link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatorPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post, or it is not this creator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The brand has nothing to do on this post's draft, so there is no link to make",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This service is not set up to make links",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/b/{token}/session": {
       "post": {
         "summary": "Swap an invite link's token for a session scoped to its deal (DS-FR-34)",
@@ -4323,7 +4474,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The deal the link opens. The session is an HttpOnly cookie",
+            "description": "The deal the link opens, and for a review link the post to land on. The session is an HttpOnly cookie",
             "content": {
               "application/json": {
                 "schema": {

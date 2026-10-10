@@ -37,6 +37,8 @@ export interface BrandDeal {
     changed?: ("amount" | "deadline")[];
     /** The post's hold as the money path has it. None can be started before the brand agrees (DS-BR-10). */
     hold: DealHold;
+    /** Where the post's draft review stands, once the post is held (DR-FR-49). */
+    review?: PostReview;
   }[];
   items: {
     id: string;
@@ -55,6 +57,9 @@ export interface BrandDeal {
   /** The brand's own notes, each with the creator's reply if there is one. */
   notes: DealNote[];
 }
+
+/** Where a post's review stands, with how many items wait on the brand or are objected to. */
+export type PostReview = { state: "nothing_yet" | "approved" | "released" } | { state: "asked" | "objected"; count: number } | { state: "window"; endsAt: string };
 
 export type NotesRefused =
   /** Notes are sent while the deal waits for the brand: not again before the creator answers, and not once agreed. */
@@ -96,8 +101,10 @@ export function createBrand(deps: {
   money?: Pick<Money, "openAgreed" | "view" | "startHold" | "holdApproved" | "holdClosed">;
   /** The sandbox app's public client id, for PayPal's button on the brand's page (DS-FR-45). */
   paypalClientId?: string;
+  /** Where each held post's draft review stands, read from the posts module (DR-FR-49). */
+  describeReviews?: (deliverableIds: string[]) => Promise<Map<string, PostReview>>;
 }) {
-  const { prisma, now, money, paypalClientId } = deps;
+  const { prisma, now, money, paypalClientId, describeReviews } = deps;
 
   async function dealOf(deal: Row): Promise<BrandDeal | undefined> {
     const [version, before] = deal.versions;
@@ -110,6 +117,7 @@ export function createBrand(deps: {
       const view = deal.step === "agreed" ? await money?.view(post.deliverableId) : undefined;
       holds.set(post.deliverableId, holdOf(view?.hold, deal.timezone));
     }
+    const reviews = deal.step === "agreed" ? await describeReviews?.(sent.posts.map((post) => post.deliverableId)) : undefined;
 
     return {
       dealId: deal.id,
@@ -127,6 +135,7 @@ export function createBrand(deps: {
         deadlineDays: post.deadlineDays,
         ...(changed.posts[post.deliverableId] ? { changed: changed.posts[post.deliverableId] } : {}),
         hold: holds.get(post.deliverableId) ?? { state: "not_started" },
+        ...(reviews?.get(post.deliverableId) ? { review: reviews.get(post.deliverableId) } : {}),
       })),
       items: sent.items.map((item) => ({
         id: item.id,
