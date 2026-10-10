@@ -89,6 +89,11 @@ export const env = {
   judgeModel: process.env.JUDGE_MODEL ?? process.env.BRIEF_MODEL ?? "anthropic.claude-opus-5-5",
   drafts: drafts(),
   email: email(),
+  /**
+   * YouTube's id of the one real channel the team owns, which demo accounts read through (PT-FR-36).
+   * The team connects it once, signed in as an ordinary creator. Without it a demo deal stops at approved.
+   */
+  demoChannelId: process.env.DEMO_YOUTUBE_CHANNEL_ID || undefined,
   /** The address of Cleared's own app: the only origin that may make changing requests (DS-BR-03). */
   appOrigin: process.env.APP_ORIGIN ?? "http://localhost:3000",
   paypal: paypal(),

@@ -543,3 +543,61 @@ describe("PT-FR-06 once a post is published its video cannot be changed", () => 
     expect(world.youtube.reads).toEqual([]);
   });
 });
+
+describe("PT-FR-36 a demo account's YouTube is one real channel the team owns", () => {
+  const SAMPLE = "aaaaaaaaaaa";
+  const file = { bytes: new Uint8Array(2_000).fill(7) };
+
+  /** A demo account's held post with an approved draft, in a world where the team has connected its channel once. */
+  async function demoPost(world: HeldWorld) {
+    await world.creator("Team Cleared");
+    const held = await world.agreedDeal(await world.demo());
+    await held.sam.send("POST", `/deliverables/${held.post}/draft?fileName=sample.mp4`, { file });
+    await world.finishChecks();
+    expect((await held.maya.send("POST", `/brand/deals/${held.deal.id}/deliverables/${held.post}/approve`)).status).toBe(200);
+    world.youtube.has(SAMPLE, { channelId: "channel-team", privacy: "public", description: GOOD, paidPromotion: true });
+    return { ...held, goAhead: (video = SAMPLE) => held.sam.send("POST", `/deliverables/${held.post}/go-ahead`, { body: { videoUrl: `https://youtu.be/${video}` } }) };
+  }
+
+  test("the go-ahead, the post and the live check all read the team's channel with its read-only access, and the deal finishes", async () => {
+    const world = heldWorld({ demoChannel: "channel-team" });
+    const post = await demoPost(world);
+
+    expect((await post.goAhead()).status).toBe(200);
+    expect((await post.sam.send("POST", `/deliverables/${post.post}/posted`)).status).toBe(200);
+    await world.runJobs();
+
+    expect(world.youtube.reads.map((read) => read.refreshToken)).toEqual(["refresh-team", "refresh-team", "refresh-team"]);
+    expect(await prisma.liveCheck.findUnique({ where: { deliverableId: post.post } })).toMatchObject({ answer: "passed" });
+    expect((await world.money.view(post.post))!.approval).toMatchObject({ by: "live_check" });
+  });
+
+  test("the same rules hold for it: a video on any other channel is refused", async () => {
+    const world = heldWorld({ demoChannel: "channel-team" });
+    const post = await demoPost(world);
+    world.youtube.has(VIDEO, { channelId: "channel-sam" });
+
+    const response = await post.goAhead(VIDEO);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "not_your_channel" } });
+  });
+
+  test("with no demo channel set, a demo account's made-up channel cannot be read, and it is told to reconnect", async () => {
+    const world = heldWorld();
+    const post = await demoPost(world);
+
+    expect(await (await post.goAhead()).json()).toEqual({ error: { code: "reconnect_youtube" } });
+    expect(world.youtube.reads).toEqual([]);
+  });
+
+  test("a creator who is not a demo account never reads through the team's channel", async () => {
+    const world = heldWorld({ demoChannel: "channel-team" });
+    await world.creator("Team Cleared");
+    const post = await goAheadGiven(world);
+    world.youtube.edit(VIDEO, { privacy: "public" });
+    await post.posted();
+
+    expect(world.youtube.reads.every((read) => read.refreshToken === "refresh-sam")).toBe(true);
+  });
+});

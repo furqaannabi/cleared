@@ -522,6 +522,18 @@ model PostCancel {
   note          String?
 }
 
+// A ruling by a person at Cleared on a live post the brand objected to (publish to paid spec PT-FR-35):
+// what was ruled, by whom, and when. It is made by a command, never by a route (PT-BR-14). The money
+// path acts on it; this row keeps the name.
+model Ruling {
+  deliverableId String   @id
+  /// pay or release.
+  decision      String
+  /// The name of the person who ruled.
+  by            String
+  at            DateTime
+}
+
 // A notice to the brand that its decision on a live post is wanted (publish to paid spec PT-FR-21):
 // one for each of its two 48-hour windows, sent once. It holds no address and no link (PT-BR-11).
 model BrandNotice {

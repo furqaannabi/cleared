@@ -17,6 +17,9 @@ import { createResend } from "./email/resend";
 import { createMoney } from "./money/money";
 import { recordedPosts } from "./money/published-post";
 import { createNotices } from "./publish/notices";
+import { createPublishedPosts } from "./publish/published-posts";
+import { createPublishing, type Publishing } from "./publish/publishing";
+import { createYouTubeApi } from "./publish/youtube-api";
 import { createReviewLinks } from "./review/links";
 import { createReview } from "./review/review";
 import { createSandboxPayPal } from "./paypal/sandbox-paypal";
@@ -32,7 +35,15 @@ if (!env.tokenKey) {
   throw new Error("Missing environment variable TOKEN_KEY. Make one with: openssl rand -base64 32. See backend/.env.example.");
 }
 
-const accounts = createAccounts({ prisma, now });
+// Reading YouTube after a draft is approved: the go-ahead, "I've posted it" and the live check. It uses
+// the same Google client as sign-in, with each creator's own read-only access. Without Google set up,
+// nothing after approval can run.
+const secrets = localSecrets(env.tokenKey);
+const reader = env.google && { prisma, youtube: createYouTubeApi({ ...env.google, log }), secrets, demoChannelId: env.demoChannelId };
+// Made further down, once the money path exists. A creator who reconnects YouTube restarts what was waiting on it.
+let publishing: Publishing | undefined;
+
+const accounts = createAccounts({ prisma, now, onYouTubeConnected: async (creatorId) => publishing?.youtubeConnected(creatorId) });
 // Briefs are read by Claude on Amazon Bedrock, with the AWS credentials the service runs under.
 const deals = createDeals({
   prisma,
@@ -49,7 +60,8 @@ const money =
   createMoney({
     prisma,
     paypal: createSandboxPayPal({ ...env.paypal, log }),
-    posts: recordedPosts(prisma),
+    // Whether a post is published is read from YouTube. Without YouTube, only what the money path was told counts.
+    posts: reader ? createPublishedPosts({ ...reader, now }) : recordedPosts(prisma),
     log: (message, details) => console.warn(message, JSON.stringify(details)),
   });
 if (!money) {
@@ -60,6 +72,9 @@ if (!money) {
 const linkKeys = localLinkKeys(env.tokenKey);
 const reviewLinks = createReviewLinks({ prisma, now, appOrigin: env.appOrigin, linkKeys, money });
 const review = createReview({ prisma, now, money, links: reviewLinks });
+
+// Claude as the judge: of drafts, and of a live post's description.
+const judge = createClaudeJudge({ model: env.judgeModel, region: env.awsRegion, log });
 
 // Drafts: a private bucket, ffmpeg to read a file, and the three services that check a video. Without
 // a bucket the API still starts in development, and takes no draft.
@@ -76,7 +91,7 @@ const drafts =
     links: reviewLinks,
     checks: {
       speech: createDataAutomation({ region: env.awsRegion, bucket: env.drafts.bucket, projectArn: env.drafts.projectArn, profileArn: env.drafts.profileArn, read: storage.read }),
-      judge: createClaudeJudge({ model: env.judgeModel, region: env.awsRegion, log }),
+      judge,
       videoModel: createNovaVideoModel({ model: env.drafts.videoModel, region: env.awsRegion, bucket: env.drafts.bucket, log }),
     },
     settings: { ...defaultDraftSettings, sampleKey: env.drafts.sampleKey },
@@ -92,6 +107,14 @@ if (!env.email) {
   console.warn("Email is not configured, so the brand is emailed nothing and the creator sends its link. See backend/.env.example.");
 }
 
+// Publishing: the go-ahead, posting and the live check, each read from YouTube and each decided by the money path.
+publishing = reader && money ? createPublishing({ ...reader, now, money, judge, notices, log }) : undefined;
+if (!publishing) {
+  console.warn("Google or PayPal is not configured, so no go-ahead can be given and no live check runs. See backend/.env.example.");
+} else if (!env.demoChannelId) {
+  console.warn("No demo YouTube channel is set, so a demo account's deal stops once its draft is approved. See backend/.env.example.");
+}
+
 const app = createApp({
   prisma,
   accounts,
@@ -100,11 +123,12 @@ const app = createApp({
   review,
   reviewLinks,
   drafts,
+  publishing,
   storage,
   appOrigin: env.appOrigin,
   apiOrigin: env.apiOrigin,
   google: env.google && createGoogle({ ...env.google, log }),
-  secrets: localSecrets(env.tokenKey),
+  secrets,
   linkKeys,
   // Public by design: PayPal's button on the brand's page needs it. The secret never leaves the service.
   paypalClientId: env.paypal?.clientId,
@@ -112,7 +136,7 @@ const app = createApp({
 
 // Timers and follow-ups: reading briefs, deleting demo accounts, and the money path's deadlines and
 // unanswered PayPal calls.
-const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers };
+const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers };
 const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now() }) });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.once(signal, async () => {

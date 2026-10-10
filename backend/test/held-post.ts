@@ -33,6 +33,7 @@ const at = (iso: string) => new Date(iso);
 
 /** Empties every table a deal touches. */
 export async function resetDatabase() {
+  await prisma.ruling.deleteMany();
   await prisma.postCancel.deleteMany();
   await prisma.brandNotice.deleteMany();
   await prisma.liveCheckItem.deleteMany();
@@ -87,6 +88,8 @@ export function heldWorld(
     ownItemKind?: "shown" | "written" | "disclosure" | "publication";
     /** Makes telling the money path that a draft is cleared fail, as a database error would. */
     clearingFails?: boolean;
+    /** The channel demo accounts read YouTube through, once the team has connected it (PT-FR-36). */
+    demoChannel?: string;
   } = {},
 ) {
   let now = at("2026-10-09T09:00:00Z");
@@ -102,7 +105,7 @@ export function heldWorld(
   const secrets = localSecrets(Buffer.alloc(32, 2).toString("base64"));
   /** What the service logged, to check nothing from a video is ever in it. */
   const logged: unknown[] = [];
-  const money = createMoney({ prisma, paypal, posts: createPublishedPosts({ prisma, now: clock, youtube, secrets }), now: clock });
+  const money = createMoney({ prisma, paypal, posts: createPublishedPosts({ prisma, now: clock, youtube, secrets, demoChannelId: options.demoChannel }), now: clock });
   const deals = createDeals({ prisma, now: clock, model: { read: async () => checklist } });
   const linkKeys = localLinkKeys(Buffer.alloc(32, 1).toString("base64"));
   const reviewLinks = createReviewLinks({ prisma, now: clock, appOrigin: APP, linkKeys, money });
@@ -131,7 +134,7 @@ export function heldWorld(
       : money,
   });
   const notices = createNotices({ prisma, now: clock, links: reviewLinks, email, log: (...parts) => void logged.push(parts) });
-  const publishing = createPublishing({ prisma, now: clock, youtube, secrets, money, judge, notices, log: (...parts) => void logged.push(parts) });
+  const publishing = createPublishing({ prisma, now: clock, youtube, secrets, demoChannelId: options.demoChannel, money, judge, notices, log: (...parts) => void logged.push(parts) });
   const accounts = createAccounts({ prisma, now: clock, onYouTubeConnected: publishing.youtubeConnected });
   const app = createApp({
     prisma,

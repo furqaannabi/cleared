@@ -84,7 +84,7 @@ interface Invite {
   dealId: string;
   brandName: string;
   step: string;
-  posts: { deliverableId: string; platform: string; itemCount: number; amount?: string; deadlineDays?: number }[];
+  posts: { deliverableId: string; platform: string; itemCount: number; amount?: string; deadlineDays?: number; cancel?: { allowed: boolean } }[];
   brandEmail?: string;
   version?: number;
   link?: { url: string; expiresAt: string; expired: boolean };
