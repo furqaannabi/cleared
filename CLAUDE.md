@@ -72,6 +72,7 @@ Chosen in `docs/PRODUCT.md`:
 | Backend hosting | One container on Amazon ECS Fargate |
 | Sign-in | Creators sign in with Google, run by the backend directly, which sets an HttpOnly session; no Cognito; Instagram is a connection, not a sign-in; a per-visit demo account (see `docs/decisions/2026-10-09-creators-sign-in-with-google-directly.md`, which supersedes the Cognito part of `2026-10-08-creator-sign-in-through-the-backend.md`; William to agree) |
 | Files and secrets | S3, KMS |
+| Email | Amazon SES, for the brand's two notices after a post is live and nothing else; everything else is a link the creator sends (see `docs/decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md`; William to agree) |
 | Evidence table and brand dashboard | AG Grid and AG Studio, on `md:` and up; cards on phones (see `docs/decisions/2026-10-06-evidence-view-ag-grid.md`) |
 | PayPal coding help | APIMatic's Context Plugin for PayPal |
 | Creator accounts | Google sign-in (read-only) for YouTube; Instagram sign-in (professional accounts only) |
@@ -143,7 +144,7 @@ From `docs/PRODUCT.md`. Do not re-open without explicit human instruction.
 | Instagram paid-partnership label | Always a manual check in v1 |
 | Instagram accounts | Professional accounts only. A Reel with licensed music cannot be fetched, so it goes to manual approval |
 
-**Still open (do not assume):** the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`; the "To verify while building" items in `docs/specs/draft-check-and-review-frd.md`, which Nova model among them; and how a demo account reaches a held post (both leads).
+**Still open (do not assume):** the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`; the "To verify while building" items in `docs/specs/draft-check-and-review-frd.md`, which Nova model among them; the "To verify while building" items in `docs/specs/publish-to-paid-frd.md`, first among them whether YouTube returns a video's file size and length; and how a judge approves a PayPal hold in the demo (both leads).
 
 ---
 

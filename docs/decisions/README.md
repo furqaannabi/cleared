@@ -80,3 +80,10 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-09 | [The unlisted YouTube video is asked for at publish, not at the draft check](2026-10-09-the-unlisted-video-is-asked-for-at-publish.md) | Accepted |
 | 2026-10-09 | [Who can watch a draft, and how long it is kept](2026-10-09-who-can-watch-a-draft-and-how-long-it-is-kept.md) | Accepted |
 | 2026-10-09 | [Test clips are recorded by the team](2026-10-09-test-clips-are-recorded-by-the-team.md) | Accepted |
+| 2026-10-10 | [The unlisted video is given with the request for the go-ahead](2026-10-10-the-unlisted-video-is-given-with-the-go-ahead.md) | Accepted |
+| 2026-10-10 | [Demo accounts read one real YouTube channel the team owns](2026-10-10-demo-accounts-read-a-shared-channel.md) | Accepted |
+| 2026-10-10 | [Which live check finding gives which answer](2026-10-10-which-live-check-finding-gives-which-answer.md) | Accepted |
+| 2026-10-10 | [Lost YouTube access decides nothing](2026-10-10-lost-youtube-access-decides-nothing.md) | Accepted |
+| 2026-10-10 | [A ruling is a command, not a page](2026-10-10-a-ruling-is-a-command-not-a-page.md) | Accepted |
+| 2026-10-10 | [A PayPal email change reaches every deliverable where no payout has started](2026-10-10-a-paypal-email-change-reaches-where-no-payout-has-started.md) | Accepted |
+| 2026-10-10 | [Email for the brand's two notices after publishing, to an address the brand gives](2026-10-10-email-for-the-brands-two-notices-after-publishing.md) | Accepted |

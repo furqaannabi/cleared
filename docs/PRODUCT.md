@@ -177,6 +177,7 @@ The frontend is hosted on Vercel. Everything behind it uses AWS services or the 
 | Backend hosting | One container on Amazon ECS Fargate |
 | Sign-in | Google sign-in, run by the backend, which also connects a YouTube channel; Instagram sign-in for connecting an account. No Cognito ([decision](decisions/2026-10-09-creators-sign-in-with-google-directly.md)) |
 | Files and secrets | S3, KMS |
+| Email | Amazon SES, for the brand's two notices after a post is live and nothing else ([decision](decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md)) |
 | Evidence table and brand dashboard | AG Grid and AG Studio |
 | PayPal coding help | APIMatic's Context Plugin for PayPal |
 | Not used | Render, Bryntum, Channel3, Elastic, Kernel, Zapier, Postman, Astropods |
