@@ -14,6 +14,7 @@ import { defaultDraftSettings, type Drafts } from "./drafts/drafts";
 import { createInvites } from "./invites/invites";
 import type { LinkKeys } from "./invites/link-keys";
 import { createPosts } from "./posts/posts";
+import type { Publishing } from "./publish/publishing";
 import { createReviewLinks, type ReviewLinks } from "./review/links";
 import { createReview, type Review } from "./review/review";
 import { registerAccountRoutes } from "./routes/account";
@@ -64,6 +65,8 @@ export interface AppDeps {
   review?: Review;
   /** The brand's review links. The service passes its own, the one its drafts and its review use. */
   reviewLinks?: ReviewLinks;
+  /** Publishing: the go-ahead and what follows. Left out when YouTube cannot be read: no go-ahead is then given. */
+  publishing?: Publishing;
   /** The largest draft file taken, in bytes. The service's own size limit must allow it. */
   maxDraftBytes?: number;
 }
@@ -131,7 +134,7 @@ export function createApp(deps: AppDeps) {
   registerInviteRoutes(app, { sessions, invites });
   const review = deps.review ?? createReview({ prisma, now, money, links: reviewLinks });
   registerBrandReviewRoutes(app, { sessions, posts, review });
-  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, review, links: reviewLinks, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
+  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, review, links: reviewLinks, publishing: deps.publishing, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
   registerBrandRoutes(app, {
     sessions,
     invites,

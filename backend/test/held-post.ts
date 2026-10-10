@@ -13,21 +13,25 @@ import { createDrafts, defaultDraftSettings, type DraftSettings } from "../src/d
 import { localLinkKeys } from "../src/invites/link-keys";
 import { runDueJobs } from "../src/jobs/jobs";
 import { createMoney } from "../src/money/money";
+import { createPublishing } from "../src/publish/publishing";
 import { recordedPosts } from "../src/money/published-post";
 import { createReviewLinks } from "../src/review/links";
 import { createReview } from "../src/review/review";
+import { localSecrets } from "../src/secrets/secrets";
 import { createSessions } from "../src/sessions/sessions";
 import { browserFor, type Browser } from "./browser";
 import { FakeJudge, FakeSpeech, FakeVideoModel } from "./fake-checks";
 import { FakeMedia } from "./fake-media";
 import { FakePayPal } from "./fake-paypal";
 import { FakeStorage } from "./fake-storage";
+import { FakeYouTube } from "./fake-youtube";
 
 export const APP = "https://app.cleared.test";
 const at = (iso: string) => new Date(iso);
 
 /** Empties every table a deal touches. */
 export async function resetDatabase() {
+  await prisma.postVideo.deleteMany();
   await prisma.checkItem.deleteMany();
   await prisma.draftUsage.deleteMany();
   await prisma.draftCheck.deleteMany();
@@ -85,6 +89,8 @@ export function heldWorld(
   const speech = new FakeSpeech();
   const judge = new FakeJudge();
   const videoModel = new FakeVideoModel();
+  const youtube = new FakeYouTube();
+  const secrets = localSecrets(Buffer.alloc(32, 2).toString("base64"));
   /** What the service logged, to check nothing from a video is ever in it. */
   const logged: unknown[] = [];
   const money = createMoney({ prisma, paypal, posts: recordedPosts(prisma), now: clock });
@@ -116,6 +122,7 @@ export function heldWorld(
         }
       : money,
   });
+  const publishing = createPublishing({ prisma, now: clock, youtube, secrets, money });
   const app = createApp({
     prisma,
     appOrigin: APP,
@@ -125,6 +132,7 @@ export function heldWorld(
     drafts,
     review,
     reviewLinks,
+    publishing,
     storage,
     paypalClientId: "sandbox-public-client-id",
     linkKeys,
@@ -136,7 +144,8 @@ export function heldWorld(
     const browser = browserFor(app, APP);
     const first = name.split(" ")[0]!.toLowerCase();
     const { creatorId } = await accounts.signInWithGoogle({ googleId: `google-${name}`, name, email: `${first}@example.com` });
-    await accounts.connectYouTube(creatorId, { externalId: `channel-${first}`, name, refreshTokenEncrypted: "sealed" });
+    // Their stored access to YouTube is `refresh-<first name>`, kept encrypted as the service keeps it.
+    await accounts.connectYouTube(creatorId, { externalId: `channel-${first}`, name, refreshTokenEncrypted: await secrets.encrypt(`refresh-${first}`) });
     await accounts.setPaypalEmail(creatorId, `${first}.pay@example.com`);
     browser.cookies.set("cleared_session", await createSessions({ prisma, now: clock }).start(creatorId));
     return browser;
@@ -196,6 +205,7 @@ export function heldWorld(
     speech,
     judge,
     videoModel,
+    youtube,
     logged,
     money,
     creator,

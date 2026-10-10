@@ -61,7 +61,7 @@ const DealSummarySchema = z
       z.object({
         id: z.string(),
         platform: PlatformSchema,
-        state: z.enum(["no_draft", "checking", "check_failed", "results", "fully_passing", "objected", "approved", "released"]),
+        state: z.enum(["no_draft", "checking", "check_failed", "results", "fully_passing", "objected", "approved", "posting", "released"]),
       }),
     ),
   })

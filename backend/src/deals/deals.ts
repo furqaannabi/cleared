@@ -75,7 +75,7 @@ export interface DealSummary {
 }
 
 /** A post's state at the draft check, and whether its next step is the creator's. Read from the posts module. */
-type PostState = "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "released";
+type PostState = "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "released";
 export type DescribePosts = (deliverableIds: string[]) => Promise<Map<string, { state: PostState; needsCreator: boolean }>>;
 
 /**
@@ -90,7 +90,7 @@ function afterSetUp(brandName: string, posts: { id: string; state: PostState; ne
       ? "Released"
       : states.includes("objected")
         ? `${brandName} objected`
-        : states.includes("approved")
+        : states.includes("approved") || states.includes("posting")
           ? "Ready to post"
           : states.every((state) => state === "no_draft")
             ? "Waiting for your draft"

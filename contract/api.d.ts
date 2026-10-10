@@ -2752,6 +2752,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deliverables/{deliverableId}/go-ahead": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask for the go-ahead to publish, with the link of the video on the creator's channel (PT-FR-01 to PT-FR-07) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        videoUrl: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The post, with the money path's answer: go until a time, wait until a time, or not confirmed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreatorPost"];
+                    };
+                };
+                /** @description The link is not a link to a YouTube video */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post, or it is not this creator's */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No go-ahead: the draft is not approved, the video is not the approved file on the creator's channel, YouTube must be reconnected, or the money path refused, each with its own code */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description YouTube could not be read, or this service is not set up to read it. Try again */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/b/{token}/session": {
         parameters: {
             query?: never;
@@ -3444,7 +3533,7 @@ export interface components {
                 /** @enum {string} */
                 platform: "youtube_video" | "youtube_short";
                 /** @enum {string} */
-                state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "released";
+                state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "released";
             }[];
         };
         Invite: {
@@ -3556,7 +3645,7 @@ export interface components {
             /** @enum {string} */
             platform: "youtube_video" | "youtube_short";
             /** @enum {string} */
-            state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "released";
+            state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "released";
             deadline: string;
             creatorTimeZone: string;
             run: number;
@@ -3602,6 +3691,18 @@ export interface components {
                 stage: "held" | "confirmed" | "captured" | "paid";
             };
             payoutEmail: string;
+            goAhead?: {
+                /** @enum {string} */
+                state: "go";
+                endsAt: string;
+            } | {
+                /** @enum {string} */
+                state: "wait";
+                until: string;
+            } | {
+                /** @enum {string} */
+                state: "confirming" | "not_confirmed" | "ended";
+            };
             reviewWindowEndsAt?: string;
             objectedAt?: string;
             approvedAt?: string;

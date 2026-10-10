@@ -468,3 +468,17 @@ model DraftUsage {
   @@index([at])
 }
 
+// The video on the creator's channel that a post's go-ahead was asked for (publish to paid spec
+// PT-FR-05). Cleared read it from YouTube and found it to be the approved draft's file, or could not
+// tell. It is the video the live check looks at.
+model PostVideo {
+  deliverableId String    @id
+  /// YouTube's id for the video, taken from the link the creator gave.
+  videoId       String
+  /// same, or unknown when YouTube did not return the file's record (PT-FR-04). Never different: that is refused.
+  fileMatch     String
+  recordedAt    DateTime
+  /// When Cleared first saw the video public: the moment the post counts as published (PT-FR-10).
+  seenPublicAt  DateTime?
+}
+

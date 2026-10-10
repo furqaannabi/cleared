@@ -432,6 +432,7 @@
                     "fully_passing",
                     "objected",
                     "approved",
+                    "posting",
                     "released"
                   ]
                 }
@@ -918,6 +919,7 @@
               "fully_passing",
               "objected",
               "approved",
+              "posting",
               "released"
             ]
           },
@@ -1113,6 +1115,62 @@
           },
           "payoutEmail": {
             "type": "string"
+          },
+          "goAhead": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "go"
+                    ]
+                  },
+                  "endsAt": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "endsAt"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "wait"
+                    ]
+                  },
+                  "until": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "until"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "confirming",
+                      "not_confirmed",
+                      "ended"
+                    ]
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              }
+            ]
           },
           "reviewWindowEndsAt": {
             "type": "string"
@@ -4546,6 +4604,104 @@
           },
           "503": {
             "description": "This service has no sample clip set up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deliverables/{deliverableId}/go-ahead": {
+      "post": {
+        "summary": "Ask for the go-ahead to publish, with the link of the video on the creator's channel (PT-FR-01 to PT-FR-07)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "videoUrl": {
+                    "type": "string",
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "videoUrl"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The post, with the money path's answer: go until a time, wait until a time, or not confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatorPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The link is not a link to a YouTube video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post, or it is not this creator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No go-ahead: the draft is not approved, the video is not the approved file on the creator's channel, YouTube must be reconnected, or the money path refused, each with its own code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "YouTube could not be read, or this service is not set up to read it. Try again",
             "content": {
               "application/json": {
                 "schema": {

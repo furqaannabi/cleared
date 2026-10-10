@@ -53,7 +53,11 @@ export type CheckFailure =
   | { kind: "ours"; retrying: boolean; fileName: string }
   | { kind: "file"; reason: FileFailure["reason"]; fileName: string; lengthSec?: number; lengthCapSec?: number };
 
-export type PostState = ReturnType<typeof postState>;
+/** A post's state: as the review rules have it, or "posting" once the creator has a go-ahead to publish (PT-FR-25). */
+export type PostState = ReturnType<typeof postState> | "posting";
+
+/** The go-ahead as the money path has it, in the words the creator's page uses (PT-FR-24). */
+export type PostGoAhead = { state: "go"; endsAt: string } | { state: "wait"; until: string } | { state: "confirming" | "not_confirmed" | "ended" };
 
 export interface CreatorPost {
   id: string;
@@ -70,6 +74,8 @@ export interface CreatorPost {
   hold: { amountMinor: number; currency: "USD"; reference: string; heldAt: string; stage: "held" | "confirmed" | "captured" | "paid" };
   /** Where the payout goes. For the creator only (DR-BR-13). */
   payoutEmail: string;
+  /** Whether the creator may publish now, once they have asked. Absent before they ask. */
+  goAhead?: PostGoAhead;
   reviewWindowEndsAt?: string;
   objectedAt?: string;
   approvedAt?: string;
@@ -177,7 +183,7 @@ export function createPosts(deps: {
 
   /** Whether a post's next step is its creator's: nothing sent yet, something to fix or decide, or a draft to post. */
   function needsCreator(state: PostState, items: ReviewItem[]): boolean {
-    if (state === "no_draft" || state === "objected" || state === "check_failed" || state === "approved") return true;
+    if (state === "no_draft" || state === "objected" || state === "check_failed" || state === "approved" || state === "posting") return true;
     return state === "results" && items.some((item) => ["fix_needed", "unsure"].includes(creatorStatus(item)));
   }
 
@@ -242,7 +248,18 @@ export function createPosts(deps: {
               ? { kind: "file", ...fileFailure }
               : undefined;
 
-      const state = postState(review);
+      const reviewed = postState(review);
+      const asked = view.goAhead;
+      const goAhead: PostGoAhead | undefined =
+        asked.state === "running"
+          ? { state: "go", endsAt: asked.until.toISOString() }
+          : asked.state === "wait_until"
+            ? { state: "wait", until: asked.until.toISOString() }
+            : asked.state === "none"
+              ? undefined
+              : { state: asked.state };
+      // "Posting" only while the money path's go-ahead is running. It is the money path's word, shown as it is (PT-BR-05).
+      const state: PostState = reviewed === "approved" && goAhead?.state === "go" ? "posting" : reviewed;
       const reviewLink = await links?.current(deliverableId);
       const current = Math.max(0, STAGES.findIndex(([stage]) => stage === row?.stage));
       const release = view.release;
@@ -268,6 +285,7 @@ export function createPosts(deps: {
           stage: view.stage === "paid" || view.stage === "captured" ? view.stage : view.goAhead.state === "running" ? "confirmed" : "held",
         },
         payoutEmail: view.payoutEmail,
+        ...(goAhead ? { goAhead } : {}),
         ...(review.window ? { reviewWindowEndsAt: review.window.endsAt.toISOString() } : {}),
         ...(review.objectedAt ? { objectedAt: review.objectedAt.toISOString() } : {}),
         ...(review.approved ? { approvedAt: review.approved.at.toISOString(), approvedBy: review.approved.by } : {}),
@@ -398,9 +416,11 @@ export function createPosts(deps: {
     async summaries(deliverableIds: string[]): Promise<Map<string, PostSummary>> {
       const found = new Map<string, PostSummary>();
       for (const deliverableId of deliverableIds) {
-        const released = isReleased((await money?.view(deliverableId))?.stage);
+        const view = await money?.view(deliverableId);
+        const released = isReleased(view?.stage);
         const review = (await loadReview(prisma, deliverableId, released))?.state ?? { ...newReview(), released };
-        const state = postState(review);
+        const reviewed = postState(review);
+        const state: PostState = reviewed === "approved" && view?.goAhead.state === "running" ? "posting" : reviewed;
         found.set(deliverableId, { state, needsCreator: needsCreator(state, review.items) });
       }
       return found;
