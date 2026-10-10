@@ -1,6 +1,6 @@
 # Draft check and review: FRD
 
-**Status:** Draft, awaiting Furqaan's sign-off. It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
+**Status:** Signed by Furqaan (revision 1.0). It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
 
 **Surface:** Backend. Steps 4 and 5 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: the creator sends a draft of a held post, it is checked against the agreed checklist with evidence for every item, the creator can ask the brand to accept what the check could not decide, and a fully passing draft opens the brand's 48-hour review window, which ends in an approval, an objection or silence.
 
@@ -252,7 +252,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 
 ## Open items
 
-**Added while drafting, for Furqaan to accept or change at sign-off.** These were not asked in the question session; they are listed so the source of each is clear.
+**Added while drafting and accepted by Furqaan at sign-off.** These were not asked in the question session; they are listed so the source of each is clear.
 
 - **DR-FR-01:** a draft cannot be sent while a check is running, or once a draft is approved.
 - **DR-FR-04, DR-FR-05:** a file that fails changes nothing; the previous run's asks and window end only when the new file has passed its checks.
@@ -290,3 +290,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | Version | Change | Record |
 | --- | --- | --- |
 | 0.1 | First draft, from the question session with Furqaan: steps 4 and 5 together; the file uploaded through the API to a private S3 bucket; limits of 15 minutes, 1 GB, 10 checks per post, 300 minutes a day overall and 3 short drafts for a demo account; Amazon Nova for what is shown, chosen without a trial; every pass verified by code, a shown pass by a second look; spoken codes matched after normalising, a near miss unsure; timing items found by the AI and summed by code; a service failure fails the run; the unlisted video left to the publish step; no email, the creator sends the link; William's fresh link per review and his objection rule accepted; latest draft only, deleted 30 days after the deal ends; test clips recorded by the team | [Upload through the API](../decisions/2026-10-09-drafts-uploaded-through-the-api-to-s3.md), [Limits](../decisions/2026-10-09-limits-on-drafts.md), [Nova](../decisions/2026-10-09-amazon-nova-judges-what-is-shown.md), [Verifying a pass](../decisions/2026-10-09-how-an-ai-pass-is-verified.md), [A broken check](../decisions/2026-10-09-a-broken-check-fails-the-run.md), [No email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md), [Unlisted video](../decisions/2026-10-09-the-unlisted-video-is-asked-for-at-publish.md), [Draft privacy](../decisions/2026-10-09-who-can-watch-a-draft-and-how-long-it-is-kept.md), [Test clips](../decisions/2026-10-09-test-clips-are-recorded-by-the-team.md) |
+| 1.0 | Signed by Furqaan, with the eleven items added while drafting accepted as written | none |

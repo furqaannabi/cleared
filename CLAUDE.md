@@ -143,7 +143,7 @@ From `docs/PRODUCT.md`. Do not re-open without explicit human instruction.
 | Instagram paid-partnership label | Always a manual check in v1 |
 | Instagram accounts | Professional accounts only. A Reel with licensed music cannot be fetched, so it goes to manual approval |
 
-**Still open (do not assume):** the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`; and everything in `docs/specs/draft-check-and-review-frd.md` until it is signed.
+**Still open (do not assume):** the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`; the "To verify while building" items in `docs/specs/draft-check-and-review-frd.md`, which Nova model among them; and how a demo account reaches a held post (both leads).
 
 ---
 
