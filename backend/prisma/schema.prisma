@@ -216,6 +216,8 @@ model Deal {
   briefLines Json?
   /// The brand's email, if the creator gave one. Nothing is sent to it (DS-FR-30).
   brandEmail String?
+  /// The brand's own address for notices after a post is live, given when it agrees (PT-FR-22). Never shown to the creator.
+  brandNoticeEmail String?
   /// The creator's timezone when the link was made, which a deadline's date is read in (DS-FR-31).
   timezone   String?
   /// True from the brand sending notes until the creator sends updated terms (DS-FR-38, DS-FR-40).
@@ -316,6 +318,9 @@ model InviteLink {
   /// Set when the brand has nothing left to do on the draft the link was made for (DR-FR-45). The link
   /// then opens nothing new, but sessions already made from it last until it expires.
   closedAt    DateTime?
+  /// Why a review link was made: live_post when the brand's decision on a published post is wanted
+  /// (PT-FR-20). Null for a draft's review and for the deal's invite link.
+  reason      String?
 
   deal     Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
   sessions Session[]
@@ -503,6 +508,24 @@ model LiveCheck {
   videoDate     DateTime?
   /// How many checks have finished.
   runs          Int       @default(0)
+}
+
+// A notice to the brand that its decision on a live post is wanted (publish to paid spec PT-FR-21):
+// one for each of its two 48-hour windows, sent once. It holds no address and no link (PT-BR-11).
+model BrandNotice {
+  id            String    @id @default(uuid())
+  deliverableId String
+  /// confirm: the live check could not decide. accept: it failed on something that cannot be fixed.
+  kind          String
+  /// When the brand's 48 hours end.
+  endsAt        DateTime
+  createdAt     DateTime
+  /// Whose address it went to: brand (its own), creator_given, or none when no address was known and
+  /// the creator's post carries the link instead. Null until it has been tried.
+  sentTo        String?
+  sentAt        DateTime?
+
+  @@unique([deliverableId, kind])
 }
 
 // One item's result at the last finished live check, with evidence from the live post (PT-FR-12).

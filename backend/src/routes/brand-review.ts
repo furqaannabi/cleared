@@ -5,9 +5,10 @@ import { ITEM_KINDS } from "../briefs/reader";
 import { PLATFORMS } from "../deals/deals";
 import { ErrorSchema, fail, requireBrand, type AppEnv } from "../http/http";
 import type { Posts } from "../posts/posts";
+import type { BrandDecisions, Decided } from "../publish/brand-decisions";
 import type { Acted, Review } from "../review/review";
 import type { Sessions } from "../sessions/sessions";
-import { NoteTextSchema } from "./shared";
+import { BrandLaterStates, NoteTextSchema } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
@@ -36,7 +37,24 @@ const BrandPostSchema = z
       z.object({ state: z.literal("objected"), objectedAt: z.string() }),
       z.object({ state: z.literal("approved"), approvedAt: z.string(), by: z.enum(["brand", "window"]) }),
       z.object({ state: z.literal("released"), releasedAt: z.string(), reason: z.enum(RELEASE_REASONS) }),
+      ...BrandLaterStates,
     ]),
+    post: z
+      .object({
+        url: z.string(),
+        items: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            kind: z.enum(ITEM_KINDS),
+            checkedBy: z.enum(["exact_match", "ai_timestamp", "from_timestamps", "published_post", "platform_record"]),
+            status: z.enum(["passed", "fix_needed", "unsure"]),
+            briefLine: z.object({ number: z.number().int(), text: z.string() }).optional(),
+            evidence: z.object({ label: z.string(), text: z.string() }).optional(),
+          }),
+        ),
+      })
+      .optional(),
     draft: z
       .object({
         url: z.string(),
@@ -71,8 +89,8 @@ const responses = {
   409: json(ErrorSchema, "Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39)"),
 };
 
-export function registerBrandReviewRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; posts: Posts; review: Review }) {
-  const { posts, review } = deps;
+export function registerBrandReviewRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; posts: Posts; review: Review; decisions?: BrandDecisions }) {
+  const { posts, review, decisions } = deps;
   const session = requireBrand(deps.sessions);
 
   /** Answers with the post's review, or with why it cannot be shown. */
@@ -82,7 +100,7 @@ export function registerBrandReviewRoutes(app: OpenAPIHono<AppEnv>, deps: { sess
     return found.refused === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, "not_held");
   };
   /** Answers with the post's review after a change, or with why the change was refused. */
-  const done = async (c: Context<AppEnv>, acted: Acted, dealId: string, deliverableId: string) => {
+  const done = async (c: Context<AppEnv>, acted: Acted | Decided, dealId: string, deliverableId: string) => {
     if (!acted.ok) return acted.reason === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, acted.reason);
     return show(c, dealId, deliverableId);
   };
@@ -167,6 +185,54 @@ export function registerBrandReviewRoutes(app: OpenAPIHono<AppEnv>, deps: { sess
     async (c) => {
       const { dealId, deliverableId } = c.req.valid("param");
       return done(c, await review.object(dealId, deliverableId, c.req.valid("json").objections), dealId, deliverableId);
+    },
+  );
+  // After the post is published (publish to paid spec PT-FR-18, PT-FR-19). Each is the money path's to allow or refuse.
+  const NOT_FOUND: Decided = { ok: false, reason: "not_found" };
+  const livePost = { 200: responses[200], 401: responses[401], 404: responses[404], 409: json(ErrorSchema, "The money path refused, with its reason as the code: there is nothing to confirm, or nothing to accept") };
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/brand/deals/{dealId}/deliverables/{deliverableId}/post/confirm",
+      summary: "Confirm a live post the check could not decide on; the hold is then taken (PT-FR-18)",
+      middleware: [session] as const,
+      request: post,
+      responses: livePost,
+    }),
+    async (c) => {
+      const { dealId, deliverableId } = c.req.valid("param");
+      return done(c, (await decisions?.confirm(dealId, deliverableId)) ?? NOT_FOUND, dealId, deliverableId);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/brand/deals/{dealId}/deliverables/{deliverableId}/post/object",
+      summary: "Object to paying for a live post the check could not decide on, with a reason in plain text; a person at Cleared then decides (PT-FR-18)",
+      middleware: [session] as const,
+      request: { ...post, ...body(z.object({ reason: z.string().trim().min(1).max(500) })) },
+      responses: { ...livePost, 400: responses[400] },
+    }),
+    async (c) => {
+      const { dealId, deliverableId } = c.req.valid("param");
+      return done(c, (await decisions?.object(dealId, deliverableId, c.req.valid("json").reason)) ?? NOT_FOUND, dealId, deliverableId);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/brand/deals/{dealId}/deliverables/{deliverableId}/post/accept",
+      summary: "Accept a live post that failed on something that cannot be fixed; the hold is then taken (PT-FR-19)",
+      middleware: [session] as const,
+      request: post,
+      responses: livePost,
+    }),
+    async (c) => {
+      const { dealId, deliverableId } = c.req.valid("param");
+      return done(c, (await decisions?.accept(dealId, deliverableId)) ?? NOT_FOUND, dealId, deliverableId);
     },
   );
 }

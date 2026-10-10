@@ -41,3 +41,17 @@ export const HoldSchema = z
  */
 export const NextSchema = z.object({ next: z.string().optional() });
 
+/**
+ * Where a post stands for the brand once its draft is approved (publish to paid spec PT-FR-23). It
+ * never holds the creator's PayPal email or anything about a payout but whether it arrived (PT-BR-09).
+ */
+export const BrandLaterStates = [
+  z.object({ state: z.literal("posting"), postBy: z.string() }),
+  z.object({ state: z.enum(["live_check", "taking", "approved_not_paid"]) }),
+  z.object({ state: z.literal("confirm"), endsAt: z.string(), what: z.array(z.enum(["file_record", "paid_promotion", "written_item"])) }),
+  z.object({ state: z.literal("accept"), endsAt: z.string(), reason: z.enum(["not_your_channel", "not_the_approved_file"]) }),
+  z.object({ state: z.literal("with_cleared"), reason: z.string(), ruleBy: z.string() }),
+  z.object({ state: z.literal("capture_refused"), retryUntil: z.string() }),
+  z.object({ state: z.literal("taken"), amount: z.string(), reference: z.string(), at: z.string(), creatorPaid: z.boolean() }),
+] as const;
+

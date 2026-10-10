@@ -12,6 +12,7 @@
     "test:bedrock": "bun test ./sandbox/bedrock.sandbox.ts",
     "test:judge": "bun test ./sandbox/judge.sandbox.ts",
     "test:ffmpeg": "bun test ./sandbox/ffmpeg.sandbox.ts",
+    "test:email": "bun test ./sandbox/email.sandbox.ts",
     "golden": "bun sandbox/golden.ts",
     "contract": "bun src/contract/contract.ts",
     "sandbox:hold": "bun sandbox/make-hold.ts",

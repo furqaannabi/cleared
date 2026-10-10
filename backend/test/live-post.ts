@@ -17,8 +17,8 @@ export const GOOD = "My two weeks with Glow Serum.\nhttps://glow.example/sam";
  * A held post whose draft the brand approved and whose creator has the go-ahead: the approved file is
  * on their channel as an unlisted video, with a description that meets the checklist.
  */
-export async function goAheadGiven(world: HeldWorld) {
-  const held = await world.heldPost();
+export async function goAheadGiven(world: HeldWorld, deal: Parameters<HeldWorld["heldPost"]>[0] = {}) {
+  const held = await world.heldPost(deal);
   await held.sam.send("POST", `/deliverables/${held.post}/draft?fileName=glow-draft.mp4`, { file });
   await world.finishChecks();
   expect((await held.maya.send("POST", `/brand/deals/${held.deal.id}/deliverables/${held.post}/approve`)).status).toBe(200);
@@ -37,11 +37,36 @@ export async function goAheadGiven(world: HeldWorld) {
 }
 
 /** The creator has posted, and said so: the video is public and a live check is waiting to run. */
-export async function postedPublic(world: HeldWorld, video: Parameters<HeldWorld["youtube"]["edit"]>[1] = {}) {
-  const post = await goAheadGiven(world);
+export async function postedPublic(world: HeldWorld, video: Parameters<HeldWorld["youtube"]["edit"]>[1] = {}, deal: Parameters<HeldWorld["heldPost"]>[0] = {}) {
+  const post = await goAheadGiven(world, deal);
   world.youtube.edit(VIDEO, { privacy: "public", ...video });
   world.timeIs("2026-10-09T12:00:00Z");
   expect((await post.posted()).status).toBe(200);
   world.youtube.reads.length = 0;
   return post;
+}
+
+/** A live post the check could not decide: YouTube returned no file record, so the brand is asked to confirm. */
+export async function undecidedPost(world: HeldWorld, deal: Parameters<HeldWorld["heldPost"]>[0] = {}) {
+  const post = await postedPublic(world, { fileSizeBytes: undefined, durationSec: undefined }, deal);
+  await world.runJobs();
+  return { ...post, ...brandActs(post) };
+}
+
+/** A live post that is not the approved file: it cannot be fixed, so the brand is asked whether it accepts it. */
+export async function notFixablePost(world: HeldWorld, deal: Parameters<HeldWorld["heldPost"]>[0] = {}) {
+  const post = await postedPublic(world, { fileSizeBytes: 2_001 }, deal);
+  await world.runJobs();
+  return { ...post, ...brandActs(post) };
+}
+
+/** What the brand can do about a live post. */
+function brandActs(post: { maya: Browser; deal: { id: string }; post: string }) {
+  const path = `/brand/deals/${post.deal.id}/deliverables/${post.post}/post`;
+  return {
+    confirm: (browser: Browser = post.maya) => browser.send("POST", `${path}/confirm`),
+    object: (reason: unknown, browser: Browser = post.maya) => browser.send("POST", `${path}/object`, { body: { reason } }),
+    accept: (browser: Browser = post.maya) => browser.send("POST", `${path}/accept`),
+    brandReads: async () => (await (await post.maya.send("GET", `/brand/deals/${post.deal.id}/deliverables/${post.post}`)).json()) as Record<string, unknown>,
+  };
 }

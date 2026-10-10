@@ -14,6 +14,7 @@ import { enqueue, type JobHandlers } from "../jobs/jobs";
 import type { Money, MoneyRefusal } from "../money/money";
 import type { GoAheadView } from "../money/view";
 import { liveCheck, type LiveItem } from "./live-check";
+import type { Notices } from "./notices";
 import { createReader, type ReaderDeps } from "./reader";
 import { sameFile, videoIdFrom } from "./video";
 
@@ -79,6 +80,8 @@ export function createPublishing(
     /** Judges written items that need judgment. Its pass counts only if its quote is in the description (PT-BR-02). */
     judge?: Pick<Judge, "judgeWritten">;
     settings?: PublishingSettings;
+    /** Told when one of the brand's 48 hours starts, so it is given a link and an email (PT-FR-20, PT-FR-21). */
+    notices?: Pick<Notices, "windowStarted">;
     /** Told what a live check did, with ids and codes only. Never a description (PT-BR-12). */
     log?: (message: string, details: Record<string, unknown>) => void;
   },
@@ -157,6 +160,10 @@ export function createPublishing(
           data: { running: false, blockedBy: null, answer: found.answer, notFixable: found.notFixable ?? null, undecided: found.undecided, ranAt: at, videoDate: video.publishedAt ?? null, runs: { increment: 1 } },
         }),
       ]);
+      // If the money path now waits on the brand, the brand is told. Asked again for the same window, nothing new is made.
+      const waiting = answered.ok ? answered.money.waitingOn : null;
+      if (waiting?.for === "brand_to_confirm") await deps.notices?.windowStarted(deliverableId, "confirm", waiting.until);
+      if (waiting?.for === "brand_to_accept") await deps.notices?.windowStarted(deliverableId, "accept", waiting.until);
       log?.("A live check finished", { deliverableId, videoId: recorded.videoId, answer: found.answer, taken: answered.ok, ...(answered.ok ? {} : { refused: answered.reason }) });
     },
   };

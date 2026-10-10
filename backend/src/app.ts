@@ -15,6 +15,7 @@ import { createInvites } from "./invites/invites";
 import type { LinkKeys } from "./invites/link-keys";
 import { createPosts } from "./posts/posts";
 import { createPayouts } from "./payouts/payouts";
+import { createBrandDecisions } from "./publish/brand-decisions";
 import type { Publishing } from "./publish/publishing";
 import { createReviewLinks, type ReviewLinks } from "./review/links";
 import { createReview, type Review } from "./review/review";
@@ -136,7 +137,7 @@ export function createApp(deps: AppDeps) {
   const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
   registerInviteRoutes(app, { sessions, invites });
   const review = deps.review ?? createReview({ prisma, now, money, links: reviewLinks });
-  registerBrandReviewRoutes(app, { sessions, posts, review });
+  registerBrandReviewRoutes(app, { sessions, posts, review, decisions: createBrandDecisions({ prisma, money }) });
   registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, posts, review, links: reviewLinks, publishing: deps.publishing, payouts, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
   registerBrandRoutes(app, {
     sessions,

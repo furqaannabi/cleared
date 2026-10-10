@@ -4,7 +4,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import type { CreatorMoneyView } from "../money/view";
-import { laterView } from "./later";
+import { brandLater, laterView } from "./later";
 
 const at = (iso: string) => new Date(iso);
 const HELD = { state: "held", reference: "AUTH-1", heldAt: at("2026-10-09T09:00:00Z"), deadlineAt: at("2026-10-23T03:59:00Z"), guaranteeEndsAt: at("2026-10-12T09:00:00Z"), day28At: at("2026-11-06T09:00:00Z") } as const;
@@ -138,5 +138,69 @@ describe("PT-FR-25 states past approved", () => {
   test("approved but not paid is its own state, and a released post has none here: the review already says released", () => {
     expect(laterView(published({ stage: "approved_not_paid", approval: { by: "live_check", at: at("2026-10-09T12:01:00Z") }, release: { reason: "day_28", at: at("2026-11-06T09:00:00Z") } }), { video, check: check() }).state).toBe("approved_not_paid");
     expect(laterView(published({ stage: "released", release: { reason: "deadline", at: at("2026-10-23T03:59:00Z") } }), { video }).state).toBeUndefined();
+  });
+});
+
+describe("PT-FR-23, PT-BR-09 where a post stands for the brand after its draft is approved", () => {
+  const plain = (view: CreatorMoneyView) => {
+    const { payoutEmail: _never, ...rest } = view;
+    return rest;
+  };
+  const brand = (view: CreatorMoneyView, record = check()) => brandLater(plain(view), { video, check: record });
+
+  test("before the creator has a go-ahead there is nothing to add", () => {
+    expect(brandLater(plain(money({ goAhead: { state: "none" } })), {})).toEqual({});
+  });
+
+  test("the creator may post until a time", () => {
+    expect(brandLater(plain(money()), { video: { ...video, seenPublicAt: null } })).toEqual({ review: { state: "posting", postBy: "2026-10-11T09:00:00.000Z" } });
+  });
+
+  test("the live check is running, with the live post's link; a post its creator is fixing reads the same", () => {
+    const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    expect(brand(published(), check({ running: true }))).toEqual({ review: { state: "live_check" }, post: { url } });
+    expect(brand(published({ waitingOn: { for: "creator_to_fix", until: at("2026-10-23T03:59:00Z") } })).review).toEqual({ state: "live_check" });
+  });
+
+  test("its confirmation is wanted until a time, with what could not be checked", () => {
+    const view = published({ waitingOn: { for: "brand_to_confirm", until: at("2026-10-11T12:00:00Z") } });
+    expect(brand(view, check({ undecided: ["paid_promotion"] })).review).toEqual({ state: "confirm", endsAt: "2026-10-11T12:00:00.000Z", what: ["paid_promotion"] });
+  });
+
+  test("its acceptance is wanted until a time, with why the post cannot be fixed", () => {
+    const view = published({ waitingOn: { for: "brand_to_accept", until: at("2026-10-11T12:00:00Z") } });
+    expect(brand(view, check({ notFixable: "not_your_channel" })).review).toEqual({ state: "accept", endsAt: "2026-10-11T12:00:00.000Z", reason: "not_your_channel" });
+  });
+
+  test("a person at Cleared is deciding, by day 28, with the brand's own reason", () => {
+    const view = published({ waitingOn: { for: "cleared_to_rule", objection: "Wrong link." } });
+    expect(brand(view).review).toEqual({ state: "with_cleared", reason: "Wrong link.", ruleBy: "2026-11-06T09:00:00.000Z" });
+  });
+
+  test("approved, with PayPal being asked for the money; then a refused capture and until when it is tried", () => {
+    const approved = published({ approval: { by: "live_check", at: at("2026-10-09T12:01:00Z") }, capture: { status: "started" } });
+    expect(brand(approved).review).toEqual({ state: "taking" });
+    expect(brand({ ...approved, capture: { status: "refused", retryUntil: at("2026-11-06T09:00:00Z") } }).review).toEqual({ state: "capture_refused", retryUntil: "2026-11-06T09:00:00.000Z" });
+  });
+
+  test("the hold was taken: the amount, PayPal's reference, when, and whether the creator has been paid", () => {
+    expect(brand(captured({ payout: { status: "sending", canSendAgain: false } })).review).toEqual({ state: "taken", amount: "1200.00", reference: "CAP-1", at: "2026-10-09T12:01:05.000Z", creatorPaid: false });
+    expect(brand(captured({ stage: "paid", payout: { status: "paid", reference: "PAYOUT-1", at: at("2026-10-09T12:02:00Z"), canSendAgain: false } })).review).toMatchObject({ state: "taken", creatorPaid: true });
+  });
+
+  test("a payout's troubles are the creator's alone: the brand reads the same whatever became of it", () => {
+    const sending = brand(captured({ payout: { status: "sending", canSendAgain: false } }));
+    for (const payout of [
+      { status: "failed", why: "returned", canSendAgain: true },
+      { status: "unclaimed", canSendAgain: true },
+      { status: "not_sent", canSendAgain: false },
+    ] as const) {
+      expect(brand(captured({ payout }))).toEqual(sending);
+    }
+  });
+
+  test("approved but not paid is its own state, and a released post adds nothing: the review already says released", () => {
+    expect(brand(published({ stage: "approved_not_paid", approval: { by: "live_check", at: at("2026-10-09T12:01:00Z") }, release: { reason: "day_28", at: at("2026-11-06T09:00:00Z") } })).review).toEqual({ state: "approved_not_paid" });
+    expect(brand(published({ stage: "released", release: { reason: "not_accepted", at: at("2026-10-11T12:00:00Z") } })).review).toBeUndefined();
   });
 });

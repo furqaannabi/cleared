@@ -4,7 +4,7 @@
  * over the money path's own view and the live check's record. It reads and decides nothing: every
  * state, time and amount here is the money path's, in the words the creator's page uses.
  */
-import type { CreatorMoneyView } from "../money/view";
+import type { CreatorMoneyView, MoneyView } from "../money/view";
 
 const UNDECIDED = ["file_record", "paid_promotion", "written_item"] as const;
 type Undecided = (typeof UNDECIDED)[number];
@@ -51,6 +51,14 @@ export interface LiveRecord {
   undecided: unknown;
 }
 
+const undecidedOf = (check: LiveRecord | undefined): Undecided[] => {
+  const listed = Array.isArray(check?.undecided) ? check.undecided : [];
+  return UNDECIDED.filter((what) => listed.includes(what));
+};
+const notFixableOf = (check: LiveRecord | undefined) => (check?.notFixable === "not_your_channel" ? ("not_your_channel" as const) : ("not_the_approved_file" as const));
+const ruleBy = (money: MoneyView) => (money.hold.state === "held" ? money.hold.day28At : new Date(0)).toISOString();
+const linkTo = (videoId: string) => `https://www.youtube.com/watch?v=${videoId}`;
+
 function liveCheckOf(money: CreatorMoneyView, check: LiveRecord | undefined): PostLiveCheck {
   if (money.approval) return money.approval.by === "live_check" ? { state: "passed" } : { state: "approved", by: money.approval.by };
   if (check && !check.running && (check.blockedBy === "reconnect_youtube" || check.blockedBy === "video_not_found")) return { state: check.blockedBy };
@@ -59,13 +67,11 @@ function liveCheckOf(money: CreatorMoneyView, check: LiveRecord | undefined): Po
     case "creator_to_fix":
       return { state: "fixable", fixBy: waiting.until.toISOString(), ...(check?.running ? { checking: true as const } : {}) };
     case "brand_to_accept":
-      return { state: "not_fixable", reason: check?.notFixable === "not_your_channel" ? "not_your_channel" : "not_the_approved_file", brandBy: waiting.until.toISOString() };
-    case "brand_to_confirm": {
-      const listed = Array.isArray(check?.undecided) ? check.undecided : [];
-      return { state: "undecided", what: UNDECIDED.filter((what) => listed.includes(what)), brandBy: waiting.until.toISOString() };
-    }
+      return { state: "not_fixable", reason: notFixableOf(check), brandBy: waiting.until.toISOString() };
+    case "brand_to_confirm":
+      return { state: "undecided", what: undecidedOf(check), brandBy: waiting.until.toISOString() };
     case "cleared_to_rule":
-      return { state: "objected", reason: waiting.objection, ruleBy: (money.hold.state === "held" ? money.hold.day28At : new Date(0)).toISOString() };
+      return { state: "objected", reason: waiting.objection, ruleBy: ruleBy(money) };
     default:
       return { state: "checking" };
   }
@@ -101,9 +107,57 @@ export function laterView(money: CreatorMoneyView, live: { video?: { videoId: st
   return {
     ...(state ? { state } : {}),
     // The link is made here from the id code took from the creator's link. Nothing the creator typed is echoed.
-    ...(live.video ? { post: { url: `https://www.youtube.com/watch?v=${live.video.videoId}`, publishedAt: publishedAt.toISOString() } } : {}),
+    ...(live.video ? { post: { url: linkTo(live.video.videoId), publishedAt: publishedAt.toISOString() } } : {}),
     ...(ended ? {} : { liveCheck: liveCheckOf(money, live.check) }),
     ...(capture ? { capture } : {}),
     ...(payout ? { payout } : {}),
   };
+}
+
+/**
+ * Where a post stands for the brand once its draft is approved (PT-FR-23). It is built from the plain
+ * money view, which holds no PayPal email, and it never says how a payout is going: only whether the
+ * creator has been paid (PT-BR-09).
+ */
+export type BrandLaterReview =
+  | { state: "posting"; postBy: string }
+  /** The live post is being checked, or its creator is fixing it. */
+  | { state: "live_check" }
+  | { state: "confirm"; endsAt: string; what: Undecided[] }
+  | { state: "accept"; endsAt: string; reason: "not_your_channel" | "not_the_approved_file" }
+  /** The brand objected. Its reason is its own plain text. */
+  | { state: "with_cleared"; reason: string; ruleBy: string }
+  /** Paying is approved and PayPal is being asked for the money. */
+  | { state: "taking" }
+  | { state: "capture_refused"; retryUntil: string }
+  | { state: "taken"; amount: string; reference: string; at: string; creatorPaid: boolean }
+  | { state: "approved_not_paid" };
+
+export interface BrandLater {
+  review?: BrandLaterReview;
+  /** The live post's link, made by code from the video's id. */
+  post?: { url: string };
+}
+
+function brandReviewOf(money: MoneyView, check: LiveRecord | undefined, published: boolean): BrandLaterReview | undefined {
+  if (money.stage === "released" || money.stage === "closed_not_held") return undefined;
+  if (money.stage === "approved_not_paid") return { state: "approved_not_paid" };
+  const { capture } = money;
+  if ((money.stage === "captured" || money.stage === "paid") && capture?.reference && capture.at) {
+    return { state: "taken", amount: money.amounts.amount, reference: capture.reference, at: capture.at.toISOString(), creatorPaid: money.stage === "paid" };
+  }
+  if (capture?.status === "refused" && capture.retryUntil) return { state: "capture_refused", retryUntil: capture.retryUntil.toISOString() };
+  if (money.approval) return { state: "taking" };
+  const waiting = money.waitingOn;
+  if (waiting?.for === "brand_to_confirm") return { state: "confirm", endsAt: waiting.until.toISOString(), what: undecidedOf(check) };
+  if (waiting?.for === "brand_to_accept") return { state: "accept", endsAt: waiting.until.toISOString(), reason: notFixableOf(check) };
+  if (waiting?.for === "cleared_to_rule") return { state: "with_cleared", reason: waiting.objection, ruleBy: ruleBy(money) };
+  if (published) return { state: "live_check" };
+  return money.goAhead.state === "running" ? { state: "posting", postBy: money.goAhead.until.toISOString() } : undefined;
+}
+
+export function brandLater(money: MoneyView, live: { video?: { videoId: string; seenPublicAt: Date | null }; check?: LiveRecord }): BrandLater {
+  const published = !!(money.publishedAt ?? live.video?.seenPublicAt);
+  const review = brandReviewOf(money, live.check, published);
+  return { ...(review ? { review } : {}), ...(published && live.video ? { post: { url: linkTo(live.video.videoId) } } : {}) };
 }

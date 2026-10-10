@@ -13,8 +13,10 @@ import { localLinkKeys } from "./invites/link-keys";
 import { runDueJobs, type JobHandlers } from "./jobs/jobs";
 import { startWorker } from "./jobs/worker";
 import { createFfmpegMedia } from "./media/ffmpeg";
+import { createResend } from "./email/resend";
 import { createMoney } from "./money/money";
 import { recordedPosts } from "./money/published-post";
+import { createNotices } from "./publish/notices";
 import { createReviewLinks } from "./review/links";
 import { createReview } from "./review/review";
 import { createSandboxPayPal } from "./paypal/sandbox-paypal";
@@ -84,6 +86,12 @@ if (!drafts) {
   console.warn("No bucket for drafts is configured, so no draft can be sent or checked. See backend/.env.example.");
 }
 
+// The brand's two notices after a post is live. Without a key nothing is emailed, and the creator's post carries the link.
+const notices = createNotices({ prisma, now, links: reviewLinks, email: env.email && createResend({ ...env.email, log }), log });
+if (!env.email) {
+  console.warn("Email is not configured, so the brand is emailed nothing and the creator sends its link. See backend/.env.example.");
+}
+
 const app = createApp({
   prisma,
   accounts,
@@ -104,7 +112,7 @@ const app = createApp({
 
 // Timers and follow-ups: reading briefs, deleting demo accounts, and the money path's deadlines and
 // unanswered PayPal calls.
-const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers };
+const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers };
 const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now() }) });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.once(signal, async () => {

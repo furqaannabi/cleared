@@ -7,6 +7,7 @@
  *
  * Every function is for a caller already known to hold a brand's session for the deal.
  */
+import type { BrandLaterReview } from "../posts/later";
 import type { BriefLine } from "../briefs/reader";
 import type { Platform } from "../deals/deals";
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
@@ -59,7 +60,7 @@ export interface BrandDeal {
 }
 
 /** Where a post's review stands, with how many items wait on the brand or are objected to. */
-export type PostReview = { state: "nothing_yet" | "approved" | "released" } | { state: "asked" | "objected"; count: number } | { state: "window"; endsAt: string };
+export type PostReview = { state: "nothing_yet" | "approved" | "released" } | { state: "asked" | "objected"; count: number } | { state: "window"; endsAt: string } | BrandLaterReview;
 
 export type NotesRefused =
   /** Notes are sent while the deal waits for the brand: not again before the creator answers, and not once agreed. */
@@ -231,7 +232,7 @@ export function createBrand(deps: {
      * post's money with what that version says, happen together or not at all (DS-FR-42). From then
      * the terms are final. Nothing is asked of PayPal here: each hold is the brand's next step.
      */
-    async agree(dealId: string, versionShown: number): Promise<BrandDeal | AgreeRefused | undefined> {
+    async agree(dealId: string, versionShown: number, noticeEmail?: string): Promise<BrandDeal | AgreeRefused | undefined> {
       if (!money) return { refused: "not_set_up" };
       const refused = await prisma.$transaction(async (tx): Promise<AgreeRefused | "no_deal" | undefined> => {
         // One at a time for a deal, so two people with the link cannot both agree.
@@ -262,7 +263,8 @@ export function createBrand(deps: {
             at,
           );
         }
-        await tx.deal.update({ where: { id: dealId }, data: { step: "agreed", agreedAt: at, agreedVersion: version.number } });
+        // The brand's own address for what needs it after a post is live (PT-FR-22). It is never returned.
+        await tx.deal.update({ where: { id: dealId }, data: { step: "agreed", agreedAt: at, agreedVersion: version.number, brandNoticeEmail: noticeEmail ?? null } });
         return undefined;
       });
       if (refused === "no_deal") return undefined;

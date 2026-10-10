@@ -787,7 +787,260 @@
                   "releasedAt",
                   "reason"
                 ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "posting"
+                    ]
+                  },
+                  "postBy": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "postBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "live_check",
+                      "taking",
+                      "approved_not_paid"
+                    ]
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "confirm"
+                    ]
+                  },
+                  "endsAt": {
+                    "type": "string"
+                  },
+                  "what": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "file_record",
+                        "paid_promotion",
+                        "written_item"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "state",
+                  "endsAt",
+                  "what"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "accept"
+                    ]
+                  },
+                  "endsAt": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "not_your_channel",
+                      "not_the_approved_file"
+                    ]
+                  }
+                },
+                "required": [
+                  "state",
+                  "endsAt",
+                  "reason"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "with_cleared"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "ruleBy": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "reason",
+                  "ruleBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "capture_refused"
+                    ]
+                  },
+                  "retryUntil": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "retryUntil"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "taken"
+                    ]
+                  },
+                  "amount": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "string"
+                  },
+                  "creatorPaid": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "state",
+                  "amount",
+                  "reference",
+                  "at",
+                  "creatorPaid"
+                ]
               }
+            ]
+          },
+          "post": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "said",
+                        "shown_as_text",
+                        "shown",
+                        "timing",
+                        "written",
+                        "disclosure",
+                        "publication"
+                      ]
+                    },
+                    "checkedBy": {
+                      "type": "string",
+                      "enum": [
+                        "exact_match",
+                        "ai_timestamp",
+                        "from_timestamps",
+                        "published_post",
+                        "platform_record"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "passed",
+                        "fix_needed",
+                        "unsure"
+                      ]
+                    },
+                    "briefLine": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "integer"
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "number",
+                        "text"
+                      ]
+                    },
+                    "evidence": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "text"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "kind",
+                    "checkedBy",
+                    "status"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "url",
+              "items"
             ]
           },
           "draft": {
@@ -1781,6 +2034,166 @@
                       "required": [
                         "state",
                         "endsAt"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "posting"
+                          ]
+                        },
+                        "postBy": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "postBy"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "live_check",
+                            "taking",
+                            "approved_not_paid"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "state"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "confirm"
+                          ]
+                        },
+                        "endsAt": {
+                          "type": "string"
+                        },
+                        "what": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "file_record",
+                              "paid_promotion",
+                              "written_item"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "endsAt",
+                        "what"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "accept"
+                          ]
+                        },
+                        "endsAt": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "enum": [
+                            "not_your_channel",
+                            "not_the_approved_file"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "endsAt",
+                        "reason"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "with_cleared"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "ruleBy": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "reason",
+                        "ruleBy"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "capture_refused"
+                          ]
+                        },
+                        "retryUntil": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "retryUntil"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "taken"
+                          ]
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "reference": {
+                          "type": "string"
+                        },
+                        "at": {
+                          "type": "string"
+                        },
+                        "creatorPaid": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "amount",
+                        "reference",
+                        "at",
+                        "creatorPaid"
                       ]
                     }
                   ]
@@ -4308,6 +4721,243 @@
         }
       }
     },
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/post/confirm": {
+      "post": {
+        "summary": "Confirm a live post the check could not decide on; the hold is then taken (PT-FR-18)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post's review as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The money path refused, with its reason as the code: there is nothing to confirm, or nothing to accept",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/post/object": {
+      "post": {
+        "summary": "Object to paying for a live post the check could not decide on, with a reason in plain text; a person at Cleared then decides (PT-FR-18)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The post's review as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The money path refused, with its reason as the code: there is nothing to confirm, or nothing to accept",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/post/accept": {
+      "post": {
+        "summary": "Accept a live post that failed on something that cannot be fixed; the hold is then taken (PT-FR-19)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post's review as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The money path refused, with its reason as the code: there is nothing to confirm, or nothing to accept",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/deliverables/{deliverableId}/draft": {
       "post": {
         "summary": "Send a draft: the video file is the request's body, and its check starts as a job (DR-FR-01, DR-FR-02)",
@@ -5463,7 +6113,7 @@
     },
     "/brand/deals/{dealId}/agree": {
       "post": {
-        "summary": "Agree to the version shown; each post's money is opened, ready for its hold (DS-FR-41, DS-FR-42)",
+        "summary": "Agree to the version shown, with an optional email of the brand's own for notices after a post is live; each post's money is opened, ready for its hold (DS-FR-41, DS-FR-42, PT-FR-22)",
         "parameters": [
           {
             "schema": {
@@ -5486,6 +6136,11 @@
                   "version": {
                     "type": "integer",
                     "exclusiveMinimum": 0
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "format": "email"
                   }
                 },
                 "required": [

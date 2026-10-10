@@ -6,7 +6,7 @@ import { PLATFORMS } from "../deals/deals";
 import { ErrorSchema, fail, letBrandIn, requireBrand, type AppEnv } from "../http/http";
 import type { Invites } from "../invites/invites";
 import type { Sessions } from "../sessions/sessions";
-import { HoldSchema, NoteAboutSchema, NoteSchema, NoteTextSchema } from "./shared";
+import { HoldSchema, NoteAboutSchema, NoteSchema, NoteTextSchema, BrandLaterStates } from "./shared";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
   description,
@@ -35,6 +35,7 @@ const BrandDealSchema = z
             z.object({ state: z.enum(["nothing_yet", "approved", "released"]) }),
             z.object({ state: z.enum(["asked", "objected"]), count: z.number().int() }),
             z.object({ state: z.literal("window"), endsAt: z.string() }),
+            ...BrandLaterStates,
           ])
           .optional(),
       }),
@@ -154,11 +155,11 @@ export function registerBrandRoutes(
     createRoute({
       method: "post",
       path: "/brand/deals/{dealId}/agree",
-      summary: "Agree to the version shown; each post's money is opened, ready for its hold (DS-FR-41, DS-FR-42)",
+      summary: "Agree to the version shown, with an optional email of the brand's own for notices after a post is live; each post's money is opened, ready for its hold (DS-FR-41, DS-FR-42, PT-FR-22)",
       middleware: [session] as const,
       request: {
         params: z.object({ dealId: z.string().min(1).max(64) }),
-        body: { required: true, content: { "application/json": { schema: z.object({ version: z.number().int().positive() }) } } },
+        body: { required: true, content: { "application/json": { schema: z.object({ version: z.number().int().positive(), email: z.email().max(254).optional() }) } } },
       },
       responses: {
         200: json(BrandDealSchema, "The deal, agreed"),
@@ -169,7 +170,8 @@ export function registerBrandRoutes(
       },
     }),
     async (c) => {
-      const agreed = await brand.agree(c.req.valid("param").dealId, c.req.valid("json").version);
+      const { version, email } = c.req.valid("json");
+      const agreed = await brand.agree(c.req.valid("param").dealId, version, email);
       if (!agreed) return fail(c, 401, "signed_out");
       if (!("refused" in agreed)) return c.json(agreed, 200);
       return agreed.refused === "not_set_up" ? fail(c, 503, "not_set_up") : fail(c, 409, agreed.refused);

@@ -15,7 +15,7 @@ import type { ReviewLink, ReviewLinks } from "../review/links";
 import { askable, brandReview, brandStatus, creatorStatus, newReview, postState, type BrandStatus, type CreatorStatus, type ReviewItem } from "../review/rules";
 import { holdEnded, loadReview } from "../review/store";
 import type { Storage } from "../storage/port";
-import { laterView, type Later, type PostCapture, type PostLiveCheck, type PostPayout } from "./later";
+import { brandLater, laterView, type BrandLater, type BrandLaterReview, type Later, type PostCapture, type PostLiveCheck, type PostPayout } from "./later";
 
 /** How an item reads on the creator's page. Before a run it is not checked yet; during one it is being checked. */
 export type PostItemStatus = CreatorStatus | "not_checked" | "checking";
@@ -118,7 +118,14 @@ export interface BrandPost {
     | { state: "window"; endsAt: string }
     | { state: "objected"; objectedAt: string }
     | { state: "approved"; approvedAt: string; by: "brand" | "window" }
-    | { state: "released"; releasedAt: string; reason: ReleaseReason };
+    | { state: "released"; releasedAt: string; reason: ReleaseReason }
+    /** Past approval, as the money path has it (PT-FR-23). */
+    | BrandLaterReview;
+  /** The live post: its link, and each live-check item's result at the last finished check (PT-FR-12). No suggestion is in it. */
+  post?: {
+    url: string;
+    items: { id: string; name: string; kind: ChecklistItem["kind"]; checkedBy: CheckedBy; status: "passed" | "fix_needed" | "unsure"; briefLine?: BriefLine; evidence?: { label: string; text: string } }[];
+  };
   draft?: {
     url: string;
     urlExpiresAt: string;
@@ -141,7 +148,8 @@ export interface BrandPost {
 export type ReviewSummary =
   | { state: "nothing_yet" | "approved" | "released" }
   | { state: "asked" | "objected"; count: number }
-  | { state: "window"; endsAt: string };
+  | { state: "window"; endsAt: string }
+  | BrandLaterReview;
 
 /** What the deals list needs of a post: its state, and whether its next step is the creator's (DR-FR-28). */
 export interface PostSummary {
@@ -201,6 +209,12 @@ export function createPosts(deps: {
     if (later.liveCheck?.state === "fixable" || later.liveCheck?.state === "reconnect_youtube" || later.liveCheck?.state === "video_not_found") return true;
     if (later.payout?.state === "unclaimed" || later.payout?.state === "failed") return true;
     return state === "results" && items.some((item) => ["fix_needed", "unsure"].includes(creatorStatus(item)));
+  }
+
+  /** Where a post stands for the brand after its draft is approved, from the plain money view (PT-FR-23). */
+  async function brandLaterOf(deliverableId: string, view: Parameters<typeof brandLater>[0]): Promise<BrandLater> {
+    const [video, check] = await Promise.all([prisma.postVideo.findUnique({ where: { deliverableId } }), prisma.liveCheck.findUnique({ where: { deliverableId } })]);
+    return brandLater(view, { ...(video ? { video } : {}), ...(check ? { check } : {}) });
   }
 
   /** The post after its draft is approved, from the money path's view and the live check's record (PT-FR-24). */
@@ -373,6 +387,11 @@ export function createPosts(deps: {
       const results = new Map((loaded?.items ?? []).map((item) => [item.itemId, item]));
       const where = brandReview(review);
       const shown = review.shown && review.phase === "done" && !released ? await draftOf(loaded?.row.draftId) : undefined;
+      const later = await brandLaterOf(deliverableId, view);
+      const lineOf = (agreed: (typeof checklist)[number]) =>
+        agreed.briefLine === undefined ? {} : { briefLine: brief.find((line) => line.number === agreed.briefLine) ?? { number: agreed.briefLine, text: "" } };
+      // The last finished live check's results, without the suggestions written for the creator.
+      const live = later.post ? new Map((await prisma.liveCheckItem.findMany({ where: { deliverableId } })).map((item) => [item.itemId, item])) : undefined;
 
       return {
         dealId,
@@ -385,13 +404,37 @@ export function createPosts(deps: {
         review:
           where.state === "released"
             ? { state: "released", releasedAt: (view.release?.at ?? now()).toISOString(), reason: reasonOf(view.release?.reason ?? "cancelled") }
-            : where.state === "approved"
+            : later.review
+              ? later.review
+              : where.state === "approved"
               ? { state: "approved", approvedAt: where.approvedAt.toISOString(), by: where.by }
               : where.state === "objected"
                 ? { state: "objected", objectedAt: where.objectedAt.toISOString() }
                 : where.state === "window"
                   ? { state: "window", endsAt: where.endsAt.toISOString() }
                   : { state: where.state },
+        ...(later.post && live
+          ? {
+              post: {
+                url: later.post.url,
+                items: checklist.flatMap((agreed) => {
+                  const result = live.get(agreed.id);
+                  if (!result) return [];
+                  return [
+                    {
+                      id: agreed.id,
+                      name: agreed.name,
+                      kind: agreed.kind as ChecklistItem["kind"],
+                      checkedBy: result.checkedBy as CheckedBy,
+                      status: result.result as "passed" | "fix_needed" | "unsure",
+                      ...lineOf(agreed),
+                      ...(result.evidence ? { evidence: result.evidence as unknown as { label: string; text: string } } : {}),
+                    },
+                  ];
+                }),
+              },
+            }
+          : {}),
         ...(shown
           ? {
               draft: {
@@ -440,9 +483,12 @@ export function createPosts(deps: {
         if (!view || view.hold.state !== "held") continue;
         const review = (await loadReview(prisma, deliverableId, isReleased(view.stage)))?.state ?? { ...newReview(), released: isReleased(view.stage) };
         const where = brandReview(review);
+        const later = where.state === "released" ? undefined : (await brandLaterOf(deliverableId, view)).review;
         found.set(
           deliverableId,
-          where.state === "asked"
+          later
+            ? later
+            : where.state === "asked"
             ? { state: "asked", count: review.items.filter((item) => item.ask === "waiting").length }
             : where.state === "objected"
               ? { state: "objected", count: review.items.filter((item) => item.objected).length }

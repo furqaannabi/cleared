@@ -2150,6 +2150,219 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/post/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm a live post the check could not decide on; the hold is then taken (PT-FR-18) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post's review as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandPost"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The money path refused, with its reason as the code: there is nothing to confirm, or nothing to accept */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/post/object": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Object to paying for a live post the check could not decide on, with a reason in plain text; a person at Cleared then decides (PT-FR-18) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The post's review as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandPost"];
+                    };
+                };
+                /** @description The request is not valid */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The money path refused, with its reason as the code: there is nothing to confirm, or nothing to accept */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/post/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a live post that failed on something that cannot be fixed; the hold is then taken (PT-FR-19) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post's review as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandPost"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The money path refused, with its reason as the code: there is nothing to confirm, or nothing to accept */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deliverables/{deliverableId}/draft": {
         parameters: {
             query?: never;
@@ -3246,7 +3459,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Agree to the version shown; each post's money is opened, ready for its hold (DS-FR-41, DS-FR-42) */
+        /** Agree to the version shown, with an optional email of the brand's own for notices after a post is live; each post's money is opened, ready for its hold (DS-FR-41, DS-FR-42, PT-FR-22) */
         post: {
             parameters: {
                 query?: never;
@@ -3260,6 +3473,8 @@ export interface paths {
                 content: {
                     "application/json": {
                         version: number;
+                        /** Format: email */
+                        email?: string;
                     };
                 };
             };
@@ -3827,6 +4042,61 @@ export interface components {
                 releasedAt: string;
                 /** @enum {string} */
                 reason: "deadline" | "cancelled" | "day_28" | "fix_window_ended" | "not_accepted" | "ruled_not_to_pay" | "hold_not_confirmed";
+            } | {
+                /** @enum {string} */
+                state: "posting";
+                postBy: string;
+            } | {
+                /** @enum {string} */
+                state: "live_check" | "taking" | "approved_not_paid";
+            } | {
+                /** @enum {string} */
+                state: "confirm";
+                endsAt: string;
+                what: ("file_record" | "paid_promotion" | "written_item")[];
+            } | {
+                /** @enum {string} */
+                state: "accept";
+                endsAt: string;
+                /** @enum {string} */
+                reason: "not_your_channel" | "not_the_approved_file";
+            } | {
+                /** @enum {string} */
+                state: "with_cleared";
+                reason: string;
+                ruleBy: string;
+            } | {
+                /** @enum {string} */
+                state: "capture_refused";
+                retryUntil: string;
+            } | {
+                /** @enum {string} */
+                state: "taken";
+                amount: string;
+                reference: string;
+                at: string;
+                creatorPaid: boolean;
+            };
+            post?: {
+                url: string;
+                items: {
+                    id: string;
+                    name: string;
+                    /** @enum {string} */
+                    kind: "said" | "shown_as_text" | "shown" | "timing" | "written" | "disclosure" | "publication";
+                    /** @enum {string} */
+                    checkedBy: "exact_match" | "ai_timestamp" | "from_timestamps" | "published_post" | "platform_record";
+                    /** @enum {string} */
+                    status: "passed" | "fix_needed" | "unsure";
+                    briefLine?: {
+                        number: number;
+                        text: string;
+                    };
+                    evidence?: {
+                        label: string;
+                        text: string;
+                    };
+                }[];
             };
             draft?: {
                 url: string;
@@ -4054,6 +4324,40 @@ export interface components {
                     /** @enum {string} */
                     state: "window";
                     endsAt: string;
+                } | {
+                    /** @enum {string} */
+                    state: "posting";
+                    postBy: string;
+                } | {
+                    /** @enum {string} */
+                    state: "live_check" | "taking" | "approved_not_paid";
+                } | {
+                    /** @enum {string} */
+                    state: "confirm";
+                    endsAt: string;
+                    what: ("file_record" | "paid_promotion" | "written_item")[];
+                } | {
+                    /** @enum {string} */
+                    state: "accept";
+                    endsAt: string;
+                    /** @enum {string} */
+                    reason: "not_your_channel" | "not_the_approved_file";
+                } | {
+                    /** @enum {string} */
+                    state: "with_cleared";
+                    reason: string;
+                    ruleBy: string;
+                } | {
+                    /** @enum {string} */
+                    state: "capture_refused";
+                    retryUntil: string;
+                } | {
+                    /** @enum {string} */
+                    state: "taken";
+                    amount: string;
+                    reference: string;
+                    at: string;
+                    creatorPaid: boolean;
                 };
             }[];
             items: {

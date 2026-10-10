@@ -54,6 +54,19 @@ function drafts(): { bucket: string; projectArn: string; profileArn: string; vid
   return { bucket, projectArn, profileArn, videoModel: process.env.VIDEO_MODEL ?? "us.amazon.nova-pro-v1:0", sampleKey: process.env.SAMPLE_VIDEO_KEY || undefined };
 }
 
+/**
+ * Email, for the brand's two notices after a post is live (publish to paid spec PT-FR-21). Without a
+ * key the API still starts, sends nothing, and the creator's post carries the link instead. A key
+ * with no sender is a mistake, and says so.
+ */
+function email(): { apiKey: string; from: string } | undefined {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return undefined;
+  const from = process.env.EMAIL_FROM;
+  if (!from) throw new Error("RESEND_API_KEY is set, so EMAIL_FROM is needed too. See backend/.env.example.");
+  return { apiKey, from };
+}
+
 const port = Number(process.env.PORT ?? 4000);
 
 /** The service's configuration, read once at start-up. */
@@ -75,6 +88,7 @@ export const env = {
   /** Bedrock's id for the model that judges drafts. The one that reads briefs, unless set apart. */
   judgeModel: process.env.JUDGE_MODEL ?? process.env.BRIEF_MODEL ?? "anthropic.claude-opus-5-5",
   drafts: drafts(),
+  email: email(),
   /** The address of Cleared's own app: the only origin that may make changing requests (DS-BR-03). */
   appOrigin: process.env.APP_ORIGIN ?? "http://localhost:3000",
   paypal: paypal(),
