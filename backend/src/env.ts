@@ -38,6 +38,22 @@ function google(): { clientId: string; clientSecret: string } | undefined {
   return undefined;
 }
 
+/**
+ * Where drafts are kept and what checks them (draft check and review spec). In development the API
+ * starts without them and takes no draft. If the bucket is set, the Data Automation project and
+ * profile must be too: a draft that is stored but can never be checked helps nobody.
+ */
+function drafts(): { bucket: string; projectArn: string; profileArn: string; videoModel: string; sampleKey?: string } | undefined {
+  const bucket = process.env.DRAFTS_BUCKET;
+  if (!bucket) return undefined;
+  const projectArn = process.env.DATA_AUTOMATION_PROJECT_ARN;
+  const profileArn = process.env.DATA_AUTOMATION_PROFILE_ARN;
+  if (!projectArn || !profileArn) {
+    throw new Error("DRAFTS_BUCKET is set, so DATA_AUTOMATION_PROJECT_ARN and DATA_AUTOMATION_PROFILE_ARN are needed too. See backend/.env.example.");
+  }
+  return { bucket, projectArn, profileArn, videoModel: process.env.VIDEO_MODEL ?? "us.amazon.nova-pro-v1:0", sampleKey: process.env.SAMPLE_VIDEO_KEY || undefined };
+}
+
 const port = Number(process.env.PORT ?? 4000);
 
 /** The service's configuration, read once at start-up. */
@@ -56,6 +72,9 @@ export const env = {
   /** Bedrock's id for the model that reads briefs, and the AWS region it is called in. */
   briefModel: process.env.BRIEF_MODEL ?? "anthropic.claude-opus-5-5",
   awsRegion: process.env.AWS_REGION ?? "us-east-1",
+  /** Bedrock's id for the model that judges drafts. The one that reads briefs, unless set apart. */
+  judgeModel: process.env.JUDGE_MODEL ?? process.env.BRIEF_MODEL ?? "anthropic.claude-opus-5-5",
+  drafts: drafts(),
   /** The address of Cleared's own app: the only origin that may make changing requests (DS-BR-03). */
   appOrigin: process.env.APP_ORIGIN ?? "http://localhost:3000",
   paypal: paypal(),

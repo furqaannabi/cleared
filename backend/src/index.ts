@@ -1,20 +1,25 @@
 import { createAccounts } from "./accounts/accounts";
 import { createApp } from "./app";
 import { createClaudeBriefModel } from "./briefs/claude";
+import { createClaudeJudge } from "./checks/claude-judge";
+import { createDataAutomation } from "./checks/data-automation";
+import { createNovaVideoModel } from "./checks/nova";
 import { prisma } from "./db";
 import { createDeals } from "./deals/deals";
-import { defaultDraftSettings } from "./drafts/drafts";
+import { createDrafts, defaultDraftSettings } from "./drafts/drafts";
 import { env } from "./env";
 import { createGoogle } from "./google/google";
 import { localLinkKeys } from "./invites/link-keys";
 import { runDueJobs, type JobHandlers } from "./jobs/jobs";
 import { startWorker } from "./jobs/worker";
+import { createFfmpegMedia } from "./media/ffmpeg";
 import { createMoney } from "./money/money";
 import { recordedPosts } from "./money/published-post";
 import { createReviewLinks } from "./review/links";
 import { createReview } from "./review/review";
 import { createSandboxPayPal } from "./paypal/sandbox-paypal";
 import { localSecrets } from "./secrets/secrets";
+import { createS3Storage } from "./storage/s3";
 
 const now = () => new Date();
 // What is logged about a call to another service: a status, counts and that service's own ids. Never a
@@ -54,6 +59,31 @@ const linkKeys = localLinkKeys(env.tokenKey);
 const reviewLinks = createReviewLinks({ prisma, now, appOrigin: env.appOrigin, linkKeys, money });
 const review = createReview({ prisma, now, money, links: reviewLinks });
 
+// Drafts: a private bucket, ffmpeg to read a file, and the three services that check a video. Without
+// a bucket the API still starts in development, and takes no draft.
+const storage = env.drafts && createS3Storage({ bucket: env.drafts.bucket, region: env.awsRegion });
+const drafts =
+  env.drafts &&
+  storage &&
+  createDrafts({
+    prisma,
+    now,
+    storage,
+    media: createFfmpegMedia(),
+    money,
+    links: reviewLinks,
+    checks: {
+      speech: createDataAutomation({ region: env.awsRegion, bucket: env.drafts.bucket, projectArn: env.drafts.projectArn, profileArn: env.drafts.profileArn, read: storage.read }),
+      judge: createClaudeJudge({ model: env.judgeModel, region: env.awsRegion, log }),
+      videoModel: createNovaVideoModel({ model: env.drafts.videoModel, region: env.awsRegion, bucket: env.drafts.bucket, log }),
+    },
+    settings: { ...defaultDraftSettings, sampleKey: env.drafts.sampleKey },
+    log,
+  });
+if (!drafts) {
+  console.warn("No bucket for drafts is configured, so no draft can be sent or checked. See backend/.env.example.");
+}
+
 const app = createApp({
   prisma,
   accounts,
@@ -61,6 +91,8 @@ const app = createApp({
   money,
   review,
   reviewLinks,
+  drafts,
+  storage,
   appOrigin: env.appOrigin,
   apiOrigin: env.apiOrigin,
   google: env.google && createGoogle({ ...env.google, log }),
@@ -72,7 +104,7 @@ const app = createApp({
 
 // Timers and follow-ups: reading briefs, deleting demo accounts, and the money path's deadlines and
 // unanswered PayPal calls.
-const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers };
+const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers };
 const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now() }) });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.once(signal, async () => {
