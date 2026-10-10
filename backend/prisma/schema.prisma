@@ -367,3 +367,59 @@ model BriefRead {
   @@index([creatorId, at])
   @@index([at])
 }
+
+// A video file a creator sent to be checked before publishing (draft check and review spec DR-FR-02).
+// Private: reached only through a short-lived address (DR-BR-12). Its name is the creator's own text.
+model Draft {
+  id            String   @id @default(uuid())
+  deliverableId String
+  /// The file's name as the creator's browser gave it. Untrusted plain text, shown and never used as a path.
+  fileName      String
+  /// Where the file is in the bucket. Made by the service, never from the file's name.
+  storageKey    String
+  sizeBytes     BigInt
+  durationSec   Float
+  createdAt     DateTime
+
+  @@index([deliverableId, createdAt])
+}
+
+// Where one post's draft check and review stand (DR-FR-25). One row per post, made when its first
+// draft is sent. The rules that change it are a pure function (src/review/rules.ts).
+model DraftCheck {
+  deliverableId  String    @id
+  /// How many runs have finished. A check that fails is not a run (DR-BR-16).
+  run            Int       @default(0)
+  /// no_draft, checking, check_failed or done.
+  phase          String    @default("no_draft")
+  /// The latest draft accepted for checking.
+  draftId        String?
+  checkStartedAt DateTime?
+  windowOpenedAt DateTime?
+  windowEndsAt   DateTime?
+  objectedAt     DateTime?
+  /// brand or window, once the draft is approved.
+  approvedBy     String?
+  approvedAt     DateTime?
+  /// Whether the brand is shown this run's draft: from the first ask or the window's start (DR-FR-48).
+  shown          Boolean   @default(false)
+  /// The last file that could not be checked because of the file itself, until a draft is accepted (DR-FR-03).
+  fileFailure    Json?
+}
+
+// Video sent for analysis, kept to enforce the limits on drafts (DR-FR-06 to DR-FR-08). It is not
+// tied to the creator's row, so a deleted demo account still counts towards the day's total.
+model DraftUsage {
+  id            String   @id @default(uuid())
+  creatorId     String
+  deliverableId String
+  draftId       String   @unique
+  seconds       Float
+  at            DateTime
+  /// False until analysis starts. A draft that fails before then is removed and counts for nothing (DR-BR-16).
+  analysed      Boolean  @default(false)
+
+  @@index([creatorId, at])
+  @@index([at])
+}
+

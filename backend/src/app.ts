@@ -10,11 +10,13 @@ import { fail, ownAppOnly, type AppEnv } from "./http/http";
 import type { Money } from "./money/money";
 import type { GooglePort } from "./google/port";
 import { createDeals, type Deals } from "./deals/deals";
+import { defaultDraftSettings, type Drafts } from "./drafts/drafts";
 import { createInvites } from "./invites/invites";
 import type { LinkKeys } from "./invites/link-keys";
 import { registerAccountRoutes } from "./routes/account";
 import { registerBrandRoutes } from "./routes/brand";
 import { registerDealRoutes } from "./routes/deals";
+import { DRAFT_UPLOAD, registerDeliverableRoutes } from "./routes/deliverables";
 import { registerGoogleRoutes } from "./routes/google";
 import { registerInviteRoutes } from "./routes/invite";
 import type { Secrets } from "./secrets/secrets";
@@ -22,6 +24,8 @@ import { createSessions, defaultSessionSettings } from "./sessions/sessions";
 
 /** No PayPal event comes near this size. Anything larger is turned away before it is read. */
 const WEBHOOK_BODY_LIMIT = 256 * 1024;
+/** No JSON a page sends comes near this size. Only a draft's file may be larger, and it has its own limit. */
+const JSON_BODY_LIMIT = 1024 * 1024;
 
 export interface AppDeps {
   prisma: PrismaClient;
@@ -47,6 +51,10 @@ export interface AppDeps {
   linkKeys?: LinkKeys;
   /** The PayPal sandbox app's public client id, for the button on the brand's page (DS-FR-45). */
   paypalClientId?: string;
+  /** Drafts, with the storage they are kept in. Left out when no storage is set up: no draft is then taken. */
+  drafts?: Drafts;
+  /** The largest draft file taken, in bytes. The service's own size limit must allow it. */
+  maxDraftBytes?: number;
 }
 
 /** The address a request came from, as the connection reports it. */
@@ -90,7 +98,10 @@ export function createApp(deps: AppDeps) {
   );
   // And the API itself refuses a changing request from anywhere else (DS-BR-03). PayPal's webhook has no
   // origin and proves itself another way; the demo button is a form the page posts.
-  app.use("*", ownAppOnly(appOrigin, { noOrigin: ["/webhooks/paypal"], forms: ["/auth/demo"] }));
+  app.use("*", ownAppOnly(appOrigin, { noOrigin: ["/webhooks/paypal"], forms: ["/auth/demo"], files: [DRAFT_UPLOAD] }));
+  // Every body but a draft's file is small. The file is cut off at its own limit as it is stored (DR-BR-17).
+  const smallBody = bodyLimit({ maxSize: JSON_BODY_LIMIT, onError: (c) => fail(c, 413, "too_large") });
+  app.use("*", (c, next) => (DRAFT_UPLOAD.test(c.req.path) ? next() : smallBody(c, next)));
 
   const sessions = createSessions({ prisma, now });
   const accounts = deps.accounts ?? createAccounts({ prisma, now });
@@ -105,6 +116,7 @@ export function createApp(deps: AppDeps) {
   registerDealRoutes(app, { sessions, deals: deps.deals ?? createDeals({ prisma, now }) });
   const invites = createInvites({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
   registerInviteRoutes(app, { sessions, invites });
+  registerDeliverableRoutes(app, { sessions, drafts: deps.drafts, maxBytes: deps.maxDraftBytes ?? defaultDraftSettings.maxBytes });
   registerBrandRoutes(app, { sessions, invites, brand: createBrand({ prisma, now, money, paypalClientId: deps.paypalClientId }), appOrigin, now });
   registerGoogleRoutes(app, {
     google: deps.google,

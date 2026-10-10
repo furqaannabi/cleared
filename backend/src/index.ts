@@ -3,6 +3,7 @@ import { createApp } from "./app";
 import { createClaudeBriefModel } from "./briefs/claude";
 import { prisma } from "./db";
 import { createDeals } from "./deals/deals";
+import { defaultDraftSettings } from "./drafts/drafts";
 import { env } from "./env";
 import { createGoogle } from "./google/google";
 import { localLinkKeys } from "./invites/link-keys";
@@ -76,4 +77,7 @@ for (const signal of ["SIGTERM", "SIGINT"] as const) {
 export default {
   port: env.port,
   fetch: app.fetch,
+  // Bun turns away anything larger than this before the app sees it. A draft's file is the largest
+  // thing sent; every other route has its own, much smaller limit.
+  maxRequestBodySize: defaultDraftSettings.maxBytes + 1024 * 1024,
 };

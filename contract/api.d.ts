@@ -1785,6 +1785,122 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deliverables/{deliverableId}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a draft: the video file is the request's body, and its check starts as a job (DR-FR-01, DR-FR-02) */
+        post: {
+            parameters: {
+                query?: {
+                    fileName?: string;
+                };
+                header?: never;
+                path: {
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            responses: {
+                /** @description The draft was taken and is being checked */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DraftAccepted"];
+                    };
+                };
+                /** @description No file was sent */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post, or it is not this creator's */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The post takes no draft now: not held, released, approved, or a check is running */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The file is over the size limit. Nothing of it was kept */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The file cannot be checked: unreadable, not an MP4 or MOV, or too long (with its length and the cap) */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description A limit on drafts was reached */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description This service is not set up to store drafts */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/b/{token}/session": {
         parameters: {
             query?: never;
@@ -2396,6 +2512,8 @@ export interface components {
                 code: string;
                 field?: string;
                 resetsAt?: string;
+                lengthSec?: number;
+                lengthCapSec?: number;
             };
         };
         DealDraft: {
@@ -2507,6 +2625,12 @@ export interface components {
             state: "not_started" | "closed" | "declined" | "pending" | "unknown" | "held";
             reference?: string;
             deadline?: string;
+        };
+        DraftAccepted: {
+            deliverableId: string;
+            /** @enum {string} */
+            state: "checking";
+            run: number;
         };
         BrandSession: {
             dealId: string;

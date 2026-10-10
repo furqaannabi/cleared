@@ -68,6 +68,12 @@
               },
               "resetsAt": {
                 "type": "string"
+              },
+              "lengthSec": {
+                "type": "number"
+              },
+              "lengthCapSec": {
+                "type": "number"
               }
             },
             "required": [
@@ -557,6 +563,28 @@
         },
         "required": [
           "state"
+        ]
+      },
+      "DraftAccepted": {
+        "type": "object",
+        "properties": {
+          "deliverableId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "checking"
+            ]
+          },
+          "run": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deliverableId",
+          "state",
+          "run"
         ]
       },
       "BrandSession": {
@@ -2705,6 +2733,135 @@
           },
           "503": {
             "description": "This service is not set up to make links",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deliverables/{deliverableId}/draft": {
+      "post": {
+        "summary": "Send a draft: the video file is the request's body, and its check starts as a job (DR-FR-01, DR-FR-02)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 1000
+            },
+            "required": false,
+            "name": "fileName",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The draft was taken and is being checked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No file was sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post, or it is not this creator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The post takes no draft now: not held, released, approved, or a check is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The file is over the size limit. Nothing of it was kept",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The file cannot be checked: unreadable, not an MP4 or MOV, or too long (with its length and the cap)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "A limit on drafts was reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This service is not set up to store drafts",
             "content": {
               "application/json": {
                 "schema": {
