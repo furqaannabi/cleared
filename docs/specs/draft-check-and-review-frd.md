@@ -1,6 +1,6 @@
 # Draft check and review: FRD
 
-**Status:** Signed by Furqaan (revision 1.0). It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
+**Status:** Signed by Furqaan (revision 1.1). It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
 
 **Surface:** Backend. Steps 4 and 5 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: the creator sends a draft of a held post, it is checked against the agreed checklist with evidence for every item, the creator can ask the brand to accept what the check could not decide, and a fully passing draft opens the brand's 48-hour review window, which ends in an approval, an objection or silence.
 
@@ -145,7 +145,7 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 | ID | Requirement |
 | --- | --- |
 | DR-FR-44 | **A review link** is made for a post when the creator first asks about an item in a run, or when its window opens, whichever is first. It follows the invite link's rules (DS-FR-32, DS-BR-11): a token worked out again for its creator, only a hash stored. Swapping it gives the same deal-scoped session and also says which post to land on. |
-| DR-FR-45 | **It stops working** when the brand has nothing left to do on that draft (the draft is approved, a new draft has started, or the hold is released) or after 7 days, whichever is first. The post carries the link for its creator while the brand has something to do. If it has expired and the brand still has something to do, the creator can make a new one. |
+| DR-FR-45 | **It stops working** when the brand has nothing left to do on that draft (the draft is approved, a new draft has started, or the hold is released) or after 7 days, whichever is first. From then it opens no new session; a session already made from it lasts until its 7 days are up, so someone who has just approved can still see that they did. The post carries the link for its creator while the brand has something to do. If it has expired and the brand still has something to do, the creator can make a new one. The creator can also replace a link that still works, which turns the old one off and ends every session made from it. |
 | DR-FR-46 | **Opened.** The first time a brand session reads a post's review, the time is recorded, and the creator's post reports it. |
 | DR-FR-47 | **One post's review.** Returns the post as the brand sees it: both names, the hold and the deadline's date, where its review stands, and the latest draft with each item's status, its brief line and its evidence. It never carries a suggestion, an earlier run, the run number or the creator's PayPal email. |
 | DR-FR-48 | **Only when asked.** The brand is shown a draft only from the first ask or the window's start of that run. Before that, and for a run that never reached either, the review says there is nothing yet and carries no draft. |
@@ -203,7 +203,7 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
   - **Routes:** thin. Each checks the session, validates the body, calls a module and maps the answer.
 - **The money module gains one thing:** a way to record that a draft is cleared inside the caller's transaction, as it gained one for agreeing (DS-FR-42), so DR-FR-42 is all or nothing. Nothing else in it changes.
 - **Review links reuse the invite link's table and code,** with the post a link lands on. A session made from one is the same deal-scoped session.
-- **Schema.** New tables for: drafts (the file, its length, its state); runs; item results with their evidence, asks and the brand's answers; objections; review windows; and the minutes checked (for the daily limit). Invite links gain the post they land on and when a review was first opened.
+- **Schema.** New tables for: drafts (the file, its length, its state); runs; item results with their evidence, asks and the brand's answers; objections; review windows; and the minutes checked (for the daily limit). Invite links gain the post they land on and when they closed. The post's review keeps when the brand first opened the draft, because any brand session counts and it starts again with each new draft. A draft keeps whether it is an MP4 or a MOV.
 - **Paths** follow the provisional ones in William's specs (DC, RW) wherever they exist.
 - **New libraries,** all AWS's own for services already in the stack: the S3 client with its streaming upload and its address signer, the Bedrock Data Automation client, and the Bedrock runtime client for Nova. Each replaces hand-written signed HTTP calls. The service also needs ffmpeg and ffprobe installed where it runs.
 - **Settings,** each with the value in this spec as its default: the size and length caps, the three limits, the window's length, the retry count, the two-second and five-second tolerances, the address lifetime, the retention days, the two model ids, the bucket and the region.
@@ -222,6 +222,14 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | Draft check (DC-FR-52), brand review (RW-FR-03) | Nothing is emailed, so `emailedTo` is never sent and "We've also emailed it" must not show ([decision](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md)). The post gains when the brand first opened the draft, and a route to make a new review link when one has expired |
 | Draft check, brand review | Locally the review link starts with `http://localhost:3000`, which the schema turns down, as for the invite link |
 | Demo | A route for a demo account to check the sample clip in place of an upload |
+| Draft check, the upload | `POST /deliverables/{id}/draft?fileName=…` with the file as the body answers `{ deliverableId, state: "checking", run }`. Refusals: 409 `not_held`, `released`, `approved` or `check_running`; 413 `file_too_large`; 422 `file_unreadable`, `file_format` or `file_too_long` (with `lengthSec` and `lengthCapSec`); 429 `draft_limit` with `field` as `post`, `overall` or `demo`, and `resetsAt` for the daily one |
+| Draft check (DC-FR-01) | A post with no hold yet has no page: `GET /deliverables/{id}` answers 409 `not_held` |
+| Draft check (DC-FR-04) | The stage names come from the API as plain words, in order: "Reading the video", "Checking what was said and written on screen", "Checking what is shown", "Confirming the evidence" |
+| Draft check (DC-FR-08, DC-FR-09) | While a failed check is being tried again the state stays `checking`, with `checkFailure` as `{ kind: "ours", retrying: true }`. A file failure with no run before it reads as `check_failed`; with a run before it, that run's state and results stay and the failure is beside them. `POST /deliverables/{id}/check/retry` starts a failed check again |
+| Draft check (DC-FR-52) | `reviewLink` is `{ url, expiresAt, expired }`. `reviewOpenedAt` says when the brand first opened the draft. `POST /deliverables/{id}/review-link` makes a new link |
+| Draft check (DC-FR-31) | The deals list's status lines follow the mock's wording, with "Released" added for a deal whose posts are all released. A post being checked counts as "Draft check" |
+| Brand review (RW-FR-05) | With no session the brand's routes answer 401, and a post outside the session's deal answers 404. An objection that comes too late is refused with `window_ended` |
+| Demo | The sample route is `POST /deliverables/{id}/draft/sample`, for demo accounts only (403 `not_demo` otherwise) |
 | All pages | The generated types in `contract/` gain these routes as they are built |
 
 ## Testing Decisions
@@ -266,18 +274,36 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **The money module's one addition:** clearing a draft inside the caller's transaction.
 - **Which Nova model:** Nova Pro to start with, compared with Nova 2 Lite on the golden set before the choice is fixed. The account can call both.
 
+**Settled while building.** Choices the spec left open, made while it was built. Each is tested. Furqaan can change any of them.
+
+- **Every route but the upload** turns away a body over 1 MB. The service's own size limit had to rise to let a draft through, so everything else got a small one.
+- **DR-FR-14:** a value shorter than four characters has no one-character near miss.
+- **DR-FR-17:** a segment needs words quoted at both its ends, and both are looked for. The sum is done on where the words really are, not on the time the model gave.
+- **DR-FR-23:** any unexpected error in a check counts as a failure on Cleared's side, not only a service that cannot be reached.
+- **DR-FR-25:** while a newer draft is checked every draft-check item reads as checking, and its results appear together.
+- **DR-FR-37, DR-FR-38:** the brand can approve after objecting, so approving and objecting at the same moment has no single right outcome. Two approvals at once approve once.
+- **DR-FR-39:** "too late" is by the clock: an objection at or after the window's end is refused whether or not the window's job has run.
+- **DS-FR-33:** replacing the deal's invite link no longer turns off a post's review link, and the other way round.
+
+**Verified while building.**
+
+- Nova Pro and Nova 2 Lite both answer for this AWS account.
+- Data Automation answers for this account. Its built-in project reads on-screen text but has no transcript, so the draft check needs a project of its own.
+
 **To verify while building.**
 
+- **None of the five real adapters is proven against its service yet** (storage, ffmpeg, Data Automation, Claude as judge, Nova on a video). Each is tested over a stand-in. They wait on the bucket, ffmpeg, the Data Automation project, and Bedrock, which answered "overloaded" to every Claude call while they were written.
+- The fields Data Automation's result uses for speech. The on-screen text fields are as AWS documents them; the speech fields are from memory.
 - That Bedrock Data Automation returns speech and on-screen text with times precise enough for DR-BR-05, and how it writes a spoken code.
 - What one minute of video really costs across the three services, and how long a run takes. The limits rest on an estimate of about 10 cents a minute.
 - How well Nova's moments line up with the video on the golden set, and how often the second look disagrees with it.
 - That a 1 GB upload through the API is workable from a home connection, and what happens when it drops.
-- That Nova and Data Automation are callable from this AWS account with quota above zero, as Opus 5.5 at first was not.
 
 **Needs setting up by a person.**
 
 - An S3 bucket: private, public access blocked, encrypted, with a rule that deletes anything older than 90 days as a backstop. Its name goes in the service's settings.
 - Permission for the AWS identity the service runs under to use that bucket, Data Automation and Nova.
+- A Data Automation project with the transcript and text detection turned on for video, and the account's Data Automation profile for the region. Both go in the service's settings.
 - ffmpeg and ffprobe on the machine the service runs on.
 - The recorded clips for the golden set, each with its expected result per item, and one chosen as the demo sample ([decision](../decisions/2026-10-09-test-clips-are-recorded-by-the-team.md)).
 
@@ -291,3 +317,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | --- | --- | --- |
 | 0.1 | First draft, from the question session with Furqaan: steps 4 and 5 together; the file uploaded through the API to a private S3 bucket; limits of 15 minutes, 1 GB, 10 checks per post, 300 minutes a day overall and 3 short drafts for a demo account; Amazon Nova for what is shown, chosen without a trial; every pass verified by code, a shown pass by a second look; spoken codes matched after normalising, a near miss unsure; timing items found by the AI and summed by code; a service failure fails the run; the unlisted video left to the publish step; no email, the creator sends the link; William's fresh link per review and his objection rule accepted; latest draft only, deleted 30 days after the deal ends; test clips recorded by the team | [Upload through the API](../decisions/2026-10-09-drafts-uploaded-through-the-api-to-s3.md), [Limits](../decisions/2026-10-09-limits-on-drafts.md), [Nova](../decisions/2026-10-09-amazon-nova-judges-what-is-shown.md), [Verifying a pass](../decisions/2026-10-09-how-an-ai-pass-is-verified.md), [A broken check](../decisions/2026-10-09-a-broken-check-fails-the-run.md), [No email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md), [Unlisted video](../decisions/2026-10-09-the-unlisted-video-is-asked-for-at-publish.md), [Draft privacy](../decisions/2026-10-09-who-can-watch-a-draft-and-how-long-it-is-kept.md), [Test clips](../decisions/2026-10-09-test-clips-are-recorded-by-the-team.md) |
 | 1.0 | Signed by Furqaan, with the eleven items added while drafting accepted as written | none |
+| 1.1 | Signed by Furqaan. DR-FR-45: a session made from a review link outlasts the link's closing, and the creator can replace a link that still works. First-opened is kept on the post's review, and a draft keeps its format. Eight choices settled while building are listed. Found: Data Automation's built-in project has no transcript, so a project is needed; Nova answers for the account; the five real adapters are written and not yet proven. Eight more requests for William | none |
