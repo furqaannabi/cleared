@@ -572,6 +572,304 @@
           "state"
         ]
       },
+      "BrandPost": {
+        "type": "object",
+        "properties": {
+          "dealId": {
+            "type": "string"
+          },
+          "deliverableId": {
+            "type": "string"
+          },
+          "creatorName": {
+            "type": "string"
+          },
+          "brandName": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "youtube_video",
+              "youtube_short"
+            ]
+          },
+          "creatorTimeZone": {
+            "type": "string"
+          },
+          "hold": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string"
+              },
+              "reference": {
+                "type": "string"
+              },
+              "deadline": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "reference",
+              "deadline"
+            ]
+          },
+          "review": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "nothing_yet"
+                    ]
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "asked"
+                    ]
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "window"
+                    ]
+                  },
+                  "endsAt": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "endsAt"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "objected"
+                    ]
+                  },
+                  "objectedAt": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "state",
+                  "objectedAt"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "approved"
+                    ]
+                  },
+                  "approvedAt": {
+                    "type": "string"
+                  },
+                  "by": {
+                    "type": "string",
+                    "enum": [
+                      "brand",
+                      "window"
+                    ]
+                  }
+                },
+                "required": [
+                  "state",
+                  "approvedAt",
+                  "by"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "released"
+                    ]
+                  },
+                  "releasedAt": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "deadline",
+                      "cancelled",
+                      "day_28",
+                      "fix_window_ended",
+                      "not_accepted",
+                      "ruled_not_to_pay",
+                      "hold_not_confirmed"
+                    ]
+                  }
+                },
+                "required": [
+                  "state",
+                  "releasedAt",
+                  "reason"
+                ]
+              }
+            ]
+          },
+          "draft": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "urlExpiresAt": {
+                "type": "string"
+              },
+              "durationSec": {
+                "type": "number"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "said",
+                        "shown_as_text",
+                        "shown",
+                        "timing",
+                        "written",
+                        "disclosure",
+                        "publication"
+                      ]
+                    },
+                    "checkedBy": {
+                      "type": "string",
+                      "enum": [
+                        "exact_match",
+                        "ai_timestamp",
+                        "from_timestamps",
+                        "published_post",
+                        "platform_record"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "passed",
+                        "fix_needed",
+                        "unsure",
+                        "at_live_check",
+                        "asked",
+                        "accepted",
+                        "fix_requested",
+                        "objected"
+                      ]
+                    },
+                    "briefLine": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "integer"
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "number",
+                        "text"
+                      ]
+                    },
+                    "evidence": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string"
+                        },
+                        "startSec": {
+                          "type": "number"
+                        },
+                        "endSec": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "text",
+                        "startSec",
+                        "endSec"
+                      ]
+                    },
+                    "note": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "kind",
+                    "checkedBy",
+                    "status"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "url",
+              "urlExpiresAt",
+              "durationSec",
+              "items"
+            ]
+          }
+        },
+        "required": [
+          "dealId",
+          "deliverableId",
+          "creatorName",
+          "brandName",
+          "platform",
+          "creatorTimeZone",
+          "hold",
+          "review"
+        ]
+      },
       "DraftAccepted": {
         "type": "object",
         "properties": {
@@ -734,8 +1032,14 @@
                 "askable": {
                   "type": "boolean"
                 },
+                "askedAt": {
+                  "type": "string"
+                },
                 "declined": {
                   "type": "boolean"
+                },
+                "brandNote": {
+                  "type": "string"
                 },
                 "fixHint": {
                   "type": "string"
@@ -3121,6 +3425,446 @@
         }
       }
     },
+    "/brand/deals/{dealId}/deliverables/{deliverableId}": {
+      "get": {
+        "summary": "One post's review: where it stands, and the latest draft once the brand is shown it (DR-FR-47, DR-FR-48)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post's review as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/items/{itemId}/accept": {
+      "post": {
+        "summary": "Accept an item the creator asked about; it then counts as passed (DR-FR-32)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post's review as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/items/{itemId}/fix": {
+      "post": {
+        "summary": "Ask for an item the creator asked about to be fixed instead, with an optional note in plain text (DR-FR-33)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The post's review as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/approve": {
+      "post": {
+        "summary": "Approve the draft, in the review window or after objecting; the draft is then cleared to publish (DR-FR-37, DR-FR-42)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post's review as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/objections": {
+      "post": {
+        "summary": "Object to items that passed, each with a note, once per draft; the review window's clock stops (DR-FR-38)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "dealId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "objections": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "itemId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "note": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        }
+                      },
+                      "required": [
+                        "itemId",
+                        "note"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "objections"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The post's review as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session for this deal, whether or not it exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item in this deal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/deliverables/{deliverableId}/draft": {
       "post": {
         "summary": "Send a draft: the video file is the request's body, and its check starts as a job (DR-FR-01, DR-FR-02)",
@@ -3416,6 +4160,142 @@
           },
           "404": {
             "description": "No such post, it is not this creator's, or it has no draft",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deliverables/{deliverableId}/items/{itemId}/ask": {
+      "post": {
+        "summary": "Ask the brand to accept an unsure item; it then waits for the brand (DR-FR-30)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatorPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item, or the post is not this creator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not allowed for this item now, with the reason as the code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Withdraw an ask the brand has not answered; the item is unsure again (DR-FR-31)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "deliverableId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post as it now stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatorPost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such post or item, or the post is not this creator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not allowed for this item now, with the reason as the code",
             "content": {
               "application/json": {
                 "schema": {

@@ -5,6 +5,7 @@ import { PLATFORMS } from "../deals/deals";
 import type { Drafts } from "../drafts/drafts";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
 import type { Posts } from "../posts/posts";
+import type { Review } from "../review/review";
 import type { Sessions } from "../sessions/sessions";
 
 const json = <Schema extends z.ZodType>(schema: Schema, description: string) => ({
@@ -44,7 +45,9 @@ const CreatorPostSchema = z
         evidence: z.object({ label: z.string(), text: z.string(), startSec: z.number(), endSec: z.number() }).optional(),
         checkedBy: z.enum(["exact_match", "ai_timestamp", "from_timestamps", "published_post", "platform_record"]),
         askable: z.boolean().optional(),
+        askedAt: z.string().optional(),
         declined: z.boolean().optional(),
+        brandNote: z.string().optional(),
         fixHint: z.string().optional(),
       }),
     ),
@@ -81,8 +84,11 @@ const CreatorPostSchema = z
   })
   .openapi("CreatorPost");
 
-export function registerDeliverableRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: Sessions; drafts?: Drafts; posts: Posts; maxBytes: number }) {
-  const { drafts, posts, maxBytes } = deps;
+export function registerDeliverableRoutes(
+  app: OpenAPIHono<AppEnv>,
+  deps: { sessions: Sessions; drafts?: Drafts; posts: Posts; review: Review; maxBytes: number },
+) {
+  const { drafts, posts, review, maxBytes } = deps;
   const creator = requireCreator(deps.sessions);
 
   app.openapi(
@@ -204,4 +210,32 @@ export function registerDeliverableRoutes(app: OpenAPIHono<AppEnv>, deps: { sess
       return "refused" in draft ? fail(c, 404, draft.refused) : c.json(draft, 200);
     },
   );
+
+  for (const what of ["ask", "withdraw"] as const) {
+    app.openapi(
+      createRoute({
+        method: what === "ask" ? "post" : "delete",
+        path: "/deliverables/{deliverableId}/items/{itemId}/ask",
+        summary:
+          what === "ask"
+            ? "Ask the brand to accept an unsure item; it then waits for the brand (DR-FR-30)"
+            : "Withdraw an ask the brand has not answered; the item is unsure again (DR-FR-31)",
+        middleware: [creator] as const,
+        request: { params: z.object({ deliverableId: z.string().min(1).max(64), itemId: z.string().min(1).max(64) }) },
+        responses: {
+          200: json(CreatorPostSchema, "The post as it now stands"),
+          401: json(ErrorSchema, "Nobody is signed in"),
+          404: json(ErrorSchema, "No such post or item, or the post is not this creator's"),
+          409: json(ErrorSchema, "Not allowed for this item now, with the reason as the code"),
+        },
+      }),
+      async (c) => {
+        const { deliverableId, itemId } = c.req.valid("param");
+        const acted = await review[what](c.get("creatorId"), deliverableId, itemId);
+        if (!acted.ok) return acted.reason === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, acted.reason);
+        const post = await posts.creatorPost(c.get("creatorId"), deliverableId);
+        return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
+      },
+    );
+  }
 }

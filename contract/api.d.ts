@@ -1785,6 +1785,371 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/brand/deals/{dealId}/deliverables/{deliverableId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One post's review: where it stands, and the latest draft once the brand is shown it (DR-FR-47, DR-FR-48) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post's review as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandPost"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/items/{itemId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept an item the creator asked about; it then counts as passed (DR-FR-32) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post's review as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandPost"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/items/{itemId}/fix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask for an item the creator asked about to be fixed instead, with an optional note in plain text (DR-FR-33) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The post's review as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandPost"];
+                    };
+                };
+                /** @description The request is not valid */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve the draft, in the review window or after objecting; the draft is then cleared to publish (DR-FR-37, DR-FR-42) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post's review as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandPost"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/brand/deals/{dealId}/deliverables/{deliverableId}/objections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Object to items that passed, each with a note, once per draft; the review window's clock stops (DR-FR-38) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dealId: string;
+                    deliverableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        objections: {
+                            itemId: string;
+                            note: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description The post's review as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandPost"];
+                    };
+                };
+                /** @description The request is not valid */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session for this deal, whether or not it exists */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item in this deal */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed now, with the reason as the code. `window_ended` means an objection came too late (DR-FR-39) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deliverables/{deliverableId}/draft": {
         parameters: {
             query?: never;
@@ -2091,6 +2456,122 @@ export interface paths {
             };
         };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deliverables/{deliverableId}/items/{itemId}/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the brand to accept an unsure item; it then waits for the brand (DR-FR-30) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deliverableId: string;
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreatorPost"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item, or the post is not this creator's */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed for this item now, with the reason as the code */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        /** Withdraw an ask the brand has not answered; the item is unsure again (DR-FR-31) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deliverableId: string;
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The post as it now stands */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreatorPost"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such post or item, or the post is not this creator's */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed for this item now, with the reason as the code */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -2821,6 +3302,73 @@ export interface components {
             reference?: string;
             deadline?: string;
         };
+        BrandPost: {
+            dealId: string;
+            deliverableId: string;
+            creatorName: string;
+            brandName: string;
+            /** @enum {string} */
+            platform: "youtube_video" | "youtube_short";
+            creatorTimeZone: string;
+            hold: {
+                amount: string;
+                reference: string;
+                deadline: string;
+            };
+            review: {
+                /** @enum {string} */
+                state: "nothing_yet";
+            } | {
+                /** @enum {string} */
+                state: "asked";
+            } | {
+                /** @enum {string} */
+                state: "window";
+                endsAt: string;
+            } | {
+                /** @enum {string} */
+                state: "objected";
+                objectedAt: string;
+            } | {
+                /** @enum {string} */
+                state: "approved";
+                approvedAt: string;
+                /** @enum {string} */
+                by: "brand" | "window";
+            } | {
+                /** @enum {string} */
+                state: "released";
+                releasedAt: string;
+                /** @enum {string} */
+                reason: "deadline" | "cancelled" | "day_28" | "fix_window_ended" | "not_accepted" | "ruled_not_to_pay" | "hold_not_confirmed";
+            };
+            draft?: {
+                url: string;
+                urlExpiresAt: string;
+                durationSec: number;
+                items: {
+                    id: string;
+                    name: string;
+                    /** @enum {string} */
+                    kind: "said" | "shown_as_text" | "shown" | "timing" | "written" | "disclosure" | "publication";
+                    /** @enum {string} */
+                    checkedBy: "exact_match" | "ai_timestamp" | "from_timestamps" | "published_post" | "platform_record";
+                    /** @enum {string} */
+                    status: "passed" | "fix_needed" | "unsure" | "at_live_check" | "asked" | "accepted" | "fix_requested" | "objected";
+                    briefLine?: {
+                        number: number;
+                        text: string;
+                    };
+                    evidence?: {
+                        label: string;
+                        text: string;
+                        startSec: number;
+                        endSec: number;
+                    };
+                    note?: string;
+                }[];
+            };
+        };
         DraftAccepted: {
             deliverableId: string;
             /** @enum {string} */
@@ -2859,7 +3407,9 @@ export interface components {
                 /** @enum {string} */
                 checkedBy: "exact_match" | "ai_timestamp" | "from_timestamps" | "published_post" | "platform_record";
                 askable?: boolean;
+                askedAt?: string;
                 declined?: boolean;
+                brandNote?: string;
                 fixHint?: string;
             }[];
             brief: {

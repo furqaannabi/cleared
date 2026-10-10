@@ -829,6 +829,15 @@ export function createMoney(deps: MoneyDeps) {
     },
 
     /** The draft is cleared to publish. Decided outside this module, and trusted (MP-FR-10). */
+    /**
+     * Records that a draft is cleared to publish, inside the caller's transaction: a draft is approved
+     * and the money path is told together, or not at all (draft check and review spec DR-FR-42). It
+     * calls PayPal for nothing; the go-ahead is the creator's next step.
+     */
+    async draftClearedIn(tx: Prisma.TransactionClient, deliverableId: string, at: Date): Promise<void> {
+      const cleared = await applyIn(tx, deliverableId, { type: "draft_cleared", at }, "call");
+      if (!cleared.ok) throw new Error(`A deliverable's draft could not be recorded as cleared: ${cleared.reason}`);
+    },
     async draftCleared(deliverableId: string): Promise<{ ok: true } | Refused> {
       const done = await dispatch(deliverableId, { type: "draft_cleared", at: now() }, "call");
       return done.ok ? { ok: true } : done;

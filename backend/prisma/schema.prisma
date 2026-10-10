@@ -430,7 +430,11 @@ model CheckItem {
   hint          String?
   /// none, waiting, accepted or declined.
   ask           String  @default("none")
+  /// When the creator asked the brand about it, while the ask stands.
+  askedAt       DateTime?
   objected      Boolean @default(false)
+  /// The brand's note: with a request to fix it, or with its objection. Untrusted plain text (DR-BR-09).
+  brandNote     String?
   /// How it read to its creator in the run before, and at the moment a newer draft replaced it.
   previous      String?
   whenReplaced  String?

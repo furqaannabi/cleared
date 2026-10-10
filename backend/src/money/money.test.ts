@@ -1480,3 +1480,40 @@ describe("DS-FR-42 money is opened as agreed inside the caller's transaction", (
     expect(await jobs()).toHaveLength(1);
   });
 });
+
+describe("DR-FR-42 a draft is recorded as cleared inside the caller's transaction", () => {
+  test("the deliverable is then cleared to publish: a go-ahead can be asked for", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    await world.money.holdApproved(deliverableId, await approvedInPayPal(world, deliverableId));
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({ ok: false, reason: "draft_not_cleared" });
+
+    await prisma.$transaction((tx) => world.money.draftClearedIn(tx, deliverableId, at("2026-10-10T10:00:00Z")));
+
+    expect(await world.money.askGoAhead(deliverableId)).toMatchObject({ ok: true });
+    expect(await recordNames()).toContain("event:draft_cleared");
+  });
+
+  test("if the caller's transaction fails, the draft is not cleared", async () => {
+    const world = setUp();
+    const deliverableId = await agreedDeliverable(world);
+    await world.money.holdApproved(deliverableId, await approvedInPayPal(world, deliverableId));
+
+    const failed = prisma.$transaction(async (tx) => {
+      await world.money.draftClearedIn(tx, deliverableId, at("2026-10-10T10:00:00Z"));
+      throw new Error("the approval could not be recorded");
+    });
+
+    await expect(failed).rejects.toThrow("the approval could not be recorded");
+    expect(await world.money.askGoAhead(deliverableId)).toEqual({ ok: false, reason: "draft_not_cleared" });
+    expect(await recordNames()).not.toContain("event:draft_cleared");
+  });
+
+  test("a deliverable with no money cannot be cleared, and the caller's transaction fails with it", async () => {
+    const world = setUp();
+
+    const cleared = prisma.$transaction((tx) => world.money.draftClearedIn(tx, "no-such-deliverable", at("2026-10-10T10:00:00Z")));
+
+    await expect(cleared).rejects.toThrow();
+  });
+});

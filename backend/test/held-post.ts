@@ -14,6 +14,7 @@ import { localLinkKeys } from "../src/invites/link-keys";
 import { runDueJobs } from "../src/jobs/jobs";
 import { createMoney } from "../src/money/money";
 import { recordedPosts } from "../src/money/published-post";
+import { createReview } from "../src/review/review";
 import { createSessions } from "../src/sessions/sessions";
 import { browserFor, type Browser } from "./browser";
 import { FakeJudge, FakeSpeech, FakeVideoModel } from "./fake-checks";
@@ -66,7 +67,15 @@ interface Deal {
   items: { id: string; name: string; deliverableId: string }[];
 }
 
-export function heldWorld(options: { drafts?: Partial<DraftSettings>; /** An item of the creator's own, added to every deal's first post. */ ownItem?: string } = {}) {
+export function heldWorld(
+  options: {
+    drafts?: Partial<DraftSettings>;
+    /** An item of the creator's own, added to every deal's first post. */
+    ownItem?: string;
+    /** Makes telling the money path that a draft is cleared fail, as a database error would. */
+    clearingFails?: boolean;
+  } = {},
+) {
   let now = at("2026-10-09T09:00:00Z");
   const clock = () => now;
   const paypal = new FakePayPal();
@@ -90,6 +99,18 @@ export function heldWorld(options: { drafts?: Partial<DraftSettings>; /** An ite
     settings: { ...defaultDraftSettings, ...options.drafts },
     log: (...parts) => void logged.push(parts),
   });
+  const review = createReview({
+    prisma,
+    now: clock,
+    money: options.clearingFails
+      ? {
+          view: money.view,
+          draftClearedIn: async () => {
+            throw new Error("the money path could not record the cleared draft");
+          },
+        }
+      : money,
+  });
   const app = createApp({
     prisma,
     appOrigin: APP,
@@ -97,6 +118,7 @@ export function heldWorld(options: { drafts?: Partial<DraftSettings>; /** An ite
     deals,
     money,
     drafts,
+    review,
     storage,
     paypalClientId: "sandbox-public-client-id",
     linkKeys: localLinkKeys(Buffer.alloc(32, 1).toString("base64")),
@@ -158,7 +180,7 @@ export function heldWorld(options: { drafts?: Partial<DraftSettings>; /** An ite
     return { sam, maya, deal: read, posts, post: posts[0]! };
   }
 
-  const runJobs = () => runDueJobs(prisma, { ...deals.handlers, ...money.handlers, ...drafts.handlers }, { now, log: () => {} });
+  const runJobs = () => runDueJobs(prisma, { ...deals.handlers, ...money.handlers, ...drafts.handlers, ...review.handlers }, { now, log: () => {} });
 
   return {
     app,

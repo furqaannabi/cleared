@@ -74,20 +74,33 @@ export async function saveItems(tx: Prisma.TransactionClient, deliverableId: str
   }
 }
 
+/** Whether the money path has released or closed a post's hold, from the stage it reports. */
+export const holdEnded = (stage: string | undefined) => stage === "released" || stage === "closed_not_held";
+
 /**
  * Does what a change asked for, in the transaction that made the change. The window's end is a job
- * written here, so a restart cannot lose it (DR-FR-36). The brand's link and telling the money path
- * arrive with the brand's review; until then no change that is reachable asks for them.
+ * written here, so a restart cannot lose it (DR-FR-36). Telling the money path a draft is cleared is
+ * done by `clearDraft`, in this same transaction (DR-FR-42); a change that asks for it where none was
+ * given is a bug, and fails loudly so no approval is ever recorded without the money path knowing.
+ * The brand's link arrives with the brand's review.
  */
-export async function applyEffects(tx: Prisma.TransactionClient, deliverableId: string, effects: ReviewEffect[]) {
+export async function applyEffects(
+  tx: Prisma.TransactionClient,
+  deliverableId: string,
+  effects: ReviewEffect[],
+  actions: { clearDraft?: () => Promise<void> } = {},
+) {
   for (const effect of effects) {
     switch (effect.type) {
       case "schedule_window_end":
         await enqueue(tx, { name: "review_window_end", payload: { deliverableId }, runAt: effect.at });
         break;
+      case "clear_draft":
+        if (!actions.clearDraft) throw new Error("A draft was approved where the money path cannot be told");
+        await actions.clearDraft();
+        break;
       case "make_review_link":
       case "end_review_link":
-      case "clear_draft":
         break;
     }
   }

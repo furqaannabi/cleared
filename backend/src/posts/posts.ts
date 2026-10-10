@@ -10,8 +10,9 @@ import type { FileFailure } from "../drafts/drafts";
 import type { PrismaClient } from "../generated/prisma/client";
 import { cents, type TermsSnapshot } from "../invites/terms";
 import type { Money } from "../money/money";
-import { askable, creatorStatus, newReview, postState, type CreatorStatus, type ReviewItem } from "../review/rules";
-import { loadReview } from "../review/store";
+import { decimal } from "../money/view";
+import { askable, brandReview, brandStatus, creatorStatus, newReview, postState, type BrandStatus, type CreatorStatus, type ReviewItem } from "../review/rules";
+import { holdEnded, loadReview } from "../review/store";
 import type { Storage } from "../storage/port";
 
 /** How an item reads on the creator's page. Before a run it is not checked yet; during one it is being checked. */
@@ -29,8 +30,12 @@ export interface PostItem {
   checkedBy: CheckedBy;
   /** Whether the creator may ask the brand to accept it now. Present once it has a result. */
   askable?: boolean;
+  /** When the creator asked the brand about it, while the ask stands. */
+  askedAt?: string;
   /** The brand asked for it to be fixed, so it cannot be asked about again in this run. */
   declined?: boolean;
+  /** The brand's note, with its request for a fix or its objection. Plain text (DR-BR-09). */
+  brandNote?: string;
   /** One plain sentence saying what to change. Guidance only. */
   fixHint?: string;
 }
@@ -75,6 +80,41 @@ export interface CreatorPost {
   releaseReason?: "deadline" | "cancelled" | "day_28" | "fix_window_ended" | "not_accepted" | "ruled_not_to_pay" | "hold_not_confirmed";
 }
 
+type ReleaseReason = NonNullable<CreatorPost["releaseReason"]>;
+
+/** One post's review as the brand sees it (DR-FR-47): only the latest draft's facts, and only once it is shown one. */
+export interface BrandPost {
+  dealId: string;
+  deliverableId: string;
+  creatorName: string;
+  brandName: string;
+  platform: Platform;
+  creatorTimeZone: string;
+  hold: { amount: string; reference: string; deadline: string };
+  review:
+    | { state: "nothing_yet" | "asked" }
+    | { state: "window"; endsAt: string }
+    | { state: "objected"; objectedAt: string }
+    | { state: "approved"; approvedAt: string; by: "brand" | "window" }
+    | { state: "released"; releasedAt: string; reason: ReleaseReason };
+  draft?: {
+    url: string;
+    urlExpiresAt: string;
+    durationSec: number;
+    items: {
+      id: string;
+      name: string;
+      kind: ChecklistItem["kind"];
+      checkedBy: CheckedBy;
+      status: BrandStatus;
+      briefLine?: BriefLine;
+      evidence?: { label: string; text: string; startSec: number; endSec: number };
+      /** The brand's own note on an item it asked to be fixed or objected to. */
+      note?: string;
+    }[];
+  };
+}
+
 /** What the deals list needs of a post: its state, and whether its next step is the creator's (DR-FR-28). */
 export interface PostSummary {
   state: PostState;
@@ -105,7 +145,8 @@ export function createPosts(deps: {
   const { prisma, now, storage, money } = deps;
   const addressSeconds = deps.addressSeconds ?? 15 * 60;
 
-  const isReleased = (stage: string | undefined) => stage === "released" || stage === "closed_not_held";
+  const isReleased = holdEnded;
+  const reasonOf = (reason: string): ReleaseReason => (reason === "cleared_ruled" ? "ruled_not_to_pay" : (reason as ReleaseReason));
 
   /** The post's latest draft with a fresh address, if it has one. */
   async function draftOf(draftId: string | null | undefined): Promise<PostDraft | undefined> {
@@ -169,7 +210,9 @@ export function createPosts(deps: {
           ...(found.evidence ? { evidence: found.evidence as unknown as PostItem["evidence"] } : {}),
           checkedBy: found.checkedBy as CheckedBy,
           askable: askable(review, item),
+          ...(item.ask === "waiting" && found.askedAt ? { askedAt: found.askedAt.toISOString() } : {}),
           ...(item.ask === "declined" ? { declined: true } : {}),
+          ...(found.brandNote ? { brandNote: found.brandNote } : {}),
           ...(found.hint ? { fixHint: found.hint } : {}),
         };
       });
@@ -222,7 +265,82 @@ export function createPosts(deps: {
             }
           : {}),
         ...(released && release
-          ? { releasedAt: release.at.toISOString(), releaseReason: release.reason === "cleared_ruled" ? ("ruled_not_to_pay" as const) : release.reason }
+          ? { releasedAt: release.at.toISOString(), releaseReason: reasonOf(release.reason) }
+          : {}),
+      };
+    },
+
+    /**
+     * One post's review, for a caller already known to hold a brand's session for the deal (DR-FR-47).
+     * The post must be in that deal. The draft is included only while the brand is shown it: from the
+     * first ask or the window's start of the latest run, and not once the hold is released (DR-FR-48).
+     * It never carries a suggestion, an earlier status, the run number or the PayPal email (DR-BR-13).
+     */
+    async brandPost(dealId: string, deliverableId: string): Promise<BrandPost | { refused: "not_found" | "not_held" }> {
+      const post = await prisma.deliverable.findFirst({
+        where: { id: deliverableId, dealId },
+        include: { deal: { include: { creator: { select: { name: true } } } } },
+      });
+      if (!post) return { refused: "not_found" };
+      // The plain money view: it holds no PayPal email at all.
+      const view = await money?.view(deliverableId);
+      if (!view || view.hold.state !== "held") return { refused: "not_held" };
+      const { deal } = post;
+      const version = await prisma.termsVersion.findFirst({ where: { dealId, number: deal.agreedVersion ?? -1 } });
+      if (!version) return { refused: "not_held" };
+      const checklist = (version.terms as unknown as TermsSnapshot).items.filter((item) => item.deliverableId === deliverableId);
+      const brief = (deal.briefLines ?? []) as unknown as BriefLine[];
+
+      const released = isReleased(view.stage);
+      const loaded = await loadReview(prisma, deliverableId, released);
+      const review = loaded?.state ?? { ...newReview(), released };
+      const results = new Map((loaded?.items ?? []).map((item) => [item.itemId, item]));
+      const where = brandReview(review);
+      const shown = review.shown && review.phase === "done" && !released ? await draftOf(loaded?.row.draftId) : undefined;
+
+      return {
+        dealId,
+        deliverableId,
+        creatorName: deal.creator.name,
+        brandName: deal.brandName,
+        platform: post.platform as Platform,
+        creatorTimeZone: deal.timezone ?? "UTC",
+        hold: { amount: view.amounts.amount, reference: view.hold.reference, deadline: view.hold.deadlineAt.toISOString() },
+        review:
+          where.state === "released"
+            ? { state: "released", releasedAt: (view.release?.at ?? now()).toISOString(), reason: reasonOf(view.release?.reason ?? "cancelled") }
+            : where.state === "approved"
+              ? { state: "approved", approvedAt: where.approvedAt.toISOString(), by: where.by }
+              : where.state === "objected"
+                ? { state: "objected", objectedAt: where.objectedAt.toISOString() }
+                : where.state === "window"
+                  ? { state: "window", endsAt: where.endsAt.toISOString() }
+                  : { state: where.state },
+        ...(shown
+          ? {
+              draft: {
+                url: shown.url,
+                urlExpiresAt: shown.urlExpiresAt,
+                durationSec: shown.durationSec,
+                items: checklist.flatMap((agreed) => {
+                  const found = results.get(agreed.id);
+                  const item = review.items.find((each) => each.id === agreed.id);
+                  if (!found || !item) return [];
+                  return [
+                    {
+                      id: agreed.id,
+                      name: agreed.name,
+                      kind: agreed.kind as ChecklistItem["kind"],
+                      checkedBy: found.checkedBy as CheckedBy,
+                      status: brandStatus(item),
+                      ...(agreed.briefLine === undefined ? {} : { briefLine: brief.find((line) => line.number === agreed.briefLine) ?? { number: agreed.briefLine, text: "" } }),
+                      ...(found.evidence ? { evidence: found.evidence as unknown as { label: string; text: string; startSec: number; endSec: number } } : {}),
+                      ...(found.brandNote ? { note: found.brandNote } : {}),
+                    },
+                  ];
+                }),
+              },
+            }
           : {}),
       };
     },

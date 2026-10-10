@@ -11,6 +11,7 @@ import { runDueJobs, type JobHandlers } from "./jobs/jobs";
 import { startWorker } from "./jobs/worker";
 import { createMoney } from "./money/money";
 import { recordedPosts } from "./money/published-post";
+import { createReview } from "./review/review";
 import { createSandboxPayPal } from "./paypal/sandbox-paypal";
 import { localSecrets } from "./secrets/secrets";
 
@@ -47,11 +48,15 @@ if (!money) {
   console.warn("PayPal is not configured, so no hold can be made and the money jobs do nothing. See backend/.env.example.");
 }
 
+// The review of drafts: asks, objections, approval and the review window's timer.
+const review = createReview({ prisma, now, money });
+
 const app = createApp({
   prisma,
   accounts,
   deals,
   money,
+  review,
   appOrigin: env.appOrigin,
   apiOrigin: env.apiOrigin,
   google: env.google && createGoogle({ ...env.google, log }),
@@ -63,7 +68,7 @@ const app = createApp({
 
 // Timers and follow-ups: reading briefs, deleting demo accounts, and the money path's deadlines and
 // unanswered PayPal calls.
-const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers };
+const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers };
 const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now() }) });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.once(signal, async () => {
