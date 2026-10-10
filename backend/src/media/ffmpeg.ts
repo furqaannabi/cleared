@@ -6,15 +6,19 @@
  * playlist could make them fetch other addresses or read local files. They are started with their
  * arguments as a list, never through a shell, and are stopped if they run too long.
  *
- * Not yet proven against real ffmpeg: it is not installed where this was written.
+ * Proven against real ffprobe and ffmpeg on local files: `pnpm test:ffmpeg`. Reading a file over https
+ * from the drafts bucket is proven when a bucket exists.
  */
 import type { Media } from "./port";
 
 /** Runs one of the two programs with these arguments, and answers with how it ended and what it printed. */
 export type Runner = (program: "ffprobe" | "ffmpeg", args: string[]) => Promise<{ code: number; stdout: Uint8Array }>;
 
-/** Read as MP4 or MOV, whatever the file claims to be, and over https and nothing else. */
-const SAFE_INPUT = ["-f", "mov", "-protocol_whitelist", "https,tls,tcp"];
+/** How a file may be reached: over https and nothing else. */
+const HTTPS_ONLY = "https,tls,tcp";
+
+/** Read as MP4 or MOV, whatever the file claims to be, and only by the ways allowed. */
+const safeInput = (protocols: string) => ["-f", "mov", "-protocol_whitelist", protocols];
 
 const ascii = (bytes: Uint8Array, from: number, to: number) => String.fromCharCode(...bytes.slice(from, to));
 
@@ -58,9 +62,18 @@ async function firstBytes(address: string): Promise<Uint8Array> {
   return new Uint8Array(await response.arrayBuffer()).slice(0, 16);
 }
 
-export function createFfmpegMedia(config: { run?: Runner; head?: (address: string) => Promise<Uint8Array>; timeoutMs?: number } = {}): Media {
+export function createFfmpegMedia(
+  config: {
+    run?: Runner;
+    head?: (address: string) => Promise<Uint8Array>;
+    timeoutMs?: number;
+    /** The ways a file may be reached. Only the check run by hand on local files changes this from https. */
+    protocols?: string;
+  } = {},
+): Media {
   const run = config.run ?? spawn(config.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   const head = config.head ?? firstBytes;
+  const SAFE_INPUT = safeInput(config.protocols ?? HTTPS_ONLY);
 
   return {
     async probe(address) {
