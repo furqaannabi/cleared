@@ -9,4 +9,6 @@ export interface Media {
    * a video at all, or has no video in it.
    */
   probe(address: string): Promise<{ format: "mp4" | "mov" | "other"; durationSec: number } | "unreadable">;
+  /** Still frames cut from the file at these moments, in seconds, one image for each. For the second look (DR-FR-19). */
+  frames(address: string, timesSec: number[]): Promise<Uint8Array[]>;
 }

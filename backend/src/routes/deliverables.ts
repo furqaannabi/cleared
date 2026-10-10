@@ -72,4 +72,27 @@ export function registerDeliverableRoutes(app: OpenAPIHono<AppEnv>, deps: { sess
       }
     },
   );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deliverables/{deliverableId}/check/retry",
+      summary: "Start the same draft's check again, after it failed on Cleared's side (DR-FR-23)",
+      middleware: [creator] as const,
+      request: { params: z.object({ deliverableId: z.string().min(1).max(64) }) },
+      responses: {
+        200: json(DraftAcceptedSchema, "The check was started again"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        404: json(ErrorSchema, "No such post, or it is not this creator's"),
+        409: json(ErrorSchema, "There is no failed check to start again, or the post is no longer held"),
+        503: json(ErrorSchema, "This service is not set up to store drafts"),
+      },
+    }),
+    async (c) => {
+      if (!drafts) return fail(c, 503, "not_set_up");
+      const started = await drafts.retryCheck(c.get("creatorId"), c.req.valid("param").deliverableId);
+      if (!("refused" in started)) return c.json(started, 200);
+      return started.refused === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, started.refused);
+    },
+  );
 }

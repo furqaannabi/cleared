@@ -16,6 +16,7 @@ import { createMoney } from "../src/money/money";
 import { recordedPosts } from "../src/money/published-post";
 import { createSessions } from "../src/sessions/sessions";
 import { browserFor, type Browser } from "./browser";
+import { FakeJudge, FakeSpeech, FakeVideoModel } from "./fake-checks";
 import { FakeMedia } from "./fake-media";
 import { FakePayPal } from "./fake-paypal";
 import { FakeStorage } from "./fake-storage";
@@ -25,6 +26,7 @@ const at = (iso: string) => new Date(iso);
 
 /** Empties every table a deal touches. */
 export async function resetDatabase() {
+  await prisma.checkItem.deleteMany();
   await prisma.draftUsage.deleteMany();
   await prisma.draftCheck.deleteMany();
   await prisma.draft.deleteMany();
@@ -70,10 +72,24 @@ export function heldWorld(options: { drafts?: Partial<DraftSettings> } = {}) {
   const paypal = new FakePayPal();
   const storage = new FakeStorage();
   const media = new FakeMedia();
+  const speech = new FakeSpeech();
+  const judge = new FakeJudge();
+  const videoModel = new FakeVideoModel();
+  /** What the service logged, to check nothing from a video is ever in it. */
+  const logged: unknown[] = [];
   const money = createMoney({ prisma, paypal, posts: recordedPosts(prisma), now: clock });
   const deals = createDeals({ prisma, now: clock, model: { read: async () => checklist } });
   const accounts = createAccounts({ prisma, now: clock });
-  const drafts = createDrafts({ prisma, now: clock, storage, media, money, settings: { ...defaultDraftSettings, ...options.drafts } });
+  const drafts = createDrafts({
+    prisma,
+    now: clock,
+    storage,
+    media,
+    money,
+    checks: { speech, judge, videoModel },
+    settings: { ...defaultDraftSettings, ...options.drafts },
+    log: (...parts) => void logged.push(parts),
+  });
   const app = createApp({
     prisma,
     appOrigin: APP,
@@ -138,11 +154,17 @@ export function heldWorld(options: { drafts?: Partial<DraftSettings> } = {}) {
     return { sam, maya, deal: read, posts, post: posts[0]! };
   }
 
+  const runJobs = () => runDueJobs(prisma, { ...deals.handlers, ...money.handlers, ...drafts.handlers }, { now, log: () => {} });
+
   return {
     app,
     paypal,
     storage,
     media,
+    speech,
+    judge,
+    videoModel,
+    logged,
     money,
     creator,
     demo,
@@ -152,7 +174,20 @@ export function heldWorld(options: { drafts?: Partial<DraftSettings> } = {}) {
     /** One creator, one brand and one held post: the usual start of a draft check. */
     heldPost: async (deal: { platforms?: string[] } = {}) => agreedDeal(await creator(), deal),
     /** Runs every job that is due, as the service's worker would. */
-    runJobs: () => runDueJobs(prisma, { ...deals.handlers, ...money.handlers, ...drafts.handlers }, { now, log: () => {} }),
+    runJobs,
+    /**
+     * Lets every running check finish, as time passing would: the worker runs, a quarter of a minute
+     * goes by, and so on until no check is waiting. The clock ends up a few minutes later at most.
+     */
+    async finishChecks() {
+      for (let pass = 0; pass < 40; pass++) {
+        await runJobs();
+        if ((await prisma.job.count({ where: { name: "check_draft", status: "pending" } })) === 0) return;
+        now = new Date(now.getTime() + 15_000);
+      }
+      throw new Error("A check was still running after ten minutes");
+    },
+    now: () => now,
     timeIs: (iso: string) => {
       now = at(iso);
     },

@@ -12,12 +12,6 @@ const video = (bytes = 2_000) => ({ bytes: new Uint8Array(bytes).fill(7) });
 const sendDraft = (browser: Browser, post: string, file = video(), name: string | null = "glow-draft.mp4") =>
   browser.send("POST", `/deliverables/${post}/draft${name === null ? "" : `?fileName=${encodeURIComponent(name)}`}`, { file });
 const check = (post: string) => prisma.draftCheck.findUnique({ where: { deliverableId: post } });
-/**
- * Stands in for a check finishing, until the check itself is built: the post is no longer checking.
- * Only the phase is touched; nothing else about the post is made up.
- */
-const checkFinished = (post: string, run = 1) => prisma.draftCheck.update({ where: { deliverableId: post }, data: { phase: "done", run } });
-
 describe("DR-FR-01, DR-FR-02 sending a draft", () => {
   test("the creator sends a video for a held post: it is stored, and its check is started as a job", async () => {
     const world = heldWorld();
@@ -194,8 +188,9 @@ describe("DR-FR-03, DR-FR-04 the file itself", () => {
     const world = heldWorld();
     const { sam, post } = await world.heldPost();
     await sendDraft(sam, post);
-    await checkFinished(post, 1);
+    await world.finishChecks();
     const before = await check(post);
+    expect(before).toMatchObject({ phase: "done", run: 1 });
     world.media.file = "unreadable";
 
     expect((await sendDraft(sam, post, video(), "broken.mp4")).status).toBe(422);
@@ -225,16 +220,17 @@ describe("DR-FR-06 to DR-FR-09 limits on drafts", () => {
   test("a post can be checked 10 times; the eleventh draft is refused and nothing of it is read", async () => {
     const world = heldWorld();
     const { sam, post } = await world.heldPost();
-    await sendDraft(sam, post);
-    await checkFinished(post, 10);
+    for (let run = 1; run <= 10; run++) {
+      expect((await sendDraft(sam, post)).status).toBe(200);
+      await world.finishChecks();
+    }
+    expect(await check(post)).toMatchObject({ phase: "done", run: 10 });
 
     const response = await sendDraft(sam, post);
 
     expect(response.status).toBe(429);
     expect(await response.json()).toEqual({ error: { code: "draft_limit", field: "post" } });
-    expect(stored(world)).toBe(1);
-    await checkFinished(post, 9);
-    expect((await sendDraft(sam, post)).status).toBe(200);
+    expect(stored(world)).toBe(10);
   });
 
   test("across everyone, the minutes checked in a day are capped; the answer says when the limit lifts", async () => {
@@ -291,9 +287,9 @@ describe("DR-FR-06 to DR-FR-09 limits on drafts", () => {
   test("a demo account can have 3 drafts checked in total; the fourth is refused before it is stored", async () => {
     const world = heldWorld();
     const { sam, post } = await world.agreedDeal(await world.demo());
-    for (const run of [1, 2, 3]) {
+    for (let draft = 1; draft <= 3; draft++) {
       expect((await sendDraft(sam, post)).status).toBe(200);
-      await checkFinished(post, run);
+      await world.finishChecks();
     }
 
     const response = await sendDraft(sam, post);

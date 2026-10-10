@@ -405,6 +405,38 @@ model DraftCheck {
   shown          Boolean   @default(false)
   /// The last file that could not be checked because of the file itself, until a draft is accepted (DR-FR-03).
   fileFailure    Json?
+  /// Where a running check has got to: reading, said, shown or confirming (DR-FR-10).
+  stage          String?
+  /// How many times the running check has failed on Cleared's side. It is tried again a few times (DR-FR-23).
+  failures       Int       @default(0)
+  /// The reading of the video that Data Automation is doing, or has done, for the running check.
+  speechJobId    String?
+}
+
+// One checklist item's result in a post's latest finished run, with the creator's ask about it and the
+// brand's answer (DR-FR-21, DR-FR-30 to DR-FR-33). Evidence belongs to its run and is replaced with it.
+model CheckItem {
+  deliverableId String
+  /// The checklist item's id, as in the version of the terms the brand agreed to.
+  itemId        String
+  position      Int
+  /// passed, fix_needed, unsure or at_live_check.
+  result        String
+  /// exact_match, ai_timestamp, from_timestamps, published_post or platform_record.
+  checkedBy     String
+  /// A label, the words or description, and the start and end in seconds. Untrusted text from the video or a model.
+  evidence      Json?
+  /// One plain sentence saying what to change. Never shown to the brand (DR-BR-13).
+  hint          String?
+  /// none, waiting, accepted or declined.
+  ask           String  @default("none")
+  objected      Boolean @default(false)
+  /// How it read to its creator in the run before, and at the moment a newer draft replaced it.
+  previous      String?
+  whenReplaced  String?
+
+  @@id([deliverableId, itemId])
+  @@index([deliverableId, position])
 }
 
 // Video sent for analysis, kept to enforce the limits on drafts (DR-FR-06 to DR-FR-08). It is not
