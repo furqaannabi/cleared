@@ -63,11 +63,20 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-08 | [The first capture re-confirms a hold whose guarantee has ended](2026-10-08-first-capture-re-confirms-a-lapsed-hold.md) | Accepted |
 | 2026-10-08 | [A payout PayPal will not send is retried and put in front of Cleared](2026-10-08-a-payout-paypal-will-not-send.md) | Accepted |
 | 2026-10-08 | [A deliverable's money state is stored as one document](2026-10-08-money-state-as-one-document.md) | Accepted |
-| 2026-10-08 | [A brand objection is settled by the creator and the brand](2026-10-08-objection-settled-by-the-two-sides.md) | Accepted |
-| 2026-10-08 | [The brand gets a fresh link each time a draft needs it](2026-10-08-fresh-brand-link-per-review.md) | Accepted |
+| 2026-10-08 | [A brand objection is settled by the creator and the brand](2026-10-08-objection-settled-by-the-two-sides.md) | Accepted; accepted by Furqaan, 9 Oct |
+| 2026-10-08 | [The brand gets a fresh link each time a draft needs it](2026-10-08-fresh-brand-link-per-review.md) | Accepted; accepted by Furqaan, 9 Oct |
 | 2026-10-08 | [Creators sign in with Google through the backend, which sets an HttpOnly session](2026-10-08-creator-sign-in-through-the-backend.md) | Superseded in part by [2026-10-09-creators-sign-in-with-google-directly.md](2026-10-09-creators-sign-in-with-google-directly.md): no Cognito |
 | 2026-10-09 | [Creators sign in with Google directly, with no Cognito](2026-10-09-creators-sign-in-with-google-directly.md) | Accepted |
 | 2026-10-09 | [The app and the API share one domain, on two subdomains](2026-10-09-app-and-api-on-one-domain.md) | Accepted |
 | 2026-10-09 | [The API contract is an OpenAPI document generated from the backend's Zod schemas](2026-10-09-api-contract-generated-from-zod.md) | Accepted |
 | 2026-10-09 | [Briefs are read by Claude Opus 5.5 on Bedrock, in one call, with limits](2026-10-09-briefs-read-by-claude-opus-on-bedrock.md) | Accepted |
 | 2026-10-09 | [An invite link is worked out again each time, never stored](2026-10-09-an-invite-link-is-worked-out-again.md) | Accepted |
+| 2026-10-09 | [Drafts are uploaded through the API to a private S3 bucket](2026-10-09-drafts-uploaded-through-the-api-to-s3.md) | Accepted |
+| 2026-10-09 | [The limits on drafts](2026-10-09-limits-on-drafts.md) | Accepted |
+| 2026-10-09 | [Amazon Nova judges what is shown](2026-10-09-amazon-nova-judges-what-is-shown.md) | Accepted |
+| 2026-10-09 | [How an AI pass is verified before it counts](2026-10-09-how-an-ai-pass-is-verified.md) | Accepted |
+| 2026-10-09 | [A broken check fails the whole run](2026-10-09-a-broken-check-fails-the-run.md) | Accepted |
+| 2026-10-09 | [No email yet: the creator sends the review link](2026-10-09-no-email-yet-the-creator-sends-the-review-link.md) | Accepted |
+| 2026-10-09 | [The unlisted YouTube video is asked for at publish, not at the draft check](2026-10-09-the-unlisted-video-is-asked-for-at-publish.md) | Accepted |
+| 2026-10-09 | [Who can watch a draft, and how long it is kept](2026-10-09-who-can-watch-a-draft-and-how-long-it-is-kept.md) | Accepted |
+| 2026-10-09 | [Test clips are recorded by the team](2026-10-09-test-clips-are-recorded-by-the-team.md) | Accepted |

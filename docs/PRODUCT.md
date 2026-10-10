@@ -169,7 +169,7 @@ The frontend is hosted on Vercel. Everything behind it uses AWS services or the 
 | Holding, capturing and paying out | PayPal Orders, Payments, Payouts and Webhooks, in the sandbox |
 | Reading the brief and judging each item | Claude on Amazon Bedrock |
 | What was said, on-screen text and logos, all timestamped | Amazon Bedrock Data Automation |
-| What is shown, such as the product in use | A video model on Amazon Bedrock: TwelveLabs Pegasus or Amazon Nova, chosen after a test |
+| What is shown, such as the product in use | Amazon Nova on Amazon Bedrock, with each pass confirmed by a second look ([decision](decisions/2026-10-09-amazon-nova-judges-what-is-shown.md)) |
 | Frontend | Next.js on Vercel |
 | API | Hono on Bun, described with an OpenAPI document generated from its own schemas ([decision](decisions/2026-10-09-api-contract-generated-from-zod.md)); on its own subdomain beside the app's ([decision](decisions/2026-10-09-app-and-api-on-one-domain.md)) |
 | Pipeline and timers | A job queue kept in Postgres, run by the same backend service |
@@ -229,7 +229,6 @@ The repo is [github.com/furqaannabi/cleared](https://github.com/furqaannabi/clea
 
 ## Still open
 
-- **Which Bedrock video model.** To be chosen after testing both on a real sponsored clip.
 - **Team.** The build is planned for two people. Who the second person is, and what they take, is not settled.
 - **First spec.** Not yet written. It should turn [How a deal runs](#how-a-deal-runs) into numbered requirements before any code.
 

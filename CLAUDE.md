@@ -61,7 +61,7 @@ Chosen in `docs/PRODUCT.md`:
 | Holding, capturing and paying out | PayPal Orders, Payments, Payouts and Webhooks (sandbox, US accounts) |
 | Reading the brief, judging each item | Claude on Amazon Bedrock. Briefs are read by Claude Opus 5.5 in one call, with limits per account and overall (see `docs/decisions/2026-10-09-briefs-read-by-claude-opus-on-bedrock.md`) |
 | What was said, on-screen text and logos, timestamped | Amazon Bedrock Data Automation |
-| What is shown, such as the product in use | A video model on Amazon Bedrock: TwelveLabs Pegasus or Amazon Nova (open) |
+| What is shown, such as the product in use | Amazon Nova on Amazon Bedrock (see `docs/decisions/2026-10-09-amazon-nova-judges-what-is-shown.md`). Every AI pass is verified by code before it counts (see `docs/decisions/2026-10-09-how-an-ai-pass-is-verified.md`) |
 | Frontend | Next.js on Vercel |
 | API | Hono on Bun, in TypeScript (see `docs/decisions/2026-10-07-backend-hono-bun-prisma-postgres.md`). The app and the API are on one domain as two subdomains (see `docs/decisions/2026-10-09-app-and-api-on-one-domain.md`; William to agree) |
 | API contract | An OpenAPI document generated from the backend's Zod schemas with `@hono/zod-openapi`, written to `contract/` with TypeScript types (see `docs/decisions/2026-10-09-api-contract-generated-from-zod.md`; William to agree) |
@@ -143,7 +143,7 @@ From `docs/PRODUCT.md`. Do not re-open without explicit human instruction.
 | Instagram paid-partnership label | Always a manual check in v1 |
 | Instagram accounts | Professional accounts only. A Reel with licensed music cannot be fetched, so it goes to manual approval |
 
-**Still open (do not assume):** which Bedrock video model; and the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`.
+**Still open (do not assume):** the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`; and everything in `docs/specs/draft-check-and-review-frd.md` until it is signed.
 
 ---
 
