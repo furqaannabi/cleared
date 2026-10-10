@@ -482,3 +482,45 @@ model PostVideo {
   seenPublicAt  DateTime?
 }
 
+// The live check of a post (publish to paid spec PT-FR-11 to PT-FR-17): whether one is waiting to run,
+// why the last try could give the money path no answer, and what the last finished check found. A new
+// check replaces the last results only when it finishes (PT-FR-15, PT-FR-16).
+model LiveCheck {
+  deliverableId String    @id
+  /// A check is waiting to run or running.
+  running       Boolean   @default(false)
+  /// Why the last try gave no answer: reconnect_youtube or video_not_found. Null when it gave one or is still trying.
+  blockedBy     String?
+  /// What the last finished check answered: passed, cannot_decide, failed_fixable or failed_not_fixable.
+  answer        String?
+  /// not_your_channel or not_the_approved_file, when the post cannot be fixed.
+  notFixable    String?
+  /// What could not be decided, of: file_record, paid_promotion, written_item.
+  undecided     Json?
+  /// When the last finished check ran (PT-FR-14).
+  ranAt         DateTime?
+  /// YouTube's own date for the video. Kept as evidence; it decides nothing (PT-FR-10).
+  videoDate     DateTime?
+  /// How many checks have finished.
+  runs          Int       @default(0)
+}
+
+// One item's result at the last finished live check, with evidence from the live post (PT-FR-12).
+model LiveCheckItem {
+  deliverableId String
+  /// The checklist item's id, as in the version of the terms the brand agreed to.
+  itemId        String
+  position      Int
+  /// passed, fix_needed or unsure.
+  result        String
+  /// published_post, platform_record or ai_timestamp.
+  checkedBy     String
+  /// A label and the words found. Untrusted text from the video's description (PT-BR-06).
+  evidence      Json?
+  /// One plain sentence saying what to change. Never shown to the brand.
+  hint          String?
+
+  @@id([deliverableId, itemId])
+  @@index([deliverableId, position])
+}
+

@@ -358,4 +358,65 @@ export function registerDeliverableRoutes(
       return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
     },
   );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deliverables/{deliverableId}/posted",
+      summary: "\"I've posted it\": the recorded video is read, and if it is public the live check starts (PT-FR-08)",
+      middleware: [creator] as const,
+      request: postId,
+      responses: {
+        200: json(CreatorPostSchema, "The post: it was seen public, and its live check has started"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        404: json(ErrorSchema, "No such post, or it is not this creator's"),
+        409: json(ErrorSchema, "Nothing changed: the video is not public yet, no video was given for a go-ahead, the video is gone, YouTube must be reconnected, or the money path refused, each with its own code"),
+        503: json(ErrorSchema, "YouTube could not be read, or this service is not set up to read it. Try again"),
+      },
+    }),
+    async (c) => {
+      if (!publishing) return fail(c, 503, "not_set_up");
+      const { deliverableId } = c.req.valid("param");
+      const posted = await publishing.posted(c.get("creatorId"), deliverableId);
+      if ("refused" in posted) {
+        switch (posted.refused) {
+          case "not_found":
+            return fail(c, 404, "not_found");
+          case "youtube_unavailable":
+            return fail(c, 503, "youtube_unavailable");
+          case "money":
+            return fail(c, 409, posted.reason);
+          default:
+            return fail(c, 409, posted.refused);
+        }
+      }
+      const post = await posts.creatorPost(c.get("creatorId"), deliverableId);
+      return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deliverables/{deliverableId}/live-check/again",
+      summary: "Have a live post that failed on something fixable checked again, while there is time to fix it (PT-FR-15)",
+      middleware: [creator] as const,
+      request: postId,
+      responses: {
+        200: json(CreatorPostSchema, "The post: a fresh live check has started, and the last results stay until it finishes"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        404: json(ErrorSchema, "No such post, or it is not this creator's"),
+        409: json(ErrorSchema, "The post is not waiting for its creator to fix it, or the time to fix it is over"),
+        503: json(ErrorSchema, "This service is not set up to read YouTube"),
+      },
+    }),
+    async (c) => {
+      if (!publishing) return fail(c, 503, "not_set_up");
+      const { deliverableId } = c.req.valid("param");
+      const again = await publishing.checkAgain(c.get("creatorId"), deliverableId);
+      if ("refused" in again) return again.refused === "not_found" ? fail(c, 404, "not_found") : fail(c, 409, again.refused);
+      const post = await posts.creatorPost(c.get("creatorId"), deliverableId);
+      return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
+    },
+  );
 }

@@ -36,7 +36,13 @@ const DAY_MS = 24 * HOUR_MS;
 
 export type Accounts = ReturnType<typeof createAccounts>;
 
-export function createAccounts(deps: { prisma: PrismaClient; now: () => Date; settings?: AccountSettings }) {
+export function createAccounts(deps: {
+  prisma: PrismaClient;
+  now: () => Date;
+  settings?: AccountSettings;
+  /** Told once a creator's YouTube channel is stored, so that what was waiting on it can carry on (PT-FR-17). */
+  onYouTubeConnected?: (creatorId: string) => Promise<void>;
+}) {
   const { prisma, now } = deps;
   const settings = deps.settings ?? defaultAccountSettings;
 
@@ -109,6 +115,7 @@ export function createAccounts(deps: { prisma: PrismaClient; now: () => Date; se
         create: { creatorId, platform: "youtube", ...account },
         update: account,
       });
+      await deps.onYouTubeConnected?.(creatorId);
     },
 
     /** Records that the creator has seen the welcome page (DS-FR-09). */

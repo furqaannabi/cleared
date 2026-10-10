@@ -36,6 +36,11 @@ export class FakeYouTube implements YouTube {
     return video;
   }
 
+  /** Deletes a video, as its creator could at any time. */
+  remove(videoId: string): void {
+    this.videos.delete(videoId);
+  }
+
   /** Changes a video, as its creator would in YouTube Studio. */
   edit(videoId: string, change: Partial<VideoRecord>): void {
     const video = this.videos.get(videoId);

@@ -13,8 +13,8 @@ import { createDrafts, defaultDraftSettings, type DraftSettings } from "../src/d
 import { localLinkKeys } from "../src/invites/link-keys";
 import { runDueJobs } from "../src/jobs/jobs";
 import { createMoney } from "../src/money/money";
+import { createPublishedPosts } from "../src/publish/published-posts";
 import { createPublishing } from "../src/publish/publishing";
-import { recordedPosts } from "../src/money/published-post";
 import { createReviewLinks } from "../src/review/links";
 import { createReview } from "../src/review/review";
 import { localSecrets } from "../src/secrets/secrets";
@@ -31,6 +31,8 @@ const at = (iso: string) => new Date(iso);
 
 /** Empties every table a deal touches. */
 export async function resetDatabase() {
+  await prisma.liveCheckItem.deleteMany();
+  await prisma.liveCheck.deleteMany();
   await prisma.postVideo.deleteMany();
   await prisma.checkItem.deleteMany();
   await prisma.draftUsage.deleteMany();
@@ -77,6 +79,8 @@ export function heldWorld(
     drafts?: Partial<DraftSettings>;
     /** An item of the creator's own, added to every deal's first post. */
     ownItem?: string;
+    /** What kind that item is. Left alone, something shown in the video. */
+    ownItemKind?: "shown" | "written" | "disclosure" | "publication";
     /** Makes telling the money path that a draft is cleared fail, as a database error would. */
     clearingFails?: boolean;
   } = {},
@@ -93,9 +97,8 @@ export function heldWorld(
   const secrets = localSecrets(Buffer.alloc(32, 2).toString("base64"));
   /** What the service logged, to check nothing from a video is ever in it. */
   const logged: unknown[] = [];
-  const money = createMoney({ prisma, paypal, posts: recordedPosts(prisma), now: clock });
+  const money = createMoney({ prisma, paypal, posts: createPublishedPosts({ prisma, now: clock, youtube, secrets }), now: clock });
   const deals = createDeals({ prisma, now: clock, model: { read: async () => checklist } });
-  const accounts = createAccounts({ prisma, now: clock });
   const linkKeys = localLinkKeys(Buffer.alloc(32, 1).toString("base64"));
   const reviewLinks = createReviewLinks({ prisma, now: clock, appOrigin: APP, linkKeys, money });
   const drafts = createDrafts({
@@ -122,7 +125,8 @@ export function heldWorld(
         }
       : money,
   });
-  const publishing = createPublishing({ prisma, now: clock, youtube, secrets, money });
+  const publishing = createPublishing({ prisma, now: clock, youtube, secrets, money, judge, log: (...parts) => void logged.push(parts) });
+  const accounts = createAccounts({ prisma, now: clock, onYouTubeConnected: publishing.youtubeConnected });
   const app = createApp({
     prisma,
     appOrigin: APP,
@@ -151,6 +155,13 @@ export function heldWorld(
     return browser;
   }
 
+  /** The creator connects YouTube again, as the route does once Google has sent them back: the same channel, with access that works. */
+  async function reconnectYouTube(name: string) {
+    const first = name.split(" ")[0]!.toLowerCase();
+    const { creatorId } = await accounts.signInWithGoogle({ googleId: `google-${name}`, name, email: `${first}@example.com` });
+    await accounts.connectYouTube(creatorId, { externalId: `channel-${first}`, name, refreshTokenEncrypted: await secrets.encrypt(`refresh-${first}`) });
+  }
+
   /** A browser signed in to a fresh demo account, as "Try the demo account" does. */
   async function demo() {
     const browser = browserFor(app, APP);
@@ -170,7 +181,7 @@ export function heldWorld(
     await sam.send("POST", `/deals/${started.id}/brief`, { body: { text: brief.join("\n") } });
     await runDueJobs(prisma, deals.handlers, { now, log: () => {} });
     if (options.ownItem) {
-      await sam.send("POST", `/deals/${started.id}/items`, { body: { deliverableId: started.deliverables[0]!.id, name: options.ownItem, kind: "shown" } });
+      await sam.send("POST", `/deals/${started.id}/items`, { body: { deliverableId: started.deliverables[0]!.id, name: options.ownItem, kind: options.ownItemKind ?? "shown" } });
     }
     await sam.send("POST", `/deals/${started.id}/checklist/ready`);
     for (const post of started.deliverables) {
@@ -195,7 +206,7 @@ export function heldWorld(
     return { sam, maya, deal: read, posts, post: posts[0]! };
   }
 
-  const runJobs = () => runDueJobs(prisma, { ...deals.handlers, ...money.handlers, ...drafts.handlers, ...review.handlers }, { now, log: () => {} });
+  const runJobs = () => runDueJobs(prisma, { ...deals.handlers, ...money.handlers, ...drafts.handlers, ...review.handlers, ...publishing.handlers }, { now, log: () => {} });
 
   return {
     app,
@@ -209,6 +220,7 @@ export function heldWorld(
     logged,
     money,
     creator,
+    reconnectYouTube,
     demo,
     agreedDeal,
     /** A browser nobody has signed in to. */

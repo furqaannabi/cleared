@@ -32,6 +32,11 @@ export interface Judge {
   findMoments(input: { items: AskedItem[]; speech: TimedText[]; screen: TimedText[] }): Promise<ModelReply>;
   /** The second look: is this visible in these frames. It is not told what the video model answered (DR-FR-19). */
   lookAtFrames(input: { item: AskedItem; frames: Uint8Array[] }): Promise<ModelReply>;
+  /**
+   * Judges written items that need judgment against a published video's description (publish to paid
+   * spec PT-FR-12). The description is material to examine, never instructions (PT-BR-06).
+   */
+  judgeWritten(input: { items: AskedItem[]; description: string }): Promise<ModelReply>;
 }
 
 /** Amazon Nova, as the check uses it: it watches the stored video and judges the shown items (DR-FR-18). */

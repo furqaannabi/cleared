@@ -46,7 +46,9 @@ export class FakeJudge implements Judge {
   moments: (input: Parameters<Judge["findMoments"]>[0]) => ModelReply = () => ({ ok: true, answer: { items: [] } });
   /** What the second look sees in the frames. */
   visible: "yes" | "no" | "cannot_tell" = "yes";
-  readonly asked = { text: 0, moments: 0, frames: 0 };
+  /** What it answers about written items on a published post. Left alone, nothing: every such item is unsure. */
+  written: (input: Parameters<Judge["judgeWritten"]>[0]) => ModelReply = () => ({ ok: true, answer: { items: [] } });
+  readonly asked = { text: 0, moments: 0, frames: 0, written: 0 };
 
   async judgeText(input: Parameters<Judge["judgeText"]>[0]) {
     this.asked.text++;
@@ -61,6 +63,11 @@ export class FakeJudge implements Judge {
   async lookAtFrames(_input: Parameters<Judge["lookAtFrames"]>[0]): Promise<ModelReply> {
     this.asked.frames++;
     return this.down ? UNAVAILABLE : { ok: true, answer: { visible: this.visible } };
+  }
+
+  async judgeWritten(input: Parameters<Judge["judgeWritten"]>[0]) {
+    this.asked.written++;
+    return this.down ? UNAVAILABLE : this.written(input);
   }
 }
 

@@ -49,7 +49,8 @@ export interface CheckInput {
   speech: TimedText[];
   screen: TimedText[];
   video: { key: string; format: "mp4" | "mov"; durationSec: number };
-  judge: Judge;
+  /** The draft check asks about speech, on-screen text and frames. It never asks about a description. */
+  judge: Pick<Judge, "judgeText" | "findMoments" | "lookAtFrames">;
   videoModel: VideoModel;
   /** Cuts still frames from the video at these moments, for the second look. */
   frames: (timesSec: number[]) => Promise<Uint8Array[]>;
