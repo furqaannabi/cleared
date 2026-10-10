@@ -1,6 +1,6 @@
 # Money path: FRD
 
-**Status:** Signed by Furqaan (revision 1.4). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
+**Status:** Signed by Furqaan (revision 1.5). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
 
 **Surface:** Backend. Everything that happens to one deliverable's money, from the brand approving a hold to the deliverable being cleared or its hold being released: steps 3, 6 and 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and the money side of every row in [When something does not go to plan](../PRODUCT.md#when-something-does-not-go-to-plan).
 
@@ -107,7 +107,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 | MP-FR-19 | **Cleared's ruling.** A person at Cleared rules to pay, which captures the hold, or not to pay, which releases it. Until a route exists for it, the ruling is made through the sandbox script. |
 | MP-FR-20 | **Live check failed, fixable.** The creator has a fix window: until the deadline, or until 24 hours after the failure was reported if that is later. Each new result within it is handled as it comes (MP-FR-17, MP-FR-18). If the post still fails when the window ends, the hold is released. |
 | MP-FR-21 | **Live check failed, not fixable.** The brand has 48 hours to accept the post anyway, which captures the hold. Without an acceptance the hold is released. Silence does not pay here. |
-| MP-FR-22 | **The deadline.** At the deadline the module asks whether an approved post was published in time. If so, the hold is kept until the steps above finish. If not, the hold is released. When the last request for a go-ahead was not confirmed, the release reason says the brand's hold could not be confirmed. |
+| MP-FR-22 | **The deadline.** At the deadline the module asks whether an approved post is published. **A post that is published when that question is answered counts as published in time,** because the answer always comes a moment after the deadline; so does one already recorded as published. The hold is then kept until the steps above finish. If no post is published, the hold is released. When the last request for a go-ahead was not confirmed, the release reason says the brand's hold could not be confirmed. |
 | MP-FR-23 | **Day 28.** A hold that is neither captured nor released on day 28 is released, with that reason. If an approval to pay was already on record (MP-FR-25), the deliverable ends as approved, not paid. |
 
 ### Capture and payout
@@ -277,3 +277,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.3 | Signed by Furqaan | none |
 | 1.4 | Schema: a deliverable's money state is stored as one document per deliverable, with PayPal calls, the money record, PayPal events and jobs as tables; hold attempts and payouts no longer have tables of their own. Open items: what the sandbox has shown is recorded, and the two items it settled are removed from "To verify". No requirement changes | [Money state as one document](../decisions/2026-10-08-money-state-as-one-document.md) |
 | 1.4 | Signed by Furqaan | none |
+| 1.5 | MP-FR-22: a post found published when the module asks at the deadline counts as in time; the module no longer compares the moment it was seen with the deadline. Found while building the live check: a video public for days, first seen five seconds after the deadline, was released | [A post found public at the deadline is in time](../decisions/2026-10-10-a-post-found-public-at-the-deadline-is-in-time.md) |
+| 1.5 | Signed by Furqaan | none |

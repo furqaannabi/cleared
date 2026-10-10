@@ -86,4 +86,6 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-10 | [Lost YouTube access decides nothing](2026-10-10-lost-youtube-access-decides-nothing.md) | Accepted |
 | 2026-10-10 | [A ruling is a command, not a page](2026-10-10-a-ruling-is-a-command-not-a-page.md) | Accepted |
 | 2026-10-10 | [A PayPal email change reaches every deliverable where no payout has started](2026-10-10-a-paypal-email-change-reaches-where-no-payout-has-started.md) | Accepted |
-| 2026-10-10 | [Email for the brand's two notices after publishing, to an address the brand gives](2026-10-10-email-for-the-brands-two-notices-after-publishing.md) | Accepted |
+| 2026-10-10 | [Email for the brand's two notices after publishing, to an address the brand gives](2026-10-10-email-for-the-brands-two-notices-after-publishing.md) | Superseded in part by [2026-10-10-resend-sends-the-brands-two-notices.md](2026-10-10-resend-sends-the-brands-two-notices.md): Resend, not Amazon SES |
+| 2026-10-10 | [Resend sends the brand's two notices, in place of Amazon SES](2026-10-10-resend-sends-the-brands-two-notices.md) | Accepted |
+| 2026-10-10 | [A post found public when Cleared asks at the deadline is in time](2026-10-10-a-post-found-public-at-the-deadline-is-in-time.md) | Accepted |

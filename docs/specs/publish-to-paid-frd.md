@@ -1,10 +1,10 @@
 # Publish to paid: FRD
 
-**Status:** Signed by Furqaan (revision 1.0). It accepts William's cancel spec as the backend's rules and adds to what his publish and pay, confirm and hold, and cancel pages call; those additions are listed for him. Two of its decisions are product behaviour he shares (the shared demo channel, and email for the brand's notices) and are recorded as Furqaan's for him to agree.
+**Status:** Signed by Furqaan (revision 1.1). It accepts William's cancel spec as the backend's rules and adds to what his publish and pay, confirm and hold, and cancel pages call; those additions are listed for him. Two of its decisions are product behaviour he shares (the shared demo channel, and email for the brand's notices) and are recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. Steps 6 to 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and cancelling, as an API the pages William has built can call: the creator asks for the go-ahead and publishes, Cleared checks the live post against YouTube's own record of it, the brand decides what the check could not, and both sides see the hold captured and the creator paid, or released.
 
-**Scope of this build:** the routes, the data behind them, the live check, the two emails to the brand, the commands for a person at Cleared to rule, and the cancel routes. Every money step is the [money path](money-path-frd.md)'s own function, called and never re-decided here. It is built and tested locally: Postgres in Docker, the PayPal sandbox, and stand-ins for YouTube and email, with a real YouTube channel and Amazon SES for the checks run by hand. Deployment is a later spec, and so is everything under [Out of Scope](#out-of-scope).
+**Scope of this build:** the routes, the data behind them, the live check, the two emails to the brand, the commands for a person at Cleared to rule, and the cancel routes. Every money step is the [money path](money-path-frd.md)'s own function, called and never re-decided here. It is built and tested locally: Postgres in Docker, the PayPal sandbox, and stand-ins for YouTube and email, with a real YouTube channel and Resend for the checks run by hand. Deployment is a later spec, and so is everything under [Out of Scope](#out-of-scope).
 
 ## Problem Statement
 
@@ -67,15 +67,15 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 | PT-FR-03 | **Unlisted or already public.** A video that is unlisted is the usual case. One that is already public is accepted too: the creator published before asking, at their own risk, and everything that follows is the same. A private video is refused, because the brand could never see it. |
 | PT-FR-04 | **When YouTube will not say.** If YouTube returns the video but not its file's size and length, the video is accepted on its channel alone, and the live check will not be able to decide the match (PT-FR-13). |
 | PT-FR-05 | **Then the hold.** With the video accepted it is recorded for the post, and the money path is asked for the go-ahead (MP-FR-10). Its answer is passed on as it is: go until a time, wait until a time, or not confirmed. The money path's refusals are passed on with their reasons. |
-| PT-FR-06 | **Asking again.** The creator can ask again after a go-ahead ends, after "not confirmed", and once a "wait until" time has come. Until a post is published they can give a different video, which is read and matched afresh. |
+| PT-FR-06 | **Asking again.** The creator can ask again after a go-ahead ends, after "not confirmed", and once a "wait until" time has come. Until a post is published they can give a different video, which is read and matched afresh. Once it is published, a different video is refused: the one Cleared saw public is the one the live check looks at. |
 | PT-FR-07 | **Lost access.** If YouTube cannot be read for the creator at all (access revoked or expired), the go-ahead is refused with "reconnect YouTube", and nothing is asked of PayPal. |
 
 ### Posting
 
 | ID | Requirement |
 | --- | --- |
-| PT-FR-08 | **"I've posted it."** The creator says the video is public. Cleared reads the recorded video's record at once. If it is public, the money path is told a post was published (MP-FR-16) and the live check starts. If it is not public yet, the answer says so and nothing changes. |
-| PT-FR-09 | **If they forget.** When a go-ahead ends, and again at the deadline, the money path asks whether a post was published (MP-FR-15, MP-FR-22). The answer is read from YouTube: the recorded video, public. If it is, the live check starts as if the creator had said so. |
+| PT-FR-08 | **"I've posted it."** The creator says the video is public. Cleared reads the recorded video's record at once. If it is public, the money path is told a post was published (MP-FR-16) and the live check starts. If it is not public yet, the answer says so and nothing changes. Saying so again while a check is waiting or finished starts nothing new. A post with no video given for a go-ahead is refused. |
+| PT-FR-09 | **If they forget.** When a go-ahead ends, and again at the deadline, the money path asks whether a post was published (MP-FR-15, MP-FR-22). The answer is read from YouTube: the recorded video, public. If it is, the live check starts as if the creator had said so. A post found public at the deadline is in time (MP-FR-22, [decision](../decisions/2026-10-10-a-post-found-public-at-the-deadline-is-in-time.md)). If YouTube fails then, the money path's question has no answer and is asked again. |
 | PT-FR-10 | **When it was published** is the moment Cleared first saw the recorded video public. YouTube's own date is kept beside it as evidence and decides nothing. |
 
 ### The live check
@@ -86,9 +86,9 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 | PT-FR-12 | **Each item checked at the live check** gets a result with evidence from the live post. A written item that carries a link, code or hashtag is matched by code in the description, after the same normalising as on-screen text (DR-FR-13). A written item that needs judgment goes to Claude with the description, and its pass counts only if the words it quotes are in the description. A disclosure item passes when the video is marked as a paid promotion. A publication item passes when the video is public on the creator's channel. |
 | PT-FR-13 | **One answer for the money path,** the worst finding winning ([decision](../decisions/2026-10-10-which-live-check-finding-gives-which-answer.md)): **cannot be fixed** when the public video is not the approved file or not on the creator's channel; **fixable** when a required link, code or hashtag is missing from the description, or the video is not marked as a paid promotion, or a written item is judged missing; **cannot decide** when YouTube does not return the file's record or the paid-promotion mark, or a written item's judgment is unsure; **passed** otherwise. |
 | PT-FR-14 | **The answer is given to the money path** (MP-FR-17 to MP-FR-21), which alone decides what follows: capture, the creator's time to fix, or the brand's 48 hours. The items' results and the answer are recorded with when the check ran. |
-| PT-FR-15 | **Check again.** After a fixable failure the creator can have the post checked again, while the money path's fix window is open. Each check reads YouTube afresh and replaces the last results. Outside the window it is refused. |
-| PT-FR-16 | **When YouTube fails** (an error, a timeout or a quota refusal), the check gives the money path no answer. The job tries again with growing waits. Nothing is shown of a check that did not finish. |
-| PT-FR-17 | **Lost access** (PT-FR-07) gives no answer either. The creator's post says to reconnect YouTube, and the check runs when they have. The money path's deadline runs meanwhile, as it would for any post not checked in time. |
+| PT-FR-15 | **Check again.** After a fixable failure the creator can have the post checked again, while the money path's fix window is open. Each check reads YouTube afresh and replaces the last results when it finishes; until then the last results stay. Outside the window it is refused. |
+| PT-FR-16 | **When YouTube fails** (an error, a timeout or a quota refusal), the check gives the money path no answer. The job tries again with growing waits: a minute, doubling to an hour at most, for as long as the hold is held. A judge that cannot be reached for a written item is treated the same. Nothing is shown of a check that did not finish. |
+| PT-FR-17 | **Lost access** (PT-FR-07) gives no answer either. The check stops, the creator's post says to reconnect YouTube, and the check starts again when they connect it or say "I've posted it" again. The money path's deadline runs meanwhile, as it would for any post not checked in time. **A video that is gone from YouTube** is treated the same way: no answer, the check stops, and the post says the video could not be found. |
 
 ### The brand's decisions after publishing
 
@@ -165,7 +165,7 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
   - **The live check:** a pure function from the video's record and the post's live-check items to each item's result and the one answer. Written items that need judgment go through the judge port the draft check built, with their quotes verified.
   - **Publishing:** the go-ahead, "I've posted it", checking again, and the answer to the money path's question whether a post was published.
   - **After publishing:** the brand's confirm, object and accept, and the links and emails that go with them.
-  - **An email port:** send one plain-text message to one address. The real one is Amazon SES; tests use a stand-in.
+  - **An email port:** send one plain-text message to one address. The real one is Resend ([decision](../decisions/2026-10-10-resend-sends-the-brands-two-notices.md)); tests use a stand-in.
   - **Cancelling:** the four routes, the note, and closing a post that has no money yet.
   - **Rulings:** the two commands.
   - **Routes:** thin. Each checks the session, validates the body, calls a module and maps the answer.
@@ -173,8 +173,10 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 - **The views.** The creator's post and the brand's review, built for the draft check, are extended with what the money path reports. Neither decides a state.
 - **Schema.** New records for: the video recorded for a post and when it was first seen public; each live check and its items' results; the note with a cancel and the closing of a post with no money; the brand's own email; and the emails sent. Review links gain the reason they were made.
 - **Paths** follow the provisional ones in William's specs (PP, CN) wherever they exist.
-- **New library:** AWS's SES client, for the one port that sends email. It replaces hand-written signed HTTP calls. The YouTube Data API is called with plain HTTP, as Google's sign-in is.
-- **Settings,** each with the value in this spec as its default: the one-second tolerance on a video's length, the live check's retries, the sender address, and which connected channel demo accounts read.
+- **No new library.** Resend and the YouTube Data API are each called with plain HTTPS, as Google's sign-in is. Resend's API key is a server-side secret in the environment.
+- **The judge port gains one question:** written items judged against a description. The draft check does not use it.
+- **Reconnecting.** Storing a creator's YouTube connection tells the publishing module, which starts again any live check of theirs that stopped on lost access.
+- **Settings,** each with the value in this spec as its default: the one-second tolerance on a video's length, the live check's first and longest wait between tries (one minute, one hour), the sender address, and which connected channel demo accounts read.
 
 ### Requests for William
 
@@ -183,7 +185,9 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | For | Needs |
 | --- | --- |
 | Publish and pay (PP-FR-01) | Asking for the go-ahead takes the unlisted video's link: `POST /deliverables/{id}/go-ahead` with `{ videoUrl }`. New refusals, each with its own code: not a YouTube link, video not found, not on your channel, not the approved file, video is private, reconnect YouTube |
-| Publish and pay (PP-FR-06) | "I've posted it" sends no link for YouTube; the video is the one given at the go-ahead. If it is not public yet the answer says so |
+| Publish and pay (PP-FR-06) | "I've posted it" sends no link for YouTube; the video is the one given at the go-ahead. `POST /deliverables/{id}/posted` answers 409 with `not_public_yet`, `no_video`, `video_not_found` or `reconnect_youtube`, and 503 with `youtube_unavailable` |
+| Publish and pay (PP-FR-12) | `POST /deliverables/{id}/live-check/again` answers 409 `not_in_fix_window` when the post is not waiting on its creator or the time is over |
+| Publish and pay (PP-FR-01) | One more refusal at the go-ahead: `already_published`, for a different video once the post is published |
 | Publish and pay (PP-FR-09 to PP-FR-15) | The post says "reconnect YouTube" when Cleared cannot read the channel, in place of a live check result |
 | Confirm and hold (CH-FR-14) | Agreeing can carry the brand's own email for notices: `POST /brand/deals/{id}/agree` with `{ version, email? }`. The page needs the field and one line saying what it is for |
 | Publish and pay (PP-FR-14, PP-FR-13) | The brand is emailed when its confirmation or acceptance is wanted. Where no address is known, the creator's post carries the link to send, as for a draft review |
@@ -206,7 +210,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **Emails:** which address is used, in order; one email for each window; none when no address is known; nothing of the address or the link in the log.
 - **Cancelling:** each route over the fake PayPal; the money path's refusals passed on; a post with no money closed; the link dead once nothing is left.
 - **The PayPal email:** a change reaches a post with no payout started and not one whose payout is with PayPal.
-- **Against real services, by hand:** one video read from a real channel, to settle the open questions about YouTube's record; one email sent through SES; and one deal taken from the go-ahead to paid through the routes in the PayPal sandbox.
+- **Against real services, by hand:** one video read from a real channel, to settle the open questions about YouTube's record; one email sent through Resend; and one deal taken from the go-ahead to paid through the routes in the PayPal sandbox.
 
 ## Out of Scope
 
@@ -216,7 +220,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **Checking a post again after it has passed.** A creator who edits the description after being paid is not looked at.
 - **Finding the unlisted video for the creator.** They paste its link.
 - **Changing a payout that is already with PayPal** when the PayPal email changes.
-- **Deployment,** Google's verification of the app, and SES production access.
+- **Deployment,** Google's verification of the app, and a sending domain verified with Resend.
 
 ## Open items
 
@@ -232,20 +236,31 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **PT-FR-30:** a post cancelled before the brand agrees is closed in the deal's own record, as it has no money to close.
 - **The one-second tolerance** on a video's length.
 
+**Settled while building and accepted by Furqaan at sign-off of 1.1.** None was asked in the question session.
+
+- **PT-FR-17:** a video that is gone from YouTube at the live check gives the money path no answer, as lost access does. The hold then waits for the deadline rules and day 28. The other choice was to call it a fixable failure, which releases sooner.
+- **PT-FR-16:** the waits between tries: a minute, doubling to an hour, until the hold is no longer held. The spec named the setting and no number.
+- **PT-FR-06:** a different video is refused once the post is published. The go-ahead as first built would have recorded it.
+- **PT-FR-08:** saying "I've posted it" twice starts one check, and a post with no video recorded is refused.
+
+**Verified.**
+
+- The judge's question about a description, against real Bedrock through the live check itself: it passed the item whose words were there, and did not pass one the description only claimed was met.
+
 **To verify while building.**
 
 - That read-only access returns a video's file size and length to its owner. If it does not, every live check would be "cannot decide" on the match, and the rule needs another look.
 - What YouTube reports as a video's date when it is switched from unlisted to public.
 - That the paid-promotion mark is returned for the owner's own video.
 - How much of YouTube's daily quota a deal uses.
-- That SES delivers from the sender address, and what the brand's email looks like in a real inbox.
+- That Resend delivers from the sender address, its sending limits on the plan in use, and what the brand's email looks like in a real inbox.
 
 **Needs setting up by a person.**
 
 - The Google app moved from Testing to In production, before any real deal and before the demo channel is connected: in Testing every stored access dies after 7 days ([PRODUCT.md, "Risks to test first"](../PRODUCT.md#risks-to-test-first)). Reading YouTube is a sensitive scope, so until Google verifies the app it shows a warning and is capped at 100 users.
 - The Google OAuth client's redirect addresses, which are not yet accepted (deal set-up's open item).
 - The shared demo channel: made, connected once, with the sample clip uploaded and public, and its description written to meet the sample deal.
-- An SES sender: a verified address or domain. Until AWS grants production access, only verified addresses receive mail.
+- A Resend account, its API key in the environment, and a verified sending domain. Until a domain is verified, Resend's test sender delivers only to the account owner's own address.
 
 **Waiting on William.** The requests in the table above, and his agreement to the shared demo channel and to email for the brand's two notices. His [cancel spec](cancel-frd.md) is now the backend's rule too.
 
@@ -255,3 +270,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | --- | --- | --- |
 | 0.1 | First draft, from the question session with Furqaan: steps 6 to 8 and cancelling in one spec; the unlisted video given with the request for the go-ahead and matched before anything is public; a shared demo channel the team owns; the live check strict on the file and lenient on what YouTube will not say; lost YouTube access decides nothing; a ruling is a command; a PayPal email change reaches where no payout has started; email through Amazon SES for the brand's two notices after publishing, to an address the brand gives when it agrees; William's cancel spec accepted as written | [Video with the go-ahead](../decisions/2026-10-10-the-unlisted-video-is-given-with-the-go-ahead.md), [Shared demo channel](../decisions/2026-10-10-demo-accounts-read-a-shared-channel.md), [Live check answers](../decisions/2026-10-10-which-live-check-finding-gives-which-answer.md), [Lost access](../decisions/2026-10-10-lost-youtube-access-decides-nothing.md), [Rulings](../decisions/2026-10-10-a-ruling-is-a-command-not-a-page.md), [PayPal email](../decisions/2026-10-10-a-paypal-email-change-reaches-where-no-payout-has-started.md), [Email for the brand](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md) |
 | 1.0 | Signed by Furqaan, with the nine items added while drafting accepted as written | none |
+| 1.1 | Resend sends the brand's two notices in place of Amazon SES, over plain HTTPS with no new library. PT-FR-09 follows the money path's new deadline rule (MP 1.5). What building posting and the live check settled: a video gone from YouTube gives no answer (PT-FR-17), the waits between tries (PT-FR-16), a published post's video cannot be changed (PT-FR-06), one check however often the creator says it is posted (PT-FR-08), and the codes the two new routes answer with | [Resend](../decisions/2026-10-10-resend-sends-the-brands-two-notices.md), [A post found public at the deadline is in time](../decisions/2026-10-10-a-post-found-public-at-the-deadline-is-in-time.md) |
+| 1.1 | Signed by Furqaan, with the four items settled while building accepted as written | none |

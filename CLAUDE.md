@@ -72,7 +72,7 @@ Chosen in `docs/PRODUCT.md`:
 | Backend hosting | One container on Amazon ECS Fargate |
 | Sign-in | Creators sign in with Google, run by the backend directly, which sets an HttpOnly session; no Cognito; Instagram is a connection, not a sign-in; a per-visit demo account (see `docs/decisions/2026-10-09-creators-sign-in-with-google-directly.md`, which supersedes the Cognito part of `2026-10-08-creator-sign-in-through-the-backend.md`; William to agree) |
 | Files and secrets | S3, KMS |
-| Email | Amazon SES, for the brand's two notices after a post is live and nothing else; everything else is a link the creator sends (see `docs/decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md`; William to agree) |
+| Email | Resend, called over plain HTTPS, for the brand's two notices after a post is live and nothing else; everything else is a link the creator sends (see `docs/decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md` for which notices, and `docs/decisions/2026-10-10-resend-sends-the-brands-two-notices.md`, which supersedes its choice of Amazon SES; William to agree) |
 | Evidence table and brand dashboard | AG Grid and AG Studio, on `md:` and up; cards on phones (see `docs/decisions/2026-10-06-evidence-view-ag-grid.md`) |
 | PayPal coding help | APIMatic's Context Plugin for PayPal |
 | Creator accounts | Google sign-in (read-only) for YouTube; Instagram sign-in (professional accounts only) |
@@ -84,7 +84,7 @@ Chosen in `docs/PRODUCT.md`:
 | Schema validation | Zod, for every API response and request body (see `docs/decisions/2026-10-06-schema-validation-zod.md`) |
 | Frontend mocks | MSW handlers over synthetic fixtures, dev only, shared by dev, Vitest and Playwright (see `docs/decisions/2026-10-06-frontend-mocks-msw.md`) |
 
-Everything behind the frontend uses AWS or the hackathon's sponsor tools. PRODUCT.md lists the sponsor tools not used; do not add them.
+Everything behind the frontend uses AWS or the hackathon's sponsor tools, with one exception: Resend, for email. PRODUCT.md lists the sponsor tools not used; do not add them.
 
 **Not yet decided.** When one of these comes up, present 2–3 options, the human chooses, and it gets an ADR. Then fill it in here:
 
