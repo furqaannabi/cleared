@@ -951,11 +951,21 @@ describe("MP-FR-22 the deadline", () => {
     });
   });
 
-  test("a post published after the deadline does not keep the hold", () => {
-    expect(transition(readyToPublish(), deadlineDue("2026-10-24T23:10:00Z", "2026-10-24T23:15:00Z"))).toMatchObject({
+  test("a post found published when the question is answered is in time, though the answer comes a moment after the deadline", () => {
+    const before = readyToPublish();
+
+    // The job runs five seconds after the deadline, and that is when the post is first seen public.
+    expect(transition(before, deadlineDue("2026-10-24T22:59:05Z", "2026-10-24T22:59:05Z"))).toEqual({
       ok: true,
-      state: { stage: "released", release: { reason: "deadline" } },
+      state: { ...before, publishedAt: at("2026-10-24T22:59:05Z") },
+      effects: [],
     });
+  });
+
+  test("a post recorded as published a moment after the deadline, before the question was asked, keeps its hold too", () => {
+    const before = after(readyToPublish(), { type: "post_published", publishedAt: at("2026-10-24T22:59:02Z"), at: at("2026-10-24T22:59:02Z") });
+
+    expect(transition(before, deadlineDue(null, "2026-10-24T22:59:05Z"))).toEqual({ ok: true, state: before, effects: [] });
   });
 
   test("when the last go-ahead request was not confirmed, the reason says so", () => {

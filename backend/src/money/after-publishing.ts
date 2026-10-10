@@ -99,10 +99,10 @@ export function afterPublishingTransition(
       return release(state, "not_accepted", event.at);
     case "deadline_due": {
       if (state.stage !== "held" || !state.hold || event.at < state.hold.deadlineAt) return unchanged(state);
+      // A post that is published when the question is answered is in time: the answer always comes a
+      // moment after the deadline, so the moment it was seen is not compared with it (MP-FR-22).
       const publishedAt = state.publishedAt ?? event.publishedAt;
-      if (publishedAt && publishedAt <= state.hold.deadlineAt) {
-        return { ok: true, state: { ...state, publishedAt }, effects: [] };
-      }
+      if (publishedAt) return { ok: true, state: { ...state, publishedAt }, effects: [] };
       // A creator who was told not to publish did not miss the deadline by choice; the reason says so.
       return release(state, state.goAhead.status === "not_confirmed" ? "hold_not_confirmed" : "deadline", event.at);
     }

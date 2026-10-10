@@ -485,6 +485,27 @@ describe("PT-FR-09 if they forget to say so, Cleared reads their channel when th
     expect(await post.check()).toMatchObject({ answer: "passed" });
   });
 
+  test("MP-FR-22 a video public before the deadline and first seen by the deadline's own question, a few seconds late, keeps its hold and is checked", async () => {
+    const world = heldWorld();
+    const post = await goAheadGiven(world);
+    const { deadlineAt } = (await post.money()).hold as { deadlineAt: Date };
+    world.timeIs((await goAheadEnds(post)).toISOString());
+    await world.runJobs();
+    expect((await post.money()).goAhead).toMatchObject({ state: "ended" });
+    // Published days before the deadline, and never said.
+    world.youtube.edit(VIDEO, { privacy: "public" });
+
+    const late = new Date(deadlineAt.getTime() + 5_000);
+    world.timeIs(late.toISOString());
+    await world.runJobs();
+
+    const money = await post.money();
+    expect(money.release).toBeNull();
+    expect(money.publishedAt).toEqual(late);
+    expect(await post.check()).toMatchObject({ running: false, answer: "passed" });
+    expect(money.approval).toMatchObject({ by: "live_check" });
+  });
+
   test("at the deadline, a video that is not public means the hold is released, with the deadline as the reason", async () => {
     const world = heldWorld();
     const post = await goAheadGiven(world);
