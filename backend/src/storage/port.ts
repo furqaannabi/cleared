@@ -9,6 +9,8 @@ export interface Storage {
    * `maxBytes` it is cut off there, nothing is kept, and the answer is "too_large".
    */
   put(key: string, body: ReadableStream<Uint8Array>, options: { maxBytes: number }): Promise<{ bytes: number } | "too_large">;
+  /** Copies one stored file to a new key, leaving the first as it was. */
+  copy(fromKey: string, toKey: string): Promise<{ bytes: number }>;
   /** An address that reads the file for `seconds`, and then stops working. Never logged (DR-BR-18). */
   address(key: string, seconds: number): Promise<string>;
   delete(key: string): Promise<void>;

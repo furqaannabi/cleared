@@ -384,6 +384,8 @@ model Draft {
   storageKey    String
   sizeBytes     BigInt
   durationSec   Float
+  /// mp4 or mov, as found by reading the file (DR-FR-03). The video model is told which.
+  format        String   @default("mp4")
   createdAt     DateTime
 
   @@index([deliverableId, createdAt])

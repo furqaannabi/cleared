@@ -48,7 +48,7 @@ function world(over: Partial<{ text: ModelReply[]; moments: ModelReply[]; shown:
     items: list,
     speech,
     screen,
-    video: { key: "drafts/post/draft", durationSec: 300 },
+    video: { key: "drafts/post/draft", format: "mp4", durationSec: 300 },
     judge: {
       judgeText: async (sent) => (asked.text.push(sent), text()),
       findMoments: async (sent) => (asked.moments.push(sent), moments()),
@@ -272,7 +272,7 @@ describe("DR-FR-18, DR-FR-19, DR-BR-07 shown items and the second look", () => {
     expect(await check([items.serum])).toEqual([
       { id: "serum", result: "passed", checkedBy: "ai_timestamp", evidence: { label: "Video", text: "She applies the serum to her cheek.", startSec: 16, endSec: 20 } },
     ]);
-    expect(asked.shown).toEqual([{ videoKey: "drafts/post/draft", durationSec: 300, items: [{ id: "serum", name: "Show the serum in use" }] }]);
+    expect(asked.shown).toEqual([{ videoKey: "drafts/post/draft", format: "mp4", durationSec: 300, items: [{ id: "serum", name: "Show the serum in use" }] }]);
     expect(asked.cut).toEqual([[16, 18, 20]]);
   });
 
@@ -391,7 +391,7 @@ describe("DR-BR-09 the video cannot talk its way to a pass", () => {
       items: [{ ...items.codeSaid, exact: "GLOW20" }, items.mention],
       speech: loud,
       screen: [],
-      video: { key: "k", durationSec: 60 },
+      video: { key: "k", format: "mp4", durationSec: 60 },
       judge: { judgeText: async () => obedient, findMoments: async () => answer({ items: [] }), lookAtFrames: async () => answer({ visible: "yes" }) },
       videoModel: { judgeShown: async () => answer({ items: [] }) },
       frames: async () => [],
@@ -420,7 +420,7 @@ describe("DR-FR-23 a service that fails, fails the whole run", () => {
       items: [items.serum],
       speech,
       screen,
-      video: { key: "k", durationSec: 300 },
+      video: { key: "k", format: "mp4", durationSec: 300 },
       judge: { judgeText: async () => answer({ items: [] }), findMoments: async () => answer({ items: [] }), lookAtFrames: async () => answer({ visible: "yes" }) },
       videoModel: {
         judgeShown: async () => {

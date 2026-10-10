@@ -311,3 +311,86 @@ describe("DR-FR-06 to DR-FR-09 limits on drafts", () => {
     expect((await sendDraft(sam, post)).status).toBe(200);
   });
 });
+
+describe("DR-FR-03 the file's format is kept", () => {
+  test("a MOV is recorded as a MOV, so the video model can be told what it is given", async () => {
+    const world = heldWorld();
+    const { sam, post } = await world.heldPost();
+    world.media.file = { format: "mov", durationSec: 30 };
+
+    await sendDraft(sam, post, video(), "phone-clip.mov");
+    await world.finishChecks();
+
+    expect(await prisma.draft.findMany()).toMatchObject([{ format: "mov" }]);
+    expect(world.videoModel.asked).toMatchObject([{ format: "mov", durationSec: 30 }]);
+  });
+});
+
+describe("DR-FR-50 a demo account checks the sample clip", () => {
+  const SAMPLE = "samples/demo.mp4";
+  const sample = (browser: Browser, post: string) => browser.send("POST", `/deliverables/${post}/draft/sample`);
+  /** A world whose bucket holds the sample clip, and a demo creator's held post. */
+  async function demoPost(drafts: Parameters<typeof heldWorld>[0] = { drafts: { sampleKey: SAMPLE } }) {
+    const world = heldWorld(drafts);
+    world.storage.files.set(SAMPLE, new Uint8Array(900).fill(3));
+    const held = await world.agreedDeal(await world.demo());
+    return { world, ...held };
+  }
+
+  test("one request takes the sample in place of an upload, and it is checked like any draft", async () => {
+    const { world, sam, post } = await demoPost();
+    world.media.file = { format: "mp4", durationSec: 45 };
+
+    const response = await sample(sam, post);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ deliverableId: post, state: "checking", run: 0 });
+    const [draft] = await prisma.draft.findMany();
+    expect(draft).toMatchObject({ deliverableId: post, fileName: "sample.mp4", sizeBytes: 900n, durationSec: 45 });
+    // The post has a copy of its own. The sample stays where it is for the next visitor.
+    expect(draft!.storageKey).toBe(`drafts/${post}/${draft!.id}`);
+    expect([...world.storage.files.keys()].sort()).toEqual([draft!.storageKey, SAMPLE].sort());
+
+    await world.finishChecks();
+    expect(await check(post)).toMatchObject({ phase: "done", run: 1 });
+  });
+
+  test("it counts as one of the demo account's 3 drafts, and the sample itself is never deleted", async () => {
+    const { world, sam, post } = await demoPost();
+    for (let draft = 1; draft <= 3; draft++) {
+      expect((await sample(sam, post)).status).toBe(200);
+      await world.finishChecks();
+    }
+
+    const fourth = await sample(sam, post);
+
+    expect(fourth.status).toBe(429);
+    expect(await fourth.json()).toEqual({ error: { code: "draft_limit", field: "demo" } });
+    expect(world.storage.files.has(SAMPLE)).toBe(true);
+    // Three copies were made, and each older one went when the next run finished.
+    expect(world.storage.files.size).toBe(2);
+  });
+
+  test("it is for demo accounts only, and only for the account's own held post", async () => {
+    const { world, sam, maya, post } = await demoPost();
+    const real = await world.heldPost();
+
+    const notDemo = await sample(real.sam, real.post);
+    expect(notDemo.status).toBe(403);
+    expect(await notDemo.json()).toEqual({ error: { code: "not_demo" } });
+    expect((await sample(real.sam, post)).status).toBe(404);
+    expect((await sample(maya, post)).status).toBe(401);
+    expect((await sample(world.visitor(), post)).status).toBe(401);
+    expect((await sample(sam, post)).status).toBe(200);
+    expect(await (await sample(sam, post)).json()).toEqual({ error: { code: "check_running" } });
+  });
+
+  test("a service with no sample clip set up says so", async () => {
+    const { sam, post } = await demoPost({});
+
+    const response = await sample(sam, post);
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: { code: "not_set_up" } });
+  });
+});

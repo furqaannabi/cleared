@@ -22,6 +22,14 @@ export class FakeStorage implements Storage {
     return { bytes };
   }
 
+  async copy(fromKey: string, toKey: string) {
+    const file = this.files.get(fromKey);
+    if (!file) throw new Error(`Nothing is stored at ${fromKey}`);
+    this.files.set(toKey, file);
+    this.everStored.push(toKey);
+    return { bytes: file.byteLength };
+  }
+
   async address(key: string, seconds: number) {
     this.addresses.push({ key, seconds });
     return `https://bucket.test/${key}?good-for=${seconds}`;

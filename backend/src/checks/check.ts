@@ -48,7 +48,7 @@ export interface CheckInput {
   items: CheckItem[];
   speech: TimedText[];
   screen: TimedText[];
-  video: { key: string; durationSec: number };
+  video: { key: string; format: "mp4" | "mov"; durationSec: number };
   judge: Judge;
   videoModel: VideoModel;
   /** Cuts still frames from the video at these moments, for the second look. */
@@ -246,7 +246,7 @@ export async function checkDraft(input: CheckInput): Promise<ItemResult[]> {
 
   // Shown items: the video model watches the video. Its passes wait for the second look (DR-BR-07).
   const shownAnswers = await answersFor("the video model", asked(shown), ShownAnswer, () =>
-    videoModel.judgeShown({ videoKey: video.key, durationSec: video.durationSec, items: asked(shown) }),
+    videoModel.judgeShown({ videoKey: video.key, format: video.format, durationSec: video.durationSec, items: asked(shown) }),
   );
   const toConfirm: { item: CheckItem; span: Span; description: string }[] = [];
   for (const item of shown) {

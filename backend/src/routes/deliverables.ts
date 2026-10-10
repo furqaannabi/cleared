@@ -267,4 +267,45 @@ export function registerDeliverableRoutes(
       return "refused" in post ? fail(c, 404, "not_found") : c.json(post, 200);
     },
   );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/deliverables/{deliverableId}/draft/sample",
+      summary: "A demo account checks the ready-made sample clip in place of an upload (DR-FR-50)",
+      middleware: [creator] as const,
+      request: postId,
+      responses: {
+        200: json(DraftAcceptedSchema, "The sample was taken and is being checked"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        403: json(ErrorSchema, "Only a demo account can use the sample"),
+        404: json(ErrorSchema, "No such post, or it is not this creator's"),
+        409: json(ErrorSchema, "The post takes no draft now"),
+        422: json(ErrorSchema, "The sample could not be checked as a file"),
+        429: json(ErrorSchema, "A limit on drafts was reached"),
+        503: json(ErrorSchema, "This service has no sample clip set up"),
+      },
+    }),
+    async (c) => {
+      if (!drafts) return fail(c, 503, "not_set_up");
+      const sent = await drafts.sendSample(c.get("creatorId"), c.req.valid("param").deliverableId);
+      if (!("refused" in sent)) return c.json(sent, 200);
+      switch (sent.refused) {
+        case "not_found":
+          return fail(c, 404, "not_found");
+        case "not_demo":
+          return fail(c, 403, "not_demo");
+        case "not_set_up":
+          return fail(c, 503, "not_set_up");
+        case "limit":
+          return c.json({ error: { code: "draft_limit", field: sent.limit, resetsAt: sent.resetsAt?.toISOString() } }, 429);
+        case "file":
+          return c.json({ error: { code: `file_${sent.failure.reason}` } }, 422);
+        case "too_large":
+          return fail(c, 422, "file_too_large");
+        default:
+          return fail(c, 409, sent.refused);
+      }
+    },
+  );
 }

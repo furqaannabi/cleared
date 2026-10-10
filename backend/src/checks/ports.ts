@@ -36,5 +36,5 @@ export interface Judge {
 
 /** Amazon Nova, as the check uses it: it watches the stored video and judges the shown items (DR-FR-18). */
 export interface VideoModel {
-  judgeShown(input: { videoKey: string; durationSec: number; items: AskedItem[] }): Promise<ModelReply>;
+  judgeShown(input: { videoKey: string; format: "mp4" | "mov"; durationSec: number; items: AskedItem[] }): Promise<ModelReply>;
 }

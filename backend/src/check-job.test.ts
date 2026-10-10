@@ -55,7 +55,7 @@ describe("DR-FR-10, DR-FR-21, DR-FR-22 a draft is checked and its run recorded",
     const [draft] = await prisma.draft.findMany();
     const serum = deal.items.find((item) => item.name === "Show the serum in use")!;
     expect(world.speech.started).toEqual([draft!.storageKey]);
-    expect(world.videoModel.asked).toEqual([{ videoKey: draft!.storageKey, durationSec: 60, items: [{ id: serum.id, name: "Show the serum in use" }] }]);
+    expect(world.videoModel.asked).toEqual([{ videoKey: draft!.storageKey, format: "mp4", durationSec: 60, items: [{ id: serum.id, name: "Show the serum in use" }] }]);
     expect(world.media.cut).toEqual([[16, 18, 20]]);
   });
 

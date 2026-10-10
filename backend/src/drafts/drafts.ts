@@ -35,6 +35,8 @@ export interface DraftSettings {
   /** How often the reading of a video is asked after, and how long it may take before it counts as failed. */
   pollSeconds: number;
   readingLimitSeconds: number;
+  /** Where the sample clip for demo accounts is kept. Without it there is no sample to check (DR-FR-50). */
+  sampleKey?: string;
   review: ReviewSettings;
 }
 
@@ -72,6 +74,9 @@ export type DraftRefused =
   | { refused: "limit"; limit: "post" | "demo" | "overall"; resetsAt?: Date }
   | { refused: "too_large" }
   | { refused: "file"; failure: FileFailure };
+
+/** Why the sample clip was not taken: only a demo account may use it, and the service must have one. */
+export type SampleRefused = DraftRefused | { refused: "not_demo" | "not_set_up" };
 
 export type RetryRefused = { refused: "not_found" | "not_held" | "released" } | /** No check of this post failed on Cleared's side. */ { refused: "no_failed_check" };
 
@@ -252,7 +257,7 @@ export function createDrafts(deps: {
           items: await agreedChecklist(deliverableId),
           speech: read.speech,
           screen: read.screen,
-          video: { key: draft.storageKey, durationSec: draft.durationSec },
+          video: { key: draft.storageKey, format: draft.format === "mov" ? "mov" : "mp4", durationSec: draft.durationSec },
           judge: checks.judge,
           videoModel: checks.videoModel,
           frames: (timesSec) => media.frames(address, timesSec),
@@ -281,88 +286,111 @@ export function createDrafts(deps: {
     },
   } satisfies JobHandlers;
 
+  /**
+   * Takes a draft for a held post (DR-FR-01 to DR-FR-05). In order: who is asking and whether the post
+   * can take a draft, the limits that need no file, the file put into storage by `store`, the file read
+   * to see what it really is, and then, in one transaction, the draft recorded and its check started as
+   * a job. A file refused at any point is deleted. `demoOnly` is for the sample clip (DR-FR-50).
+   */
+  async function take(
+    creatorId: string,
+    deliverableId: string,
+    name: string | undefined,
+    store: (storageKey: string) => Promise<{ bytes: number } | "too_large">,
+    demoOnly = false,
+  ): Promise<DraftAccepted | SampleRefused> {
+    const post = await prisma.deliverable.findFirst({
+      where: { id: deliverableId, deal: { creatorId } },
+      include: { deal: { include: { creator: { select: { demo: true } } } } },
+    });
+    if (!post) return { refused: "not_found" };
+    const demo = post.deal.creator.demo;
+    if (demoOnly && !demo) return { refused: "not_demo" };
+    const hold = await holdOf(deliverableId);
+    if (hold !== "held") return { refused: hold };
+
+    const at = now();
+    const fileName = plainName(name);
+    await prisma.draftCheck.upsert({ where: { deliverableId }, create: { deliverableId }, update: {} });
+    const before = (await loadReview(prisma, deliverableId, false))!;
+    const allowed = review(before.state, { type: "draft_started", at }, settings.review);
+    if (!allowed.ok) return { refused: allowed.reason as "check_running" | "approved" };
+    const early = await limitReached(prisma, { creatorId, demo, run: before.row.run }, 0, at);
+    if (early) return early;
+
+    const draftId = crypto.randomUUID();
+    // The key is the service's own. Nothing of the file's name goes into it.
+    const storageKey = `drafts/${deliverableId}/${draftId}`;
+    const stored = await store(storageKey);
+    if (stored === "too_large") return { refused: "too_large" };
+
+    /** Deletes the file just stored and answers with why it was not taken. */
+    const turnedAway = async <Refusal extends DraftRefused>(refusal: Refusal): Promise<Refusal> => {
+      await storage.delete(storageKey);
+      return refusal;
+    };
+
+    // What the file is comes from reading it, never from its name or what the browser said (DR-FR-03).
+    const lengthCapSec = demo ? settings.demoMaxSeconds : settings.maxSeconds;
+    const found = await media.probe(await storage.address(storageKey, settings.addressSeconds));
+    const failure: FileFailure | undefined =
+      found === "unreadable"
+        ? { reason: "unreadable", fileName }
+        : found.format === "other"
+          ? { reason: "format", fileName }
+          : found.durationSec > lengthCapSec
+            ? { reason: "too_long", fileName, lengthSec: found.durationSec, lengthCapSec }
+            : undefined;
+    if (failure || found === "unreadable") {
+      // A file failure is not a check: only the failure is noted, and everything else stands (DR-FR-04).
+      await prisma.draftCheck.update({ where: { deliverableId }, data: { fileFailure: failure as unknown as Prisma.InputJsonValue } });
+      return turnedAway({ refused: "file", failure: failure! });
+    }
+
+    const refused = await prisma.$transaction(async (tx): Promise<DraftRefused | undefined> => {
+      // One draft at a time for a post, and one count of the day's minutes at a time for everyone.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('cleared:draft-minutes'))`;
+      await lockReview(tx, deliverableId);
+      const current = (await loadReview(tx, deliverableId, false))!;
+      // A new draft cancels every ask, acceptance and objection, and ends the window (DR-FR-05).
+      const start = review(current.state, { type: "draft_started", at }, settings.review);
+      if (!start.ok) return { refused: start.reason as "check_running" | "approved" };
+      const limit = await limitReached(tx, { creatorId, demo, run: current.row.run }, found.durationSec, at);
+      if (limit) return limit;
+
+      await tx.draft.create({
+        data: { id: draftId, deliverableId, fileName, storageKey, sizeBytes: BigInt(stored.bytes), durationSec: found.durationSec, format: found.format, createdAt: at },
+      });
+      await tx.draftUsage.create({ data: { creatorId, deliverableId, draftId, seconds: found.durationSec, at } });
+      await saveState(tx, deliverableId, start.state);
+      await saveItems(tx, deliverableId, start.state.items);
+      await tx.draftCheck.update({
+        where: { deliverableId },
+        data: { draftId, checkStartedAt: at, stage: null, failures: 0, speechJobId: null, fileFailure: Prisma.DbNull, reviewOpenedAt: null },
+      });
+      await applyEffects(tx, deliverableId, start.effects, { at, links });
+      await enqueue(tx, { name: "check_draft", payload: { deliverableId, draftId }, runAt: at });
+      return undefined;
+    });
+    if (refused) return turnedAway(refused);
+    return { deliverableId, state: "checking", run: before.row.run };
+  }
+
   return {
-    /**
-     * Takes a draft for a held post (DR-FR-01 to DR-FR-05). In order: who is asking and whether the
-     * post can take a draft, the limits that need no file, the file streamed to storage and cut off
-     * at the size limit, the file read to see what it really is, and then, in one transaction, the
-     * draft recorded and its check started as a job. A file refused at any point is deleted.
-     */
+    /** Takes the video a creator sends: streamed to storage, and cut off at the size limit as it arrives (DR-FR-02). */
     async send(creatorId: string, deliverableId: string, file: { name?: string; body: ReadableStream<Uint8Array> }): Promise<DraftAccepted | DraftRefused> {
-      const post = await prisma.deliverable.findFirst({
-        where: { id: deliverableId, deal: { creatorId } },
-        include: { deal: { include: { creator: { select: { demo: true } } } } },
-      });
-      if (!post) return { refused: "not_found" };
-      const hold = await holdOf(deliverableId);
-      if (hold !== "held") return { refused: hold };
+      const taken = await take(creatorId, deliverableId, file.name, (storageKey) => storage.put(storageKey, file.body, { maxBytes: settings.maxBytes }));
+      return taken as DraftAccepted | DraftRefused;
+    },
 
-      const at = now();
-      const fileName = plainName(file.name);
-      const demo = post.deal.creator.demo;
-      await prisma.draftCheck.upsert({ where: { deliverableId }, create: { deliverableId }, update: {} });
-      const before = (await loadReview(prisma, deliverableId, false))!;
-      const allowed = review(before.state, { type: "draft_started", at }, settings.review);
-      if (!allowed.ok) return { refused: allowed.reason as "check_running" | "approved" };
-      const early = await limitReached(prisma, { creatorId, demo, run: before.row.run }, 0, at);
-      if (early) return early;
-
-      const draftId = crypto.randomUUID();
-      // The key is the service's own. Nothing of the file's name goes into it.
-      const storageKey = `drafts/${deliverableId}/${draftId}`;
-      const stored = await storage.put(storageKey, file.body, { maxBytes: settings.maxBytes });
-      if (stored === "too_large") return { refused: "too_large" };
-
-      /** Deletes the file just stored and answers with why it was not taken. */
-      const turnedAway = async <Refusal extends DraftRefused>(refusal: Refusal): Promise<Refusal> => {
-        await storage.delete(storageKey);
-        return refusal;
-      };
-
-      // What the file is comes from reading it, never from its name or what the browser said (DR-FR-03).
-      const lengthCapSec = demo ? settings.demoMaxSeconds : settings.maxSeconds;
-      const found = await media.probe(await storage.address(storageKey, settings.addressSeconds));
-      const failure: FileFailure | undefined =
-        found === "unreadable"
-          ? { reason: "unreadable", fileName }
-          : found.format === "other"
-            ? { reason: "format", fileName }
-            : found.durationSec > lengthCapSec
-              ? { reason: "too_long", fileName, lengthSec: found.durationSec, lengthCapSec }
-              : undefined;
-      if (failure || found === "unreadable") {
-        // A file failure is not a check: only the failure is noted, and everything else stands (DR-FR-04).
-        await prisma.draftCheck.update({ where: { deliverableId }, data: { fileFailure: failure as unknown as Prisma.InputJsonValue } });
-        return turnedAway({ refused: "file", failure: failure! });
-      }
-
-      const refused = await prisma.$transaction(async (tx): Promise<DraftRefused | undefined> => {
-        // One draft at a time for a post, and one count of the day's minutes at a time for everyone.
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('cleared:draft-minutes'))`;
-        await lockReview(tx, deliverableId);
-        const current = (await loadReview(tx, deliverableId, false))!;
-        // A new draft cancels every ask, acceptance and objection, and ends the window (DR-FR-05).
-        const start = review(current.state, { type: "draft_started", at }, settings.review);
-        if (!start.ok) return { refused: start.reason as "check_running" | "approved" };
-        const limit = await limitReached(tx, { creatorId, demo, run: current.row.run }, found.durationSec, at);
-        if (limit) return limit;
-
-        await tx.draft.create({
-          data: { id: draftId, deliverableId, fileName, storageKey, sizeBytes: BigInt(stored.bytes), durationSec: found.durationSec, createdAt: at },
-        });
-        await tx.draftUsage.create({ data: { creatorId, deliverableId, draftId, seconds: found.durationSec, at } });
-        await saveState(tx, deliverableId, start.state);
-        await saveItems(tx, deliverableId, start.state.items);
-        await tx.draftCheck.update({
-          where: { deliverableId },
-          data: { draftId, checkStartedAt: at, stage: null, failures: 0, speechJobId: null, fileFailure: Prisma.DbNull, reviewOpenedAt: null },
-        });
-        await applyEffects(tx, deliverableId, start.effects, { at, links });
-        await enqueue(tx, { name: "check_draft", payload: { deliverableId, draftId }, runAt: at });
-        return undefined;
-      });
-      if (refused) return turnedAway(refused);
-      return { deliverableId, state: "checking", run: before.row.run };
+    /**
+     * A demo account checks the ready-made sample clip in place of an upload (DR-FR-50). The post gets
+     * a copy of its own, which is checked, counted and later deleted like any draft. The sample stays.
+     */
+    async sendSample(creatorId: string, deliverableId: string): Promise<DraftAccepted | SampleRefused> {
+      const { sampleKey } = settings;
+      if (!sampleKey) return { refused: "not_set_up" };
+      return take(creatorId, deliverableId, "sample.mp4", (storageKey) => storage.copy(sampleKey, storageKey), true);
     },
 
     /**
