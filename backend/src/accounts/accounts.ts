@@ -9,7 +9,7 @@ export interface Profile {
   demo: boolean;
   welcomed: boolean;
   paypalEmail?: string;
-  accounts: { platform: "youtube"; name: string }[];
+  accounts: { platform: "youtube" | "instagram"; name: string }[];
 }
 
 export interface AccountSettings {
@@ -148,8 +148,8 @@ export function createAccounts(deps: {
         welcomed: creator.welcomedAt !== null,
         paypalEmail: creator.paypalEmail ?? undefined,
         accounts: creator.accounts
-          .filter((account) => account.platform === "youtube")
-          .map((account) => ({ platform: "youtube" as const, name: account.name })),
+          .filter((account) => account.platform === "youtube" || account.platform === "instagram")
+          .map((account) => ({ platform: account.platform as "youtube" | "instagram", name: account.name })),
       };
     },
   };

@@ -67,6 +67,16 @@ function email(): { apiKey: string; from: string } | undefined {
   return { apiKey, from };
 }
 
+/**
+ * Instagram, for connecting an account (Instagram Reels spec IG-FR-02). Without the app's id and secret
+ * the API still starts, and no Instagram account can be connected.
+ */
+function instagram(): { appId: string; appSecret: string } | undefined {
+  const appId = process.env.INSTAGRAM_APP_ID;
+  const appSecret = process.env.INSTAGRAM_APP_SECRET;
+  return appId && appSecret ? { appId, appSecret } : undefined;
+}
+
 const port = Number(process.env.PORT ?? 4000);
 
 /** The service's configuration, read once at start-up. */
@@ -89,6 +99,7 @@ export const env = {
   judgeModel: process.env.JUDGE_MODEL ?? process.env.BRIEF_MODEL ?? "anthropic.claude-opus-5-5",
   drafts: drafts(),
   email: email(),
+  instagram: instagram(),
   /**
    * YouTube's id of the one real channel the team owns, which demo accounts read through (PT-FR-36).
    * The team connects it once, signed in as an ordinary creator. Without it a demo deal stops at approved.

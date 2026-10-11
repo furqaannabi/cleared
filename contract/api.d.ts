@@ -4182,6 +4182,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/connect/instagram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Connect the creator's Instagram account, read-only: the browser is sent here, on to Instagram, and back (IG-FR-02) */
+        get: {
+            parameters: {
+                query?: {
+                    next?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description To Instagram; afterwards to `next` or /deals with `connected=instagram`, or `connect=failed`, `declined` or `not_professional` */
+                302: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4194,7 +4230,7 @@ export interface components {
             paypalEmail?: string;
             accounts: {
                 /** @enum {string} */
-                platform: "youtube";
+                platform: "youtube" | "instagram";
                 name: string;
             }[];
         };

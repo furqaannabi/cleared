@@ -14,7 +14,7 @@ const ProfileSchema = z
     demo: z.boolean(),
     welcomed: z.boolean(),
     paypalEmail: z.string().optional(),
-    accounts: z.array(z.object({ platform: z.enum(["youtube"]), name: z.string() })),
+    accounts: z.array(z.object({ platform: z.enum(["youtube", "instagram"]), name: z.string() })),
   })
   .openapi("Profile");
 

@@ -9,6 +9,8 @@ import type { PrismaClient } from "./generated/prisma/client";
 import { fail, ownAppOnly, type AppEnv } from "./http/http";
 import type { Money } from "./money/money";
 import type { GooglePort } from "./google/port";
+import { createInstagramConnections, type InstagramConnections } from "./instagram/connections";
+import type { InstagramPort } from "./instagram/port";
 import { createDeals, type Deals } from "./deals/deals";
 import { defaultDraftSettings, type Drafts } from "./drafts/drafts";
 import { createInvites } from "./invites/invites";
@@ -26,6 +28,7 @@ import { registerBrandReviewRoutes } from "./routes/brand-review";
 import { registerDealRoutes } from "./routes/deals";
 import { DRAFT_UPLOAD, registerDeliverableRoutes } from "./routes/deliverables";
 import { registerGoogleRoutes } from "./routes/google";
+import { registerInstagramRoutes } from "./routes/instagram";
 import { registerInviteRoutes } from "./routes/invite";
 import type { Secrets } from "./secrets/secrets";
 import { createSessions, defaultSessionSettings } from "./sessions/sessions";
@@ -54,6 +57,10 @@ export interface AppDeps {
   apiOrigin?: string;
   /** Google, for signing in and connecting YouTube. Left out when it is not set up. */
   google?: GooglePort;
+  /** Instagram, for connecting an account (IG-FR-02). Left out when it is not set up. */
+  instagram?: InstagramPort;
+  /** Stores a connected Instagram account with its token encrypted. Made here from `instagram` and `secrets` when left out. */
+  instagramConnections?: InstagramConnections;
   /** Encrypts Google's refresh token before it is stored (DS-BR-14). */
   secrets?: Secrets;
   /** Works out an invite link's token (DS-FR-32). Without it no link can be made. */
@@ -158,6 +165,13 @@ export function createApp(deps: AppDeps) {
     appOrigin,
     apiOrigin: deps.apiOrigin ?? "http://localhost:4000",
     sessionDays: defaultSessionSettings.creatorDays,
+  });
+  registerInstagramRoutes(app, {
+    instagram: deps.instagram,
+    connections: deps.instagramConnections ?? (deps.instagram && deps.secrets ? createInstagramConnections({ prisma, now, instagram: deps.instagram, secrets: deps.secrets }) : undefined),
+    sessions,
+    appOrigin,
+    apiOrigin: deps.apiOrigin ?? "http://localhost:4000",
   });
 
   /** Reports whether the service is up and can reach Postgres. Used by the load balancer. */

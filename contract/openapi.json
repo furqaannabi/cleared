@@ -33,7 +33,8 @@
                 "platform": {
                   "type": "string",
                   "enum": [
-                    "youtube"
+                    "youtube",
+                    "instagram"
                   ]
                 },
                 "name": {
@@ -7008,6 +7009,26 @@
         "responses": {
           "302": {
             "description": "To Google; afterwards to `next` or /deals with `connected=youtube`, or `connect=failed`, `declined` or `no_channel`"
+          }
+        }
+      }
+    },
+    "/connect/instagram": {
+      "get": {
+        "summary": "Connect the creator's Instagram account, read-only: the browser is sent here, on to Instagram, and back (IG-FR-02)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "next",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "To Instagram; afterwards to `next` or /deals with `connected=instagram`, or `connect=failed`, `declined` or `not_professional`"
           }
         }
       }

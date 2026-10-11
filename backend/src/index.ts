@@ -9,6 +9,8 @@ import { createDeals } from "./deals/deals";
 import { createDrafts, defaultDraftSettings } from "./drafts/drafts";
 import { env } from "./env";
 import { createGoogle } from "./google/google";
+import { createInstagramConnections } from "./instagram/connections";
+import { createInstagramApi } from "./instagram/instagram-api";
 import { localLinkKeys } from "./invites/link-keys";
 import { runDueJobs, type JobHandlers } from "./jobs/jobs";
 import { startWorker } from "./jobs/worker";
@@ -115,6 +117,14 @@ if (!publishing) {
   console.warn("No demo YouTube channel is set, so a demo account's deal stops once its draft is approved. See backend/.env.example.");
 }
 
+// Instagram, for connecting an account. Its tokens last 60 days, so a daily job keeps them renewed.
+const instagram = env.instagram && createInstagramApi({ ...env.instagram, log });
+const instagramConnections = instagram && createInstagramConnections({ prisma, now, instagram, secrets, log });
+if (!instagram) {
+  console.warn("Instagram is not configured, so no Instagram account can be connected. See backend/.env.example.");
+}
+await instagramConnections?.scheduleRenewals();
+
 const app = createApp({
   prisma,
   accounts,
@@ -128,6 +138,8 @@ const app = createApp({
   appOrigin: env.appOrigin,
   apiOrigin: env.apiOrigin,
   google: env.google && createGoogle({ ...env.google, log }),
+  instagram,
+  instagramConnections,
   secrets,
   linkKeys,
   // Public by design: PayPal's button on the brand's page needs it. The secret never leaves the service.
@@ -136,7 +148,7 @@ const app = createApp({
 
 // Timers and follow-ups: reading briefs, deleting demo accounts, and the money path's deadlines and
 // unanswered PayPal calls.
-const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers };
+const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers, ...instagramConnections?.handlers };
 const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now() }) });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.once(signal, async () => {

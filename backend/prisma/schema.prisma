@@ -193,7 +193,11 @@ model ConnectedAccount {
   name                  String
   /// Made up, for a demo account. It has no token and reaches no platform.
   synthetic             Boolean @default(false)
+  /// The stored access to the account, encrypted: Google's refresh token for YouTube, Instagram's own
+  /// 60-day token for Instagram. Null when there is none that could work.
   refreshTokenEncrypted String?
+  /// When an Instagram token ends, unless it is renewed first (IG-FR-06). Null for YouTube.
+  tokenExpiresAt        DateTime?
   connectedAt           DateTime
 
   creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
