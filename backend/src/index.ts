@@ -115,7 +115,9 @@ const instagramConnections = instagram && createInstagramConnections({ prisma, n
 if (!instagram) {
   console.warn("Instagram is not configured, so no Instagram account can be connected and no Reel gets a go-ahead. See backend/.env.example.");
 }
-await instagramConnections?.scheduleRenewals();
+// Not waited for: this file must load without waiting, because a process manager loads it with
+// require(). If scheduling fails the service still runs, and the next start schedules it.
+instagramConnections?.scheduleRenewals().catch((error: unknown) => log("The daily renewal of Instagram tokens could not be scheduled", { error: error instanceof Error ? error.name : "unknown" }));
 const reels = instagram && createReelPublishing({ prisma, instagram, secrets, money });
 
 // Publishing: the go-ahead, posting and the live check, each read from the platform and each decided by the money path.
@@ -158,10 +160,13 @@ for (const signal of ["SIGTERM", "SIGINT"] as const) {
   });
 }
 
-export default {
+// Started here, and not left to Bun as a default export: Bun serves a default export only for the file
+// it was asked to run, and a process manager such as pm2 loads this file with require().
+const server = Bun.serve({
   port: env.port,
   fetch: app.fetch,
   // Bun turns away anything larger than this before the app sees it. A draft's file is the largest
   // thing sent; every other route has its own, much smaller limit.
   maxRequestBodySize: defaultDraftSettings.maxBytes + 1024 * 1024,
-};
+});
+console.log(`Cleared's API is listening on port ${server.port}`);
