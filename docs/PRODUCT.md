@@ -157,7 +157,7 @@ No field for the paid-partnership label was found in Instagram's API, so on Inst
 - **A post PayPal never lets Cleared collect for ends as "approved, not paid".** Getting paid after that is outside Cleared.
 - **The paid-partnership label on Instagram is a manual check.**
 - **Instagram creators need a professional account.**
-- **Only the team's tester accounts can connect Instagram** until Meta has reviewed the app, which is not asked for during the hackathon ([decision](decisions/2026-10-11-no-meta-review-for-the-hackathon.md)). Demo accounts read one Instagram account the team owns.
+- **Only the team's tester accounts can connect Instagram** until Meta has reviewed the app, which is not asked for during the hackathon ([decision](decisions/2026-10-11-no-meta-review-for-the-hackathon.md)).
 - **A Reel with licensed music cannot be fetched**, so it goes to manual approval.
 - **Not included:** Stories, photo posts, carousels, other platforms, finding or matching brands and creators, contracts, tax, and checking that a post stays up after payment.
 
@@ -215,7 +215,7 @@ Judging has two stages. Stage one is pass or fail: does the project fit the them
 
 ## Risks to test first
 
-- **Judges cannot connect their own accounts.** Instagram allows only tester accounts the team adds until Meta reviews the app, and Google caps an unverified app at 100 users. The hosted demo needs pre-connected demo creator accounts and sample files.
+- **Judges cannot connect their own accounts, and there is no demo account.** Instagram allows only tester accounts the team adds until Meta reviews the app, and Google caps an unverified app at 100 users. Demo accounts were removed ([decision](decisions/2026-10-11-no-demo-accounts.md)), so how a judge signs in and finishes a deal on the hosted demo is not settled. It has to be before submission: a demo judges cannot run does not count.
 - **The demo must survive until 15 December.** Google sign-ins made while the app is in "Testing" expire after 7 days, so the app must be switched to "In production" before submission.
 - **Re-confirming a hold cannot be tested on a fresh one.** PayPal allows it only after day 3, so sandbox holds need creating on day one of the build.
 - **Capturing straight to the creator is unverified.** If PayPal refuses, the capture-then-payout path already covers it.
@@ -231,6 +231,7 @@ The repo is [github.com/furqaannabi/cleared](https://github.com/furqaannabi/clea
 
 ## Still open
 
+- **How a judge runs the demo.** There are no demo accounts ([decision](decisions/2026-10-11-no-demo-accounts.md)). How a judge signs in, gets a channel to read and finishes a deal is for both leads to decide before submission.
 - **Team.** The build is planned for two people. Who the second person is, and what they take, is not settled.
 - **First spec.** Not yet written. It should turn [How a deal runs](#how-a-deal-runs) into numbered requirements before any code.
 

@@ -1,6 +1,6 @@
 # Publish to paid: FRD
 
-**Status:** Signed by Furqaan (revision 1.1). It accepts William's cancel spec as the backend's rules and adds to what his publish and pay, confirm and hold, and cancel pages call; those additions are listed for him. Two of its decisions are product behaviour he shares (the shared demo channel, and email for the brand's notices) and are recorded as Furqaan's for him to agree.
+**Status:** Signed by Furqaan (revision 1.2). It accepts William's cancel spec as the backend's rules and adds to what his publish and pay, confirm and hold, and cancel pages call; those additions are listed for him. One of its decisions is product behaviour he shares (email for the brand's notices) and is recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. Steps 6 to 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and cancelling, as an API the pages William has built can call: the creator asks for the go-ahead and publishes, Cleared checks the live post against YouTube's own record of it, the brand decides what the check could not, and both sides see the hold captured and the creator paid, or released.
 
@@ -48,7 +48,7 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 24. As a brand, I want to see that a hold was released, when and why, so that I know the money is back.
 25. As a brand, I want to cancel a post before the go-ahead, with a note, so that I can back out while nothing is public.
 26. As a brand, I want never to see the creator's PayPal email or payout problems, so that their details stay theirs.
-27. As a demo visitor, I want to take the sample clip through the go-ahead, the live check and the payout, so that I can see a deal finish.
+27. (Removed in revision 1.2: there are no demo accounts.)
 28. As a person at Cleared, I want to list the posts waiting for a ruling with both sides' reasons, so that I can decide.
 29. As a person at Cleared, I want to record "pay" or "release" with my name, so that a disputed post is settled before day 28.
 30. As the team, I want the live check to give the money path an answer only when it has actually looked, so that silence never pays for a post nobody checked.
@@ -132,7 +132,7 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 
 | ID | Requirement |
 | --- | --- |
-| PT-FR-36 | **A shared channel.** A demo account's YouTube is one real channel the team owns, connected once. Every read of YouTube for a demo account goes through that channel's read-only access, with the same code as any creator's ([decision](../decisions/2026-10-10-demo-accounts-read-a-shared-channel.md)). The channel holds the sample clip, public, with a description that meets the sample deal's written items. |
+| PT-FR-36 | **Removed in revision 1.2.** There are no demo accounts: every creator signs in with Google ([decision](../decisions/2026-10-11-no-demo-accounts.md)). |
 
 ## Business rules
 
@@ -176,7 +176,7 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 - **No new library.** Resend and the YouTube Data API are each called with plain HTTPS, as Google's sign-in is. Resend's API key is a server-side secret in the environment.
 - **The judge port gains one question:** written items judged against a description. The draft check does not use it.
 - **Reconnecting.** Storing a creator's YouTube connection tells the publishing module, which starts again any live check of theirs that stopped on lost access.
-- **Settings,** each with the value in this spec as its default: the one-second tolerance on a video's length, the live check's first and longest wait between tries (one minute, one hour), the sender address, and which connected channel demo accounts read.
+- **Settings,** each with the value in this spec as its default: the one-second tolerance on a video's length, the live check's first and longest wait between tries (one minute, one hour), and the sender address.
 
 ### Requests for William
 
@@ -193,7 +193,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | Publish and pay (PP-FR-14, PP-FR-13) | The brand is emailed when its confirmation or acceptance is wanted. Where no address is known, the creator's post carries the link to send, as for a draft review |
 | Draft check (DC-FR-52) | A review link can now also be about a live post |
 | Profile (IN-FR-12) | Saving a PayPal email answers with which posts keep the old one, because their payout is already with PayPal |
-| Demo | A demo deal can only be finished with the sample clip, whose link the page should offer at the go-ahead |
+| Demo | **Revision 1.2:** there are no demo accounts, so no sample clip is offered at the go-ahead |
 | All pages | The generated types in `contract/` gain these routes as they are built |
 
 ## Testing Decisions
@@ -226,7 +226,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 
 **Added while drafting and accepted by Furqaan at sign-off.** These were not asked in the question session; they are listed so the source of each is clear.
 
-- **PT-FR-03:** a video that is already public is accepted at the go-ahead, and a private one is refused. The shared demo video is always public, so the demo needs this.
+- **PT-FR-03:** a video that is already public is accepted at the go-ahead, and a private one is refused.
 - **PT-FR-04:** a video whose file record YouTube does not return is still given a go-ahead, on its channel alone.
 - **PT-FR-06:** the creator can give a different video on a later ask, until a post is published.
 - **PT-FR-10:** a post counts as published when Cleared first sees it public, not by YouTube's own date.
@@ -257,12 +257,11 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 
 **Needs setting up by a person.**
 
-- The Google app moved from Testing to In production, before any real deal and before the demo channel is connected: in Testing every stored access dies after 7 days ([PRODUCT.md, "Risks to test first"](../PRODUCT.md#risks-to-test-first)). Reading YouTube is a sensitive scope, so until Google verifies the app it shows a warning and is capped at 100 users.
+- The Google app moved from Testing to In production, before any real deal: in Testing every stored access dies after 7 days ([PRODUCT.md, "Risks to test first"](../PRODUCT.md#risks-to-test-first)). Reading YouTube is a sensitive scope, so until Google verifies the app it shows a warning and is capped at 100 users.
 - The Google OAuth client's redirect addresses, which are not yet accepted (deal set-up's open item).
-- The shared demo channel: made, connected once, with the sample clip uploaded and public, and its description written to meet the sample deal.
 - A Resend account, its API key in the environment, and a verified sending domain. Until a domain is verified, Resend's test sender delivers only to the account owner's own address.
 
-**Waiting on William.** The requests in the table above, and his agreement to the shared demo channel and to email for the brand's two notices. His [cancel spec](cancel-frd.md) is now the backend's rule too.
+**Waiting on William.** The requests in the table above, and his agreement to email for the brand's two notices. His [cancel spec](cancel-frd.md) is now the backend's rule too.
 
 ## Revision
 
@@ -272,3 +271,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.0 | Signed by Furqaan, with the nine items added while drafting accepted as written | none |
 | 1.1 | Resend sends the brand's two notices in place of Amazon SES, over plain HTTPS with no new library. PT-FR-09 follows the money path's new deadline rule (MP 1.5). What building posting and the live check settled: a video gone from YouTube gives no answer (PT-FR-17), the waits between tries (PT-FR-16), a published post's video cannot be changed (PT-FR-06), one check however often the creator says it is posted (PT-FR-08), and the codes the two new routes answer with | [Resend](../decisions/2026-10-10-resend-sends-the-brands-two-notices.md), [A post found public at the deadline is in time](../decisions/2026-10-10-a-post-found-public-at-the-deadline-is-in-time.md) |
 | 1.1 | Signed by Furqaan, with the four items settled while building accepted as written | none |
+| 1.2 | Demo accounts are removed, so the shared demo channel goes (PT-FR-36) with its setting | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
+| 1.2 | Signed by Furqaan | none |

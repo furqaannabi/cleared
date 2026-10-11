@@ -1,6 +1,6 @@
 # Deal set-up: FRD
 
-**Status:** Signed by Furqaan (revision 1.1). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no Instagram for now) are Furqaan's; William has to agree.
+**Status:** Signed by Furqaan (revision 1.2). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no demo accounts) are Furqaan's; William has to agree.
 
 **Surface:** Backend. Steps 1 to 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: a creator signs in, starts a deal, has its brief turned into a checklist, sets the terms and makes the brand's link; the brand opens the link, asks for changes or agrees, and approves a PayPal hold for each post.
 
@@ -12,7 +12,7 @@ William's pages cover every step of a deal, and none of them can reach a real ba
 
 ## Solution
 
-A creator signs in with Google, or tries a demo account with one press. They name the brand and the posts, paste the brief, and about half a minute later see a checklist: each item quotes the line of the brief it came from, and anything unclear comes back as a question with suggested answers. They fix what needs fixing, set an amount and a deadline for each post, and get a link for the brand.
+A creator signs in with Google. They name the brand and the posts, paste the brief, and about half a minute later see a checklist: each item quotes the line of the brief it came from, and anything unclear comes back as a question with suggested answers. They fix what needs fixing, set an amount and a deadline for each post, and get a link for the brand.
 
 The brand opens the link with no account. It sees the terms and every checklist item with its source, leaves notes on anything it disagrees with, and the creator answers with a new version. When the brand agrees to a version, a hold appears for each post, approved through PayPal. From that moment the deliverable's money is in the money path's hands.
 
@@ -62,8 +62,8 @@ Every route checks who is calling and that they are a party to the deal. The bri
 
 **A judge**
 
-35. As a judge, I want to try a demo account with one press, so that I can use the product without connecting anything of my own.
-36. As a judge, I want my own copy of the demo, so that another judge's actions do not change what I see.
+35. (Removed in revision 1.2: there are no demo accounts.)
+36. (Removed in revision 1.2: there are no demo accounts.)
 37. As a judge, I want the demo to run a real brief and a real sandbox hold, so that I am judging the product and not a recording.
 
 **Cleared (the team)**
@@ -87,14 +87,14 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | DS-FR-03 | **The session.** A successful sign-in sets a session cookie the page cannot read (HttpOnly, Secure, SameSite=Lax) and sends the browser back into the app. A creator session lasts 14 days from its last use. |
 | DS-FR-04 | **Back where they were going.** The sign-in carries a `next` path. It is used only if it is a path on Cleared's own app; anything else is dropped and the creator lands on the default page. A first sign-in lands on the welcome page. |
 | DS-FR-05 | **Sign out.** Ends the session on the backend and clears the cookie. The same cookie sent again is refused. |
-| DS-FR-06 | **Try the demo account.** One route makes a fresh demo creator for this visitor, signed in at once, marked as a demo, with a made-up name, a YouTube channel already connected (made up, and marked so) and a sandbox PayPal email. It starts with no deals. |
-| DS-FR-07 | **Demo limits.** At most 10 demo accounts an hour from one address. A demo creator and everything it made is deleted after 7 days, except a deliverable whose money is not finished, which is deleted once it is. |
+| DS-FR-06 | **Removed in revision 1.2.** There are no demo accounts: every creator signs in with Google ([decision](../decisions/2026-10-11-no-demo-accounts.md)). |
+| DS-FR-07 | **Removed in revision 1.2,** with DS-FR-06. Demo accounts that exist when this is built are deleted with everything they made. Their money is the PayPal sandbox's and is not touched here: the money path finishes it on its own timers. |
 
 ### The creator's account
 
 | ID | Requirement |
 | --- | --- |
-| DS-FR-08 | **Who is signed in.** `GET /me` returns the creator's name, email, whether this is a demo account, whether the welcome has been seen, the PayPal email, and each connected account's platform and name. With no session it answers 401. |
+| DS-FR-08 | **Who is signed in.** `GET /me` returns the creator's name, email, whether the welcome has been seen, the PayPal email, and each connected account's platform and name. With no session it answers 401. |
 | DS-FR-09 | **Welcome seen.** A route records that the creator has seen the welcome page. |
 | DS-FR-10 | **PayPal email.** The creator saves the PayPal email they are paid at. It must look like an email. It is not checked with PayPal. Changing it also changes where the payout goes for every deliverable of theirs that is not yet paid. |
 | DS-FR-11 | **Connect YouTube.** A second trip through Google asks for read-only access to the creator's YouTube account. On return the backend reads the channel's id and name, stores them, and keeps Google's refresh token encrypted. The token is never sent to the page or logged. |
@@ -104,7 +104,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 
 | ID | Requirement |
 | --- | --- |
-| DS-FR-13 | **Start a deal.** The creator gives the brand's name and one or more posts. Each post is a YouTube video or a YouTube Short. A deal with any other kind of post is refused with the reason. The deal starts at step `checklist`. |
+| DS-FR-13 | **Start a deal.** The creator gives the brand's name and one or more posts. Each post is a YouTube video, a YouTube Short or an Instagram Reel ([IG-FR-07](instagram-reels-frd.md)). A deal with any other kind of post is refused with the reason. The deal starts at step `checklist`. |
 | DS-FR-14 | **The deals list.** Returns the creator's own deals, each with its brand name, step, one-line status, and its posts. |
 | DS-FR-15 | **One deal.** Returns the deal as its step needs it: the brief's numbered lines, the reading state, the items and questions, the terms, the notes, and each post's hold. |
 | DS-FR-16 | **Change the brand or the posts.** Allowed only before the brief is sent or after it failed to read. Refused once reading has started. |
@@ -127,7 +127,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 
 | ID | Requirement |
 | --- | --- |
-| DS-FR-26 | **Per account.** A demo account can have 5 briefs read in total. Any other creator can have 20 read in a day. |
+| DS-FR-26 | **Per account.** A creator can have 20 briefs read in a day. |
 | DS-FR-27 | **Overall.** Across everyone, no more than 300 briefs are read in a day. |
 | DS-FR-28 | **At a limit,** the brief is not read and nothing is charged. The answer says which limit was reached and, for a daily one, when it resets. All four numbers in DS-FR-17, 26 and 27 are settings. |
 
@@ -137,7 +137,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | --- | --- |
 | DS-FR-29 | **Terms.** For each post the creator sets an amount in US dollars, as a decimal string with two places, and a deadline of 1 to 21 days after the hold. An amount outside the money path's limits ($20.00 to $10,000.00) is refused when it is saved, with the reason (MP-FR-09). |
 | DS-FR-30 | **The brand's email** is optional and stored if it looks like an email. Nothing is sent to it. |
-| DS-FR-31 | **Create the link.** Allowed when every post has a valid amount and deadline, the creator's YouTube channel is connected, and their PayPal email is saved. It saves the terms and the checklist as version 1, makes an unguessable link scoped to this deal that expires in 7 days, records the creator's timezone, and moves the deal to `waiting_for_brand`. |
+| DS-FR-31 | **Create the link.** Allowed when every post has a valid amount and deadline, each platform the deal has a post on is connected ([IG-FR-08](instagram-reels-frd.md)), and their PayPal email is saved. It saves the terms and the checklist as version 1, makes an unguessable link scoped to this deal that expires in 7 days, records the creator's timezone, and moves the deal to `waiting_for_brand`. |
 | DS-FR-32 | **The link is returned to its creator only.** The backend keeps a hash of the link's token and a random salt, never the token or the link. Each time the creator's page fetches the link, the token is worked out again from the salt and a key the service holds ([decision](../decisions/2026-10-09-an-invite-link-is-worked-out-again.md)). The page can fetch it until it is turned off; one past its 7 days comes back marked as expired. |
 | DS-FR-33 | **Replace or turn off.** "Make a new link" turns the old one off and returns a new one. "Change terms" turns the link off and moves the deal back to `invite`. A link turned off ends every brand session made from it. |
 
@@ -201,7 +201,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | DS-BR-14 | Google's refresh token is encrypted before it is stored, with a key the database does not hold. Read-only access is the only access ever asked for. |
 | DS-BR-15 | Logs carry ids only: creator, deal, deliverable, session and request ids. Never a brief, a note, an email, a token, a link or a model's answer. |
 | DS-BR-16 | A read that is refused for a limit, or that fails before the model is called, does not count against any limit. A read that fails after the model was called does. |
-| DS-BR-17 | A demo account runs the same code as any other. Its data is made up, its money is the PayPal sandbox, and it is labelled as a demo in `GET /me`. |
+| DS-BR-17 | **Removed in revision 1.2.** There are no demo accounts: every creator signs in with Google ([decision](../decisions/2026-10-11-no-demo-accounts.md)). |
 
 ## Implementation Decisions
 
@@ -226,10 +226,10 @@ Every route checks who is calling and that they are a party to the deal. The bri
   - A refusal, or an answer cut off for length, is a failed read.
 - **Schema.** New tables for: creators; sessions; connected accounts; deals; deliverables; briefs and their lines; checklist items; questions; terms versions; notes; invite links; and brief reads (for the limits). A deliverable's id is the id the money path's row uses.
 - **The money module gains one thing:** a way to open a deliverable's money and record the brand's agreement inside the caller's transaction, so DS-FR-42 is all or nothing. Nothing else in it changes.
-- **Paths** follow the provisional ones in William's specs (BC, IN, CH, SI) wherever they exist, so his pages change as little as possible. The sign-in routes are `/auth/google`, `/auth/google/callback`, `/auth/demo` and `/auth/sign-out`; connecting YouTube is `/connect/youtube` and its callback.
+- **Paths** follow the provisional ones in William's specs (BC, IN, CH, SI) wherever they exist, so his pages change as little as possible. The sign-in routes are `/auth/google`, `/auth/google/callback` and `/auth/sign-out`; connecting YouTube is `/connect/youtube` and its callback.
 - **The contract** is generated with Hono's OpenAPI add-on from Zod schemas ([decision](../decisions/2026-10-09-api-contract-generated-from-zod.md)).
 - **The token key** is the one setting with no default. The service does not start without it: the brand's links are worked out from it and Google's tokens are encrypted with it.
-- **Settings**, each with the value in this spec as its default: session lengths, the link's expiry, the demo limits, the four read limits, the model id, the region, the app's and the API's addresses.
+- **Settings**, each with the value in this spec as its default: session lengths, the link's expiry, the three read limits, the model id, the region, the app's and the API's addresses.
 
 ### Requests for William
 
@@ -241,13 +241,13 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | Every page's API client | The API is on its own subdomain, not `/api` on the app's address. `NEXT_PUBLIC_API_BASE_URL` is already read; it needs setting, and requests already send credentials |
 | Brief to checklist (BC-FR-07) | Items and questions arrive together when reading finishes. There is no `readUpTo` progress; the page's single "Reading" state is what shows |
 | Brief to checklist (BC-FR-06) | No file upload yet. The page's paste-only fallback applies |
-| New deal, invite (BC, IN-FR-09 to IN-FR-11) | A deal can only have YouTube videos and Shorts for now. A Reel is refused by the API, so the pages need to hide or flag Reels and the Instagram card |
+| New deal, invite (BC, IN-FR-09 to IN-FR-11) | **Revision 1.2:** a deal can hold YouTube videos, Shorts and Instagram Reels, and Instagram can be connected. See the [Instagram Reels spec](instagram-reels-frd.md) for what the pages need |
 | Invite (IN-FR-13, IN-FR-17) | The brand's email is stored and nothing is sent. "We've also emailed it" must not show |
 | Invite (IN-FR-17) | Creating the link needs the creator's timezone, as the browser reports it: `POST /deals/{id}/invite/link` takes `{ "timezone": "…" }` and refuses a request without it |
 | Invite (IN-FR-06) | An amount outside $20.00 to $10,000.00 is refused when it is saved, with status 400, the code `amount_below_minimum` or `amount_above_maximum`, and the field `amount`. `amountProblem` is never sent |
 | Invite (IN-BR-04) | The link's address is the app's own. Locally that is `http://localhost:3000/b/…`, which the page's schema turns down because it accepts `https` only |
 | Invite (IN-FR-16) | Creating the link is refused with status 409 and the code `terms_incomplete`, `youtube_not_connected` or `paypal_email_missing` |
-| Sign-in (SI-FR-02, SI-FR-14) | The demo account starts with a connected YouTube channel and no deals. Seeded deals come as later steps are built |
+| Sign-in (SI-FR-02, SI-FR-14) and the landing page | **Revision 1.2:** there is no demo account. `POST /auth/demo` is gone and `GET /me` has no `demo` field, so "Try the demo account" has to come off both pages |
 | Brief to checklist | A new refusal when a limit on reading is reached, with which limit and when it resets |
 | Confirm and hold (CH-FR-17) | The brand's deal carries PayPal's public client id for the button |
 | All pages | The generated types in `contract/` replace the hand-written schemas, a page at a time |
@@ -265,7 +265,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
   - a session ends on sign-out and when its link is turned off.
 - **Changing requests** from another origin, or with no origin, are refused.
 - **The brief reader:** an item citing a line that is not there is dropped; a bad shape is asked for once more and then fails; a refusal fails; a brief that tries to give instructions changes nothing that code decides; how an item is checked comes from code.
-- **Limits:** the sixth read on a demo account, the twenty-first in a day, and the three-hundred-and-first overall are refused and call nothing.
+- **Limits:** the twenty-first read in a day and the three-hundred-and-first overall are refused and call nothing.
 - **Versions and agreeing:** what changed between versions; agreeing to an old version is refused; agreeing opens every post's money or none.
 - **Holds:** the three routes over the fake PayPal, including a hold started before agreeing and an order id from another post.
 - **The contract:** the generated document matches the one in the repo.
@@ -273,10 +273,10 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 
 ## Out of Scope
 
-- **Instagram:** connecting an account, and deals with a Reel.
+- **Instagram** has its own spec: [Instagram Reels](instagram-reels-frd.md).
 - **Uploading a brief as a file.**
 - **Sending any email:** the link to the brand, or anything else.
-- **Seeded deals in the demo account.**
+- **Demo accounts,** since revision 1.2.
 - **Steps 4 to 8:** the draft check, the brand's review, the go-ahead, the live check, and the routes for capture, payout and release. The money path's functions for them exist; their routes come with those specs.
 - **Cancelling from the deal pages** (William's cancel spec), and the note on a cancel.
 - **A fresh link per review** (William's brand review spec).
@@ -288,7 +288,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 **Added while drafting and accepted by Furqaan at sign-off.** These were not asked in the grill-me session; they are listed so the source of each is clear.
 
 - **DS-FR-03, DS-FR-34:** a creator session lasts 14 days from its last use; a brand session lasts until its link expires.
-- **DS-FR-07:** 10 demo accounts an hour from one address, and deletion after 7 days that waits for unfinished money.
+- **DS-FR-07:** 10 demo accounts an hour from one address, and deletion after 7 days that waits for unfinished money. (Removed in revision 1.2.)
 - **DS-FR-10:** changing the PayPal email also changes it for every deliverable not yet paid.
 - **DS-FR-21, DS-FR-23:** each suggested answer carries its item, and the creator's own words become the item's name, so answering a question never calls the model again.
 - **DS-FR-22:** a bad shape is asked for once more before the read fails.
@@ -313,10 +313,10 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 
 **Needs setting up by a person.**
 
-- A Google Cloud OAuth client: its id and secret, and the callback addresses. Until it exists the Google routes are tested against the fake, and the demo account works without it.
+- A Google Cloud OAuth client: its id and secret, and the callback addresses. Until it exists the Google routes are tested against the fake. Without it nobody can sign in.
 - A domain, before deployment.
 
-**Waiting on William.** No Cognito, the API on its own subdomain, the generated contract, and no Instagram for now are shared decisions. Furqaan decided them; William has to agree.
+**Waiting on William.** No Cognito, the API on its own subdomain, the generated contract, and no demo accounts are shared decisions. Furqaan decided them; William has to agree.
 
 ## Revision
 
@@ -325,3 +325,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 0.1 | First draft, from the grill-me session with Furqaan: steps 1 to 3 end to end; Google sign-in run by the backend with no Cognito, and a demo account; the app and the API on one domain as two subdomains; William's four decisions accepted (brand gets in by its link, brand asks and creator changes, the repo layout, the deadline as one shared date); the contract generated from the backend's Zod schemas; briefs read by Claude Opus 5.5 on Bedrock in one call, shown all at once; limits of 20,000 characters, 5 reads per demo account, 20 a day per creator and 300 a day overall; Instagram, brief upload, email and seeded demo deals left for later | [Google directly](../decisions/2026-10-09-creators-sign-in-with-google-directly.md), [One domain](../decisions/2026-10-09-app-and-api-on-one-domain.md), [Generated contract](../decisions/2026-10-09-api-contract-generated-from-zod.md), [Briefs read by Claude](../decisions/2026-10-09-briefs-read-by-claude-opus-on-bedrock.md) |
 | 1.0 | Signed by Furqaan, with the twelve items added while drafting accepted as written | none |
 | 1.1 | Signed by Furqaan. How the brand's link is kept: a hash and a salt, with the token worked out again from a key each time its creator fetches it, so DS-FR-32 no longer contradicts itself (DS-FR-32, DS-BR-11); an expired link is still returned to its creator, marked expired; the token key is required for the service to start. Found while building: Bedrock's structured answers and the real time and cost of a read are verified; four more requests for William on the invite | [Link worked out again](../decisions/2026-10-09-an-invite-link-is-worked-out-again.md) |
+| 1.2 | Demo accounts are removed: DS-FR-06, DS-FR-07 and DS-BR-17 go, `GET /me` no longer says whether an account is a demo (DS-FR-08), and every creator has one limit on briefs (DS-FR-26). Demo accounts that exist are deleted with what they made. Brought into line with the Instagram Reels spec: a deal can hold a Reel (DS-FR-13), and each platform a deal has a post on must be connected before the link is made (DS-FR-31) | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
+| 1.2 | Signed by Furqaan | none |

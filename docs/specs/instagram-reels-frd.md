@@ -1,10 +1,10 @@
 # Instagram Reels: FRD
 
-**Status:** Signed by Furqaan (revision 1.0). It adds Instagram to what William's invite, publish and pay, and profile pages call; those additions are listed for him. Two of its decisions are product behaviour he shares (a shared demo Instagram account, and no Meta review for the hackathon) and are recorded as Furqaan's for him to agree.
+**Status:** Signed by Furqaan (revision 1.1). It adds Instagram to what William's invite, publish and pay, and profile pages call; those additions are listed for him. One of its decisions is product behaviour he shares (no Meta review for the hackathon) and is recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. Instagram Reels through the whole of [How a deal runs](../PRODUCT.md#how-a-deal-runs): a creator connects their Instagram account, a deal can hold a Reel, and the Reel gets its own go-ahead, its own way of saying "I've posted it", and its own live check. Everything else a Reel needs already exists and is not rebuilt: the checklist, the draft check on the file, the review, the money path, the brand's decisions, cancelling and rulings.
 
-**Scope of this build:** connecting Instagram, allowing a Reel in a deal, the Reel's go-ahead, posting with the Reel's link, the Reel's live check and the match between the live Reel and the approved draft, and demo accounts. Every money step is the [money path](money-path-frd.md)'s own function, called and never re-decided here. It is built and tested locally over a stand-in for Instagram, with a real tester account for the checks run by hand. **Before any of it is built, Meta's API is proven by hand (IG-FR-01).**
+**Scope of this build:** connecting Instagram, allowing a Reel in a deal, the Reel's go-ahead, posting with the Reel's link, the Reel's live check and the match between the live Reel and the approved draft. Every money step is the [money path](money-path-frd.md)'s own function, called and never re-decided here. It is built and tested locally over a stand-in for Instagram, with a real tester account for the checks run by hand. **Before any of it is built, Meta's API is proven by hand (IG-FR-01).**
 
 ## Problem Statement
 
@@ -41,7 +41,7 @@ What Instagram will not show, Cleared does not guess: the paid-partnership label
 17. As a brand, I want to be asked when Cleared could not check the paid-partnership label, so that I can look at it myself before I am charged.
 18. As a brand, I want to be asked when the live Reel is not the draft I approved, so that I decide whether to pay for it.
 19. As a brand, I want a link to the live Reel that Instagram itself gave Cleared, so that I am never sent somewhere a person typed.
-20. As a demo visitor, I want to take a sample Reel through the go-ahead, the live check and the payout, so that I can see a Reel deal finish.
+20. (Removed in revision 1.1: there are no demo accounts.)
 21. As the team, I want Meta's API proven by hand before anything is built on it, so that a month is not spent on a field Meta does not return.
 22. As the team, I want a Reel found only among the creator's own posts, so that nobody can claim someone else's Reel.
 23. As the team, I want the Reel's video fetched only from the address Instagram's API returned, so that a typed link can never make the service fetch something else.
@@ -114,7 +114,7 @@ What Instagram will not show, Cleared does not guess: the paid-partnership label
 
 | ID | Requirement |
 | --- | --- |
-| IG-FR-29 | **A shared account.** A demo account's Instagram is one real professional account the team owns, connected once and named in the settings. Every read of Instagram for a demo account goes through that account's read-only access, with the same code as any creator's ([decision](../decisions/2026-10-11-demo-accounts-read-a-shared-instagram-account.md)). The account holds the sample Reel, with a caption that meets the sample deal's written items. |
+| IG-FR-29 | **Removed in revision 1.1.** There are no demo accounts: every creator signs in with Google ([decision](../decisions/2026-10-11-no-demo-accounts.md)). |
 
 ### Limits
 
@@ -154,7 +154,7 @@ What Instagram will not show, Cleared does not guess: the paid-partnership label
 - **Schema.** The stored connection gains when its token ends. The record of the video a post was published as becomes the record of the post on its platform: the platform's id for it, the platform's own link and date, and for a Reel the match once decided. The list of platforms gains the Reel.
 - **Paths** follow William's specs: connecting mirrors YouTube's (`/connect/instagram` and its callback); the go-ahead takes no link for a Reel; "I've posted it" takes the Reel's link.
 - **No new library.** Instagram is called with plain HTTPS, as Google and YouTube are.
-- **Settings,** each with the value in this spec as its default: the app's id and secret; the shared demo account; the 2-second and 90%, 50% and 20-word limits of the match; how many of the account's recent media are searched (100); and how old a token is before it is renewed (7 days).
+- **Settings,** each with the value in this spec as its default: the app's id and secret; the 2-second and 90%, 50% and 20-word limits of the match; how many of the account's recent media are searched (100); and how old a token is before it is renewed (7 days).
 - **Cost.** Each Reel is read by Data Automation one more time, at its live check. Nothing else an AI does is repeated.
 
 ### Requests for William
@@ -169,7 +169,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | Publish and pay (PP-FR-07) | "I've posted it" for a Reel sends `{ url }`. New refusals: `not_an_instagram_link`, `reel_not_found`, `not_a_reel`. The page should say the link must be given before the deadline |
 | Publish and pay (PP-FR-08) | The line "if you forget to tap, we check" is not true for a Reel: Cleared does not look for a Reel it was not given |
 | Publish and pay (PP-FR-13, PP-FR-14) | What the check could not decide gains `paid_partnership_label`, `reel_not_fetched` and `reel_match`; the creator's post can say `reconnect_instagram` or that the Reel was not found |
-| Demo | A demo deal with a Reel can only be finished with the sample Reel, whose link the page should offer |
+| Demo | **Revision 1.1:** there are no demo accounts, so no sample Reel is offered |
 | All pages | The generated types in `contract/` gain these as they are built |
 
 ## Testing Decisions
@@ -227,9 +227,8 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 
 - A Meta app with Instagram Login, its id and secret, and its redirect address.
 - The team's own Instagram accounts added as testers, each a professional account.
-- The shared demo account: made, switched to professional, added as a tester, connected once, with the sample Reel posted and its caption written to meet the sample deal.
 
-**Waiting on William.** The requests in the table above, and his agreement to the shared demo Instagram account and to no Meta review for the hackathon.
+**Waiting on William.** The requests in the table above, and his agreement to no Meta review for the hackathon.
 
 ## Revision
 
@@ -237,3 +236,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | --- | --- | --- |
 | 0.1 | First draft, from the question session with Furqaan: the whole Reel path in one spec with Meta's API proven by hand first; Instagram Login with one read-only permission; a go-ahead that checks the account can be read and then the hold; a live Reel matched to the draft by length and then words, with the unclear going to the brand; the paid-partnership label and a Reel that cannot be fetched are "cannot decide", by the rule already signed for YouTube; a Reel nobody gave a link for is not looked for; a shared demo Instagram account; no Meta review for the hackathon | [Whole path, access first](../decisions/2026-10-11-instagram-reels-whole-path-access-proven-first.md), [Instagram Login](../decisions/2026-10-11-instagram-login-read-only.md), [A Reel's go-ahead](../decisions/2026-10-11-a-reels-go-ahead-checks-the-account-then-the-hold.md), [The match](../decisions/2026-10-11-a-live-reel-is-matched-by-length-then-words.md), [No link](../decisions/2026-10-11-a-reel-nobody-gave-a-link-for-is-not-looked-for.md), [Shared demo account](../decisions/2026-10-11-demo-accounts-read-a-shared-instagram-account.md), [No Meta review](../decisions/2026-10-11-no-meta-review-for-the-hackathon.md) |
 | 1.0 | Signed by Furqaan, with the nine items added while drafting accepted as written | none |
+| 1.1 | Demo accounts are removed, so the shared demo Instagram account goes (IG-FR-29) with its setting. Until Meta reviews the app, Instagram works for the team's tester accounts only | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
+| 1.1 | Signed by Furqaan | none |

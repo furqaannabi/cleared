@@ -1,6 +1,6 @@
 # Draft check and review: FRD
 
-**Status:** Signed by Furqaan (revision 1.1). It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
+**Status:** Signed by Furqaan (revision 1.2). It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
 
 **Surface:** Backend. Steps 4 and 5 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: the creator sends a draft of a held post, it is checked against the agreed checklist with evidence for every item, the creator can ask the brand to accept what the check could not decide, and a fully passing draft opens the brand's 48-hour review window, which ends in an approval, an objection or silence.
 
@@ -55,7 +55,7 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 31. As a brand, I want to be told when I am too late to object, so that I understand why the draft is approved.
 32. As a brand, I want never to see the creator's suggested fixes, earlier drafts or PayPal email, so that I see only what I am asked to review.
 33. As a brand's colleague with the link, I want my own session, so that I can review from my own device.
-34. As a demo visitor, I want to check a ready-made sample video with one press, so that I can see a draft check without filming anything.
+34. (Removed in revision 1.2: there are no demo accounts.)
 35. As the team, I want every model's answer checked against a strict schema, so that a malformed answer becomes "unsure" and never a pass.
 36. As the team, I want nothing said or shown in a video to be able to change the checklist or a result decided by code, so that a video cannot talk its way to a pass.
 37. As the team, I want every AI pass verified by code before it counts, so that silence can only ever clear a draft whose passes are real.
@@ -83,8 +83,8 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 | --- | --- |
 | DR-FR-06 | **Per post.** A post can be checked 10 times. |
 | DR-FR-07 | **Overall.** Across everyone, no more than 300 minutes of video are checked in a day. |
-| DR-FR-08 | **Demo accounts.** A demo account can have 3 drafts checked in total, each at most 3 minutes long. |
-| DR-FR-09 | **At a limit,** the draft is not checked and nothing is analysed. The answer says which limit was reached and, for the daily one, when it resets. A file refused for the daily limit or the demo length is deleted. Every number in DR-FR-02, DR-FR-03 and DR-FR-06 to DR-FR-08 is a setting. |
+| DR-FR-08 | **Removed in revision 1.2.** There are no demo accounts: every creator signs in with Google ([decision](../decisions/2026-10-11-no-demo-accounts.md)). |
+| DR-FR-09 | **At a limit,** the draft is not checked and nothing is analysed. The answer says which limit was reached and, for the daily one, when it resets. A file refused for the daily limit is deleted. Every number in DR-FR-02, DR-FR-03, DR-FR-06 and DR-FR-07 is a setting. |
 
 ### The check
 
@@ -151,11 +151,11 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 | DR-FR-48 | **Only when asked.** The brand is shown a draft only from the first ask or the window's start of that run. Before that, and for a run that never reached either, the review says there is nothing yet and carries no draft. |
 | DR-FR-49 | **The brand's deal** gains, for each post, where its review stands and how many items are waiting on it or objected. |
 
-### Demo and test clips
+### Test clips
 
 | ID | Requirement |
 | --- | --- |
-| DR-FR-50 | **A sample.** A demo account can check a ready-made sample clip with one request, in place of an upload. It counts as one of its 3 drafts and runs the same check. |
+| DR-FR-50 | **Removed in revision 1.2.** There is no sample clip: there are no demo accounts to check it ([decision](../decisions/2026-10-11-no-demo-accounts.md)). |
 | DR-FR-51 | **The golden set.** A development-only command runs the check on each of the team's recorded clips and compares every item's result with the one written down for it, reporting each difference, the time taken and what was used. It is run by hand, because every run costs money. |
 
 ## Business rules
@@ -180,7 +180,7 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 | DR-BR-16 | A check that fails, for the file's reasons or Cleared's, is not a run. A draft refused for a limit, or failing before analysis starts, counts against no limit. Minutes count towards the daily total from the moment analysis starts, whether or not the run then finishes. |
 | DR-BR-17 | An upload is accepted only from Cleared's own app, with a creator session, and is cut off at the size limit as it arrives. |
 | DR-BR-18 | Logs carry ids only: creator, deal, deliverable, run and item ids, and each service's own job ids, counts and timings. Never speech, on-screen text, evidence, a note, a file's name, a draft's address or a model's answer. |
-| DR-BR-19 | When a newer draft's run finishes, the older draft's file and everything read from it are deleted. Everything kept for a post's drafts is deleted 30 days after the post is paid, released or closed. A demo account's drafts go when the account does. |
+| DR-BR-19 | When a newer draft's run finishes, the older draft's file and everything read from it are deleted. Everything kept for a post's drafts is deleted 30 days after the post is paid, released or closed. |
 | DR-BR-20 | The evidence shown to the brand is the evidence the creator sees for the same run. Neither side is shown anything the other cannot check against the video. |
 
 ## Implementation Decisions
@@ -215,21 +215,21 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | For | Needs |
 | --- | --- |
 | Draft check (DC-FR-45, upload) | The upload: one request to the post's draft route with the file as its body and the file's name. His spec left the upload flow unspecced; this is the backend's side of it |
-| Draft check (DC-FR-08) | A draft is never refused as "not the same video": the unlisted YouTube video is asked for at the publish step ([decision](../decisions/2026-10-09-the-unlisted-video-is-asked-for-at-publish.md)). `lengthCapSec` is 900, or 180 for a demo account |
-| Draft check, new | Refusals when a limit is reached (the post's 10 checks, the day's minutes, a demo account's 3 drafts), each with which limit and, for the daily one, when it resets |
+| Draft check (DC-FR-08) | A draft is never refused as "not the same video": the unlisted YouTube video is asked for at the publish step ([decision](../decisions/2026-10-09-the-unlisted-video-is-asked-for-at-publish.md)). `lengthCapSec` is 900 |
+| Draft check, new | Refusals when a limit is reached (the post's 10 checks, the day's minutes), each with which limit and, for the daily one, when it resets |
 | Draft check (DC-FR-05) | Item results arrive together when the run finishes, not one by one. Progress is the stages list |
 | Draft check (DC-BR-02) | A model can be wrong about fix needed, and a fix needed item can only be answered with a new draft. Whether a fix needed item that a model judged may also be put to the brand is his call; the backend can allow it for those and not for exact items |
 | Draft check (DC-FR-52), brand review (RW-FR-03) | Nothing is emailed, so `emailedTo` is never sent and "We've also emailed it" must not show ([decision](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md)). The post gains when the brand first opened the draft, and a route to make a new review link when one has expired |
 | Draft check, brand review | Locally the review link starts with `http://localhost:3000`, which the schema turns down, as for the invite link |
-| Demo | A route for a demo account to check the sample clip in place of an upload |
-| Draft check, the upload | `POST /deliverables/{id}/draft?fileName=…` with the file as the body answers `{ deliverableId, state: "checking", run }`. Refusals: 409 `not_held`, `released`, `approved` or `check_running`; 413 `file_too_large`; 422 `file_unreadable`, `file_format` or `file_too_long` (with `lengthSec` and `lengthCapSec`); 429 `draft_limit` with `field` as `post`, `overall` or `demo`, and `resetsAt` for the daily one |
+| Demo | **Revision 1.2:** there are no demo accounts, so there is no sample clip and no demo limit |
+| Draft check, the upload | `POST /deliverables/{id}/draft?fileName=…` with the file as the body answers `{ deliverableId, state: "checking", run }`. Refusals: 409 `not_held`, `released`, `approved` or `check_running`; 413 `file_too_large`; 422 `file_unreadable`, `file_format` or `file_too_long` (with `lengthSec` and `lengthCapSec`); 429 `draft_limit` with `field` as `post` or `overall`, and `resetsAt` for the daily one |
 | Draft check (DC-FR-01) | A post with no hold yet has no page: `GET /deliverables/{id}` answers 409 `not_held` |
 | Draft check (DC-FR-04) | The stage names come from the API as plain words, in order: "Reading the video", "Checking what was said and written on screen", "Checking what is shown", "Confirming the evidence" |
 | Draft check (DC-FR-08, DC-FR-09) | While a failed check is being tried again the state stays `checking`, with `checkFailure` as `{ kind: "ours", retrying: true }`. A file failure with no run before it reads as `check_failed`; with a run before it, that run's state and results stay and the failure is beside them. `POST /deliverables/{id}/check/retry` starts a failed check again |
 | Draft check (DC-FR-52) | `reviewLink` is `{ url, expiresAt, expired }`. `reviewOpenedAt` says when the brand first opened the draft. `POST /deliverables/{id}/review-link` makes a new link |
 | Draft check (DC-FR-31) | The deals list's status lines follow the mock's wording, with "Released" added for a deal whose posts are all released. A post being checked counts as "Draft check" |
 | Brand review (RW-FR-05) | With no session the brand's routes answer 401, and a post outside the session's deal answers 404. An objection that comes too late is refused with `window_ended` |
-| Demo | The sample route is `POST /deliverables/{id}/draft/sample`, for demo accounts only (403 `not_demo` otherwise) |
+| Demo | **Revision 1.2:** `POST /deliverables/{id}/draft/sample` is gone |
 | All pages | The generated types in `contract/` gain these routes as they are built |
 
 ## Testing Decisions
@@ -243,7 +243,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **The run's rules** are tested as a table: every combination of statuses, asks and objections against the state and whether a window is open.
 - **Silence** gets the most attention: the window's job approves only a run that is still the latest, fully passing, unobjected and held; it does nothing after a new draft, an objection or a release; it approves once when run twice.
 - **Who may see what:** a creator cannot read or send a draft for another creator's post; a brand session reaches no post outside its deal; the brand is shown no draft before an ask or a window; the brand's review never contains a suggestion, a run number or the PayPal email.
-- **Limits:** the eleventh check of a post, the minute that passes the day's total, and a demo account's fourth draft are refused and analyse nothing.
+- **Limits:** the eleventh check of a post and the minute that passes the day's total are refused and analyse nothing.
 - **Deletion:** the older file goes when the newer run finishes; everything goes 30 days after the post ends.
 - **Against real services, by hand:** the golden set (DR-FR-51), and one deal taken from an upload to an approved draft through the routes.
 
@@ -305,9 +305,9 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - Permission for the AWS identity the service runs under to use that bucket, Data Automation and Nova.
 - A Data Automation project with the transcript and text detection turned on for video, and the account's Data Automation profile for the region. Both go in the service's settings.
 - ffmpeg and ffprobe on the machine the service runs on.
-- The recorded clips for the golden set, each with its expected result per item, and one chosen as the demo sample ([decision](../decisions/2026-10-09-test-clips-are-recorded-by-the-team.md)).
+- The recorded clips for the golden set, each with its expected result per item ([decision](../decisions/2026-10-09-test-clips-are-recorded-by-the-team.md)).
 
-**Not solved here.** A demo account can only reach a draft check through a real sandbox hold, which needs a person to approve in PayPal's window. How a judge gets to this step without that is a product decision for both leads.
+**Not solved here.** A draft check is reached only through a real sandbox hold, which needs a person to approve in PayPal's window. How a judge gets to this step is a product decision for both leads. So, since revision 1.2, is how a judge signs in at all ([decision](../decisions/2026-10-11-no-demo-accounts.md)).
 
 **Waiting on William.** The requests in the table above. His two records this spec accepts are now Furqaan's too: [a fresh link per review](../decisions/2026-10-08-fresh-brand-link-per-review.md) and [an objection settled by the two sides](../decisions/2026-10-08-objection-settled-by-the-two-sides.md).
 
@@ -318,3 +318,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 0.1 | First draft, from the question session with Furqaan: steps 4 and 5 together; the file uploaded through the API to a private S3 bucket; limits of 15 minutes, 1 GB, 10 checks per post, 300 minutes a day overall and 3 short drafts for a demo account; Amazon Nova for what is shown, chosen without a trial; every pass verified by code, a shown pass by a second look; spoken codes matched after normalising, a near miss unsure; timing items found by the AI and summed by code; a service failure fails the run; the unlisted video left to the publish step; no email, the creator sends the link; William's fresh link per review and his objection rule accepted; latest draft only, deleted 30 days after the deal ends; test clips recorded by the team | [Upload through the API](../decisions/2026-10-09-drafts-uploaded-through-the-api-to-s3.md), [Limits](../decisions/2026-10-09-limits-on-drafts.md), [Nova](../decisions/2026-10-09-amazon-nova-judges-what-is-shown.md), [Verifying a pass](../decisions/2026-10-09-how-an-ai-pass-is-verified.md), [A broken check](../decisions/2026-10-09-a-broken-check-fails-the-run.md), [No email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md), [Unlisted video](../decisions/2026-10-09-the-unlisted-video-is-asked-for-at-publish.md), [Draft privacy](../decisions/2026-10-09-who-can-watch-a-draft-and-how-long-it-is-kept.md), [Test clips](../decisions/2026-10-09-test-clips-are-recorded-by-the-team.md) |
 | 1.0 | Signed by Furqaan, with the eleven items added while drafting accepted as written | none |
 | 1.1 | Signed by Furqaan. DR-FR-45: a session made from a review link outlasts the link's closing, and the creator can replace a link that still works. First-opened is kept on the post's review, and a draft keeps its format. Eight choices settled while building are listed. Found: Data Automation's built-in project has no transcript, so a project is needed; Nova answers for the account; the five real adapters are written and not yet proven. Eight more requests for William | none |
+| 1.2 | Demo accounts are removed: their limits on drafts (DR-FR-08) and the sample clip (DR-FR-50) go, and a draft is no longer refused for a demo limit (DR-FR-09) | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
+| 1.2 | Signed by Furqaan | none |

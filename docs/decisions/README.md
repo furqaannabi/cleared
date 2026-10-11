@@ -65,7 +65,7 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-08 | [A deliverable's money state is stored as one document](2026-10-08-money-state-as-one-document.md) | Accepted |
 | 2026-10-08 | [A brand objection is settled by the creator and the brand](2026-10-08-objection-settled-by-the-two-sides.md) | Accepted; accepted by Furqaan, 9 Oct |
 | 2026-10-08 | [The brand gets a fresh link each time a draft needs it](2026-10-08-fresh-brand-link-per-review.md) | Accepted; accepted by Furqaan, 9 Oct |
-| 2026-10-08 | [Creators sign in with Google through the backend, which sets an HttpOnly session](2026-10-08-creator-sign-in-through-the-backend.md) | Superseded in part by [2026-10-09-creators-sign-in-with-google-directly.md](2026-10-09-creators-sign-in-with-google-directly.md): no Cognito |
+| 2026-10-08 | [Creators sign in with Google through the backend, which sets an HttpOnly session](2026-10-08-creator-sign-in-through-the-backend.md) | Superseded in part by [2026-10-09-creators-sign-in-with-google-directly.md](2026-10-09-creators-sign-in-with-google-directly.md): no Cognito; and by [2026-10-11-no-demo-accounts.md](2026-10-11-no-demo-accounts.md): no demo account |
 | 2026-10-09 | [Creators sign in with Google directly, with no Cognito](2026-10-09-creators-sign-in-with-google-directly.md) | Accepted |
 | 2026-10-09 | [The app and the API share one domain, on two subdomains](2026-10-09-app-and-api-on-one-domain.md) | Accepted |
 | 2026-10-09 | [The API contract is an OpenAPI document generated from the backend's Zod schemas](2026-10-09-api-contract-generated-from-zod.md) | Accepted |
@@ -81,7 +81,7 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-09 | [Who can watch a draft, and how long it is kept](2026-10-09-who-can-watch-a-draft-and-how-long-it-is-kept.md) | Accepted |
 | 2026-10-09 | [Test clips are recorded by the team](2026-10-09-test-clips-are-recorded-by-the-team.md) | Accepted |
 | 2026-10-10 | [The unlisted video is given with the request for the go-ahead](2026-10-10-the-unlisted-video-is-given-with-the-go-ahead.md) | Accepted |
-| 2026-10-10 | [Demo accounts read one real YouTube channel the team owns](2026-10-10-demo-accounts-read-a-shared-channel.md) | Accepted |
+| 2026-10-10 | [Demo accounts read one real YouTube channel the team owns](2026-10-10-demo-accounts-read-a-shared-channel.md) | Superseded by [2026-10-11-no-demo-accounts.md](2026-10-11-no-demo-accounts.md) |
 | 2026-10-10 | [Which live check finding gives which answer](2026-10-10-which-live-check-finding-gives-which-answer.md) | Accepted |
 | 2026-10-10 | [Lost YouTube access decides nothing](2026-10-10-lost-youtube-access-decides-nothing.md) | Accepted |
 | 2026-10-10 | [A ruling is a command, not a page](2026-10-10-a-ruling-is-a-command-not-a-page.md) | Accepted |
@@ -94,5 +94,6 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-11 | [A Reel's go-ahead checks the account can be read, then the hold](2026-10-11-a-reels-go-ahead-checks-the-account-then-the-hold.md) | Accepted |
 | 2026-10-11 | [A live Reel is matched to the approved draft by its length, then its words](2026-10-11-a-live-reel-is-matched-by-length-then-words.md) | Accepted |
 | 2026-10-11 | [A Reel nobody gave a link for is not looked for](2026-10-11-a-reel-nobody-gave-a-link-for-is-not-looked-for.md) | Accepted |
-| 2026-10-11 | [Demo accounts read one real Instagram account the team owns](2026-10-11-demo-accounts-read-a-shared-instagram-account.md) | Accepted |
+| 2026-10-11 | [Demo accounts read one real Instagram account the team owns](2026-10-11-demo-accounts-read-a-shared-instagram-account.md) | Superseded by [2026-10-11-no-demo-accounts.md](2026-10-11-no-demo-accounts.md) |
 | 2026-10-11 | [No Meta review of the app for the hackathon](2026-10-11-no-meta-review-for-the-hackathon.md) | Accepted |
+| 2026-10-11 | [No demo accounts: every creator signs in with Google](2026-10-11-no-demo-accounts.md) | Accepted |
