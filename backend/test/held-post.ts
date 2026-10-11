@@ -16,6 +16,7 @@ import { createMoney } from "../src/money/money";
 import { createPublishedPosts } from "../src/publish/published-posts";
 import { createNotices } from "../src/publish/notices";
 import { createPublishing } from "../src/publish/publishing";
+import { createReelPublishing } from "../src/publish/reels";
 import { createReviewLinks } from "../src/review/links";
 import { createReview } from "../src/review/review";
 import { localSecrets } from "../src/secrets/secrets";
@@ -23,6 +24,7 @@ import { createSessions } from "../src/sessions/sessions";
 import { browserFor, type Browser } from "./browser";
 import { FakeJudge, FakeSpeech, FakeVideoModel } from "./fake-checks";
 import { FakeEmail } from "./fake-email";
+import { FakeInstagram } from "./fake-instagram";
 import { FakeMedia } from "./fake-media";
 import { FakePayPal } from "./fake-paypal";
 import { FakeStorage } from "./fake-storage";
@@ -102,6 +104,7 @@ export function heldWorld(
   const videoModel = new FakeVideoModel();
   const youtube = new FakeYouTube();
   const email = new FakeEmail();
+  const instagram = new FakeInstagram(clock);
   const secrets = localSecrets(Buffer.alloc(32, 2).toString("base64"));
   /** What the service logged, to check nothing from a video is ever in it. */
   const logged: unknown[] = [];
@@ -134,7 +137,8 @@ export function heldWorld(
       : money,
   });
   const notices = createNotices({ prisma, now: clock, links: reviewLinks, email, log: (...parts) => void logged.push(parts) });
-  const publishing = createPublishing({ prisma, now: clock, youtube, secrets, demoChannelId: options.demoChannel, money, judge, notices, log: (...parts) => void logged.push(parts) });
+  const reels = createReelPublishing({ prisma, instagram, secrets, money });
+  const publishing = createPublishing({ prisma, now: clock, youtube, secrets, demoChannelId: options.demoChannel, money, judge, notices, reels, log: (...parts) => void logged.push(parts) });
   const accounts = createAccounts({ prisma, now: clock, onYouTubeConnected: publishing.youtubeConnected });
   const app = createApp({
     prisma,
@@ -160,11 +164,12 @@ export function heldWorld(
     // Their stored access to YouTube is `refresh-<first name>`, kept encrypted as the service keeps it.
     await accounts.connectYouTube(creatorId, { externalId: `channel-${first}`, name, refreshTokenEncrypted: await secrets.encrypt(`refresh-${first}`) });
     // And their Instagram account, with its own token kept the same way. Signing in again connects it again.
-    const instagram = { externalId: `ig-${first}`, name: first, refreshTokenEncrypted: await secrets.encrypt(`ig-token-${first}`), tokenExpiresAt: new Date(now.getTime() + 60 * 24 * 3600 * 1000), connectedAt: now };
+    instagram.has(`ig-token-${first}`, { id: `ig-${first}`, username: first });
+    const connection = { externalId: `ig-${first}`, name: first, refreshTokenEncrypted: await secrets.encrypt(`ig-token-${first}`), tokenExpiresAt: new Date(now.getTime() + 60 * 24 * 3600 * 1000), connectedAt: now };
     await prisma.connectedAccount.upsert({
       where: { creatorId_platform: { creatorId, platform: "instagram" } },
-      create: { creatorId, platform: "instagram", ...instagram },
-      update: instagram,
+      create: { creatorId, platform: "instagram", ...connection },
+      update: connection,
     });
     await accounts.setPaypalEmail(creatorId, `${first}.pay@example.com`);
     browser.cookies.set("cleared_session", await createSessions({ prisma, now: clock }).start(creatorId));
@@ -247,6 +252,7 @@ export function heldWorld(
     judge,
     videoModel,
     youtube,
+    instagram,
     email,
     logged,
     money,

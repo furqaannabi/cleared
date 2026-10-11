@@ -15,17 +15,20 @@ import type { Money, MoneyRefusal } from "../money/money";
 import type { GoAheadView } from "../money/view";
 import { liveCheck, type LiveItem } from "./live-check";
 import type { Notices } from "./notices";
+import type { ReelPublishing } from "./reels";
 import { createReader, type ReaderDeps } from "./reader";
 import { sameFile, videoIdFrom } from "./video";
 
 export type GoAheadRefused =
   | { refused: "not_found" }
-  /**
-   * The post is a Reel. A Reel has its own go-ahead and its own way of saying it is posted (Instagram
-   * Reels spec IG-FR-11 to IG-FR-18), which this service does not have yet. It is never taken down
-   * YouTube's path: a YouTube video cannot stand in for a Reel.
-   */
+  /** The post is a Reel, and this service is not set up to read Instagram. */
   | { refused: "not_set_up" }
+  /** A YouTube post needs its video's link (PT-FR-01). */
+  | { refused: "link_needed" }
+  /** A Reel's go-ahead takes no link: nothing is on Instagram to point at yet, and a YouTube video cannot stand in for a Reel (IG-FR-11). */
+  | { refused: "link_not_taken" }
+  /** A Reel's own refusals (IG-FR-13). */
+  | { refused: "reconnect_instagram" | "instagram_unavailable" }
   | { refused: "not_a_youtube_link" }
   /** The post's draft is not approved, so there is nothing to publish yet. */
   | { refused: "not_approved" }
@@ -41,7 +44,7 @@ export type GoAheadRefused =
 
 export type PostedRefused =
   | { refused: "not_found" }
-  /** The post is a Reel, which has its own way of saying it is posted. See `GoAheadRefused`. */
+  /** The post is a Reel. It has its own way of saying it is posted (IG-FR-14), which this service does not have yet; it is never taken down YouTube's path. */
   | { refused: "not_set_up" }
   /** No video is recorded for the post: the creator has not been through the go-ahead. */
   | { refused: "no_video" }
@@ -78,7 +81,7 @@ export interface PublishingSettings {
 export const defaultPublishingSettings: PublishingSettings = { retryFirstSeconds: 60, retryLongestSeconds: 3600 };
 
 const LIVE_KINDS = ["written", "disclosure", "publication"];
-/** Everything in this module reads YouTube. A Reel is turned away before any of it. */
+/** Everything else in this module reads YouTube. A Reel is sent to its own path, or turned away, before any of it. */
 const REEL = "instagram_reel";
 
 export type Publishing = ReturnType<typeof createPublishing>;
@@ -90,6 +93,8 @@ export function createPublishing(
     /** Judges written items that need judgment. Its pass counts only if its quote is in the description (PT-BR-02). */
     judge?: Pick<Judge, "judgeWritten">;
     settings?: PublishingSettings;
+    /** A Reel's own go-ahead (IG-FR-11). Without it a Reel gets none. */
+    reels?: Pick<ReelPublishing, "askGoAhead">;
     /** Told when one of the brand's 48 hours starts, so it is given a link and an email (PT-FR-20, PT-FR-21). */
     notices?: Pick<Notices, "windowStarted">;
     /** Told what a live check did, with ids and codes only. Never a description (PT-BR-12). */
@@ -187,10 +192,15 @@ export function createPublishing(
      * video read from YouTube and matched to that draft's file, the video recorded for the post, and
      * then the money path's own answer. PayPal is asked nothing until the video is accepted.
      */
-    async askGoAhead(creatorId: string, deliverableId: string, videoUrl: string): Promise<{ goAhead: GoAheadView } | GoAheadRefused> {
+    async askGoAhead(creatorId: string, deliverableId: string, videoUrl?: string): Promise<{ goAhead: GoAheadView } | GoAheadRefused> {
       const post = await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } } });
       if (!post) return { refused: "not_found" };
-      if (post.platform === REEL) return { refused: "not_set_up" };
+      // A Reel has its own go-ahead, which reads Instagram and takes no link (IG-FR-11). It is never taken down YouTube's path.
+      if (post.platform === REEL) {
+        if (videoUrl !== undefined) return { refused: "link_not_taken" };
+        return deps.reels ? deps.reels.askGoAhead(creatorId, deliverableId) : { refused: "not_set_up" };
+      }
+      if (videoUrl === undefined) return { refused: "link_needed" };
       const videoId = videoIdFrom(videoUrl);
       if (!videoId) return { refused: "not_a_youtube_link" };
 

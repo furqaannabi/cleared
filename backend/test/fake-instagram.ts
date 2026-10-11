@@ -21,6 +21,8 @@ export class FakeInstagram implements InstagramPort {
   readonly started: { state: string; redirectUri: string }[] = [];
   /** Every token it was asked to renew, in order. */
   readonly renewals: string[] = [];
+  /** Every token an account was read with, in order. */
+  readonly reads: string[] = [];
   /** Tokens that no longer work: revoked by the person, or expired. */
   readonly lost = new Set<string>();
   /** Makes every call fail, as Instagram being down would. */
@@ -43,6 +45,7 @@ export class FakeInstagram implements InstagramPort {
   }
 
   async account(token: string): Promise<InstagramAccount | "no_access"> {
+    this.reads.push(token);
     if (this.down) throw new Error("Instagram answered 500 for an account");
     const person = this.tokens.get(token);
     if (!person || this.lost.has(token)) return "no_access";
@@ -58,6 +61,11 @@ export class FakeInstagram implements InstagramPort {
   }
 
   // What a test controls
+
+  /** A token that already works for this person, as one stored by an earlier connection would. */
+  has(token: string, person: InstagramPerson): void {
+    this.tokens.set(token, person);
+  }
 
   /** The person approves at Instagram's screen. Returns the code Instagram sends the browser back with. */
   approve(state: string, person: InstagramPerson): string {

@@ -3136,7 +3136,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ask for the go-ahead to publish, with the link of the video on the creator's channel (PT-FR-01 to PT-FR-07) */
+        /** Ask for the go-ahead to publish. A YouTube post gives the link of the video on the creator's channel; a Reel gives nothing (PT-FR-01 to PT-FR-07, IG-FR-11 to IG-FR-13) */
         post: {
             parameters: {
                 query?: never;
@@ -3146,10 +3146,10 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
                     "application/json": {
-                        videoUrl: string;
+                        videoUrl?: string;
                     };
                 };
             };
@@ -3163,7 +3163,7 @@ export interface paths {
                         "application/json": components["schemas"]["CreatorPost"];
                     };
                 };
-                /** @description The link is not a link to a YouTube video */
+                /** @description The link is not a link to a YouTube video; or a YouTube post gave no link, or a Reel gave one */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3190,7 +3190,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description No go-ahead: the draft is not approved, the video is not the approved file on the creator's channel, YouTube must be reconnected, or the money path refused, each with its own code */
+                /** @description No go-ahead: the draft is not approved, the video is not the approved file on the creator's channel, YouTube or Instagram must be reconnected, or the money path refused, each with its own code */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -3199,7 +3199,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description YouTube could not be read, or this service is not set up to read it. Try again */
+                /** @description YouTube or Instagram could not be read, or this service is not set up to read it. Try again */
                 503: {
                     headers: {
                         [name: string]: unknown;

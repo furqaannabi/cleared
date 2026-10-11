@@ -353,33 +353,39 @@ export function registerDeliverableRoutes(
     createRoute({
       method: "post",
       path: "/deliverables/{deliverableId}/go-ahead",
-      summary: "Ask for the go-ahead to publish, with the link of the video on the creator's channel (PT-FR-01 to PT-FR-07)",
+      summary: "Ask for the go-ahead to publish. A YouTube post gives the link of the video on the creator's channel; a Reel gives nothing (PT-FR-01 to PT-FR-07, IG-FR-11 to IG-FR-13)",
       middleware: [creator] as const,
       request: {
         ...postId,
-        body: { required: true, content: { "application/json": { schema: z.object({ videoUrl: z.string().max(4000) }) } } },
+        // No body at all asks the same as an empty one: a Reel has nothing to send.
+        body: { required: false, content: { "application/json": { schema: z.object({ videoUrl: z.string().max(4000).optional() }) } } },
       },
       responses: {
         200: json(CreatorPostSchema, "The post, with the money path's answer: go until a time, wait until a time, or not confirmed"),
-        400: json(ErrorSchema, "The link is not a link to a YouTube video"),
+        400: json(ErrorSchema, "The link is not a link to a YouTube video; or a YouTube post gave no link, or a Reel gave one"),
         401: json(ErrorSchema, "Nobody is signed in"),
         404: json(ErrorSchema, "No such post, or it is not this creator's"),
-        409: json(ErrorSchema, "No go-ahead: the draft is not approved, the video is not the approved file on the creator's channel, YouTube must be reconnected, or the money path refused, each with its own code"),
-        503: json(ErrorSchema, "YouTube could not be read, or this service is not set up to read it. Try again"),
+        409: json(ErrorSchema, "No go-ahead: the draft is not approved, the video is not the approved file on the creator's channel, YouTube or Instagram must be reconnected, or the money path refused, each with its own code"),
+        503: json(ErrorSchema, "YouTube or Instagram could not be read, or this service is not set up to read it. Try again"),
       },
     }),
     async (c) => {
       if (!publishing) return fail(c, 503, "not_set_up");
       const { deliverableId } = c.req.valid("param");
-      const asked = await publishing.askGoAhead(c.get("creatorId"), deliverableId, c.req.valid("json").videoUrl);
+      const asked = await publishing.askGoAhead(c.get("creatorId"), deliverableId, c.req.valid("json")?.videoUrl);
       if ("refused" in asked) {
         switch (asked.refused) {
           case "not_found":
             return fail(c, 404, "not_found");
           case "not_a_youtube_link":
             return fail(c, 400, "not_a_youtube_link", "videoUrl");
+          case "link_needed":
+          case "link_not_taken":
+            // The same answer as any body that does not fit: the link is there when it should not be, or the other way round.
+            return fail(c, 400, "invalid", "videoUrl");
           case "youtube_unavailable":
-            return fail(c, 503, "youtube_unavailable");
+          case "instagram_unavailable":
+            return fail(c, 503, asked.refused);
           case "not_set_up":
             return fail(c, 503, "not_set_up");
           case "money":

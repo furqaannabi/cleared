@@ -21,6 +21,7 @@ import { recordedPosts } from "./money/published-post";
 import { createNotices } from "./publish/notices";
 import { createPublishedPosts } from "./publish/published-posts";
 import { createPublishing, type Publishing } from "./publish/publishing";
+import { createReelPublishing } from "./publish/reels";
 import { createYouTubeApi } from "./publish/youtube-api";
 import { createReviewLinks } from "./review/links";
 import { createReview } from "./review/review";
@@ -109,21 +110,22 @@ if (!env.email) {
   console.warn("Email is not configured, so the brand is emailed nothing and the creator sends its link. See backend/.env.example.");
 }
 
-// Publishing: the go-ahead, posting and the live check, each read from YouTube and each decided by the money path.
-publishing = reader && money ? createPublishing({ ...reader, now, money, judge, notices, log }) : undefined;
+// Instagram, for connecting an account and for a Reel's go-ahead. Its tokens last 60 days, so a daily job keeps them renewed.
+const instagram = env.instagram && createInstagramApi({ ...env.instagram, log });
+const instagramConnections = instagram && createInstagramConnections({ prisma, now, instagram, secrets, log });
+if (!instagram) {
+  console.warn("Instagram is not configured, so no Instagram account can be connected and no Reel gets a go-ahead. See backend/.env.example.");
+}
+await instagramConnections?.scheduleRenewals();
+const reels = instagram && createReelPublishing({ prisma, instagram, secrets, money });
+
+// Publishing: the go-ahead, posting and the live check, each read from the platform and each decided by the money path.
+publishing = reader && money ? createPublishing({ ...reader, now, money, judge, notices, reels, log }) : undefined;
 if (!publishing) {
   console.warn("Google or PayPal is not configured, so no go-ahead can be given and no live check runs. See backend/.env.example.");
 } else if (!env.demoChannelId) {
   console.warn("No demo YouTube channel is set, so a demo account's deal stops once its draft is approved. See backend/.env.example.");
 }
-
-// Instagram, for connecting an account. Its tokens last 60 days, so a daily job keeps them renewed.
-const instagram = env.instagram && createInstagramApi({ ...env.instagram, log });
-const instagramConnections = instagram && createInstagramConnections({ prisma, now, instagram, secrets, log });
-if (!instagram) {
-  console.warn("Instagram is not configured, so no Instagram account can be connected. See backend/.env.example.");
-}
-await instagramConnections?.scheduleRenewals();
 
 const app = createApp({
   prisma,

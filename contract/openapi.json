@@ -5868,7 +5868,7 @@
     },
     "/deliverables/{deliverableId}/go-ahead": {
       "post": {
-        "summary": "Ask for the go-ahead to publish, with the link of the video on the creator's channel (PT-FR-01 to PT-FR-07)",
+        "summary": "Ask for the go-ahead to publish. A YouTube post gives the link of the video on the creator's channel; a Reel gives nothing (PT-FR-01 to PT-FR-07, IG-FR-11 to IG-FR-13)",
         "parameters": [
           {
             "schema": {
@@ -5882,7 +5882,7 @@
           }
         ],
         "requestBody": {
-          "required": true,
+          "required": false,
           "content": {
             "application/json": {
               "schema": {
@@ -5892,10 +5892,7 @@
                     "type": "string",
                     "maxLength": 4000
                   }
-                },
-                "required": [
-                  "videoUrl"
-                ]
+                }
               }
             }
           }
@@ -5912,7 +5909,7 @@
             }
           },
           "400": {
-            "description": "The link is not a link to a YouTube video",
+            "description": "The link is not a link to a YouTube video; or a YouTube post gave no link, or a Reel gave one",
             "content": {
               "application/json": {
                 "schema": {
@@ -5942,7 +5939,7 @@
             }
           },
           "409": {
-            "description": "No go-ahead: the draft is not approved, the video is not the approved file on the creator's channel, YouTube must be reconnected, or the money path refused, each with its own code",
+            "description": "No go-ahead: the draft is not approved, the video is not the approved file on the creator's channel, YouTube or Instagram must be reconnected, or the money path refused, each with its own code",
             "content": {
               "application/json": {
                 "schema": {
@@ -5952,7 +5949,7 @@
             }
           },
           "503": {
-            "description": "YouTube could not be read, or this service is not set up to read it. Try again",
+            "description": "YouTube or Instagram could not be read, or this service is not set up to read it. Try again",
             "content": {
               "application/json": {
                 "schema": {
