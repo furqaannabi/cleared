@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Draft upload B: in the next step</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="du.css"><style>
+/* B: the page stays exactly as it was, last draft playable, and the upload lives where the creator pressed Upload: the next-step bar (the fixed bar on phones). The bar's top edge is the progress. */
+.b-bar{position:relative;overflow:hidden}
+.b-bar .u-bar{position:absolute;left:0;right:0;top:0;height:5px;border-radius:0;background:var(--latte)}
+.b-bar .u-bar>span{border-radius:0 999px 999px 0}
+.b-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:4px}
+.b-row .u-pct{font-size:22px;flex:none}
+.b-bar .u-link{flex:none}
+.b-txt{min-width:0;flex:1}
+.b-txt .u-file{display:block;font-size:14.5px}
+</style></head><body><main class="u-doc">
+<h1>B · The upload lives in the next step</h1>
+<p class="u-why">The page doesn't change while the draft uploads: the last draft still plays, its results stay as they are. The next-step bar, where Upload new draft was pressed, becomes the upload: its top edge fills marigold, with the file, the percentage and Cancel. On phones that's the fixed bar.</p>
+
+<p class="u-state">Uploading (DC-FR-45)</p>
+<div class="u-pair">
+  <div class="u-phone">
+    <div class="u-top"><span><i></i>Cleared</span><span>Deals</span></div>
+    <div class="u-page">
+      <p class="u-title">Glow Theory · YouTube video</p>
+      <p class="u-sub">Draft check, run 2 · Post by 24 Oct</p>
+      <div class="u-card"><div class="u-player"><span class="u-play"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align:-1px;margin-right:6px"><path d="M7 5v14l12-7z"/></svg>3:15 / 6:48</span></div>
+        <div class="u-timeline"><span class="u-pass" style="left:12%"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="u-fail" style="left:46%"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><span class="u-uns" style="left:58%"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6M12 17h.01"/></svg></span></div></div>
+      <div class="u-list">
+        <div class="u-item">Code GLOW20 shown on screen<em class="u-fail">Fix needed</em></div>
+        <div class="u-item">Serum shown in use<em class="u-uns">Unsure</em></div>
+        <div class="u-item">Mentions Glow Theory early<em class="u-pass">Passed</em></div>
+      </div>
+    </div>
+    <div class="u-fixed b-bar" role="status" aria-label="Uploading your draft">
+      <div class="u-bar"><span></span></div>
+      <div class="b-row"><div class="b-txt"><span class="u-file">Uploading GlowTheory_cut3.mp4</span><span class="u-muted">Keep this page open.</span></div><span class="u-pct">42%</span><button class="u-link">Cancel</button></div>
+    </div>
+  </div>
+  <div class="u-desk">
+    <div class="u-page">
+      <p class="u-crumb">Deals › Glow Theory › YouTube video</p>
+      <p class="u-title">Glow Theory · YouTube video</p>
+      <p class="u-sub">Draft check, run 2 · 6:48 long · Post by 24 Oct</p>
+      <div class="u-grid">
+        <div>
+          <div class="u-card"><div class="u-player"><span class="u-play"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align:-1px;margin-right:6px"><path d="M7 5v14l12-7z"/></svg>3:15 / 6:48</span></div>
+            <div class="u-timeline"><span class="u-pass" style="left:12%"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="u-fail" style="left:46%"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><span class="u-uns" style="left:58%"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6M12 17h.01"/></svg></span></div></div>
+          <div class="u-nextbar b-bar" role="status" aria-label="Uploading your draft">
+            <div class="u-bar"><span></span></div>
+            <div class="b-txt"><span class="u-file">Uploading GlowTheory_cut3.mp4 · 412 MB</span><span class="u-muted">About 2 minutes left. When it's up, the check starts on its own.</span></div>
+            <span class="u-pct">42%</span><button class="u-link">Cancel</button>
+          </div>
+        </div>
+        <div class="u-money"><small>Held in PayPal for this video</small><b>$1,200.00</b><small>Ref 7HK21934LM · held 3 Oct</small></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="u-state">Checked before sending: over 1 GB (DC-FR-45), said in the bar it came from</p>
+<div class="u-pair">
+  <div class="u-phone">
+    <div class="u-top"><span><i></i>Cleared</span><span>Deals</span></div>
+    <div class="u-page">
+      <p class="u-title">Glow Theory · YouTube video</p>
+      <p class="u-sub">Draft check, run 2 · Post by 24 Oct</p>
+      <div class="u-banner" role="alert">
+        <span class="u-seal fail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg></span>
+        <h3>This file is over 1 GB.</h3>
+        <p>GlowTheory_master.mov is 3.4 GB. Export a smaller file and upload it again. Nothing was sent.</p>
+      </div>
+      <div class="u-card"><div class="u-player"><span class="u-play"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align:-1px;margin-right:6px"><path d="M7 5v14l12-7z"/></svg>3:15 / 6:48</span></div></div>
+    </div>
+    <div class="u-fixed"><button class="u-btn dark">Upload again</button></div>
+  </div>
+</div>
+</main></body></html>

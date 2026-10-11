@@ -1,0 +1,84 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Draft upload A: in the player</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="du.css"><style>
+/* A: the upload takes the player's place. The frame stays the video's shape, latte instead of the dark screen, so the creator watches the new draft arrive where it will play. The last run's results stay under it, faded, until the new run lands. */
+.a-up{aspect-ratio:16/9;border-radius:12px;background:var(--latte-wash);border:1.5px dashed var(--latte-line);display:grid;align-content:center;gap:12px;padding:18px 20px}
+.a-up .a-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.a-up .a-head .u-muted{flex:none}
+.a-up .u-pct{font-size:40px;line-height:1;color:var(--ink)}
+.u-desk .a-up .u-pct{font-size:56px}
+.a-up .a-foot{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.a-stale{font-size:13px;color:var(--ink-3);margin:14px 2px 0}
+</style></head><body><main class="u-doc">
+<h1>A · The upload takes the player's place</h1>
+<p class="u-why">While the draft uploads, the player frame becomes the upload: the file's name, the percentage large, a marigold bar and Cancel. The last run's results stay below, faded, labelled as the last run. Nothing to press on phones, so no fixed bar.</p>
+
+<p class="u-state">Uploading (DC-FR-45)</p>
+<div class="u-pair">
+  <div class="u-phone">
+    <div class="u-top"><span><i></i>Cleared</span><span>Deals</span></div>
+    <div class="u-page">
+      <p class="u-title">Glow Theory · YouTube video</p>
+      <p class="u-sub">Draft check, run 2 · Post by 24 Oct</p>
+      <div class="u-card">
+        <div class="a-up" role="status" aria-label="Uploading your draft">
+          <div class="a-head"><span class="u-file">GlowTheory_cut3.mp4</span><span class="u-muted">412 MB</span></div>
+          <span class="u-pct">42%</span>
+          <div class="u-bar"><span></span></div>
+          <div class="a-foot"><span class="u-muted">Keep this page open.</span><button class="u-link">Cancel</button></div>
+        </div>
+      </div>
+      <p class="a-stale">Your results from run 2, until the new draft is checked:</p>
+      <div class="u-list u-faded">
+        <div class="u-item">Code GLOW20 shown on screen<em class="u-fail">Fix needed</em></div>
+        <div class="u-item">Serum shown in use<em class="u-uns">Unsure</em></div>
+        <div class="u-item">Mentions Glow Theory early<em class="u-pass">Passed</em></div>
+      </div>
+    </div>
+  </div>
+  <div class="u-desk">
+    <div class="u-page">
+      <p class="u-crumb">Deals › Glow Theory › YouTube video</p>
+      <p class="u-title">Glow Theory · YouTube video</p>
+      <p class="u-sub">Draft check, run 2 · 6:48 long · Post by 24 Oct</p>
+      <div class="u-grid">
+        <div>
+          <div class="u-card">
+            <div class="a-up" role="status" aria-label="Uploading your draft">
+              <div class="a-head"><span class="u-file">GlowTheory_cut3.mp4</span><span class="u-muted">412 MB</span></div>
+              <span class="u-pct">42%</span>
+              <div class="u-bar"><span></span></div>
+              <div class="a-foot"><span class="u-muted">About 2 minutes left. Keep this page open; the check starts on its own.</span><button class="u-link">Cancel</button></div>
+            </div>
+          </div>
+          <p class="a-stale">Your results from run 2, until the new draft is checked:</p>
+          <div class="u-list u-faded">
+            <div class="u-item">Code GLOW20 shown on screen<em class="u-fail">Fix needed</em></div>
+            <div class="u-item">Serum shown in use<em class="u-uns">Unsure</em></div>
+          </div>
+        </div>
+        <div class="u-money"><small>Held in PayPal for this video</small><b>$1,200.00</b><small>Ref 7HK21934LM · held 3 Oct</small></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="u-state">Checked before sending: over 1 GB (DC-FR-45), the player stays as it was</p>
+<div class="u-pair">
+  <div class="u-phone">
+    <div class="u-top"><span><i></i>Cleared</span><span>Deals</span></div>
+    <div class="u-page">
+      <p class="u-title">Glow Theory · YouTube video</p>
+      <p class="u-sub">Draft check, run 2 · Post by 24 Oct</p>
+      <div class="u-banner" role="alert">
+        <span class="u-seal fail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg></span>
+        <h3>This file is over 1 GB.</h3>
+        <p>GlowTheory_master.mov is 3.4 GB. Export a smaller file and upload it again. Nothing was sent.</p>
+      </div>
+      <div class="u-card"><div class="u-player"><span class="u-play"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align:-1px;margin-right:6px"><path d="M7 5v14l12-7z"/></svg>3:15 / 6:48</span></div></div>
+    </div>
+    <div class="u-fixed"><button class="u-btn dark">Upload again</button></div>
+  </div>
+</div>
+</main></body></html>

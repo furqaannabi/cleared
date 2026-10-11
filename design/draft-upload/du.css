@@ -1,0 +1,75 @@
+/* Draft upload mockups (DC 1.18). The app's own tokens (web/src/app/globals.css @theme); classes prefixed u- so nothing clashes. */
+:root{
+  --espresso:#3f3322;--espresso-deep:#2c2314;--espresso-ink:#1c150a;--latte-line:#e4dcce;--latte:#f3eee5;--latte-wash:#faf8f4;
+  --marigold:#f5c14b;--marigold-chip:#e2b144;--marigold-ink:#231a00;--marigold-ink-2:#5a4510;
+  --ink:#1e1a14;--ink-2:#4a4339;--ink-3:#675f55;--ground:#f6f5f2;--surface:#fff;--line:#e8e4dc;--line-soft:#f1eee8;
+  --pass:#0b6b3a;--pass-wash:#ddf4e6;--fail:#b8302a;--fail-wash:#ffe7e4;--fail-tint:#fff7f6;--fail-line:#f5c9c4;
+  --unsure:#855000;--unsure-wash:#ffefc7;--waiting:#5e574d;--waiting-wash:#f0ede7;
+  --head:"Bricolage Grotesque","Figtree",system-ui,sans-serif;--sans:"Figtree",system-ui,sans-serif;
+  --shadow-bar:0 8px 24px rgb(28 21 10/.22);--shadow-money:0 2px 4px rgb(120 80 0/.12),0 14px 32px rgb(120 80 0/.18);
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--sans);background:var(--ground);color:var(--ink);font-size:15px;line-height:1.5}
+.u-doc{max-width:1240px;margin:0 auto;padding:24px 16px 120px;overflow-x:clip}
+.u-doc>h1{font-family:var(--head);font-size:26px;line-height:1.15}
+.u-doc>.u-why{color:var(--ink-2);max-width:70ch;margin:8px 0 22px}
+.u-state{font-size:12.5px;font-weight:800;color:var(--ink-3);letter-spacing:.02em;margin:34px 0 10px}
+.u-pair{display:grid;gap:22px}
+@media(min-width:1000px){.u-pair{grid-template-columns:390px minmax(0,1fr);align-items:start}}
+.u-phone{width:100%;max-width:390px;border:1px solid var(--line);border-radius:28px;background:var(--ground);overflow:hidden;position:relative;min-height:760px}
+.u-desk{border:1px solid var(--line);border-radius:18px;background:var(--ground);overflow:hidden}
+.u-top{background:var(--espresso-deep);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-weight:800}
+.u-top i{display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--marigold);vertical-align:-5px;margin-right:8px}
+.u-page{padding:16px}
+.u-desk .u-page{padding:22px 28px}
+.u-crumb{font-size:13px;color:var(--ink-3);margin-bottom:4px}
+.u-title{font-family:var(--head);font-size:22px;line-height:1.15;font-weight:800}
+.u-desk .u-title{font-size:30px}
+.u-sub{font-size:13.5px;color:var(--ink-3);margin:4px 0 14px}
+.u-grid{display:grid;gap:16px}
+.u-desk .u-grid{grid-template-columns:minmax(0,1fr) 340px;align-items:start}
+.u-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:14px}
+.u-player{aspect-ratio:16/9;border-radius:12px;background:#3a3125 radial-gradient(circle at 60% 40%,#5a4a36,#2b2318);position:relative;overflow:hidden}
+.u-player .u-play{position:absolute;left:12px;bottom:10px;color:#fff;font-size:12.5px;font-weight:700}
+.u-timeline{height:6px;border-radius:3px;background:var(--line);margin:18px 2px 6px;position:relative}
+.u-timeline span{position:absolute;top:-8px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:900}
+.u-money{background:var(--marigold);border-radius:20px;padding:18px;box-shadow:var(--shadow-money);color:var(--marigold-ink)}
+.u-money small{font-size:12.5px;font-weight:700;color:var(--marigold-ink-2)}
+.u-money b{display:block;font-family:var(--head);font-size:30px;font-weight:800;line-height:1.1;margin:2px 0}
+.u-list{display:grid;gap:8px;margin-top:16px}
+.u-item{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;font-weight:700;font-size:14.5px}
+.u-item em{font-style:normal;font-size:12.5px;font-weight:800;padding:2px 9px;border-radius:999px;white-space:nowrap;align-self:start}
+.u-fail{background:var(--fail-wash);color:var(--fail)}.u-pass{background:var(--pass-wash);color:var(--pass)}.u-uns{background:var(--unsure-wash);color:var(--unsure)}
+.u-faded{opacity:.55}
+.u-btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:999px;font-weight:800;font-size:15px;border:0;cursor:pointer;font-family:inherit}
+.u-btn.dark{background:var(--espresso);color:#fff}
+.u-btn.line{background:var(--surface);color:var(--espresso);border:1px solid var(--latte-line)}
+.u-link{font-weight:800;color:var(--espresso);text-decoration:underline;text-underline-offset:3px;background:none;border:0;font-size:14px;cursor:pointer;min-height:44px;font-family:inherit}
+.u-fixed{position:absolute;left:10px;right:10px;bottom:10px;background:var(--surface);border-radius:18px;box-shadow:var(--shadow-bar);padding:10px}
+.u-fixed .u-btn{width:100%}
+.u-nextbar{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px;display:flex;gap:16px;align-items:center;justify-content:space-between;margin-top:16px}
+.u-nextbar p{color:var(--ink-2);font-size:14.5px;max-width:60ch}
+.u-nextbar p b{color:var(--ink)}
+/* the upload's own pieces */
+.u-bar{height:8px;border-radius:999px;background:var(--latte);overflow:hidden}
+.u-bar>span{display:block;height:100%;width:42%;background:var(--marigold);border-radius:inherit;position:relative}
+.u-bar>span::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgb(255 255 255/.55),transparent);background-size:60% 100%;background-repeat:no-repeat;animation:u-sheen 1.6s cubic-bezier(.22,1,.36,1) infinite}
+@keyframes u-sheen{from{background-position:-60% 0}to{background-position:160% 0}}
+@media(prefers-reduced-motion:reduce){.u-bar>span::after{animation:none;display:none}}
+.u-pct{font-family:var(--head);font-weight:800;font-variant-numeric:tabular-nums}
+.u-file{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.u-muted{color:var(--ink-3);font-size:13.5px}
+/* banners, as DC-FR-08's */
+.u-banner{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;grid-template-columns:40px minmax(0,1fr);gap:4px 14px;align-items:start;margin-bottom:14px}
+.u-banner .u-seal{grid-row:1/4;width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.u-banner h3{font-size:16px;font-weight:800;line-height:1.3}
+.u-banner p{color:var(--ink-2);font-size:14.5px}
+.u-banner .u-acts{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.u-seal.fail{background:var(--fail-wash);color:var(--fail)}.u-seal.wait{background:var(--waiting-wash);color:var(--waiting)}.u-seal.uns{background:var(--unsure-wash);color:var(--unsure)}
+.u-seal svg{width:20px;height:20px}
+/* the brand's link line beside Copy */
+.u-linkrow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.u-opened{font-size:13.5px;color:var(--ink-3);display:flex;gap:6px;align-items:center}
+.u-opened svg{width:16px;height:16px}
+.u-opened.seen{color:var(--pass)}
+.u-opened.gone{color:var(--fail);font-weight:700}

@@ -1,0 +1,64 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Draft upload: shared pieces</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="du.css"><style>
+.s-row{display:grid;gap:18px}
+@media(min-width:900px){.s-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.s-next p{margin-bottom:10px}
+.s-hold{min-height:420px;display:grid;place-items:center;text-align:center}
+.s-hold>div{max-width:420px;display:grid;gap:12px;justify-items:center}
+.s-hold h2{font-family:var(--head);font-size:24px;line-height:1.2}
+.s-hold .u-seal{width:56px;height:56px;border-radius:50%;display:grid;place-items:center}
+.s-hold .u-seal svg{width:26px;height:26px}
+</style></head><body><main class="u-doc">
+<h1>Shared by A and B</h1>
+<p class="u-why">The two limit banners (DC-FR-53), the brand's link line (DC-FR-52) and the page for a post with no hold yet (DC-FR-54). They sit where the draft-check banners and next step already are, whichever option is picked.</p>
+
+<p class="u-state">Draft limits (DC-FR-53)</p>
+<div class="s-row">
+  <div>
+    <div class="u-banner" role="alert">
+      <span class="u-seal wait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+      <h3>This post has had all the checks one post can have.</h3>
+      <p>So this draft can't be checked. Your last results stay as they are.</p>
+    </div>
+    <p class="u-muted">The post's limit. Upload new draft is gone from the page and the next step.</p>
+  </div>
+  <div>
+    <div class="u-banner" role="alert">
+      <span class="u-seal uns"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>
+      <h3>Cleared has checked all the video it can today.</h3>
+      <p>You can upload this draft from 3:40 pm.</p>
+      <div class="u-acts"><button class="u-btn line">Upload new draft</button></div>
+    </div>
+    <p class="u-muted">Everyone's daily limit. Uploading stays; without a time from the API it says "tomorrow".</p>
+  </div>
+</div>
+
+<p class="u-state">The brand's link, beside Copy (DC-FR-52)</p>
+<div class="s-row">
+  <div class="u-nextbar s-next" style="display:block">
+    <p>Glow Theory has until <b>13 Oct, 14:00</b> to review. If they say nothing, you're cleared to publish.</p>
+    <div class="u-linkrow"><button class="u-btn line">Copy link for Glow Theory</button>
+      <span class="u-opened"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/></svg>Glow Theory hasn't opened it yet.</span></div>
+  </div>
+  <div class="u-nextbar s-next" style="display:block">
+    <p>Glow Theory has until <b>13 Oct, 14:00</b> to review. If they say nothing, you're cleared to publish.</p>
+    <div class="u-linkrow"><button class="u-btn line">Copy link for Glow Theory</button>
+      <span class="u-opened seen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/></svg>Glow Theory opened it on 11 Oct, 14:05.</span></div>
+  </div>
+  <div class="u-nextbar s-next" style="display:block">
+    <p>Glow Theory asked to accept <b>Serum shown in use</b>. They decide; nothing clears by waiting.</p>
+    <div class="u-linkrow"><button class="u-btn dark">Make a new link</button>
+      <span class="u-opened gone">This link has expired.</span></div>
+  </div>
+</div>
+
+<p class="u-state">A post with no hold yet (DC-FR-54)</p>
+<div class="u-desk s-hold"><div>
+  <span class="u-seal" style="background:var(--latte);color:var(--espresso)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+  <h2>Maple &amp; Moss hasn't approved this post's hold yet.</h2>
+  <p class="u-muted" style="font-size:15px">Its draft check opens once the money is held.</p>
+  <a class="u-link" href="#">See the deal's terms</a>
+</div></div>
+</main></body></html>
