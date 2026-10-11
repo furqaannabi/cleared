@@ -124,7 +124,7 @@ Version one covers YouTube videos and Shorts, and Instagram Reels. Stories, phot
 
 | | YouTube | Instagram |
 | --- | --- | --- |
-| Creator connects | Google sign-in, read-only | Instagram sign-in; professional accounts only |
+| Creator connects | Google sign-in, read-only | Instagram Login with one read-only permission; professional accounts only ([decision](decisions/2026-10-11-instagram-login-read-only.md)) |
 | Draft | The file, plus the same video uploaded to their channel as unlisted | The file |
 | Can Cleared fetch the published video? | No. The API does not offer it, and downloading breaks YouTube's terms. | Yes, unless the Reel uses licensed music |
 | How the live post is tied to the draft | Same video, switched to public. The file's size and length match YouTube's record of the upload. | The live file's transcript and length match the draft's |
@@ -157,6 +157,7 @@ No field for the paid-partnership label was found in Instagram's API, so on Inst
 - **A post PayPal never lets Cleared collect for ends as "approved, not paid".** Getting paid after that is outside Cleared.
 - **The paid-partnership label on Instagram is a manual check.**
 - **Instagram creators need a professional account.**
+- **Only the team's tester accounts can connect Instagram** until Meta has reviewed the app, which is not asked for during the hackathon ([decision](decisions/2026-10-11-no-meta-review-for-the-hackathon.md)). Demo accounts read one Instagram account the team owns.
 - **A Reel with licensed music cannot be fetched**, so it goes to manual approval.
 - **Not included:** Stories, photo posts, carousels, other platforms, finding or matching brands and creators, contracts, tax, and checking that a post stays up after payment.
 

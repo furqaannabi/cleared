@@ -89,3 +89,10 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-10 | [Email for the brand's two notices after publishing, to an address the brand gives](2026-10-10-email-for-the-brands-two-notices-after-publishing.md) | Superseded in part by [2026-10-10-resend-sends-the-brands-two-notices.md](2026-10-10-resend-sends-the-brands-two-notices.md): Resend, not Amazon SES |
 | 2026-10-10 | [Resend sends the brand's two notices, in place of Amazon SES](2026-10-10-resend-sends-the-brands-two-notices.md) | Accepted |
 | 2026-10-10 | [A post found public when Cleared asks at the deadline is in time](2026-10-10-a-post-found-public-at-the-deadline-is-in-time.md) | Accepted |
+| 2026-10-11 | [Instagram Reels: the whole path in one spec, with Meta's access proven first](2026-10-11-instagram-reels-whole-path-access-proven-first.md) | Accepted |
+| 2026-10-11 | [A creator connects Instagram with Instagram Login and one read-only permission](2026-10-11-instagram-login-read-only.md) | Accepted |
+| 2026-10-11 | [A Reel's go-ahead checks the account can be read, then the hold](2026-10-11-a-reels-go-ahead-checks-the-account-then-the-hold.md) | Accepted |
+| 2026-10-11 | [A live Reel is matched to the approved draft by its length, then its words](2026-10-11-a-live-reel-is-matched-by-length-then-words.md) | Accepted |
+| 2026-10-11 | [A Reel nobody gave a link for is not looked for](2026-10-11-a-reel-nobody-gave-a-link-for-is-not-looked-for.md) | Accepted |
+| 2026-10-11 | [Demo accounts read one real Instagram account the team owns](2026-10-11-demo-accounts-read-a-shared-instagram-account.md) | Accepted |
+| 2026-10-11 | [No Meta review of the app for the hackathon](2026-10-11-no-meta-review-for-the-hackathon.md) | Accepted |
