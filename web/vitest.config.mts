@@ -8,6 +8,8 @@ export default defineConfig({
   resolve: { tsconfigPaths: true },
   test: {
     environment: "jsdom",
+    // The page and the API share an origin in tests, so XMLHttpRequest (the draft upload, DC-FR-45) isn't cross-origin.
+    environmentOptions: { jsdom: { url: "http://localhost/" } },
     // Absolute so Node can resolve request URLs; the browser uses same-origin /api.
     env: { NEXT_PUBLIC_API_BASE_URL: "http://localhost/api" },
     setupFiles: ["./src/test/setup.ts"],

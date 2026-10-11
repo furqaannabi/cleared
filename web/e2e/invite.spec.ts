@@ -36,14 +36,20 @@ test("IN: checklist ready → invite → amounts, deadlines, Instagram → link 
   await page.getByRole("spinbutton", { name: "Days after the hold for the Instagram Reel", exact: true }).fill("10");
   await page.getByRole("textbox", { name: "Glow Theory’s email (optional)", exact: true }).click();
   await expect(page.getByText("$1,650.00", { exact: true })).toBeVisible();
-  await page.getByRole("textbox", { name: "Glow Theory’s email (optional)", exact: true }).fill("sam@glowtheory.com");
-  await page.getByRole("button", { name: "Connect Instagram" }).click();
+  const brandEmail = page.getByRole("textbox", { name: "Glow Theory’s email (optional)", exact: true });
+  await brandEmail.fill("sam@glowtheory.com");
+  await brandEmail.blur();
+  // IN-FR-11 (1.3): leaves for Instagram and comes back (on mocks, the mock answers); what was saved is still there.
+  await page.getByRole("link", { name: "Connect Instagram" }).click();
+  await page.waitForURL((u) => !u.search.includes("connect"));
   await expect(page.getByText("Instagram connected as ada.makes")).toBeVisible();
+  await expect(brandEmail).toHaveValue("sam@glowtheory.com");
   await page.screenshot({ path: testInfo.outputPath("editing.png"), fullPage: true });
 
   await page.getByRole("button", { name: "Create link for Glow Theory" }).click();
   const panel = page.getByRole("region", { name: "Send this link to Glow Theory" });
-  await expect(panel.getByText("We’ve also emailed it to sam@glowtheory.com.")).toBeVisible();
+  await expect(panel.getByText("Anyone with this link can open this deal. Send it only to Glow Theory.")).toBeVisible();
+  await expect(panel.getByText(/emailed/)).toHaveCount(0);
   await panel.getByRole("button", { name: "Copy link" }).click();
   await expect(panel.getByText("Copied")).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/^https:\/\/cleared\.example\/b\//);

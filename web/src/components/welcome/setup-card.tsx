@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { ConnectLink } from "@/components/connect/connect-link";
+import { useConnectResult } from "@/components/connect/use-connect-result";
 import { EmailField } from "@/components/invite/email-field";
 import { api } from "@/lib/api";
 import type { CreatorProfile } from "@/lib/invite/types";
@@ -14,7 +16,8 @@ const ACCOUNTS = [
 /**
  * "Set up in a minute": connect YouTube, connect Instagram and the PayPal
  * email, each optional and saved as it's done, with how many are done.
- * Connecting follows IN-FR-10 and IN-FR-11; the email is IN-FR-12's.
+ * Connecting follows IN-FR-10 and IN-FR-11 (1.3: a link to the backend);
+ * the email is IN-FR-12's.
  *
  * @param me - the creator's profile
  * @param onMe - takes the profile a save returned
@@ -22,6 +25,8 @@ const ACCOUNTS = [
  */
 export function SetupCard({ me, onMe }: { me: CreatorProfile; onMe: (me: CreatorProfile) => void }) {
   const [problem, setProblem] = useState<string | null>(null);
+  // IN-FR-11 (1.3): back from connecting, the result shows on its row.
+  const result = useConnectResult();
   const connected = (p: string) => me.accounts.find((a) => a.platform === p);
   const done = ACCOUNTS.filter((a) => connected(a.platform)).length + (me.paypalEmail ? 1 : 0);
   const take = async (call: () => ReturnType<typeof api.getProfile>) => {
@@ -69,9 +74,14 @@ export function SetupCard({ me, onMe }: { me: CreatorProfile; onMe: (me: Creator
             {c ? (
               <span className="text-[13.5px] font-bold text-pass">Connected as {c.name}</span>
             ) : (
-              <button type="button" onClick={() => void take(() => api.connectAccount(a.platform))} className={CONNECT}>
+              <ConnectLink platform={a.platform} path="/welcome" className={CONNECT}>
                 Connect {a.name}
-              </button>
+              </ConnectLink>
+            )}
+            {!c && result?.platform === a.platform && result.message && (
+              <p role="alert" className="basis-full text-meta font-semibold text-fail">
+                {result.message}
+              </p>
             )}
           </div>
         );

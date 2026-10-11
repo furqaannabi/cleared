@@ -13,8 +13,8 @@ import { deliverablesData } from "./store";
  * before each request. Never used by Vitest or a production build.
  */
 
-// 2: the held demo deal (RW 1.0) joined the seed. 3: posts cancelled before their hold (CN 1.0). 4: who is signed in, and a profile per account (SI 1.0).
-const VERSION = 4;
+// 2: the held demo deal (RW 1.0) joined the seed. 3: posts cancelled before their hold (CN 1.0). 4: who is signed in, and a profile per account (SI 1.0). 5: one creator, no demo account (SI 1.1).
+const VERSION = 5;
 
 /** Every mock module's data, as plain JSON-safe values. */
 export function snapshotMockData() {
@@ -41,7 +41,7 @@ const isSnapshot = (v: unknown): v is Snapshot => {
     typeof s.deliverables === "object" &&
     Array.isArray(s.drafts) &&
     Array.isArray(s.invites?.terms) &&
-    typeof s.invites?.profiles === "object" &&
+    typeof s.invites?.profile === "object" &&
     Array.isArray(s.brand?.sessions) &&
     Array.isArray(s.brand?.state) &&
     Array.isArray(s.cancel) &&

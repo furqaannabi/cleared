@@ -10,9 +10,8 @@ test("LP-FR-07: the landing page has no sideways scroll, and the button is on th
   expect(box && box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
 });
 
-test("LP-FR-03, LP-FR-15 (1.2), SI-FR-02: Try the demo account opens the demo's first deal", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("main").getByRole("button", { name: "Try the demo account" }).first().click();
+test("LP-FR-15: /deals opens the signed-in creator's first deal", async ({ page }) => {
+  await page.goto("/deals");
   await expect(page).toHaveURL(/\/deals\/deal_glow\/deliverables\/del_glow_video/);
   await expect(page.getByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
 });

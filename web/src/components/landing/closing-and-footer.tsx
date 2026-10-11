@@ -1,8 +1,8 @@
-import { SignInButtons } from "@/components/session/sign-in-buttons";
-import { DemoNote } from "./demo-button";
+import { SignInButton } from "@/components/session/sign-in-buttons";
 
 /**
- * The closing band: the two ways in again before the footer (LP 1.2).
+ * The closing band: Sign in with Google again before the footer, with no
+ * note (LP 1.3).
  *
  * @see docs/specs/landing-frd.md LP-FR-17
  */
@@ -14,9 +14,8 @@ export function Closing() {
           See a whole deal clear.
         </h2>
         <div className="mt-[18px] flex justify-center">
-          <SignInButtons onDark />
+          <SignInButton next="/deals" onDark />
         </div>
-        <DemoNote onDark />
       </section>
     </div>
   );

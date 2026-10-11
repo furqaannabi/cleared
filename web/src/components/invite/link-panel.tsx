@@ -18,8 +18,9 @@ function shortDate(iso: string): string {
 
 /**
  * The brand's link once it exists: the link with Copy and (where the browser
- * has one) Share, who can open it, when it expires, and who Cleared emailed it
- * to. The link only ever comes from the API; it is never stored or logged.
+ * has one) Share, who can open it, and when it expires. Cleared never emails
+ * it (IN 1.3). The link only ever comes from the API; it is never stored or
+ * logged.
  *
  * @param invite - the deal's invite, with its link
  * @param save - runs a change against the API
@@ -95,7 +96,6 @@ export function LinkPanel({
         </div>
         <p className="text-meta text-ink-3">Anyone with this link can open this deal. Send it only to {brandName}.</p>
         <p className="text-meta text-ink-3">{`Expires on ${shortDate(link.expiresAt)}.`}</p>
-        {link.emailedTo && <p className="text-meta text-ink-3">{`We’ve also emailed it to ${link.emailedTo}.`}</p>}
         {/* Mock builds only: open the brand's side in this browser (CH "Mocks"). */}
         {demo && (
           <Link href={`/b/${link.url.split("/b/")[1]}`} className="inline-flex min-h-11 items-center text-[14px] font-bold text-espresso underline underline-offset-3">

@@ -22,6 +22,9 @@ import { SeekProvider } from "@/components/player/seek";
 import { api } from "@/lib/api";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { MOCKING_ENABLED } from "@/lib/mocking/mocking-enabled";
+import { UploadNotices } from "./upload-notices";
+import { UploadProgress } from "./upload-progress";
+import { useDraftUpload } from "./use-draft-upload";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import type { Deliverable } from "@/lib/deliverable/types";
 import { CheckFailedBanner } from "./check-failed-banner";
@@ -36,6 +39,7 @@ import { DemoDraftOutcome, type DemoChoice } from "@/components/mocking/demo-dra
 import { RunChangeBanner } from "./run-change-banner";
 import { runChangeRecap } from "@/lib/deliverable/run-change";
 import { LoadProblem } from "./load-problem";
+import { NoHoldYet } from "./no-hold-yet";
 import { PageSkeleton } from "./page-skeleton";
 import { useDeliverable } from "./use-deliverable";
 import { useItemActions } from "./use-item-actions";
@@ -58,7 +62,9 @@ export function DraftCheckPage({ dealId, deliverableId }: { dealId: string; deli
       {load.status === "loading" && <PageSkeleton />}
       {load.status === "switching" && <Loaded key={load.previous.id} dealId={dealId} deliverable={load.previous} onUpdated={replace} openingId={deliverableId} />}
       {load.status === "ready" && <Loaded key={load.deliverable.id} dealId={dealId} deliverable={load.deliverable} onUpdated={replace} settle={switched} />}
-      {load.status === "error" && <LoadProblem error={load.error} onRetry={retry} />}
+      {/* DC-FR-54 (1.18): a post with no hold yet has no draft check. */}
+      {load.status === "error" && load.code === "not_held" && <NoHoldYet dealId={dealId} />}
+      {load.status === "error" && load.code !== "not_held" && <LoadProblem error={load.error} onRetry={retry} />}
     </main>
   );
 }
@@ -144,10 +150,14 @@ function Loaded({
         );
       }
     : undefined;
+  // DC-FR-45 (1.18): the real upload, everywhere but mock builds; the post's limit takes the upload away (DC-FR-53).
+  const draftUpload = useDraftUpload(deliverable.id, onUpdated);
+  const postLimit = draftUpload.problem?.show === "limit" && draftUpload.problem.post;
+  const onUpload = simulateUpload ?? (postLimit ? undefined : draftUpload.upload);
   // PP FRD, design B: past Approved the journey takes the money card's and the next step's place.
   const inJourney = JOURNEY_STATES.includes(deliverable.state);
   const barHasAction =
-    view.nextStep.action === "try_again" || (view.nextStep.action !== null && simulateUpload !== undefined);
+    view.nextStep.action === "try_again" || (view.nextStep.action !== null && onUpload !== undefined);
   // DC-FR-26: a fresh link for the draft when the current one stops working.
   const cancelSend = useCallback((note?: string) => api.cancelDeliverable(deliverable.id, note), [deliverable.id]);
   const reloadPost = useCallback(async () => {
@@ -193,8 +203,9 @@ function Loaded({
   }, [setSelectedId]);
 
   // DC-FR-02: before a draft, the player's space says so.
-  const playerSlot =
-    deliverable.state === "no_draft" ? (
+  const playerSlot = draftUpload.uploading ? (
+    <UploadProgress uploading={draftUpload.uploading} vertical={deliverable.platform !== "youtube_video"} onCancel={draftUpload.cancel} />
+  ) : deliverable.state === "no_draft" ? (
       <DraftPlaceholder platform={deliverable.platform} />
     ) : deliverable.draft ? (
       <DraftPlayer
@@ -230,11 +241,12 @@ function Loaded({
         className={`transition-opacity duration-150 ${openingId ? "pointer-events-none opacity-55" : ""} ${settle ? "motion-safe:animate-post-in" : ""}`}
       >
       {view.checkFailed && <CheckFailedBanner banner={view.checkFailed} />}
+      <UploadNotices problem={draftUpload.problem} deliverable={deliverable} />
       {/* DC-FR-48: a banner from md: up; on phones it is the first line of What happens next. */}
       {view.runChange && wide && <RunChangeBanner change={view.runChange} landed={landed} />}
       {view.passed && <PassedBanner passed={view.passed} brandName={deliverable.brandName} />}
       {deliverable.state === "approved" && <ApprovedBanner deliverable={deliverable} />}
-      <CopyReviewLink deliverable={deliverable} />
+      <CopyReviewLink deliverable={deliverable} onUpdated={onUpdated} />
       {simulateUpload && view.nextStep.action?.startsWith("upload") && <DemoDraftOutcome value={demoOutcome} onChange={setDemoOutcome} />}
       {MOCKING_ENABLED && inJourney && <DemoPublishControls d={deliverable} onUpdated={onUpdated} />}
       {/* DC-FR-47: on phones the work comes first: this panel, the player, the checklist, then the money. */}
@@ -249,14 +261,15 @@ function Loaded({
         player={playerSlot}
         next={
           // DC-FR-30: phones show the bar only when it has an action (or a problem to report).
-          !inJourney && (wide || barHasAction || retryProblem) && (
+          // DC-FR-45 (1.18): while uploading, Cancel is in the player and the phone bar steps aside.
+          !inJourney && (wide || barHasAction || retryProblem) && !(draftUpload.uploading && !wide) && (
             <NextStepBar
               step={view.nextStep}
               onTryAgain={retryCheck}
               pending={retrying}
               problem={retryProblem}
               secondary={wide ? briefSheet : undefined}
-              onUpload={simulateUpload}
+              onUpload={draftUpload.uploading ? undefined : onUpload}
               onShowItem={wide ? showItem : undefined}
               // Phones: the panel carries the words, except while a check-failed banner shows (no panel then).
               showLead={wide || Boolean(view.checkFailed)}
@@ -275,7 +288,10 @@ function Loaded({
           )
         }
       />
-      <section aria-label="Checklist" className="mt-8">
+      {draftUpload.uploading && deliverable.run && (
+        <p className="mt-8 text-meta text-ink-3">{`Your results from run ${deliverable.run}, until the new draft is checked:`}</p>
+      )}
+      <section aria-label="Checklist" className={draftUpload.uploading ? "mt-3 opacity-55" : "mt-8"}>
         <div className="flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between">
           <h2 className="font-head text-section-title font-bold">
             Checklist<small className="ml-1.5 font-sans text-[14px] font-semibold text-ink-3">{view.items.length} items</small>

@@ -1,13 +1,12 @@
 import Image from "next/image";
 import { StatusSeal } from "@/components/checklist/status-seal";
 import { MoneyCard } from "@/components/money/money-card";
-import { InstagramOnlyNote, SignInButtons } from "@/components/session/sign-in-buttons";
-import { DemoNote } from "./demo-button";
+import { InstagramOnlyNote, SignInButton } from "@/components/session/sign-in-buttons";
 import { exampleDeliverable, exampleItems } from "./example";
 
 /**
- * The opening screen: the tagline as the page's only h1, one sentence, the one
- * action with its demo note, and the product itself: a phone showing the
+ * The opening screen: the tagline as the page's only h1, one sentence, Sign
+ * in with Google with the Instagram-only line, and the product itself: a phone showing the
  * example deal with the held money card beside it.
  *
  * @see docs/specs/landing-frd.md LP-FR-02 to LP-FR-07, LP-FR-16
@@ -26,12 +25,11 @@ export function Hero() {
         <p className="mt-[18px] mb-6 max-w-[34ch] text-lg text-ink-2">
           The brand’s money is held in PayPal, AI checks your video against the brief, and you’re paid when the approved post is live.
         </p>
-        {/* LP-FR-03 (1.2): the two ways in (SI-FR-01, SI-FR-02). */}
-        <SignInButtons />
-        <div className="mt-2.5 grid gap-1">
+        {/* LP-FR-03 (1.3): the one way in (SI-FR-01). */}
+        <SignInButton next="/deals" />
+        <div className="mt-2.5">
           <InstagramOnlyNote />
         </div>
-        <DemoNote />
       </div>
       <HeroPhone />
     </section>

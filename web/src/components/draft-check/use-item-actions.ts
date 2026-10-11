@@ -9,6 +9,10 @@ const PROBLEM: Record<ApiError, string> = {
   not_found: "We couldn’t find this deal any more.",
   unavailable: "We couldn’t send that. Try again.",
   invalid_response: "We couldn’t send that. Try again.",
+  // Only briefs have a limit on reading (BC-FR-24); asking the brand never meets one.
+  read_limit: "We couldn’t send that. Try again.",
+  draft_limit: "We couldn’t send that. Try again.",
+  cancelled: "We couldn’t send that. Try again.",
   // SI-FR-07: the shell sends the creator to sign in.
   signed_out: "You’ve been signed out. Sign in again to carry on.",
 };

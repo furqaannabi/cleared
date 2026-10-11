@@ -16,15 +16,14 @@ describe("Landing page", () => {
     ).toBeInTheDocument();
   });
 
-  test("LP-FR-03, LP-FR-04, LP-FR-17 (1.2): the two ways in, in the hero and the closing band, with the notes", () => {
+  test("LP-FR-03, LP-FR-17 (1.3): Sign in with Google alone, in the hero and the closing band, with no demo and no note", () => {
     page();
     const google = screen.getAllByRole("link", { name: "Sign in with Google" });
     expect(google).toHaveLength(2);
-    for (const g of google) expect(g.getAttribute("href")).toMatch(/\/auth\/google$/);
-    expect(screen.getAllByRole("button", { name: "Try the demo account" })).toHaveLength(2);
-    expect(screen.getAllByText("The demo account has made-up data. No real money moves.").length).toBe(2);
-    expect(screen.getAllByText("Instagram-only? Sign in with any Google account, then connect your Instagram.").length).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByRole("link", { name: "See a deal in action" })).toBeNull();
+    for (const g of google) expect(g.getAttribute("href")).toMatch(/\/auth\/google\?next=%2Fdeals$/);
+    expect(screen.queryByText(/demo/i)).toBeNull();
+    expect(screen.queryByText("No real money moves.", { exact: false, ignore: "footer *" })).toBeNull();
+    expect(screen.getAllByText("Instagram-only? Sign in with any Google account, then connect your Instagram.")).toHaveLength(1);
     expect(screen.getByRole("heading", { name: "See a whole deal clear." })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/sign-in");
   });
@@ -91,10 +90,9 @@ describe("Landing page", () => {
     );
   });
 
-  test("LP-BR-02: never asks for anything: no form fields (the demo account's form is a single button)", () => {
+  test("LP-BR-02: never asks for anything: no forms", () => {
     const { container } = page();
-    expect(container.querySelector("input, select, textarea")).toBeNull();
-    for (const form of container.querySelectorAll("form")) expect([...form.elements].map((e) => e.tagName)).toEqual(["BUTTON"]);
+    expect(container.querySelector("form, input, select, textarea")).toBeNull();
   });
 
   test("headings are in order: one h1, then h2s, with h3s only inside sections", () => {

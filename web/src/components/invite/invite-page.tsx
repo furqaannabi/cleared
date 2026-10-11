@@ -37,11 +37,11 @@ export function InvitePage({ dealId }: { dealId: string }) {
     if (invite && next.step !== invite.step) refreshDeals();
     setInvite(next);
   };
-  const save: Save = async (key, call, onSaved) => {
+  const save: Save = async (key, call, onSaved, explained) => {
     setProblems(({ [key]: _, ...rest }) => (void _, rest));
     const r = await call();
     if (r.ok) onSaved(r.data);
-    else setProblems((p) => ({ ...p, [key]: () => void save(key, call, onSaved) }));
+    else if (!explained?.(r)) setProblems((p) => ({ ...p, [key]: () => void save(key, call, onSaved, explained) }));
     return r.ok;
   };
   const view = invite && profile ? inviteView(invite, profile, new Date()) : null;
@@ -110,7 +110,7 @@ export function InvitePage({ dealId }: { dealId: string }) {
                 <LinkPanel invite={{ ...invite, link: invite.link }} save={save} problems={problems} onInvite={takeInvite} />
               ) : (
                 <>
-                  <BeforeYouSend invite={invite} view={view} save={save} problems={problems} onInvite={takeInvite} onProfile={setProfile} />
+                  <BeforeYouSend invite={invite} view={view} save={save} problems={problems} onInvite={takeInvite} />
                   <CreateLinkBar invite={invite} view={view} paypalEmail={profile.paypalEmail} save={save} problems={problems} onInvite={takeInvite} />
                 </>
               )}

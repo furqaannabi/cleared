@@ -1,50 +1,34 @@
-"use client";
-
-import { apiBaseUrl, api } from "@/lib/api";
-import { MOCKING_ENABLED } from "@/lib/mocking/mocking-enabled";
+import { apiBaseUrl } from "@/lib/api";
 import { safeNext } from "@/lib/session/sign-in-path";
 
 const GOOGLE =
   "inline-flex min-h-12 items-center justify-center gap-2.5 rounded-pill bg-espresso px-[22px] text-body-strong font-bold text-surface shadow-[0_2px_6px_rgb(28_21_10/0.2)] hover:bg-espresso-hover";
-const DEMO = "inline-flex min-h-12 w-full items-center justify-center rounded-pill border border-latte-line bg-surface px-[22px] text-body-strong font-bold text-espresso hover:bg-latte-wash";
 
 /**
- * The two ways in: "Sign in with Google", a plain link to the backend's
- * sign-in, and "Try the demo account", a form posting to the backend's demo
- * route. Both carry a safe `next`. The page holds no Google or Cognito code
- * and never sees a token (SI-BR-01). Mock builds ask the mock instead and go
- * where it answers (SI-FR-14).
+ * "Sign in with Google": a plain link to the backend's sign-in, carrying a
+ * safe `next`. The page holds no Google code and never sees a token
+ * (SI-BR-01). There is no other way in (1.1: no demo account).
  *
  * @param next - where to return after signing in, if anywhere
- * @param layout - side by side from `sm:` (the landing) or stacked full width (the sign-in page)
+ * @param fullWidth - full width (the sign-in page) rather than its own width (the landing)
  * @param onDark - on the espresso closing band
- * @see docs/specs/sign-in-frd.md SI-FR-01, SI-FR-02, SI-FR-06; docs/specs/landing-frd.md LP-FR-03
+ * @see docs/specs/sign-in-frd.md SI-FR-01, SI-FR-06; docs/specs/landing-frd.md LP-FR-03
  */
-export function SignInButtons({ next, layout = "row", onDark = false }: { next?: string | null; layout?: "row" | "stack"; onDark?: boolean }) {
+export function SignInButton({ next, fullWidth = false, onDark = false }: { next?: string | null; fullWidth?: boolean; onDark?: boolean }) {
   const safe = safeNext(next);
   const q = safe ? `?next=${encodeURIComponent(safe)}` : "";
-  const mock = (kind: "google" | "demo") => async (e: { preventDefault: () => void }) => {
-    if (!MOCKING_ENABLED) return;
-    e.preventDefault();
-    const r = await api.mockSignIn(kind, safe ?? undefined);
-    if (r.ok) window.location.assign(r.data.location);
-  };
   return (
-    <div className={`grid gap-2.5 ${layout === "row" ? "sm:flex sm:flex-wrap sm:items-center" : "w-full"}`}>
-      <a href={`${apiBaseUrl}/auth/google${q}`} onClick={mock("google")} className={`${GOOGLE} ${onDark ? "bg-marigold text-marigold-ink hover:bg-marigold-chip" : ""}`}>
-        <GoogleMark />
-        Sign in with Google
-      </a>
-      <form method="post" action={`${apiBaseUrl}/auth/demo${q}`} onSubmit={mock("demo")} className={layout === "row" ? "sm:w-auto" : ""}>
-        <button type="submit" className={`${DEMO} ${layout === "row" ? "sm:w-auto" : ""}`}>
-          Try the demo account
-        </button>
-      </form>
-    </div>
+    <a
+      href={`${apiBaseUrl}/auth/google${q}`}
+      className={`${GOOGLE} ${fullWidth ? "w-full" : ""} ${onDark ? "bg-marigold text-marigold-ink hover:bg-marigold-chip" : ""}`}
+    >
+      <GoogleMark />
+      Sign in with Google
+    </a>
   );
 }
 
-/** SI-FR-01: under the buttons, for creators who only use Instagram. */
+/** SI-FR-01: under the button, for creators who only use Instagram. */
 export function InstagramOnlyNote({ onDark = false }: { onDark?: boolean }) {
   return <p className={`text-[13.5px] ${onDark ? "text-white/75" : "text-ink-3"}`}>Instagram-only? Sign in with any Google account, then connect your Instagram.</p>;
 }

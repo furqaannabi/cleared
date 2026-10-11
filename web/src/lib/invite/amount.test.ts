@@ -8,16 +8,23 @@ describe("parseAmount (IN-FR-05)", () => {
     expect(parseAmount(" $450.00 ")).toEqual({ ok: true, value: "450.00" });
   });
 
-  it("refuses empty, zero, three places, letters, negatives and anything over $9,999,999.99", () => {
+  it("refuses empty, three places, letters and negatives", () => {
     const shape = "Enter an amount in dollars, like 1200 or 1200.50";
     expect(parseAmount("")).toEqual({ ok: false, message: "Add an amount" });
-    expect(parseAmount("0")).toEqual({ ok: false, message: "The amount must be more than $0" });
-    expect(parseAmount("0.00")).toEqual({ ok: false, message: "The amount must be more than $0" });
     expect(parseAmount("12.345")).toEqual({ ok: false, message: shape });
     expect(parseAmount("twelve")).toEqual({ ok: false, message: shape });
     expect(parseAmount("-5")).toEqual({ ok: false, message: shape });
-    expect(parseAmount("9999999.99")).toEqual({ ok: true, value: "9999999.99" });
-    expect(parseAmount("10000000")).toEqual({ ok: false, message: "Up to $9,999,999.99" });
+  });
+
+  it("1.3: one post is $20.00 to $10,000.00", () => {
+    const least = "The least one post can be is $20.00.";
+    const most = "The most one post can be is $10,000.00.";
+    expect(parseAmount("0")).toEqual({ ok: false, message: least });
+    expect(parseAmount("19.99")).toEqual({ ok: false, message: least });
+    expect(parseAmount("20")).toEqual({ ok: true, value: "20.00" });
+    expect(parseAmount("10,000.00")).toEqual({ ok: true, value: "10000.00" });
+    expect(parseAmount("10000.01")).toEqual({ ok: false, message: most });
+    expect(parseAmount("99999999999")).toEqual({ ok: false, message: most });
   });
 });
 

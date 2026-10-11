@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { api } from "@/lib/api";
+import { connectMockAccount } from "@/mocks/invites";
 
 /** The demo deal after the brand sent two notes: one on an item, one on the Reel's amount. */
 async function changesAsked() {
@@ -60,7 +61,7 @@ describe("CH-FR-24 sending updated terms", () => {
     const invite = await api.getInvite("deal_maple");
     await api.replyToNote("deal_maple", invite.ok ? invite.data.notes![1].id : "", "Fixed.");
     await api.updateInvitePost("deal_maple", "del_maple_reel", { amount: "400.00" });
-    await api.connectAccount("instagram");
+    connectMockAccount("instagram");
     const sent = await api.sendUpdatedTerms("deal_maple");
     expect(sent.ok && sent.data).toMatchObject({ step: "waiting_for_brand", version: 2 });
     expect(sent.ok && sent.data.link?.url).toBe("https://cleared.example/b/demo_maple");
@@ -79,7 +80,7 @@ describe("CH-FR-24 sending updated terms", () => {
     await api.reopenChecklist("deal_maple");
     await api.renameItem("deal_maple", "it_maple_link", "maplemoss.com/ada-okafor in the description");
     await api.markChecklistReady("deal_maple");
-    await api.connectAccount("instagram");
+    connectMockAccount("instagram");
     await api.sendUpdatedTerms("deal_maple");
     const brand = await api.getBrandDeal("deal_maple");
     expect(brand.ok && brand.data.items.find((i) => i.id === "it_maple_link")).toMatchObject({ name: "maplemoss.com/ada-okafor in the description", changed: true });
@@ -91,7 +92,7 @@ describe("CH-FR-24 sending updated terms", () => {
   });
 
   test("can only be sent while changes are asked", async () => {
-    await api.connectAccount("instagram");
+    connectMockAccount("instagram");
     expect(await api.sendUpdatedTerms("deal_maple")).toEqual({ ok: false, error: "rejected" });
   });
 });

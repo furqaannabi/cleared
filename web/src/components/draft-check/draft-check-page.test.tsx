@@ -161,11 +161,11 @@ describe("creator draft check page", () => {
     expect(within(dialog).getByText("Say and show the code GLOW20.").closest("li")).toHaveAttribute("aria-current", "true");
   });
 
-  test("DC-FR-45, DC-FR-30: with mocks off, there is no upload button, so phones show no fixed bar", async () => {
+  test("DC-FR-45 (1.18), DC-FR-30: with mocks off, the real upload is offered, so phones show it in the fixed bar", async () => {
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
     await within(await screen.findByRole("region", { name: "What happens next" })).findByText("Fix 1 item, and decide on 1 unsure item.");
-    expect(screen.queryByLabelText("Upload new draft")).toBeNull();
-    expect(screen.queryByRole("region", { name: "What to do next" })).toBeNull();
+    expect(screen.getByLabelText("Upload new draft")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "What to do next" })).toBeInTheDocument();
   });
 
   test("DC-FR-32, DC-FR-34: the header shows the details and where the deal is", async () => {

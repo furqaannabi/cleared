@@ -2,60 +2,43 @@ import { http, HttpResponse, type RequestHandler } from "msw";
 import { apiBaseUrl } from "@/lib/api";
 
 /*
- * Mock only: who is signed in (SI FRD). The real sign-in is the backend's,
- * through Cognito, with an HttpOnly cookie the page never reads
- * (docs/decisions/2026-10-08-creator-sign-in-through-the-backend.md). Here
- * there are two made-up accounts: a new creator, Sam Rivera, with no deals,
- * and the demo creator, Ada Okafor, who owns every seeded deal.
+ * Mock only, for the surfaces not yet moved onto the live API
+ * (docs/decisions/2026-10-11-frontend-on-the-live-api.md): one made-up
+ * creator, Ada Okafor, who owns every seeded deal and starts signed in. The
+ * real sign-in is the backend's, with an HttpOnly cookie the page never
+ * reads; there is no mock sign-in and no demo account (SI 1.1). Tests of the
+ * sign-in surface answer `/me` themselves (src/test/stub-api.ts).
  */
 
-export type Account = "demo" | "new";
-
-let account: Account | null = null;
-let welcomed: Record<Account, boolean> = { demo: true, new: false };
+let signedIn = true;
+let welcomed = true;
 
 /** Who is signed in, for keeping the mock data in the browser. */
 export const sessionData = {
-  get: () => ({ account, welcomed: { ...welcomed } }),
-  set: (s: { account: Account | null; welcomed: Record<Account, boolean> }) => {
-    account = s.account;
-    welcomed = { ...s.welcomed };
+  get: () => ({ signedIn, welcomed }),
+  set: (s: { signedIn: boolean; welcomed: boolean }) => {
+    signedIn = s.signedIn;
+    welcomed = s.welcomed;
   },
 };
 
-/** The signed-in account, or null. */
-export const currentAccount = () => account;
-/** Signs an account in (tests, and the mock sign-in route); null signs out. */
-export const signInAs = (a: Account | null) => void (account = a);
-/** Whether the account has seen the welcome page (SI-FR-10). */
-export const isWelcomed = (a: Account) => welcomed[a];
-/** Marks the welcome page seen for the signed-in account. */
-export const markWelcomed = () => void (account && (welcomed[account] = true));
+/** Whether the mock creator is signed in. */
+export const isSignedIn = () => signedIn;
+/** Whether the mock creator has seen the welcome page (SI-FR-10). */
+export const isWelcomed = () => welcomed;
+/** Marks the welcome page seen. */
+export const markWelcomed = () => void (welcomed = true);
 
-/** SI-FR-14: Reset demo data signs out and restores the seed. */
+/** Back to signed in, with the welcome seen. */
 export function resetSession() {
-  account = null;
-  welcomed = { demo: true, new: false };
+  signedIn = true;
+  welcomed = true;
 }
 
-/** SI-BR-02: only a path on this site. */
-const sitePath = (next: string | null) => (next && /^\/(?!\/)[^\s\\]*$/.test(next) ? next : null);
-
 export const sessionHandlers: RequestHandler[] = [
-  // Mock only (SI-FR-14): the two ways in, answering where to go next. The real build links to the backend instead.
-  http.post(`${apiBaseUrl}/__demo/sign-in/:kind`, ({ params, request }) => {
-    const next = sitePath(new URL(request.url).searchParams.get("next"));
-    if (params.kind === "demo") {
-      account = "demo";
-      return HttpResponse.json({ location: next ?? "/deals" });
-    }
-    if (params.kind !== "google") return HttpResponse.json({ message: "Not found" }, { status: 404 });
-    account = "new";
-    return HttpResponse.json({ location: welcomed.new ? (next ?? "/deals") : "/welcome" });
-  }),
   // SI-FR-12
   http.post(`${apiBaseUrl}/auth/sign-out`, () => {
-    account = null;
+    signedIn = false;
     return HttpResponse.json({});
   }),
 ];

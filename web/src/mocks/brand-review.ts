@@ -142,8 +142,8 @@ export function creatorView(d: Deliverable): Deliverable {
   out.cancel = cancelOf(d);
   const dealId = dealOfDeliverable(d.id);
   if (dealId && brandHasWork(d)) {
-    const emailedTo = brandEmailFor(dealId);
-    out.reviewLink = { url: `https://cleared.example/b/${REVIEW_TOKEN}${d.id}`, ...(emailedTo ? { emailedTo } : {}) };
+    // DC-FR-52 (1.18): never emailed; a fresh link lasts the review window.
+    out.reviewLink = { url: `https://cleared.example/b/${REVIEW_TOKEN}${d.id}`, expiresAt: new Date(Date.now() + 2 * 86_400_000).toISOString(), expired: false };
   }
   return out;
 }

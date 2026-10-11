@@ -8,16 +8,21 @@ export interface ApprovalProps {
   label: string;
   /** The hold's amount, a two-place decimal string. */
   amount: string;
+  /** PayPal's order for this hold, from the API (CH-FR-17). */
+  orderId: string;
   onApproved: () => void;
   onClosed: () => void;
+  /** PayPal couldn't load or reported an error; nothing was held. */
+  onError: () => void;
 }
 
 const PayPalApprovalContext = createContext<((props: ApprovalProps) => ReactNode) | null>(null);
 
 /**
- * Supplies PayPal's approval step to the holds. The real one is PayPal's own
- * script (Requests for Furqaan); on mocks it is the demo PayPal. Without one,
- * the page says no hold can be approved in this build.
+ * Supplies a stand-in for PayPal's approval step to the holds: on mocks, the
+ * demo PayPal. Without one, the holds use PayPal's own button in the sandbox
+ * when the API gives a client id (CH-FR-17, 1.3), and otherwise say no hold
+ * can be approved in this build.
  *
  * @param approval - the approval step component
  * @param children - the app
@@ -28,5 +33,5 @@ export function PayPalApprovalProvider({ approval: Approval, children }: { appro
   return <PayPalApprovalContext.Provider value={render}>{children}</PayPalApprovalContext.Provider>;
 }
 
-/** Renders the approval step this build has, or null when there is none. */
+/** The stand-in approval step this build has, or null for PayPal's own. */
 export const usePayPalApproval = () => useContext(PayPalApprovalContext);

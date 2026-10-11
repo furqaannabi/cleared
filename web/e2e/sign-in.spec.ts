@@ -3,43 +3,36 @@ import { expect, test, type Page } from "@playwright/test";
 const noSidewaysScroll = async (page: Page) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
 
-test("SI: Sign in with Google the first time → welcome → connect YouTube → Start your first deal", async ({ page }, testInfo) => {
+/*
+ * SI 1.1: Sign in with Google is the backend's, so these runs never follow
+ * it. Signed-in runs against the live backend wait for Furqaan's test
+ * session (SI Requests); until then the mock creator starts signed in.
+ */
+
+test("LP-FR-03, SI-FR-01 (1.3, 1.1): the landing has one way in, to the backend's Google sign-in", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("main").getByRole("link", { name: "Sign in with Google" }).first().click();
-  await page.waitForURL(/\/welcome$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Get paid for every brand deal, on time." })).toBeVisible();
-  const setup = page.getByRole("region", { name: "Set up in a minute" });
-  await setup.getByRole("button", { name: "Connect YouTube" }).click();
-  await expect(setup.getByText("Connected as Sam Rivera")).toBeVisible();
-  await expect(setup).toContainText("1 of 3 done");
+  const google = page.getByRole("main").getByRole("link", { name: "Sign in with Google" });
+  await expect(google).toHaveCount(2);
+  for (const g of await google.all()) await expect(g).toHaveAttribute("href", /\/auth\/google\?next=%2Fdeals$/);
+  await expect(page.getByText("Try the demo account")).toHaveCount(0);
   await noSidewaysScroll(page);
-  await page.screenshot({ path: testInfo.outputPath("welcome.png"), fullPage: true });
-  await page.getByRole("link", { name: "Start your first deal" }).click();
-  await page.waitForURL(/\/deals\/new$/);
-  // Shown once: back at /welcome, the creator is sent to their deals.
-  await page.goto("/welcome");
-  await page.waitForURL(/\/deals/);
 });
 
-test("SI-FR-02, SI-FR-13: Try the demo account → the demo's deals → Leave the demo → the landing", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("main").getByRole("button", { name: "Try the demo account" }).first().click();
-  await page.waitForURL(/\/deals\/deal_glow\//);
+test("SI-FR-12, SI-FR-06: Sign out → the landing; a bookmarked deal then asks to sign in, keeping where it was going", async ({ page }) => {
+  await page.goto("/deals/deal_juniper/deliverables/del_juniper_short");
+  await expect(page.getByRole("heading", { level: 1, name: "Juniper & Salt · YouTube Short" })).toBeVisible();
   const isDesktop = (page.viewportSize()?.width ?? 0) >= 1024;
   if (!isDesktop) await page.getByRole("button", { name: "Deals" }).click();
   await page.getByRole("button", { name: /Ada Okafor/ }).click();
-  await page.getByRole("button", { name: "Leave the demo" }).click();
+  await page.getByRole("button", { name: "Sign out" }).click();
   await page.waitForURL((u) => u.pathname === "/");
-  await page.goto("/deals");
-  await page.waitForURL(/\/sign-in\?next=%2Fdeals/);
-});
 
-test("SI-FR-06: a signed-out bookmarked deal → sign in → back on that deal", async ({ page }) => {
   await page.goto("/deals/deal_juniper/deliverables/del_juniper_short");
-  await page.waitForURL(/\/sign-in\?next=/);
+  await page.waitForURL(/\/sign-in\?next=%2Fdeals%2Fdeal_juniper%2Fdeliverables%2Fdel_juniper_short$/);
   await expect(page.getByRole("heading", { level: 1, name: "Sign in to see your deals" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in with Google" })).toHaveAttribute(
+    "href",
+    /\/auth\/google\?next=%2Fdeals%2Fdeal_juniper%2Fdeliverables%2Fdel_juniper_short$/,
+  );
   await noSidewaysScroll(page);
-  await page.getByRole("button", { name: "Try the demo account" }).click();
-  await page.waitForURL(/\/deals\/deal_juniper\/deliverables\/del_juniper_short$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Juniper & Salt · YouTube Short" })).toBeVisible();
 });

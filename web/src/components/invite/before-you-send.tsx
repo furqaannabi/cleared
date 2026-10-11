@@ -1,9 +1,11 @@
 "use client";
 
 import { Seal } from "@/components/ui/seal";
+import { ConnectLink } from "@/components/connect/connect-link";
+import { useConnectResult } from "@/components/connect/use-connect-result";
 import { api } from "@/lib/api";
 import type { InviteView } from "@/lib/invite/invite-view";
-import type { CreatorProfile, DealInvite } from "@/lib/invite/types";
+import type { DealInvite } from "@/lib/invite/types";
 import { EmailField } from "./email-field";
 import { SaveProblem } from "./save-problem";
 import type { Save, SaveProblems } from "./save";
@@ -16,14 +18,13 @@ const WHY: Record<"youtube" | "instagram", string> = {
 /**
  * "Before you send": what must be in place before the brand's link can be
  * created, each ticked off as it is done, with Connect for a missing account
- * (mocked; no real sign-in yet), and the brand's optional email.
+ * (the backend's connect route, IN 1.3), and the brand's optional email.
  *
  * @param invite - the deal's invite terms
  * @param view - the invite view model
  * @param save - runs a change against the API
  * @param problems - fields whose last save failed
  * @param onInvite - takes the invite a saved change returned
- * @param onProfile - takes the profile a saved change returned
  * @see docs/specs/creator-invite-frd.md IN-FR-09 to IN-FR-11, IN-FR-13, IN-FR-16
  */
 export function BeforeYouSend({
@@ -32,15 +33,15 @@ export function BeforeYouSend({
   save,
   problems,
   onInvite,
-  onProfile,
 }: {
   invite: DealInvite;
   view: InviteView;
   save: Save;
   problems: SaveProblems;
   onInvite: (invite: DealInvite) => void;
-  onProfile: (profile: CreatorProfile) => void;
 }) {
+  // IN-FR-11 (1.3): back from connecting, the result shows on its card.
+  const connected = useConnectResult();
   return (
     <section aria-labelledby="before-heading" className="grid gap-3 rounded-[18px] border border-line bg-surface p-[18px]">
       <h2 id="before-heading" className="font-head text-[17px] font-bold">
@@ -66,14 +67,18 @@ export function BeforeYouSend({
               {!c.done && (c.key === "youtube" || c.key === "instagram") && (
                 <>
                   <p className="text-meta text-ink-3">{WHY[c.key]}</p>
-                  <button
-                    type="button"
-                    onClick={() => save(`connect:${c.key}`, () => api.connectAccount(c.key as "youtube" | "instagram"), onProfile)}
+                  {connected?.platform === c.key && connected.message && (
+                    <p role="alert" className="mt-1 text-meta font-semibold text-fail">
+                      {connected.message}
+                    </p>
+                  )}
+                  <ConnectLink
+                    platform={c.key}
+                    path={`/deals/${invite.dealId}/invite`}
                     className="mt-2 inline-flex min-h-11 items-center rounded-pill border border-latte-line bg-surface px-[18px] font-bold text-espresso hover:bg-latte-wash"
                   >
                     {c.label}
-                  </button>
-                  <SaveProblem retry={problems[`connect:${c.key}`]} />
+                  </ConnectLink>
                 </>
               )}
             </div>
@@ -84,7 +89,7 @@ export function BeforeYouSend({
         <EmailField
           label={`${invite.brandName}’s email (optional)`}
           value={invite.brandEmail}
-          hint="We’ll email them the link too."
+          hint={`Only used if ${invite.brandName} needs to act after your post is live. You send the link yourself.`}
           optional
           onSave={(brandEmail) => save("brandEmail", () => api.updateInvite(invite.dealId, { brandEmail }), onInvite)}
         />

@@ -1,8 +1,9 @@
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import { DemoBuildProvider } from "@/components/mocking/demo-build";
 import { api } from "@/lib/api";
+import { connectMockAccount } from "@/mocks/invites";
 import { InvitePage } from "./invite-page";
 
 const push = vi.fn();
@@ -49,8 +50,11 @@ describe("CH-FR-24 sending updated terms", () => {
     await changesAsked();
     const send = screen.getByRole("button", { name: "Send updated terms to Maple & Moss" });
     expect(send).toHaveAttribute("aria-disabled", "true");
-    await userEvent.click(screen.getByRole("button", { name: "Connect Instagram" }));
-    await userEvent.click(send);
+    // Back from connecting Instagram (IN-FR-11, 1.3).
+    connectMockAccount("instagram");
+    cleanup();
+    render(<InvitePage dealId="deal_maple" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Send updated terms to Maple & Moss" }));
     expect(await screen.findByText("Version 2 sent")).toBeVisible();
     expect(screen.getByRole("region", { name: "Send this link to Maple & Moss" })).toBeVisible();
     expect(screen.queryByRole("region", { name: /asked for/ })).toBeNull();

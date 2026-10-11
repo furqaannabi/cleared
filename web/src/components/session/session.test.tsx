@@ -2,12 +2,12 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 import { AppShell } from "@/components/shell/app-shell";
 import { apiBaseUrl } from "@/lib/api";
-import { signInAs } from "@/mocks/session";
+import { aProfile, stubSession } from "@/test/stub-api";
 import { SignInPage } from "./sign-in-page";
 
 describe("SI-FR-06 a signed-out creator page", () => {
   test("sends the visitor to sign in, keeping where they were going, and never shows the page", async () => {
-    signInAs(null);
+    stubSession(null);
     window.history.replaceState(null, "", "/deals/deal_glow/deliverables/del_glow_video?item=g1");
     render(
       <AppShell currentDealId="deal_glow">
@@ -19,6 +19,7 @@ describe("SI-FR-06 a signed-out creator page", () => {
   });
 
   test("a signed-in creator sees the page", async () => {
+    stubSession(aProfile());
     render(
       <AppShell currentDealId={null}>
         <p>Page content</p>
@@ -28,14 +29,13 @@ describe("SI-FR-06 a signed-out creator page", () => {
   });
 });
 
-describe("SI-FR-01, SI-FR-02, SI-FR-05 the sign-in page", () => {
-  test("the two ways in, each carrying a safe next to the backend", () => {
+describe("SI-FR-01, SI-FR-05 the sign-in page", () => {
+  test("Sign in with Google alone, carrying a safe next to the backend", () => {
     render(<SignInPage next="/deals/new" />);
     expect(screen.getByRole("heading", { level: 1, name: "Sign in to see your deals" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Sign in with Google" })).toHaveAttribute("href", `${apiBaseUrl}/auth/google?next=%2Fdeals%2Fnew`);
-    const demo = screen.getByRole("button", { name: "Try the demo account" });
-    expect(demo.closest("form")).toHaveAttribute("action", `${apiBaseUrl}/auth/demo?next=%2Fdeals%2Fnew`);
-    expect(demo.closest("form")).toHaveAttribute("method", "post");
+    expect(screen.queryAllByRole("button")).toEqual([]);
+    expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(screen.getByText("Instagram-only? Sign in with any Google account, then connect your Instagram.")).toBeVisible();
   });
 

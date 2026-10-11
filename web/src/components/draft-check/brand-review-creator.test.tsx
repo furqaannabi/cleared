@@ -1,7 +1,9 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
-import { api } from "@/lib/api";
+import { http, HttpResponse } from "msw";
+import { api, apiBaseUrl } from "@/lib/api";
+import { server } from "@/mocks/node";
 import { DraftCheckPage } from "./draft-check-page";
 
 const DEAL = "deal_juniper";
@@ -43,5 +45,49 @@ describe("DC-FR-52 a link for the brand", () => {
     render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_short" />);
     await screen.findByRole("region", { name: "Draft approved" });
     expect(screen.queryByRole("button", { name: /Copy link/ })).toBeNull();
+  });
+});
+
+describe("DC-FR-52 (1.18) the brand's link: opened, expired, made again", () => {
+  const route = `${apiBaseUrl}/deliverables/del_juniper_video`;
+  /** The post as the mocks have it, with this test's review link. */
+  async function withLink(link: { expired: boolean }, reviewOpenedAt?: string) {
+    const base = await api.getDeliverable("del_juniper_video");
+    if (!base.ok) throw new Error(base.error);
+    const post = {
+      ...base.data,
+      reviewLink: { url: "https://cleared.example/b/rev_juniper", expiresAt: "2026-10-14T12:00:00.000Z", ...link },
+      ...(reviewOpenedAt ? { reviewOpenedAt } : {}),
+    };
+    server.use(http.get(route, () => HttpResponse.json(post)));
+    return post;
+  }
+
+  test("says whether the brand has opened it, and never that it was emailed", async () => {
+    await withLink({ expired: false });
+    const { unmount } = render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_video" />);
+    expect(await screen.findByText("Juniper & Salt hasn’t opened it yet.")).toBeVisible();
+    expect(screen.queryByText(/emailed/)).toBeNull();
+    unmount();
+    const opened = new Date(2026, 9, 11, 14, 5).toISOString();
+    await withLink({ expired: false }, opened);
+    render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_video" />);
+    expect(await screen.findByText("Juniper & Salt opened it on 11 Oct, 14:05.")).toBeVisible();
+  });
+
+  test("an expired link offers Make a new link, which makes one and copies it", async () => {
+    const user = userEvent.setup();
+    const post = await withLink({ expired: true });
+    server.use(
+      http.post(`${route}/review-link`, () =>
+        HttpResponse.json({ ...post, reviewLink: { url: "https://cleared.example/b/rev_juniper_2", expiresAt: "2026-10-16T12:00:00.000Z", expired: false } }),
+      ),
+    );
+    render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_video" />);
+    expect(await screen.findByText("This link has expired.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Copy link for Juniper & Salt" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Make a new link" }));
+    expect(await screen.findByText("New link copied")).toBeVisible();
+    expect(await navigator.clipboard.readText()).toBe("https://cleared.example/b/rev_juniper_2");
   });
 });

@@ -1,3 +1,5 @@
+import type { components } from "contract";
+import type { SameShape } from "./same-shape";
 import { z } from "zod";
 import { ITEM_STATUSES } from "@/lib/checklist/item-status";
 
@@ -29,9 +31,12 @@ function isTimeZone(tz: string): boolean {
   }
 }
 const isoTime = z.iso.datetime({ offset: true });
+/** IN-BR-04 (1.3): a link on the app's own address: https, or http only on localhost for local work. */
+const appLinkUrl = z.url({ protocol: /^https?$/ }).refine((u) => u.startsWith("https://") || new URL(u).hostname === "localhost", "Links are https");
+
 /** CN-FR-03: whether a post can be cancelled now, and if not, why (MP-FR-33). */
 const cancelSchema = z.discriminatedUnion("allowed", [
-  z.object({ allowed: z.literal(true), holdAttemptWaiting: z.boolean().optional() }),
+  z.object({ allowed: z.literal(true), holdAttemptWaiting: z.literal(true).optional() }),
   z.object({ allowed: z.literal(false), reason: z.enum(["go_ahead_running", "published", "finished"]) }),
 ]);
 /** CN-FR-10, CN-FR-11: who cancelled a post, when, and their note (plain text, CN-BR-04). */
@@ -67,7 +72,8 @@ export const checklistItemSchema = z.object({
 export const checkFailureSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("file"),
-    reason: z.enum(["unreadable", "format", "too_long", "not_same_video"]),
+    // DC-FR-08 (1.18): never "not the same video"; the unlisted video is asked for at publishing.
+    reason: z.enum(["unreadable", "format", "too_long"]),
     fileName: z.string(),
     lengthSec: z.number().nonnegative().optional(),
     lengthCapSec: z.number().positive().optional(),
@@ -155,7 +161,9 @@ export const deliverableSchema = z.object({
     })
     .optional(),
   // DC-FR-52: a fresh link for the brand while it has something to do; only ever from the API, never stored.
-  reviewLink: z.object({ url: z.url({ protocol: /^https$/ }), emailedTo: z.email().max(254).optional() }).optional(),
+  // DC-FR-52 (1.18): never emailed; when it expires, and when the brand first opened the draft.
+  reviewLink: z.object({ url: appLinkUrl, expiresAt: isoTime, expired: z.boolean() }).optional(),
+  reviewOpenedAt: isoTime.optional(),
   checkFailure: checkFailureSchema.optional(),
   // DC-FR-03, DC-FR-04: when the running check started, and its stages if the backend reports them.
   checkStartedAt: isoTime.optional(),
@@ -257,7 +265,9 @@ export const dealDraftSchema = z.object({
   // CH-FR-22: the brand's notes, once it has asked for changes.
   notes: z.array(noteSchema).optional(),
 });
-
+// BC 1.4: the deal draft is the contract's `DealDraft`, checked both ways at compile time.
+const dealDraftIsTheContracts: SameShape<z.infer<typeof dealDraftSchema>, components["schemas"]["DealDraft"]> = true;
+void dealDraftIsTheContracts;
 
 /** IN-BR-02: a US-dollar amount as a two-place decimal string, never a number. */
 const amount = z.string().regex(/^\d{1,7}\.\d{2}$/);
@@ -278,7 +288,6 @@ export const dealInviteSchema = z.object({
         // IN-BR-01: days after the hold, 1 to 21.
         deadlineDays: z.number().int().min(1).max(21).optional(),
         // IN-FR-06: the API's reason it turned the amount down; plain text.
-        amountProblem: z.string().min(1).max(200).optional(),
         // CH-FR-25: the post's hold, once the brand has agreed.
         hold: holdSchema.optional(),
         // CN-FR-03, CN-FR-10, CN-FR-11
@@ -295,25 +304,36 @@ export const dealInviteSchema = z.object({
   // IN-BR-04: only ever from the API, never stored by the frontend.
   link: z
     .object({
-      url: z.url({ protocol: /^https$/ }),
+      url: appLinkUrl,
       expiresAt: isoTime,
-      emailedTo: z.email().max(254).optional(),
       expired: z.boolean(),
     })
     .optional(),
 });
+// IN 1.3: the invite is the contract's `Invite`, checked both ways at compile time.
+const inviteIsTheContracts: SameShape<z.infer<typeof dealInviteSchema>, components["schemas"]["Invite"]> = true;
+void inviteIsTheContracts;
 
 /** IN-FR-10, IN-FR-12: the creator's own details. Only the creator ever sees the PayPal email (IN-BR-05). */
 export const creatorProfileSchema = z.object({
   name: z.string().min(1).max(120),
-  // SI-FR-04: the signed-in email, whether this is the demo account, and whether the welcome was seen.
+  // SI-FR-04 (1.1): the signed-in email and whether the welcome was seen. No demo flag.
   email: z.email().max(254).optional(),
-  demo: z.boolean().optional(),
-  welcomed: z.boolean().optional(),
+  welcomed: z.boolean(),
   paypalEmail: z.email().max(254).optional(),
   // Connected accounts only.
   accounts: z.array(z.object({ platform: z.enum(["youtube", "instagram"]), name: z.string().min(1).max(120) })),
 });
+/** IN-FR-12 (1.3): the profile after a new PayPal email, with the payouts already with PayPal that keep the old one. */
+export const profileAfterEmailSchema = creatorProfileSchema.extend({
+  postsKeepingEmail: z.array(z.object({ deliverableId: z.string().min(1), dealId: z.string().min(1), brandName: z.string().min(1).max(120), email: z.string().max(254) })),
+});
+const profileAfterEmailIsTheContracts: SameShape<z.infer<typeof profileAfterEmailSchema>, components["schemas"]["ProfileAfterEmail"]> = true;
+void profileAfterEmailIsTheContracts;
+
+// The move onto the live API (1.1): the profile is the contract's `Profile`, checked both ways at compile time.
+const profileIsTheContracts: SameShape<z.infer<typeof creatorProfileSchema>, components["schemas"]["Profile"]> = true;
+void profileIsTheContracts;
 
 /**
  * CH-FR-04 to CH-FR-20: the deal as the brand sees it (provisional; confirm
@@ -326,6 +346,8 @@ export const brandDealSchema = z.object({
   step: z.enum(["waiting_for_brand", "changes_requested", "agreed"]),
   version: z.number().int().positive(),
   agreedAt: isoTime.optional(),
+  // CH-FR-17 (1.3): PayPal's sandbox client id for the approval button; public, never a secret.
+  paypalClientId: z.string().min(1).max(200).optional(),
   posts: z
     .array(
       z.object({
@@ -447,3 +469,8 @@ export const brandDeliverableSchema = z.object({
 
 /** CH-FR-17: a started hold: the PayPal order the approval step needs (provisional). */
 export const holdStartSchema = z.object({ orderId: z.string().min(1).max(64) });
+
+/** DC-FR-45 (1.18): the API took the draft and its check has started. */
+export const draftAcceptedSchema = z.object({ deliverableId: z.string().min(1), state: z.literal("checking"), run: z.number().int().positive() });
+const draftAcceptedIsTheContracts: SameShape<z.infer<typeof draftAcceptedSchema>, components["schemas"]["DraftAccepted"]> = true;
+void draftAcceptedIsTheContracts;

@@ -7,7 +7,8 @@ import { PLATFORM_LABEL } from "@/lib/checklist-builder/checklist-view";
 import type { BrandDeal, BrandPost } from "@/lib/brand-deal/types";
 import { formatAmount } from "@/lib/invite/amount";
 import { PlatformMark } from "./platform-mark";
-import { usePayPalApproval } from "./paypal-approval";
+import { usePayPalApproval, type ApprovalProps } from "./paypal-approval";
+import { PayPalSandboxApproval } from "./paypal-sandbox-approval";
 
 /**
  * "Holds · {held} of {n} held": after agreeing, one line per post, each
@@ -44,7 +45,11 @@ export function HoldsPanel({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: B
 }
 
 function HoldRow({ deal, post, onDeal }: { deal: BrandDeal; post: BrandPost; onDeal: (deal: BrandDeal) => void }) {
-  const renderApproval = usePayPalApproval();
+  // CH-FR-17 (1.3): a build's stand-in (mocks), else PayPal's own button when the API gives a client id.
+  const standIn = usePayPalApproval();
+  const clientId = deal.paypalClientId;
+  const renderApproval =
+    standIn ?? (clientId ? (props: ApprovalProps) => <PayPalSandboxApproval {...props} clientId={clientId} /> : null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -95,7 +100,17 @@ function HoldRow({ deal, post, onDeal }: { deal: BrandDeal; post: BrandPost; onD
       {!line.held && (
         <div className="col-start-2 mt-1.5">
           {orderId && renderApproval ? (
-            renderApproval({ label, amount: post.amount, onApproved: () => void finish(true), onClosed: () => void finish(false) })
+            renderApproval({
+              label,
+              amount: post.amount,
+              orderId,
+              onApproved: () => void finish(true),
+              onClosed: () => void finish(false),
+              onError: () => {
+                setOrderId(null);
+                setProblem("PayPal didn’t load. Nothing was held. Try again.");
+              },
+            })
           ) : (
             <button
               type="button"

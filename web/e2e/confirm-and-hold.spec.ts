@@ -23,7 +23,9 @@ test("CH: brand asks → creator replies, changes and sends → brand agrees and
   await amount.fill("400");
   await amount.blur();
   await expect(amount).toHaveValue("400.00");
-  await page.getByRole("button", { name: "Connect Instagram" }).click();
+  // IN-FR-11 (1.3): leaves for Instagram and comes back (on mocks, the mock answers).
+  await page.getByRole("link", { name: "Connect Instagram" }).click();
+  await page.waitForURL((u) => !u.search.includes("connect"));
   await page.getByRole("button", { name: "Send updated terms to Maple & Moss" }).click();
   await expect(page.getByText("Version 2 sent")).toBeVisible();
 
@@ -70,11 +72,8 @@ test("Mocks: the brand's notes survive a reload and a typed address, and Reset d
   if (testInfo.project.name === "desktop-1280") {
     await page.getByRole("button", { name: "Reset demo data" }).click();
     await page.getByRole("button", { name: "Yes, reset" }).click();
-    // SI-FR-14: resetting also signs out; sign back in to the demo to see the seed.
-    await page.waitForURL(/\/sign-in/);
-    await page.goto("/sign-in?next=%2Fdeals%2Fdeal_maple%2Finvite");
-    await page.getByRole("button", { name: "Try the demo account" }).click();
-    await page.waitForURL(/\/deals\/deal_maple\/invite$/);
+    await page.waitForURL(/\/deals\/deal_glow\//);
+    await page.goto("/deals/deal_maple/invite");
     await expect(page.getByText(/^Sent to Maple & Moss · waiting/)).toBeVisible();
     await expect(page.getByRole("heading", { name: /asked for/ })).toHaveCount(0);
   }

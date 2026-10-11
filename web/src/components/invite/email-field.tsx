@@ -1,8 +1,8 @@
 "use client";
 
+import { looksLikeEmail } from "@/lib/email/looks-like-email";
 import { useId, useState } from "react";
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * An email field that checks its shape and saves when left. An optional field
@@ -40,7 +40,7 @@ export function EmailField({
       if (value) onSave(null);
       return;
     }
-    if (email.length > 254 || !EMAIL.test(email)) return setError("Enter an email, like name@example.com");
+    if (!looksLikeEmail(email)) return setError("Enter an email, like name@example.com");
     setError(null);
     if (email !== value) onSave(email);
   }

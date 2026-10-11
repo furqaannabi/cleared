@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Seal } from "@/components/ui/seal";
+import { api } from "@/lib/api";
+import { formatDay, formatTime } from "@/lib/deliverable/format";
 import type { Deliverable } from "@/lib/deliverable/types";
 
 /**
@@ -35,36 +37,60 @@ export function ApprovedBanner({ deliverable }: { deliverable: Deliverable }) {
 
 /**
  * DC-FR-52: while the brand has something to do on this deliverable, a link
- * the creator can copy and send them. The link is copied, never shown in
- * full, stored or logged.
+ * the creator can copy and send them, and whether the brand has opened the
+ * draft. An expired link offers Make a new link, which is made and copied.
+ * Nothing is emailed (1.18). The link is copied, never shown in full, stored
+ * or logged.
  *
  * @param deliverable - the deliverable, with its review link from the API
+ * @param onUpdated - takes the post with its new link
  * @see docs/specs/creator-draft-check-frd.md DC-FR-52; docs/decisions/2026-10-08-fresh-brand-link-per-review.md
  */
-export function CopyReviewLink({ deliverable }: { deliverable: Deliverable }) {
-  const [copied, setCopied] = useState<"yes" | "no" | null>(null);
+export function CopyReviewLink({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdated: (d: Deliverable) => void }) {
+  const [said, setSaid] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const link = deliverable.reviewLink;
   if (!link) return null;
   const b = deliverable.brandName;
-  async function copy() {
+  const copy = async (url: string, done: string) => {
     try {
-      await navigator.clipboard.writeText(link!.url);
-      setCopied("yes");
+      await navigator.clipboard.writeText(url);
+      setSaid(done);
     } catch {
-      setCopied("no");
+      setSaid("Couldn’t copy. Try again.");
     }
+  };
+  async function makeNew() {
+    setBusy(true);
+    const r = await api.makeReviewLink(deliverable.id);
+    setBusy(false);
+    if (!r.ok || !r.data.reviewLink) return setSaid("We couldn’t make a new link. Try again.");
+    onUpdated(r.data);
+    await copy(r.data.reviewLink.url, "New link copied");
   }
+  const opened = deliverable.reviewOpenedAt ? `${b} opened it on ${formatDay(deliverable.reviewOpenedAt)}, ${formatTime(deliverable.reviewOpenedAt)}.` : `${b} hasn’t opened it yet.`;
   return (
     <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[14px] text-ink-2">
-      <button
-        type="button"
-        onClick={copy}
-        className="inline-flex min-h-11 items-center rounded-pill border border-latte-line bg-surface px-[18px] text-[14.5px] font-bold text-espresso"
-      >
-        Copy link for {b}
-      </button>
-      <span aria-live="polite">
-        {copied === "yes" ? "Copied" : copied === "no" ? "Couldn’t copy. Try again." : link.emailedTo ? `We’ve emailed it to ${link.emailedTo}.` : `Send it to ${b} so they can review.`}
+      {link.expired ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={makeNew}
+          className="inline-flex min-h-11 items-center rounded-pill bg-espresso px-[18px] text-[14.5px] font-bold text-white hover:bg-espresso-hover disabled:opacity-60"
+        >
+          Make a new link
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => copy(link.url, "Copied")}
+          className="inline-flex min-h-11 items-center rounded-pill border border-latte-line bg-surface px-[18px] text-[14.5px] font-bold text-espresso"
+        >
+          Copy link for {b}
+        </button>
+      )}
+      <span aria-live="polite" className={!said && link.expired ? "font-bold text-fail" : !said && deliverable.reviewOpenedAt ? "text-pass" : undefined}>
+        {said ?? (link.expired ? "This link has expired." : opened)}
       </span>
     </div>
   );

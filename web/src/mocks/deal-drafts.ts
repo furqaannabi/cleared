@@ -1,5 +1,4 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
-import { currentAccount, type Account } from "./session";
 import type { z } from "zod";
 import { apiBaseUrl } from "@/lib/api";
 import type { dealDraftSchema } from "@/lib/api/schemas";
@@ -9,8 +8,7 @@ import { juniperDraft } from "./fixtures/juniper";
 import { findDeliverable } from "./store";
 
 type Draft = z.infer<typeof dealDraftSchema>;
-// `owner` is mock-only (SI-BR-03): the API's deal never carries it.
-type Stored = Draft & { owner?: Account; readStartedAt?: number; pending?: Pick<Draft, "items" | "questions"> };
+type Stored = Draft & { readStartedAt?: number; pending?: Pick<Draft, "items" | "questions"> };
 
 const STATUS: Record<Draft["step"], string> = {
   checklist: "Checklist",
@@ -129,8 +127,8 @@ export function resetDealDrafts() {
 }
 
 /** The mock deal drafts, as deal summaries for GET /deals. */
-export function draftSummaries(owner: Account = "demo") {
-  return [...drafts.values()].filter((d) => (d.owner ?? "demo") === owner).map((d) => {
+export function draftSummaries() {
+  return [...drafts.values()].map((d) => {
     // CH-FR-21: once every post is held the deal leaves set-up, for its first post's draft check.
     if (allHeld(d.id)) return heldSummary(d);
     const { held, posts } = heldCount(d.id);
@@ -220,8 +218,6 @@ export const dealDraftHandlers: RequestHandler[] = [
     if (!brandName || !body.deliverables?.length || body.deliverables.length > 10) return refused();
     const d: Stored = {
       id: nextId("deal"),
-      // SI-BR-03: the deal belongs to whoever made it.
-      owner: currentAccount() ?? "demo",
       brandName,
       step: "checklist",
       deliverables: body.deliverables.map((x) => ({ id: nextId("del"), platform: x.platform })),

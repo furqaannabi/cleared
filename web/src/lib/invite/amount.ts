@@ -7,7 +7,7 @@ export type ParsedAmount = { ok: true; value: string } | { ok: false; message: s
  *
  * @param text - the field's text, e.g. "1,200" or "$450.50"
  * @returns the amount as a two-place decimal string ("1200.00"), or a message
- * @see docs/specs/creator-invite-frd.md IN-FR-05
+ * @see docs/specs/creator-invite-frd.md IN-FR-05 (1.3)
  */
 export function parseAmount(text: string): ParsedAmount {
   const cleaned = text.trim().replace(/^\$/, "").replace(/,/g, "").trim();
@@ -16,14 +16,33 @@ export function parseAmount(text: string): ParsedAmount {
   if (!match) return { ok: false, message: "Enter an amount in dollars, like 1200 or 1200.50" };
   const whole = match[1].replace(/^0+(?=\d)/, "");
   const value = `${whole}.${(match[2] ?? "").padEnd(2, "0")}`;
+  // Very long digit runs are over the limit without reading them as a number.
+  if (whole.length > 7) return { ok: false, message: AMOUNT_TOO_HIGH };
   const cents = toCents(value);
-  if (cents === 0) return { ok: false, message: "The amount must be more than $0" };
-  if (cents > MAX_CENTS) return { ok: false, message: "Up to $9,999,999.99" };
+  if (cents < MIN_CENTS) return { ok: false, message: AMOUNT_TOO_LOW };
+  if (cents > MAX_CENTS) return { ok: false, message: AMOUNT_TOO_HIGH };
   return { ok: true, value };
 }
 
-// A sanity bound on length, not a product limit: PayPal sets any real ceiling (IN-FR-06).
-const MAX_CENTS = 999_999_999;
+// IN-FR-05 (1.3): one hold is $20.00 to $10,000.00 (docs/decisions/2026-10-08-cleared-fee-and-amount-limits.md).
+const MIN_CENTS = 2_000;
+const MAX_CENTS = 1_000_000;
+/** IN-FR-05, IN-FR-06: under the least one post can be, typed or refused by the API. */
+export const AMOUNT_TOO_LOW = "The least one post can be is $20.00.";
+/** IN-FR-05, IN-FR-06: over the most one post can be, typed or refused by the API. */
+export const AMOUNT_TOO_HIGH = "The most one post can be is $10,000.00.";
+
+/**
+ * IN-FR-06 (1.3): the words for an amount the API refused, from the
+ * contract's code, or null when the refusal isn't about the amount's limits.
+ *
+ * @param code - the refusal's code, e.g. "amount_above_maximum"
+ */
+export function amountRefusal(code: string | undefined): string | null {
+  if (code === "amount_below_minimum") return AMOUNT_TOO_LOW;
+  if (code === "amount_above_maximum") return AMOUNT_TOO_HIGH;
+  return null;
+}
 
 /** A two-place decimal string as whole cents (an integer, so no float rounding). */
 function toCents(value: string): number {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useRefreshDeals } from "@/components/shell/use-deals";
 import { api } from "@/lib/api";
 import { formatAmount } from "@/lib/invite/amount";
@@ -8,6 +9,7 @@ import type { InviteView } from "@/lib/invite/invite-view";
 import type { CreatorProfile, DealInvite } from "@/lib/invite/types";
 import { ConfirmAction } from "./confirm-action";
 import { EmailField } from "./email-field";
+import { KeepingEmail } from "./keeping-email";
 import { PaymentRules } from "./payment-rules";
 import { PostLine } from "./post-line";
 import { SaveProblem } from "./save-problem";
@@ -48,6 +50,8 @@ export function TermsSheet({
   onInvite: (invite: DealInvite) => void;
   onProfile: (profile: CreatorProfile) => void;
 }) {
+  // IN-FR-12 (1.3): payouts the last new email didn't reach.
+  const [keeping, setKeeping] = useState<Parameters<typeof KeepingEmail>[0]["posts"]>([]);
   const router = useRouter();
   const refreshDeals = useRefreshDeals();
   // IN-BR-03: read-only once the link exists, except while answering the brand's notes (CH-FR-22).
@@ -154,9 +158,16 @@ export function TermsSheet({
             label="Your PayPal email"
             value={profile.paypalEmail}
             hint="Only you see this. Check it: a payment to the wrong email can’t be pulled back."
-            onSave={(email) => email && save("paypal", () => api.setPaypalEmail(email), onProfile)}
+            onSave={(email) =>
+              email &&
+              save("paypal", () => api.setPaypalEmail(email), ({ postsKeepingEmail, ...p }) => {
+                onProfile(p);
+                setKeeping(postsKeepingEmail);
+              })
+            }
           />
           <SaveProblem retry={problems.paypal} />
+          <KeepingEmail posts={keeping} />
         </div>
       )}
       <PaymentRules brand={invite.brandName} />

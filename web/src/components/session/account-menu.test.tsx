@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { AppShell } from "@/components/shell/app-shell";
 import { api } from "@/lib/api";
-import { signInAs } from "@/mocks/session";
+import { aProfile, stubSession } from "@/test/stub-api";
 
 const desktop = () =>
   vi.stubGlobal("matchMedia", (query: string) => ({ matches: query === "(min-width: 1024px)", media: query, addEventListener: () => {}, removeEventListener: () => {} }));
@@ -15,13 +15,14 @@ const shell = () =>
     </AppShell>,
   );
 
-describe("SI-FR-11 to SI-FR-13 the account menu", () => {
+describe("SI-FR-11, SI-FR-12 the account menu", () => {
   test("the creator's name opens a menu with their email and Sign out, which signs out", async () => {
     const user = userEvent.setup();
     desktop();
-    signInAs("new");
+    stubSession(aProfile({ name: "Sam Rivera", email: "sam.rivera@example.com" }));
     shell();
     const name = await screen.findByRole("button", { name: /Sam Rivera/ });
+    expect(name).toHaveTextContent("Creator");
     expect(name).toHaveAttribute("aria-expanded", "false");
     await user.click(name);
     expect(name).toHaveAttribute("aria-expanded", "true");
@@ -34,13 +35,16 @@ describe("SI-FR-11 to SI-FR-13 the account menu", () => {
     await waitFor(async () => expect(await api.getProfile()).toEqual({ ok: false, error: "signed_out" }));
   });
 
-  test("the demo account says so, and offers Leave the demo", async () => {
+  test("1.1: there is no demo account; a profile that still says demo shows the email and Sign out", async () => {
     const user = userEvent.setup();
     desktop();
+    stubSession({ ...aProfile(), demo: true } as ReturnType<typeof aProfile>);
     shell();
     const name = await screen.findByRole("button", { name: /Ada Okafor/ });
-    expect(name).toHaveTextContent("Demo account");
+    expect(name).not.toHaveTextContent("Demo account");
     await user.click(name);
-    expect(screen.getByRole("button", { name: "Leave the demo" })).toBeVisible();
+    expect(screen.getByText("ada.okafor@example.com")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
+    expect(screen.queryByText(/demo/i)).toBeNull();
   });
 });

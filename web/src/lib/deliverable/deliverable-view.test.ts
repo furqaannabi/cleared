@@ -247,15 +247,10 @@ describe("DC-FR-30 next step", () => {
   });
 
   test("DC-FR-08, DC-FR-30: each file problem's bar says what to do; the banner says what is wrong", () => {
-    const fileStep = (reason: "unreadable" | "format" | "not_same_video") =>
+    const fileStep = (reason: "unreadable" | "format") =>
       next({ state: "check_failed", checkFailure: { kind: "file", reason, fileName: "draft_v3.mp4" } });
     expect(fileStep("unreadable")).toEqual({ lead: "Upload your draft again.", detail: "", action: "upload_again" });
     expect(fileStep("format")).toEqual({ lead: "Upload your draft as a different file type.", detail: "", action: "upload_again" });
-    expect(fileStep("not_same_video")).toEqual({
-      lead: "Upload the same video you put on YouTube as unlisted.",
-      detail: "",
-      action: "upload_again",
-    });
   });
 
   test("DC-FR-10 released: where the money went, when, why, and that nothing more can happen", () => {
@@ -468,11 +463,10 @@ describe("DC-FR-08, DC-FR-09, DC-FR-28 check-failed banner", () => {
   });
 
   test("each file problem says what is wrong", () => {
-    const body = (reason: "unreadable" | "format" | "not_same_video") =>
+    const body = (reason: "unreadable" | "format") =>
       banner({ checkFailure: { kind: "file", reason, fileName: "draft_v3.mp4" } })?.body;
     expect(body("unreadable")).toBe("We couldn’t read draft_v3.mp4; the file may be damaged.");
     expect(body("format")).toBe("We can’t check draft_v3.mp4 in this format.");
-    expect(body("not_same_video")).toBe("draft_v3.mp4 doesn’t match your unlisted YouTube upload.");
   });
 
   test("our side: not the creator's fault", () => {

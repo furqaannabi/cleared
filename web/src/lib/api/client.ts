@@ -1,13 +1,14 @@
+import type { components } from "contract";
 import { z } from "zod";
-import { brandDealSchema, brandDeliverableSchema, brandSessionSchema, holdStartSchema, creatorProfileSchema, dealDraftSchema, dealInviteSchema, dealsSchema, deliverableSchema, draftSchema } from "./schemas";
+import { readAnswer, type ApiResult } from "./answer";
+import { brandDealSchema, brandDeliverableSchema, brandSessionSchema, holdStartSchema, creatorProfileSchema, dealDraftSchema, profileAfterEmailSchema, dealInviteSchema, dealsSchema, deliverableSchema, draftAcceptedSchema, draftSchema } from "./schemas";
 
-/** `rejected`: the API refused a change (the item changed, say); the others are as for reads. */
-export type ApiError = "not_found" | "invalid_response" | "unavailable" | "rejected" | "signed_out";
 type BrandNoteAbout = z.infer<typeof brandDealSchema>["notes"][number]["about"];
-type DraftPlatform = "youtube_video" | "youtube_short" | "instagram_reel";
-type DraftItemKind = "said" | "shown_as_text" | "shown" | "timing" | "written" | "disclosure" | "publication";
+// BC 1.4: from the contract.
+type DraftPlatform = components["schemas"]["DealDraft"]["deliverables"][number]["platform"];
+type DraftItemKind = components["schemas"]["DealDraft"]["items"][number]["kind"];
 
-export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError };
+export type { ApiError, ApiLimit, ApiResult } from "./answer";
 
 /**
  * The one typed client for the Cleared API. Every response is parsed with
@@ -36,22 +37,45 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     } catch {
       return { ok: false, error: "unavailable" };
     }
-    // DC-FR-38: a deal that doesn't exist and one that isn't yours look the same.
-    // SI-FR-06, SI-FR-07: nobody is signed in, or the session ended.
-    if (res.status === 401) return { ok: false, error: "signed_out" };
-    if (res.status === 404 || res.status === 403) return { ok: false, error: "not_found" };
-    if (res.status === 400 || res.status === 409 || res.status === 422) return { ok: false, error: "rejected" };
-    if (!res.ok) return { ok: false, error: "unavailable" };
+    // A body that isn't JSON reads as none; readAnswer decides what that means.
+    return readAnswer(res.status, await res.json().catch(() => null), schema);
+  }
 
-    let json: unknown;
-    try {
-      json = await res.json();
-    } catch {
-      return { ok: false, error: "invalid_response" };
-    }
-    const parsed = schema.safeParse(json);
-    // A response that breaks its schema is an error, never shown in part.
-    return parsed.success ? { ok: true, data: parsed.data } : { ok: false, error: "invalid_response" };
+  /**
+   * DC-FR-45 (1.18): one request with the file as its body, sent with
+   * XMLHttpRequest because fetch can't report upload progress. Its answer is
+   * read like every other (readAnswer). The session cookie goes with it.
+   */
+  function upload<S extends z.ZodType>(
+    path: string,
+    file: File,
+    schema: S,
+    { onProgress, signal }: { onProgress?: (percent: number) => void; signal?: AbortSignal } = {},
+  ): Promise<ApiResult<z.infer<S>>> {
+    return new Promise((resolve) => {
+      if (signal?.aborted) return resolve({ ok: false, error: "cancelled" });
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${baseUrl}${path}`);
+      xhr.withCredentials = true;
+      xhr.setRequestHeader("Accept", "application/json");
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(Math.min(99, Math.floor((e.loaded / e.total) * 100)));
+      xhr.onload = () => {
+        let json: unknown = null;
+        try {
+          json = JSON.parse(xhr.responseText);
+        } catch {
+          // Not JSON: readAnswer decides what that means.
+        }
+        const r = readAnswer(xhr.status, json, schema);
+        if (r.ok) onProgress?.(100);
+        resolve(r);
+      };
+      xhr.onerror = () => resolve({ ok: false, error: "unavailable" });
+      xhr.onabort = () => resolve({ ok: false, error: "cancelled" });
+      signal?.addEventListener("abort", () => xhr.abort(), { once: true });
+      xhr.send(file);
+    });
   }
 
   const deliverablePath = (id: string) => `/deliverables/${encodeURIComponent(id)}`;
@@ -68,6 +92,11 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** DC-FR-31: the creator's deals, each with the deliverable to open (DC-FR-37). */
     getDeals: () => request("GET", "/deals", dealsSchema),
     /** DC-FR-01: one deliverable for the draft check page. */
+    /** DC-FR-45 (1.18): send a draft, with its progress; Cancel through the signal. */
+    uploadDraft: (deliverableId: string, file: File, options?: { onProgress?: (percent: number) => void; signal?: AbortSignal }) =>
+      upload(`${deliverablePath(deliverableId)}/draft?fileName=${encodeURIComponent(file.name)}`, file, draftAcceptedSchema, options),
+    /** DC-FR-52 (1.18): a new link for the brand when the last one expired. */
+    makeReviewLink: (deliverableId: string) => request("POST", `${deliverablePath(deliverableId)}/review-link`, deliverableSchema),
     getDeliverable: (deliverableId: string) => request("GET", deliverablePath(deliverableId), deliverableSchema),
     /** DC-FR-14: ask the brand to accept an Unsure item. Returns the updated deliverable. */
     askBrandToAccept: (deliverableId: string, itemId: string) =>
@@ -134,7 +163,8 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** IN-FR-13: the brand's email, or null to clear it. */
     updateInvite: (dealId: string, terms: { brandEmail: string | null }) => request("PATCH", invitePath(dealId), dealInviteSchema, terms),
     /** IN-FR-17: lock the terms and create the brand's link. */
-    createInviteLink: (dealId: string) => request("POST", `${invitePath(dealId)}/link`, dealInviteSchema),
+    createInviteLink: (dealId: string) =>
+      request("POST", `${invitePath(dealId)}/link`, dealInviteSchema, { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
     /** IN-FR-18: turn the link off and make a new one. */
     renewInviteLink: (dealId: string) => request("POST", `${invitePath(dealId)}/link/renew`, dealInviteSchema),
     /** IN-FR-19: turn the link off and reopen the terms for editing. */
@@ -151,13 +181,11 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     markWelcomeSeen: () => request("POST", "/me/welcomed", creatorProfileSchema),
     /** SI-FR-12: ends the session. */
     signOut: () => request("POST", "/auth/sign-out", z.object({})),
-    /** Mock builds only (SI-FR-14): the two ways in, answering where to go; a real build links to the backend's sign-in. */
-    mockSignIn: (kind: "google" | "demo", next?: string) =>
-      request("POST", `/__demo/sign-in/${kind}${next ? `?next=${encodeURIComponent(next)}` : ""}`, z.object({ location: z.string().startsWith("/") })),
     /** IN-FR-12: save the PayPal email payments go to. */
-    setPaypalEmail: (email: string) => request("PUT", "/me/paypal-email", creatorProfileSchema, { email }),
-    /** IN-FR-11: connect an account. Provisional: the real flow is a sign-in redirect (Requests for Furqaan). */
-    connectAccount: (platform: "youtube" | "instagram") => request("POST", `/me/accounts/${platform}`, creatorProfileSchema),
+    setPaypalEmail: (email: string) => request("PUT", "/me/paypal-email", profileAfterEmailSchema, { email }),
+    /** Mock builds only (IN-FR-11, 1.3): connects an account and answers where the backend would return; the real flow is a link. */
+    mockConnect: (platform: "youtube" | "instagram", next: string) =>
+      request("POST", `/__demo/connect/${platform}?next=${encodeURIComponent(next)}`, z.object({ location: z.string().startsWith("/") })),
 
     // Confirm and hold, the brand's side (CH FRD). The session is an HttpOnly cookie set by the API.
     /** CH-FR-01: swap a link's token for a session scoped to its deal. The token is never stored or logged (CH-BR-06). */
@@ -204,7 +232,9 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     sendChanges: (dealId: string, notes: { about: BrandNoteAbout; text: string }[]) =>
       request("POST", `/brand${dealPath(dealId)}/notes`, brandDealSchema, { notes }),
     /** CH-FR-14, CH-FR-15: agree to the version shown; the API refuses one that's out of date (CH-BR-02). */
-    agree: (dealId: string, version: number) => request("POST", `/brand${dealPath(dealId)}/agree`, brandDealSchema, { version }),
+    // CH-FR-28 (1.3): with the brand's own email when given.
+    agree: (dealId: string, version: number, email?: string) =>
+      request("POST", `/brand${dealPath(dealId)}/agree`, brandDealSchema, email ? { version, email } : { version }),
     /** CH-FR-17: start one post's hold; returns the PayPal order its approval needs. The page never moves money itself (CH-BR-05). */
     startHold: (dealId: string, deliverableId: string) => request("POST", holdPath(dealId, deliverableId), holdStartSchema),
     /** CH-FR-18: PayPal approved the order; the API authorizes it and reports the hold's state. */

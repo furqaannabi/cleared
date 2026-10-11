@@ -138,11 +138,6 @@ export function fileProblem(f: Extract<CheckFailure, { kind: "file" }>): { lead:
       return { lead: "Upload your draft again.", why: `We couldn’t read ${f.fileName}; the file may be damaged.` };
     case "format":
       return { lead: "Upload your draft as a different file type.", why: `We can’t check ${f.fileName} in this format.` };
-    case "not_same_video":
-      return {
-        lead: "Upload the same video you put on YouTube as unlisted.",
-        why: `${f.fileName} doesn’t match your unlisted YouTube upload.`,
-      };
   }
 }
 

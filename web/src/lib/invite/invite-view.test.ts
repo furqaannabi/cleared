@@ -19,6 +19,7 @@ function invite(over: Partial<DealInvite> = {}): DealInvite {
 
 const profile: CreatorProfile = {
   name: "Ada Okafor",
+  welcomed: true,
   paypalEmail: "ada@example.com",
   accounts: [{ platform: "youtube", name: "Ada Okafor" }],
 };

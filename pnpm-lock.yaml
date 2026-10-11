@@ -70,6 +70,9 @@ importers:
 
   web:
     dependencies:
+      '@paypal/react-paypal-js':
+        specifier: ^10.6.0
+        version: 10.6.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@radix-ui/react-dialog':
         specifier: ^1.2.0
         version: 1.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -125,6 +128,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^5.0.3
         version: 5.0.3(vitest@5.0.3)
+      contract:
+        specifier: workspace:*
+        version: link:../contract
       eslint:
         specifier: ^9
         version: 9.39.5(jiti@2.7.0)(supports-color@7.2.0)
@@ -891,9 +897,21 @@ packages:
   '@oxc-project/types@0.152.0':
     resolution: {integrity: sha512-oM/5rLBm2tPkg0iBgkH/FOeR3PCDpY19GTgAZjMFM8h9WI9VW7cLgzp6nwtarYKmovavIQZ+Fe/RKX/8C8O/Rw==}
 
+  '@paypal/paypal-js@11.2.2':
+    resolution: {integrity: sha512-RVGfgu9lmcEtsi0LbMGwPL4ksmzQ6ws9nyOJyEmBVWtkMnf+WfA6JLPmi2aHvlwKbT+K6Sw153VbE5rUjYxE8g==}
+
   '@paypal/paypal-server-sdk@2.5.0':
     resolution: {integrity: sha512-smJXZx7Euj6f886BszgMyy8dhWWVCI0++QDPn+I5ugcYwNmhzR+vvWr5CuW1Z4+KPh44hSOzhlXnNEjWnugEtg==}
     engines: {node: '>=14.17.0'}
+
+  '@paypal/react-paypal-js@10.6.0':
+    resolution: {integrity: sha512-oBf/5EsmHTvNho8U25z/SJkU82eGoWEfogVHBd7K0Bf91hOPuM9brx3bwbP87j+45/M/S91SyVTavEKpBKxWVA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18 || ^19
+      react-dom: ^16.8.0 || ^17 || ^18 || ^19
+
+  '@paypal/sdk-constants@1.0.158':
+    resolution: {integrity: sha512-OrX2kN4gsBl6fG1GS1ewsNk7TTqYmdtUMVaJ+wAzPhsv9M7dfni95WuJdt4pMALOo5ioZeJ05a16BUSca5IC+Q==}
 
   '@playwright/test@1.63.0':
     resolution: {integrity: sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==}
@@ -2835,6 +2853,9 @@ packages:
   hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
+  hi-base32@0.5.1:
+    resolution: {integrity: sha512-EmBBpvdYh/4XxsnUybsPag6VikPYnN30td+vQk+GI3qpahVEG9+gTkG0aXVxTjBqQ5T6ijbWIu77O+C5WFWsnA==}
+
   hono@4.13.13:
     resolution: {integrity: sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==}
     engines: {node: '>=16.9.0'}
@@ -3624,6 +3645,9 @@ packages:
       typescript:
         optional: true
 
+  promise-polyfill@8.3.0:
+    resolution: {integrity: sha512-H5oELycFml5yto/atYqmjyigJoAo3+OXwolYiH7OfQuYlAqhxNvTfiNMbV9hsC6Yp83yE5r2KTVmtrG6R9i6Pg==}
+
   prop-types@15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
 
@@ -3797,6 +3821,9 @@ packages:
 
   seq-queue@0.0.5:
     resolution: {integrity: sha512-hr3Wtp/GZIc/6DAGPDcV4/9WoZhjrkXsi5B/07QgX8tsdc6ilr7BFM6PM6rbdAX1kFSDYeZGLipIZZKyQP0O5Q==}
+
+  server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
 
   set-cookie-parser@3.1.2:
     resolution: {integrity: sha512-5/r/lTwbJ3zQ+qwdUFZYeRNqda7P5HD8zQKqlSjdGt1/S0cjLAphHusj4Y58ahDtWn/g32xrIS58/ikOvwl0Lw==}
@@ -5218,6 +5245,10 @@ snapshots:
 
   '@oxc-project/types@0.152.0': {}
 
+  '@paypal/paypal-js@11.2.2':
+    dependencies:
+      promise-polyfill: 8.3.0
+
   '@paypal/paypal-server-sdk@2.5.0(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)':
     dependencies:
       '@apimatic/authentication-adapters': 0.5.14
@@ -5229,6 +5260,18 @@ snapshots:
     transitivePeerDependencies:
       - debug
       - supports-color
+
+  '@paypal/react-paypal-js@10.6.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      '@paypal/paypal-js': 11.2.2
+      '@paypal/sdk-constants': 1.0.158
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+      server-only: 0.0.1
+
+  '@paypal/sdk-constants@1.0.158':
+    dependencies:
+      hi-base32: 0.5.1
 
   '@playwright/test@1.63.0':
     dependencies:
@@ -7354,6 +7397,8 @@ snapshots:
     dependencies:
       hermes-estree: 0.25.1
 
+  hi-base32@0.5.1: {}
+
   hono@4.13.13: {}
 
   html-encoding-sniffer@7.0.0:
@@ -8104,6 +8149,8 @@ snapshots:
       - react
       - react-dom
 
+  promise-polyfill@8.3.0: {}
+
   prop-types@15.8.1:
     dependencies:
       loose-envify: 1.4.0
@@ -8290,6 +8337,8 @@ snapshots:
   semver@7.8.5: {}
 
   seq-queue@0.0.5: {}
+
+  server-only@0.0.1: {}
 
   set-cookie-parser@3.1.2: {}
 

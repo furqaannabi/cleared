@@ -5,6 +5,7 @@ import { describe, expect, test, vi } from "vitest";
 import { api, apiBaseUrl } from "@/lib/api";
 import { server } from "@/mocks/node";
 import { setReadingSpeed } from "@/mocks/deal-drafts";
+import { connectMockAccount } from "@/mocks/invites";
 import { InvitePage } from "./invite-page";
 
 const push = vi.fn();
@@ -151,14 +152,19 @@ describe("IN-FR-08, IN-FR-12, IN-FR-14 the rest of the sheet", () => {
 const beforeYouSend = () => screen.getByRole("region", { name: "Before you send" });
 
 describe("IN-FR-09 to IN-FR-11, IN-FR-13 Before you send", () => {
-  test("lists what's done and connects Instagram, the account the Reel needs", async () => {
-    await openInvite();
-    const list = within(beforeYouSend()).getByRole("list");
+  test("lists what's done and offers Connect Instagram, the account the Reel needs; once connected it's ticked off", async () => {
+    const deal = await openInvite();
+    let list = within(beforeYouSend()).getByRole("list");
     expect(within(list).getByText("YouTube connected as Ada Okafor")).toBeVisible();
     expect(within(list).getByText(/Professional accounts only/)).toBeVisible();
-    await userEvent.click(within(list).getByRole("button", { name: "Connect Instagram" }));
+    expect(within(list).getByRole("link", { name: "Connect Instagram" })).toHaveAttribute("href", expect.stringContaining("/connect/instagram?next="));
+    // Back from connecting (IN-FR-11, 1.3).
+    connectMockAccount("instagram");
+    cleanup();
+    render(<InvitePage dealId={deal.id} />);
+    list = within(await screen.findByRole("region", { name: "Before you send" })).getByRole("list");
     expect(await within(list).findByText("Instagram connected as ada.makes")).toBeVisible();
-    expect(within(list).queryByRole("button", { name: "Connect Instagram" })).toBeNull();
+    expect(within(list).queryByRole("link", { name: "Connect Instagram" })).toBeNull();
   });
 
   test("the brand's email is optional and saves when given", async () => {
@@ -184,7 +190,7 @@ async function openFilledInvite(brandEmail?: string) {
   await api.markChecklistReady(id);
   await api.updateInvitePost(id, created.data.deliverables[0].id, { amount: "1200.00", deadlineDays: 14 });
   await api.updateInvitePost(id, created.data.deliverables[1].id, { amount: "450.00", deadlineDays: 10 });
-  await api.connectAccount("instagram");
+  connectMockAccount("instagram");
   if (brandEmail) await api.updateInvite(id, { brandEmail });
   render(<InvitePage dealId={id} />);
   await screen.findByRole("heading", { level: 1, name: "Glow Theory · Invite" });
@@ -192,7 +198,7 @@ async function openFilledInvite(brandEmail?: string) {
 }
 
 describe("IN-FR-16, IN-FR-17 creating the link", () => {
-  test("Create link locks the terms and shows the link, who can open it, when it expires and who it was emailed to", async () => {
+  test("Create link locks the terms and shows the link, who can open it and when it expires; it is never emailed (1.3)", async () => {
     const user = userEvent.setup();
     await openFilledInvite("sam@glowtheory.com");
     await user.click(screen.getByRole("button", { name: "Create link for Glow Theory" }));
@@ -200,7 +206,7 @@ describe("IN-FR-16, IN-FR-17 creating the link", () => {
     const url = within(panel).getByText(/^https:\/\/cleared\.example\/b\//);
     expect(within(panel).getByText("Anyone with this link can open this deal. Send it only to Glow Theory.")).toBeVisible();
     expect(within(panel).getByText(/^Expires on \d{1,2} \w{3}\.$/)).toBeVisible();
-    expect(within(panel).getByText("We’ve also emailed it to sam@glowtheory.com.")).toBeVisible();
+    expect(within(panel).queryByText(/emailed/)).toBeNull();
     expect(within(sheet()).queryByRole("textbox")).toBeNull();
     expect(within(sheet()).getByText("Within 14 days of the hold")).toBeVisible();
     expect(within(sheet()).getByText("$1,200.00")).toBeVisible();

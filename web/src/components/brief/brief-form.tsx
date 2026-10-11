@@ -1,16 +1,24 @@
 "use client";
 
 import { useId, useState } from "react";
-import { api } from "@/lib/api";
+import { api, type ApiLimit } from "@/lib/api";
 import type { DealDraft } from "@/lib/checklist-builder/types";
 
 const MIN = 40;
 const MAX = 20_000;
 
+/** BC-FR-24: what to say at a daily limit on reading, with when it lifts in the creator's own time. */
+function limitProblem({ field, resetsAt }: ApiLimit) {
+  const when = resetsAt ? `from ${new Date(resetsAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()}` : "tomorrow";
+  const what = field === "creator" ? "You’ve reached today’s limit on reading briefs." : "Cleared has read all the briefs it can today.";
+  return `${what} You can send this one ${when}.`;
+}
+
 /**
- * BC-FR-04, BC-FR-05: paste the brief the brand sent. Too short or too long is
+ * BC-FR-04, BC-FR-05, BC-FR-24: paste the brief the brand sent. Too short or too long is
  * said before sending. File upload waits on the backend (BC-FR-06), so the
- * page offers pasting only.
+ * page offers pasting only. At a limit on reading, the page says which and
+ * when, keeping the text.
  *
  * @param draft - the deal draft (for its id and brand)
  * @param onSent - called with the draft the API returns (reading has started)
@@ -31,7 +39,7 @@ export function BriefForm({ draft, onSent, initial = "" }: { draft: DealDraft; o
     const r = await api.submitBrief(draft.id, text);
     setSending(false);
     if (r.ok) onSent(r.data);
-    else setProblem("We couldn’t send the brief. Try again.");
+    else setProblem(r.limit ? limitProblem(r.limit) : "We couldn’t send the brief. Try again.");
   }
 
   return (

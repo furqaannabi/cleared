@@ -96,10 +96,10 @@ function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal)
   }, [waitingOnPayPal, deal.dealId, onDeal]);
 
   // CH-FR-14 to CH-FR-16: agree to the version shown; unsent notes are dropped.
-  async function agree() {
+  async function agree(email?: string) {
     setAgreeing(true);
     setAgreeProblem(null);
-    const r = await api.agree(deal.dealId, deal.version);
+    const r = await api.agree(deal.dealId, deal.version, email);
     setAgreeing(false);
     if (r.ok) {
       notes.clear();
@@ -174,7 +174,13 @@ function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal)
         <DraftsPanel deal={deal} />
         {deal.step === "agreed" && <HoldsPanel deal={deal} onDeal={onDeal} />}
         <NotesPanel deal={deal} sending={sending} failed={failed} onSend={send} />
-        {deal.step === "waiting_for_brand" && <AgreePanel summary={view.summary} agreeing={agreeing} problem={agreeProblem} onAgree={agree} />}
+        {deal.step === "waiting_for_brand" && (
+          <>
+            <AgreePanel summary={view.summary} creator={deal.creatorName} agreeing={agreeing} problem={agreeProblem} onAgree={agree} />
+            {/* CH-FR-28: on phones the fixed panel is taller with the email field; the page scrolls clear of it. */}
+            <div aria-hidden="true" className="h-36 lg:hidden" />
+          </>
+        )}
         {/* CN-FR-02: the deal's cancel, under the side panel. */}
         <CancelDeal posts={cancelPosts} side="brand" brandName={deal.brandName} creatorName={deal.creatorName} sendOne={cancelOne} onUpdated={onDeal} />
       </div>

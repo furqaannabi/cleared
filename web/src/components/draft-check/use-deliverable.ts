@@ -9,7 +9,7 @@ export type DeliverableLoad =
   // DC-FR-33: another post in the same deal is opening; the one on screen stays until it arrives.
   | { status: "switching"; previous: Deliverable }
   | { status: "ready"; deliverable: Deliverable }
-  | { status: "error"; error: ApiError };
+  | { status: "error"; error: ApiError; code?: string };
 
 /** The post on screen, so a switch within its deal starts from it rather than from empty. */
 let onScreen: { dealId: string; deliverable: Deliverable } | null = null;
@@ -53,7 +53,7 @@ export function useDeliverable(
     let current = true;
     api.getDeliverable(deliverableId).then((result) => {
       if (!current) return;
-      setLoad(result.ok ? { status: "ready", deliverable: result.data } : { status: "error", error: result.error });
+      setLoad(result.ok ? { status: "ready", deliverable: result.data } : { status: "error", error: result.error, code: result.code });
     });
     return () => {
       current = false;

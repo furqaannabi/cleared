@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { creatorHoldLine } from "@/lib/brand-deal/hold-view";
 import type { Note } from "@/lib/brand-deal/types";
-import { formatAmount } from "@/lib/invite/amount";
+import { amountRefusal, formatAmount } from "@/lib/invite/amount";
 import type { InviteView } from "@/lib/invite/invite-view";
 import type { DealInvite } from "@/lib/invite/types";
 import { AmountField } from "./amount-field";
@@ -50,8 +51,16 @@ export function PostLine({
   cancel?: React.ReactNode;
 }) {
   const key = `post:${post.deliverableId}`;
-  const saveTerms = (terms: { amount?: string; deadlineDays?: number }) =>
-    save(key, () => api.updateInvitePost(dealId, post.deliverableId, terms), onInvite);
+  // IN-FR-06 (1.3): an amount the API refuses says why beside the field.
+  const [refused, setRefused] = useState<string | null>(null);
+  const saveTerms = (terms: { amount?: string; deadlineDays?: number }) => {
+    if (terms.amount) setRefused(null);
+    return save(key, () => api.updateInvitePost(dealId, post.deliverableId, terms), onInvite, (failure) => {
+      const why = amountRefusal(failure.code);
+      if (why) setRefused(why);
+      return !!why;
+    });
+  };
 
   return (
     <div role="group" aria-label={post.label} className="grid gap-3 border-b border-line py-4 md:grid-cols-[minmax(0,1fr)_200px_150px] md:items-start md:gap-4">
@@ -67,7 +76,7 @@ export function PostLine({
       ) : (
         <>
           <DeadlineField label={post.label} days={post.deadlineDays} exampleDate={post.exampleDate} onSave={(deadlineDays) => saveTerms({ deadlineDays })} />
-          <AmountField label={post.label} amount={post.amount} problem={post.amountProblem} onSave={(amount) => saveTerms({ amount })} />
+          <AmountField label={post.label} amount={post.amount} problem={refused ?? undefined} onSave={(amount) => saveTerms({ amount })} />
         </>
       )}
       {notes.map((n) => (
