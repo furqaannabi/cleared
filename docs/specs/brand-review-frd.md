@@ -1,10 +1,10 @@
 # Brand review: FRD
 
-**Status:** Signed by William (revision 1.1). The objection rule and review links are decided by William; Furqaan can supersede them. The objection rule and review links are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.2). The objection rule and review links are decided by William; Furqaan can supersede them.
 
 **Surface:** Both sides of step 5 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's side:** each post's review status on the brand's deal page, and a review page per post where the brand answers the creator's asks, then approves the draft or objects to items in the 48-hour review window. **The creator's side** (amending the [creator draft check](creator-draft-check-frd.md), revision 1.14): objections, the approved state, and a link to send the brand.
 
-**Scope of this build:** frontend only, against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). The review window's timer, deliverable states, review links and email run on the backend; the frontend starts actions and shows what the API returns. It never decides when a window starts or ends, or anything about money. Requirements tagged **Depends on backend** name their fallback.
+**Scope of this build:** frontend only. 1.2: on the live API, with the contract's shapes ([frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)). Before 1.2: against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). The review window's timer, deliverable states, review links and email run on the backend; the frontend starts actions and shows what the API returns. It never decides when a window starts or ends, or anything about money. Requirements tagged **Depends on backend** name their fallback.
 
 ## Problem Statement
 
@@ -80,8 +80,9 @@ This spec ends at "Approved". Re-confirming the hold and publishing are step 6.
 
 | ID | Requirement |
 | --- | --- |
-| RW-FR-03 | **A review link.** A review link (`/b/{token}`, like the invite link) goes through CH-FR-01's swap and lands on that post's review page, with the token gone from the URL. A review link that doesn't work shows CH-FR-02's one message. **Depends on backend** for making and emailing links; on mocks the demo link and "Open as {brand}" stand in. |
-| RW-FR-04 | **No session.** The review page without a session for its deal shows CH-FR-03's message. |
+| RW-FR-03 | **A review link.** A review link (`/b/{token}`, like the invite link) goes through CH-FR-01's swap and lands on that post's review page, with the token gone from the URL. A review link that doesn't work shows CH-FR-02's one message. 1.2: the backend makes the link and nothing is emailed; the creator sends it (RW-FR-25, [decision](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md)). On mocks the demo link and "Open as {brand}" stand in until the mocks go. |
+| RW-FR-04 | **No session.** The review page without a session for its deal shows CH-FR-03's message. 1.2: the API answers 401 with no session and 404 for a post outside the session's deal; the page reads both the same way, and the deal's own read decides which message shows (CH-FR-03 or RW-FR-05's). |
+| RW-FR-31 | **The session ends during an action (1.2).** When the API answers 401 to accepting, asking for a fix, approving or sending objections, the action's own place says "Your access to this deal has ended. Open the link {creator} sent you, then try again here." ("the link you were sent" when the creator's name isn't known). Nothing on the page is cleared: unsent objections, a note being written and the open confirmation stay, so after opening the link in another tab the same action can be tried again here. Never "Check your connection" for a 401. |
 
 ### The review page
 
@@ -127,10 +128,10 @@ This spec ends at "Approved". Re-confirming the hold and publishing are step 6.
 
 | ID | Requirement |
 | --- | --- |
-| RW-FR-25 | **Copy link for the brand.** While the brand has something to do on a post (an ask waiting, the window open, or objected), the creator's draft check page shows "Copy link for {brand}" beside the next step, and "We've emailed it to {email}" when there's a brand email. **Depends on backend** for the link; on mocks it copies the demo link. |
+| RW-FR-25 | **Copy link for the brand.** While the brand has something to do on a post (an ask waiting, the window open, or objected), the creator's draft check page shows "Copy link for {brand}" beside the next step. 1.2: nothing is emailed, so there is no "We've emailed it"; the link line, when the brand opened it, and "Make a new link" for an expired link are DC-FR-52's (DC 1.18). On mocks it copies the demo link. |
 | RW-FR-26 | **Objected, for the creator.** Specified in DC 1.14 (DC-FR-49, DC-FR-50): each objected item shows "{brand} objected" with the note, and the next step names the items and the deadline. |
 | RW-FR-27 | **Approved, for the creator.** Specified in DC 1.14 (DC-FR-51): "{brand} approved this draft" or "No objection from {brand} in 48 hours, so this draft is approved", then "Don't publish yet. Cleared confirms {brand}'s hold with PayPal first." |
-| RW-FR-28 | **Demo draft.** In mock builds only, DC-FR-45's simulated upload lets the creator pick the run's outcome: "passes every item" (the window starts) or "one Unsure item". Supplied only through the mock gate, like Demo PayPal; never in a real build. |
+| RW-FR-28 | **Demo draft.** In mock builds only, DC-FR-45's simulated upload lets the creator pick the run's outcome: "passes every item" (the window starts) or "one Unsure item". Supplied only through the mock gate, like Demo PayPal; never in a real build. 1.2: it goes with the mocks in the last slice ([mocks go in one last slice](../decisions/2026-10-11-mocks-go-in-one-last-slice.md)). |
 
 ### Responsive and accessibility
 
@@ -161,11 +162,24 @@ This spec ends at "Approved". Re-confirming the hold and publishing are step 6.
   - The **item status map** gains the brand's wording beside the creator's; one mapping, so icons and colours never differ between sides.
   - A pure **objection draft** (the unsent objections: add, edit, remove, which items allow one), mirroring CH's notes and kept in memory only.
   - The draft check's player, timeline, grid, cards and evidence panel are reused with a side prop for wording; the brand's actions live in their own components under `brand-review/`, each under ~200 lines.
-- **Data:** Zod schemas for the brand's deliverable; the typed client gains the brand calls (read, accept, ask to fix, approve, send objections) and the creator's review link call.
-- **Mocks:** the seed gains a held demo deal whose posts are in the brand's states (one in the window with 31 hours left, one with an Unsure item asked about, one approved) and its own demo link. DC-FR-45's simulated upload gains the outcome choice (RW-FR-28). A mock-only control ends a window now, so RW-FR-20 can be shown.
+- **Data:** Zod schemas for the brand's deliverable; the typed client gains the brand calls (read, accept, ask to fix, approve, send objections) and the creator's review link call. 1.2: the shapes are the contract's (`BrandPost`, and `BrandDeal`'s `posts[].review`), still checked with Zod at runtime.
+- **Mocks:** 1.2: the shared mocks, the seeded deal, the demo outcome and the end-window control stay until the last slice; this spec's tests move to per-test stubs typed from `contract/`. Before 1.2: the seed gains a held demo deal whose posts are in the brand's states (one in the window with 31 hours left, one with an Unsure item asked about, one approved) and its own demo link. DC-FR-45's simulated upload gains the outcome choice (RW-FR-28). A mock-only control ends a window now, so RW-FR-20 can be shown.
 - **Visual:** inherits DESIGN.md and the creator's draft check. Rendered mockups in `design/brand-review/` before build, at 390 px and desktop; William picks.
 
 ## Mocks and the provisional contract
+
+### On the live API (1.2)
+
+The brand's review routes and the shapes up to Approved match the contract: `GET /brand/deals/{dealId}/deliverables/{deliverableId}` and its `…/items/{itemId}/accept`, `…/items/{itemId}/fix`, `…/approve` and `…/objections` answer `BrandPost`; `POST /b/{token}/session` answers `BrandSession` with the post to land on; a late objection is refused with `window_ended`. Differences, and where they go:
+
+| Difference | Where it goes |
+| --- | --- |
+| Past Approved: `confirm.what` is a list (`file_record`, `paid_promotion`, `written_item`), `accept.reason` is `not_your_channel` or `not_the_approved_file`, `taking` is a state, and `post` carries its own items; on the deal page, `taking`, `capture_refused` and `taken`'s fields | Publish and pay, its own slice (PP) |
+| A draft item's evidence always has `startSec` and `endSec` in the contract; the page's schema allows them absent | Kept: the page's schema is the wider one and reads the contract's answer. The two-way compile check on `BrandPost` waits for publish and pay |
+| No session: 401 (`signed_out`); outside the deal: 404 | RW-FR-04, RW-FR-31; and CH 1.4 for the brand's deal page |
+
+Before 1.2:
+
 
 ```ts
 // Provisional. Not an agreed contract.
@@ -218,6 +232,7 @@ The creator's deliverable (DC) gains `state: "objected" | "approved"`, item stat
 | RW-FR-25 | The creator's deliverable gains `reviewLink` while the brand has something to do |
 | Mocks only | `POST /__demo/review/end-window` ends a window now. It exists only in the MSW mocks and is never part of the real API |
 | Security | Every changing brand request sends the session cookie and is protected from cross-site requests, as DC's security request |
+| RW-FR-20, live end to end (1.2) | A test-only "end the review window now" route, accepted only with the secret held in CI, like the test-session route. Until it exists, a window ending is proven in Vitest only |
 
 ## Testing Decisions
 
@@ -226,15 +241,16 @@ The creator's deliverable (DC) gains `state: "objected" | "approved"`, item stat
 - **Status map:** every brand-worded status has an icon and a word; "You accepted" never the pass colour; both sides share icons and colours.
 - **Objection draft:** add, edit, remove; refused on accepted, At live check and non-passing items; a note is required.
 - **Components:** the deal page's post lines in each state and their order; the review page in each state at 375 px and desktop; grid and card parity; accept, ask to fix with and without a note; approve and send with their confirmations; approve anyway; the late send; creator side: Copy link, objected items, approved, "Don't publish yet", the demo outcome choice.
-- **End to end (Playwright, on MSW):** a held post → the creator's demo draft with one Unsure item → asks the brand → the brand accepts → the window opens → the brand objects to an item → the creator sees "{brand} objected" → a new demo draft that passes → the brand approves → both sides show Approved and the creator sees "Don't publish yet". Also: the window ends with no objection. At 375 px and 1280 px.
+- **1.2:** new and changed behaviour on per-test stubs typed from the contract: the 401 on load (RW-FR-04), the session ending during each action with unsent objections kept (RW-FR-31), and a window that ended (RW-FR-20) from a stubbed `approved` by `window`. Live end to end (once the test-session route exists): ask → accept → window → object → new draft → approve; the window ending is not in the live run until the end-window route exists.
+- **End to end (Playwright, on MSW, before 1.2):** a held post → the creator's demo draft with one Unsure item → asks the brand → the brand accepts → the window opens → the brand objects to an item → the creator sees "{brand} objected" → a new demo draft that passes → the brand approves → both sides show Approved and the creator sees "Don't publish yet". Also: the window ends with no objection. At 375 px and 1280 px.
 
 ## Out of Scope
 
 - Step 6 onward: re-confirming the hold, publishing, the live check and payment. The brand's side of them is in the [publish and pay FRD](publish-and-pay-frd.md).
 - Manual approval outside an objection in the review window (the live check; Instagram's paid-partnership label).
-- The real upload flow (DC-FR-45 stands in).
-- Real email sending and the PayPal JS SDK.
-- A brand account, notifications other than the review link email, and the brand seeing earlier drafts.
+- The real upload flow (DC-FR-45 stands in; 1.2: built in DC 1.18).
+- Real email sending and the PayPal JS SDK (1.2: the button is CH 1.3's).
+- A brand account, any notification about the review (1.2: no review link email), and the brand seeing earlier drafts.
 - Cancelling a deal.
 
 ## Open items
@@ -250,3 +266,5 @@ The creator's deliverable (DC) gains `state: "objected" | "approved"`, item stat
 | 1.0 | Signed by William | none |
 | 1.1 | Pointer: the brand's page after Approved (the live post, confirming, objecting, accepting, paid) is in the [publish and pay FRD](publish-and-pay-frd.md). No requirement changes here | none |
 | 1.1 | Signed by William | none |
+| 1.2 | The move onto the live API, from the grill-me with William: the review routes and shapes up to Approved matched the contract, the differences past Approved go to publish and pay; no review link email (RW-FR-03, RW-FR-25); a 401 reads as no session (RW-FR-04); the session ending during an action keeps everything on the page and says to open the link again (new RW-FR-31); a window ending proven in Vitest, with a test-only end-window route asked of Furqaan; the doubled sentence in the Status line removed | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md), [Mocks go in one last slice](../decisions/2026-10-11-mocks-go-in-one-last-slice.md), [No email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md) |
+| 1.2 signed | Revision 1.2 signed by William | none |

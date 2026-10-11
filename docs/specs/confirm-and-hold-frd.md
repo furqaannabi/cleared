@@ -1,6 +1,6 @@
 # Confirm and hold: FRD
 
-**Status:** Signed by William (revision 1.3).
+**Status:** Signed by William (revision 1.4).
 
 **Surface:** Both sides of step 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's deal page:** the brand opens the creator's link, reads the terms and every checklist with where each item came from, asks for changes or agrees, then approves one PayPal hold per post. **The creator's side:** the brand's notes beside what they're about, "Send updated terms", and each post's hold as it comes in.
 
@@ -78,7 +78,8 @@ The brand can "Ask for a change" on any item, line left out, amount or deadline,
 | --- | --- |
 | CH-FR-01 | **Swap the token.** `/b/{token}` shows "Opening your deal…" while it asks the API to swap the token for a session (an HttpOnly cookie scoped to the deal; the frontend never sees it). On success it replaces the URL with `/brand/deals/{dealId}`, so the token leaves the address bar and history. **Depends on backend;** on mocks the session lives in the mock's memory. |
 | CH-FR-02 | **A link that doesn't work.** Expired, turned off or unknown, the page says one thing: "This link doesn't work any more. Ask the creator who sent it for a new one." It names no creator or brand and gives no reason. |
-| CH-FR-03 | **No session.** `/brand/deals/{dealId}` without a session for that deal says "Open the link {creator} sent you again." (or, when the API can't name the creator, "Open the link you were sent again."). It never offers sign-in. |
+| CH-FR-03 | **No session.** `/brand/deals/{dealId}` without a session for that deal says "Open the link {creator} sent you again." (or, when the API can't name the creator, "Open the link you were sent again."). It never offers sign-in. 1.4: the API answers 401 with no session; the page shows this message for it, never "Check your connection". |
+| CH-FR-29 | **The session ends during an action (1.4).** When the API answers 401 to sending notes, agreeing or starting or finishing a hold, the action's own place says "Your access to this deal has ended. Open the link {creator} sent you, then try again here." ("the link you were sent" when the creator's name isn't known). Nothing on the page is cleared: unsent notes, the brand's email and the open confirmation stay, so after opening the link in another tab the same action can be tried again here. Cancelling gets the same in the cancel FRD's slice. |
 
 ### The brand's page
 
@@ -219,6 +220,7 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 - Tests check what the brand and creator see and can do, named after the CH-FR they prove.
 - **Terms view:** an item's source (brief line, added, interpreted with the answer); lines no item cites listed once; changes since the last version; the agree summary's count and total; never includes the PayPal email.
 - **Hold view:** each state's text and whether the button is on; "Held" only for `held`; "{held} of {n} held".
+- **1.4, on per-test stubs:** a 401 on load shows CH-FR-03's message; a 401 on sending notes, agreeing and the hold calls shows CH-FR-29's message and keeps what the brand typed.
 - **Components (1.3: new behaviour on per-test stubs typed from the contract):** the brand's email sent with the agreement, and agreeing without it; PayPal's approval wired to start, approved and closed (PayPal's button replaced by a stand-in in tests); PayPal failing to load; the swap and the URL replaced; the one bad-link message; the terms read-only with the brand's rules; folding on phones; Ask for a change on each kind, edit and remove, send; the sent state; version marks and replies; Agree with and without unsent notes; out-of-date refusal; each hold state; coming back. Creator side: notes beside their targets, reply, Send updated terms gated, hold lines and "Open draft check".
 - **End to end (Playwright, on MSW):** creator creates the link → opens it as the brand → asks for a change on an item and an amount → creator replies, changes and sends → the brand sees "Changed", agrees → approves both holds (one declined first, then held) → the creator's rail shows "All held" routing on. At 375 px and 1280 px; the token is absent from the URL after the swap.
 
@@ -249,3 +251,5 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | 1.3 | The move onto the live API, from the grill-me with William: PayPal's own approval button through `@paypal/react-paypal-js`, sandbox, `intent=authorize`, with the client id from the API (CH-FR-17); the brand's own optional email when agreeing (new CH-FR-28); the hold routes and the session matched the contract; the `review` part of the brand's deal moves with its own slices | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md), [The brand's notices](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md) |
 | 1.3 signed | Revision 1.3 signed by William | none |
 | 1.3 | After signing: the brand's email was numbered CH-FR-26, which CH-FR-26 (mobile-first) already used; renumbered CH-FR-28. No change to any requirement's words | none |
+| 1.4 | From the brand review grill-me with William: a 401 reads as no session (CH-FR-03), and the session ending during an action keeps everything on the page and says to open the link again (new CH-FR-29), as RW-FR-31 on the review page | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md) |
+| 1.4 signed | Revision 1.4 signed by William | none |
