@@ -7,7 +7,7 @@
  * untrusted text: whatever it says, only items and questions can come out (DS-BR-04).
  */
 import { z } from "zod";
-import type { Platform } from "../deals/deals";
+import { PLATFORMS, type Platform } from "../deals/platforms";
 
 export interface BriefLine {
   number: number;
@@ -73,7 +73,7 @@ const SUGGESTIONS_AT_MOST = 3;
 const Proposed = z.strictObject({
   name: z.string().trim().min(1),
   kind: z.enum(ITEM_KINDS),
-  appliesTo: z.enum(["all", "youtube_video", "youtube_short"]),
+  appliesTo: z.enum(["all", ...PLATFORMS]),
   // Null, missing and empty all mean "no exact value".
   exact: z.string().trim().nullish(),
 });

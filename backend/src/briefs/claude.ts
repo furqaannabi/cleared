@@ -10,14 +10,14 @@ import { AnthropicBedrockMantle } from "@anthropic-ai/bedrock-sdk";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import type { Platform } from "../deals/deals";
+import { PLATFORMS, type Platform } from "../deals/platforms";
 import { ITEM_KINDS, type BriefLine, type BriefModel } from "./reader";
 
 /** What the model is asked to produce. The reader's own schema is stricter and has the last word. */
 const ProposedItem = z.object({
   name: z.string(),
   kind: z.enum(ITEM_KINDS),
-  appliesTo: z.enum(["all", "youtube_video", "youtube_short"]),
+  appliesTo: z.enum(["all", ...PLATFORMS]),
   exact: z.string().nullable(),
 });
 const AnswerFormat = z.object({
@@ -47,11 +47,11 @@ An item is one requirement that can be checked against the video or the publishe
   - shown_as_text: text that must appear on screen in the video, such as a code or a web address.
   - shown: something that must be visible in the video, such as the product in use or a logo.
   - timing: when something must happen or how long it must last, such as a mention in the first 60 seconds or a segment of at least 45 seconds.
-  - written: something that must be in the post's description, such as a link, a code or hashtags.
-  - disclosure: the post being marked as a paid promotion.
-  - publication: the post being public, on the creator's own channel, or up by a date.
+  - written: something that must be in the post's description, or its caption on Instagram, such as a link, a code or hashtags.
+  - disclosure: the post being marked as a paid promotion, or as a paid partnership on Instagram.
+  - publication: the post being public, on the creator's own channel or account, or up by a date.
 - exact: when the requirement is an exact string that must appear (a discount code, a link, a hashtag), that string exactly as the brief writes it. Otherwise null.
-- appliesTo: "youtube_video" or "youtube_short" only when the line itself says it is about that kind of post. Otherwise "all".
+- appliesTo: "youtube_video", "youtube_short" or "instagram_reel" only when the line itself says it is about that kind of post. Otherwise "all".
 
 A question is for a line that states a requirement but leaves out what is needed to check it: a vague time ("mention us early"), a vague amount ("show the product a few times"), or a choice the brief does not make. Do not guess and do not make an item for such a line. Ask instead:
 - line: the line's number.
@@ -62,7 +62,7 @@ Some lines produce nothing: greetings and thanks, background about the brand, pa
 
 If the brief has no checkable requirements, return empty lists.`;
 
-const POST_NAMES: Record<Platform, string> = { youtube_video: "YouTube video", youtube_short: "YouTube Short" };
+const POST_NAMES: Record<Platform, string> = { youtube_video: "YouTube video", youtube_short: "YouTube Short", instagram_reel: "Instagram Reel" };
 
 /** The brief as the model sees it. A line that writes the tag itself cannot close it early. */
 function userTurn(lines: BriefLine[], platforms: Platform[]): string {

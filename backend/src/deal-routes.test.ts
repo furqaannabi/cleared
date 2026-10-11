@@ -107,15 +107,28 @@ describe("DS-FR-13 start a deal", () => {
     });
   });
 
-  test("a deal with a Reel is refused, saying why, because Instagram is not available yet", async () => {
+  test("IG-FR-07 a deal can hold an Instagram Reel, beside YouTube posts or on its own", async () => {
     const sam = await setUp().creator();
 
-    const response = await sam.send("POST", "/deals", {
+    const mixed = await sam.send("POST", "/deals", {
       body: { brandName: "Glow Skincare", deliverables: [{ platform: "youtube_video" }, { platform: "instagram_reel" }] },
     });
+    const alone = await sam.send("POST", "/deals", { body: { brandName: "Kora Audio", deliverables: [{ platform: "instagram_reel" }] } });
+
+    expect(mixed.status).toBe(200);
+    expect(((await mixed.json()) as { deliverables: { platform: string }[] }).deliverables.map((post) => post.platform)).toEqual(["youtube_video", "instagram_reel"]);
+    expect(alone.status).toBe(200);
+    // Both deals were started at the same moment, so the list's order between them is not checked.
+    const listed = ((await (await sam.send("GET", "/deals")).json()) as { deliverables: { platform: string }[] }[]).map((deal) => deal.deliverables.map((post) => post.platform).join("+"));
+    expect(listed.sort()).toEqual(["instagram_reel", "youtube_video+instagram_reel"]);
+  });
+
+  test("a kind of post Cleared does not cover is still refused", async () => {
+    const sam = await setUp().creator();
+
+    const response = await sam.send("POST", "/deals", { body: { brandName: "Glow Skincare", deliverables: [{ platform: "instagram_story" }] } });
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error: { code: "platform_not_available", field: "deliverables.1.platform" } });
     expect(await prisma.deal.count()).toBe(0);
   });
 
@@ -282,11 +295,15 @@ describe("DS-FR-16 change the brand or the posts", () => {
     const sam = await setUp().creator();
     const made = (await (await sam.send("POST", "/deals", { body: glow })).json()) as { id: string };
 
-    const reel = await sam.send("PATCH", `/deals/${made.id}`, { body: { brandName: "Glow Skincare", deliverables: [{ platform: "instagram_reel" }] } });
+    const story = await sam.send("PATCH", `/deals/${made.id}`, { body: { brandName: "Glow Skincare", deliverables: [{ platform: "instagram_story" }] } });
     const empty = await sam.send("PATCH", `/deals/${made.id}`, { body: { brandName: "Glow Skincare", deliverables: [] } });
+    // IG-FR-07: a Reel can be added to a deal that is being set up.
+    const reel = await sam.send("PATCH", `/deals/${made.id}`, { body: { brandName: "Glow Skincare", deliverables: [{ platform: "instagram_reel" }] } });
 
-    expect(await reel.json()).toEqual({ error: { code: "platform_not_available", field: "deliverables.0.platform" } });
+    expect(story.status).toBe(400);
     expect(empty.status).toBe(400);
+    expect(reel.status).toBe(200);
+    expect(((await reel.json()) as { deliverables: { platform: string }[] }).deliverables.map((post) => post.platform)).toEqual(["instagram_reel"]);
   });
 });
 

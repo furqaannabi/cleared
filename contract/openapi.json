@@ -168,7 +168,8 @@
                   "type": "string",
                   "enum": [
                     "youtube_video",
-                    "youtube_short"
+                    "youtube_short",
+                    "instagram_reel"
                   ]
                 }
               },
@@ -471,7 +472,8 @@
                   "type": "string",
                   "enum": [
                     "youtube_video",
-                    "youtube_short"
+                    "youtube_short",
+                    "instagram_reel"
                   ]
                 },
                 "state": {
@@ -539,7 +541,8 @@
                   "type": "string",
                   "enum": [
                     "youtube_video",
-                    "youtube_short"
+                    "youtube_short",
+                    "instagram_reel"
                   ]
                 },
                 "itemCount": {
@@ -724,7 +727,8 @@
             "type": "string",
             "enum": [
               "youtube_video",
-              "youtube_short"
+              "youtube_short",
+              "instagram_reel"
             ]
           },
           "creatorTimeZone": {
@@ -1297,7 +1301,8 @@
             "type": "string",
             "enum": [
               "youtube_video",
-              "youtube_short"
+              "youtube_short",
+              "instagram_reel"
             ]
           },
           "state": {
@@ -2055,7 +2060,8 @@
                   "type": "string",
                   "enum": [
                     "youtube_video",
-                    "youtube_short"
+                    "youtube_short",
+                    "instagram_reel"
                   ]
                 },
                 "amount": {

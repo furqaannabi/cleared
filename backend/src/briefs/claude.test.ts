@@ -89,6 +89,24 @@ describe("what the model is sent", () => {
   });
 });
 
+describe("IG-FR-09 a deal with a Reel", () => {
+  test("the model is told the deal has an Instagram Reel, and can say an item applies to Reels only", async () => {
+    const { model, sent } = standIn({ stop_reason: "end_turn", text: '{"items":[],"questions":[]}' });
+
+    await model.read({ lines, platforms: ["youtube_video", "instagram_reel"] });
+
+    expect(sent[0]!.messages[0]!.content).toContain("The deal's posts: YouTube video, Instagram Reel.");
+    expect(JSON.stringify(sent[0]!.output_config)).toContain("instagram_reel");
+  });
+
+  test("the instructions read a Reel's checklist the same way: its caption, its paid-partnership label, the creator's own account", () => {
+    expect(INSTRUCTIONS).toContain("in the post's description, or its caption on Instagram");
+    expect(INSTRUCTIONS).toContain("a paid partnership on Instagram");
+    expect(INSTRUCTIONS).toContain("the creator's own channel or account");
+    expect(INSTRUCTIONS).toContain('"instagram_reel"');
+  });
+});
+
 describe("what comes back", () => {
   test("a finished answer is handed to the reader as it is, for the reader to check", async () => {
     const { model } = standIn({ stop_reason: "end_turn", text: '{"items":[{"line":1}],"questions":[]}' });

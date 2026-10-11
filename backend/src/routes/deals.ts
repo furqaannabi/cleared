@@ -12,8 +12,6 @@ const json = <Schema extends z.ZodType>(schema: Schema, description: string) => 
   content: { "application/json": { schema } },
 });
 
-/** Every kind of post the pages know. A Reel is understood and refused, with a reason, until Instagram is built. */
-const AnyPlatform = z.enum([...PLATFORMS, "instagram_reel"]);
 const PlatformSchema = z.enum(PLATFORMS);
 const StepSchema = z.enum(["checklist", "invite", "waiting_for_brand", "changes_requested", "agreed"]);
 
@@ -71,10 +69,10 @@ const DealSummarySchema = z
 const brandName = z.string().trim().min(1).max(120);
 const posts = <Post extends z.ZodType>(post: Post) => z.array(post).min(1).max(10);
 
-const StartDealSchema = z.object({ brandName, deliverables: posts(z.object({ platform: AnyPlatform })) });
+const StartDealSchema = z.object({ brandName, deliverables: posts(z.object({ platform: PlatformSchema })) });
 const ChangeDealSchema = z.object({
   brandName,
-  deliverables: posts(z.object({ id: z.string().min(1).max(64).optional(), platform: AnyPlatform })),
+  deliverables: posts(z.object({ id: z.string().min(1).max(64).optional(), platform: PlatformSchema })),
 });
 
 const body = <Schema extends z.ZodType>(schema: Schema) => ({
@@ -92,9 +90,6 @@ export function registerDealRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: S
   const { deals } = deps;
   const creator = requireCreator(deps.sessions);
 
-  /** The place of the first post that cannot be in a deal yet, if there is one (DS-FR-13). */
-  const notAvailable = (sent: { platform: string }[]) => sent.findIndex((post) => post.platform === "instagram_reel");
-
   app.openapi(
     createRoute({
       method: "post",
@@ -106,8 +101,6 @@ export function registerDealRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: S
     }),
     async (c) => {
       const input = c.req.valid("json");
-      const reel = notAvailable(input.deliverables);
-      if (reel !== -1) return fail(c, 400, "platform_not_available", `deliverables.${reel}.platform`);
       const platforms = input.deliverables.map((post) => post.platform as Platform);
       return c.json(await deals.start(c.get("creatorId"), { brandName: input.brandName, platforms }), 200);
     },
@@ -150,8 +143,6 @@ export function registerDealRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions: S
     }),
     async (c) => {
       const input = c.req.valid("json");
-      const reel = notAvailable(input.deliverables);
-      if (reel !== -1) return fail(c, 400, "platform_not_available", `deliverables.${reel}.platform`);
       const changed = await deals.change(c.get("creatorId"), c.req.valid("param").dealId, {
         brandName: input.brandName,
         posts: input.deliverables.map((post) => ({ id: post.id, platform: post.platform as Platform })),

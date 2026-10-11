@@ -17,9 +17,9 @@ import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import { inOrder, noteOf, type DealNote } from "../invites/notes";
 import { enqueue, type JobHandlers } from "../jobs/jobs";
 
-/** The posts a deal can have for now. Reels wait for Instagram to be connected. */
-export const PLATFORMS = ["youtube_video", "youtube_short"] as const;
-export type Platform = (typeof PLATFORMS)[number];
+import type { Platform } from "./platforms";
+
+export { PLATFORMS, type Platform } from "./platforms";
 
 export type Step = "checklist" | "invite" | "waiting_for_brand" | "changes_requested" | "agreed";
 export type Reading = "idle" | "reading" | "done" | "failed";

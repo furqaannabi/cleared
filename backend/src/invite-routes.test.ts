@@ -44,12 +44,15 @@ function setUp(options: { linkKey?: false } = {}) {
   });
 
   /** A browser signed in as a creator. Unless told otherwise they have YouTube connected and a PayPal email saved. */
-  async function creator(name = "Sam Rivera", has: { youtube?: boolean; paypalEmail?: boolean } = {}) {
+  async function creator(name = "Sam Rivera", has: { youtube?: boolean; paypalEmail?: boolean; instagram?: boolean } = {}) {
     const browser = browserFor(app, APP);
     const first = name.split(" ")[0]!.toLowerCase();
     const { creatorId } = await accounts.signInWithGoogle({ googleId: `google-${name}`, name, email: `${first}@example.com` });
     if (has.youtube !== false) {
       await accounts.connectYouTube(creatorId, { externalId: `channel-${first}`, name, refreshTokenEncrypted: "sealed" });
+    }
+    if (has.instagram) {
+      await prisma.connectedAccount.create({ data: { creatorId, platform: "instagram", externalId: `ig-${first}`, name: first, refreshTokenEncrypted: "sealed", connectedAt: clock() } });
     }
     if (has.paypalEmail !== false) await accounts.setPaypalEmail(creatorId, `${first}.pay@example.com`);
     browser.cookies.set("cleared_session", await createSessions({ prisma, now: clock }).start(creatorId));
@@ -60,8 +63,8 @@ function setUp(options: { linkKey?: false } = {}) {
     creator,
     stranger: () => browserFor(app, APP),
     /** A deal of this creator's, with its checklist marked ready: at the invite step. */
-    async dealAtInvite(browser: Browser) {
-      const deal = (await (await browser.send("POST", "/deals", { body: glow })).json()) as Deal;
+    async dealAtInvite(browser: Browser, platforms: string[] = glow.deliverables.map((post) => post.platform)) {
+      const deal = (await (await browser.send("POST", "/deals", { body: { brandName: glow.brandName, deliverables: platforms.map((platform) => ({ platform })) } })).json()) as Deal;
       await browser.send("POST", `/deals/${deal.id}/brief`, { body: { text: brief } });
       await runDueJobs(prisma, deals.handlers, { now, log: () => {} });
       const ready = await browser.send("POST", `/deals/${deal.id}/checklist/ready`);
@@ -344,6 +347,60 @@ describe("DS-FR-31 create the link", () => {
     expect(await response.json()).toEqual({ error: { code: "terms_incomplete", field: `posts.1` } });
     expect(await readInvite(sam, deal)).toMatchObject({ step: "invite" });
     expect(await prisma.inviteLink.count()).toBe(0);
+  });
+
+  describe("IG-FR-08 each platform in the deal must be connected", () => {
+    /** A deal with these posts, each with its terms, ready to send. */
+    async function ready(world: ReturnType<typeof setUp>, browser: Browser, platforms: string[]) {
+      const deal = await world.dealAtInvite(browser, platforms);
+      for (const [index] of platforms.entries()) await setTerms(browser, deal, { amount: "500.00", deadlineDays: 10 }, index);
+      return deal;
+    }
+
+    test("a deal with a Reel is refused until Instagram is connected, and the refusal names Instagram", async () => {
+      const world = setUp();
+      const sam = await world.creator();
+      const deal = await ready(world, sam, ["youtube_video", "instagram_reel"]);
+
+      const response = await createLink(sam, deal);
+
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: { code: "instagram_not_connected" } });
+      expect(await prisma.inviteLink.count()).toBe(0);
+    });
+
+    test("with both connected, a deal with a YouTube post and a Reel goes to the brand", async () => {
+      const world = setUp();
+      const sam = await world.creator("Sam Rivera", { instagram: true });
+      const deal = await ready(world, sam, ["youtube_video", "instagram_reel"]);
+
+      expect((await createLink(sam, deal)).status).toBe(200);
+    });
+
+    test("a deal with only Reels does not need YouTube", async () => {
+      const world = setUp();
+      const sam = await world.creator("Sam Rivera", { youtube: false, instagram: true });
+      const deal = await ready(world, sam, ["instagram_reel"]);
+
+      expect((await createLink(sam, deal)).status).toBe(200);
+    });
+
+    test("a deal with a YouTube post still needs YouTube, whatever else is connected", async () => {
+      const world = setUp();
+      const sam = await world.creator("Sam Rivera", { youtube: false, instagram: true });
+      const deal = await ready(world, sam, ["youtube_short", "instagram_reel"]);
+
+      expect(await (await createLink(sam, deal)).json()).toEqual({ error: { code: "youtube_not_connected" } });
+    });
+
+    test("a Reel that was cancelled is not sent, so it does not need Instagram", async () => {
+      const world = setUp();
+      const sam = await world.creator();
+      const deal = await ready(world, sam, ["youtube_video", "instagram_reel"]);
+      expect((await sam.send("POST", `/deals/${deal.id}/invite/posts/${deal.deliverables[1]!.id}/cancel`, { body: {} })).status).toBe(200);
+
+      expect((await createLink(sam, deal)).status).toBe(200);
+    });
   });
 
   test("it is refused until the creator's YouTube channel is connected", async () => {

@@ -77,6 +77,15 @@ describe("DS-FR-18 and DS-FR-19 reading", () => {
     expect(read.ok && read.items.map((item) => item.deliverableId)).toEqual(["post-video"]);
   });
 
+  test("IG-FR-09 an item the brief says is about Reels goes to the deal's Reel and to no other post", async () => {
+    const { model } = scripted(answer([{ line: 2, name: "Put #GlowPartner in the caption", kind: "written", appliesTo: "instagram_reel", exact: "#GlowPartner" }]));
+    const withReel = [posts[0]!, { id: "post-reel", platform: "instagram_reel" as const }];
+
+    const read = await readBrief({ model, lines, posts: withReel });
+
+    expect(read).toMatchObject({ ok: true, items: [{ deliverableId: "post-reel", name: "Put #GlowPartner in the caption", kind: "written", checkedBy: "at_live_check" }] });
+  });
+
   test("an item for a kind of post the deal does not have is dropped", async () => {
     const { model } = scripted(answer([{ line: 2, name: "Say the code", kind: "said", appliesTo: "youtube_short" }]));
 

@@ -96,6 +96,7 @@ export function registerInviteRoutes(app: OpenAPIHono<AppEnv>, deps: { sessions:
       case "no_link":
       case "no_changes_asked":
       case "youtube_not_connected":
+      case "instagram_not_connected":
       case "paypal_email_missing":
         return fail(c, 409, changed.refused);
       case "terms_incomplete":

@@ -74,7 +74,8 @@ export type LinkRefused =
   | { refused: "not_at_invite" }
   /** A post has no amount or no deadline yet. `index` is its place among the deal's posts. */
   | { refused: "terms_incomplete"; index: number }
-  | { refused: "youtube_not_connected" | "paypal_email_missing" }
+  /** A platform the deal has a post on is not connected, or the creator has no PayPal email (DS-FR-31, IG-FR-08). */
+  | { refused: "youtube_not_connected" | "instagram_not_connected" | "paypal_email_missing" }
   /** The brand has no link to replace or turn off: none is made yet, or the deal has moved on. */
   | { refused: "no_link" }
   /** Updated terms are sent in answer to the brand's notes, and there are none to answer. */
@@ -185,7 +186,11 @@ export function createInvites(deps: {
     const unfinished = deal.deliverables.findIndex((post) => !gone.has(post.id) && (post.amountCents === null || post.deadlineDays === null));
     if (unfinished !== -1) return { refused: "terms_incomplete", index: unfinished };
     const creator = await tx.creator.findUniqueOrThrow({ where: { id: deal.creatorId }, include: { accounts: true } });
-    if (!creator.accounts.some((account) => account.platform === "youtube")) return { refused: "youtube_not_connected" };
+    // Each platform the deal still has a post on must be connected, and no other (IG-FR-08).
+    const sent = deal.deliverables.filter((post) => !gone.has(post.id));
+    const connected = (platform: "youtube" | "instagram") => creator.accounts.some((account) => account.platform === platform);
+    if (sent.some((post) => post.platform !== "instagram_reel") && !connected("youtube")) return { refused: "youtube_not_connected" };
+    if (sent.some((post) => post.platform === "instagram_reel") && !connected("instagram")) return { refused: "instagram_not_connected" };
     if (!creator.paypalEmail) return { refused: "paypal_email_missing" };
     return undefined;
   }

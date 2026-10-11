@@ -380,6 +380,8 @@ export function registerDeliverableRoutes(
             return fail(c, 400, "not_a_youtube_link", "videoUrl");
           case "youtube_unavailable":
             return fail(c, 503, "youtube_unavailable");
+          case "not_set_up":
+            return fail(c, 503, "not_set_up");
           case "money":
             return fail(c, 409, asked.reason);
           default:
@@ -416,6 +418,8 @@ export function registerDeliverableRoutes(
             return fail(c, 404, "not_found");
           case "youtube_unavailable":
             return fail(c, 503, "youtube_unavailable");
+          case "not_set_up":
+            return fail(c, 503, "not_set_up");
           case "money":
             return fail(c, 409, posted.reason);
           default:

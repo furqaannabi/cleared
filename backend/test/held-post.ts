@@ -152,13 +152,20 @@ export function heldWorld(
   });
   const json = async <Body>(response: Response) => (await response.json()) as Body;
 
-  /** A browser signed in as a creator with YouTube connected and a PayPal email saved. */
+  /** A browser signed in as a creator with YouTube and Instagram connected and a PayPal email saved. */
   async function creator(name = "Sam Rivera") {
     const browser = browserFor(app, APP);
     const first = name.split(" ")[0]!.toLowerCase();
     const { creatorId } = await accounts.signInWithGoogle({ googleId: `google-${name}`, name, email: `${first}@example.com` });
     // Their stored access to YouTube is `refresh-<first name>`, kept encrypted as the service keeps it.
     await accounts.connectYouTube(creatorId, { externalId: `channel-${first}`, name, refreshTokenEncrypted: await secrets.encrypt(`refresh-${first}`) });
+    // And their Instagram account, with its own token kept the same way. Signing in again connects it again.
+    const instagram = { externalId: `ig-${first}`, name: first, refreshTokenEncrypted: await secrets.encrypt(`ig-token-${first}`), tokenExpiresAt: new Date(now.getTime() + 60 * 24 * 3600 * 1000), connectedAt: now };
+    await prisma.connectedAccount.upsert({
+      where: { creatorId_platform: { creatorId, platform: "instagram" } },
+      create: { creatorId, platform: "instagram", ...instagram },
+      update: instagram,
+    });
     await accounts.setPaypalEmail(creatorId, `${first}.pay@example.com`);
     browser.cookies.set("cleared_session", await createSessions({ prisma, now: clock }).start(creatorId));
     return browser;

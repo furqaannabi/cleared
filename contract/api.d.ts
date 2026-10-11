@@ -4262,7 +4262,7 @@ export interface components {
             deliverables: {
                 id: string;
                 /** @enum {string} */
-                platform: "youtube_video" | "youtube_short";
+                platform: "youtube_video" | "youtube_short" | "instagram_reel";
             }[];
             brief?: {
                 lines: {
@@ -4329,7 +4329,7 @@ export interface components {
             deliverables: {
                 id: string;
                 /** @enum {string} */
-                platform: "youtube_video" | "youtube_short";
+                platform: "youtube_video" | "youtube_short" | "instagram_reel";
                 /** @enum {string} */
                 state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "published" | "captured" | "paid" | "approved_not_paid" | "released" | "closed";
             }[];
@@ -4342,7 +4342,7 @@ export interface components {
             posts: {
                 deliverableId: string;
                 /** @enum {string} */
-                platform: "youtube_video" | "youtube_short";
+                platform: "youtube_video" | "youtube_short" | "instagram_reel";
                 itemCount: number;
                 amount?: string;
                 deadlineDays?: number;
@@ -4389,7 +4389,7 @@ export interface components {
             creatorName: string;
             brandName: string;
             /** @enum {string} */
-            platform: "youtube_video" | "youtube_short";
+            platform: "youtube_video" | "youtube_short" | "instagram_reel";
             creatorTimeZone: string;
             hold: {
                 amount: string;
@@ -4517,7 +4517,7 @@ export interface components {
             id: string;
             brandName: string;
             /** @enum {string} */
-            platform: "youtube_video" | "youtube_short";
+            platform: "youtube_video" | "youtube_short" | "instagram_reel";
             /** @enum {string} */
             state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "published" | "captured" | "paid" | "approved_not_paid" | "released";
             deadline: string;
@@ -4692,7 +4692,7 @@ export interface components {
             posts: {
                 deliverableId: string;
                 /** @enum {string} */
-                platform: "youtube_video" | "youtube_short";
+                platform: "youtube_video" | "youtube_short" | "instagram_reel";
                 amount: string;
                 deadlineDays: number;
                 changed?: ("amount" | "deadline")[];

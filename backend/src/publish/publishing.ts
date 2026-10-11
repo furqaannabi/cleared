@@ -20,6 +20,12 @@ import { sameFile, videoIdFrom } from "./video";
 
 export type GoAheadRefused =
   | { refused: "not_found" }
+  /**
+   * The post is a Reel. A Reel has its own go-ahead and its own way of saying it is posted (Instagram
+   * Reels spec IG-FR-11 to IG-FR-18), which this service does not have yet. It is never taken down
+   * YouTube's path: a YouTube video cannot stand in for a Reel.
+   */
+  | { refused: "not_set_up" }
   | { refused: "not_a_youtube_link" }
   /** The post's draft is not approved, so there is nothing to publish yet. */
   | { refused: "not_approved" }
@@ -35,6 +41,8 @@ export type GoAheadRefused =
 
 export type PostedRefused =
   | { refused: "not_found" }
+  /** The post is a Reel, which has its own way of saying it is posted. See `GoAheadRefused`. */
+  | { refused: "not_set_up" }
   /** No video is recorded for the post: the creator has not been through the go-ahead. */
   | { refused: "no_video" }
   /** The recorded video is not public yet. Nothing has changed (PT-FR-08). */
@@ -70,6 +78,8 @@ export interface PublishingSettings {
 export const defaultPublishingSettings: PublishingSettings = { retryFirstSeconds: 60, retryLongestSeconds: 3600 };
 
 const LIVE_KINDS = ["written", "disclosure", "publication"];
+/** Everything in this module reads YouTube. A Reel is turned away before any of it. */
+const REEL = "instagram_reel";
 
 export type Publishing = ReturnType<typeof createPublishing>;
 
@@ -180,6 +190,7 @@ export function createPublishing(
     async askGoAhead(creatorId: string, deliverableId: string, videoUrl: string): Promise<{ goAhead: GoAheadView } | GoAheadRefused> {
       const post = await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } } });
       if (!post) return { refused: "not_found" };
+      if (post.platform === REEL) return { refused: "not_set_up" };
       const videoId = videoIdFrom(videoUrl);
       if (!videoId) return { refused: "not_a_youtube_link" };
 
@@ -223,6 +234,7 @@ export function createPublishing(
     async posted(creatorId: string, deliverableId: string): Promise<{ publishedAt: Date } | PostedRefused> {
       const post = await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } } });
       if (!post) return { refused: "not_found" };
+      if (post.platform === REEL) return { refused: "not_set_up" };
       const recorded = await prisma.postVideo.findUnique({ where: { deliverableId } });
       if (!recorded) return { refused: "no_video" };
       const stage = (await money?.view(deliverableId))?.stage;
