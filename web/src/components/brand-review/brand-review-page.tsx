@@ -37,7 +37,8 @@ import { useReviewActions } from "./use-review-actions";
  */
 export function BrandReviewPage({ dealId, deliverableId }: { dealId: string; deliverableId: string }) {
   const { post, error, setPost, reload } = useBrandDeliverable(dealId, deliverableId);
-  if (error === "not_found")
+  // RW-FR-04 (1.2): the API answers 401 with no session and 404 outside the deal; both read the same.
+  if (error === "not_found" || error === "signed_out")
     return (
       <BrandFrame>
         {/* RW-FR-04, RW-FR-05: one answer for no session and for a post outside the deal; the session decides which. */}

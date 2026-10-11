@@ -58,6 +58,42 @@ export const aBrandDeal = (d: Partial<BrandDeal> = {}): BrandDeal => ({
 /** This test's answer to `GET /brand/deals/{id}`. */
 export const stubBrandDeal = (deal: BrandDeal) => server.use(http.get(`${apiBaseUrl}/brand/deals/${deal.dealId}`, () => HttpResponse.json(deal)));
 
+/** One post's review as the brand sees it, as the contract's `GET /brand/deals/{id}/deliverables/{id}` answers it. */
+export type BrandPost = components["schemas"]["BrandPost"];
+
+/** Juniper & Salt's YouTube video in its review window, one passed item; override any field. */
+export const aBrandPost = (p: Partial<BrandPost> = {}): BrandPost => ({
+  dealId: "deal_juniper",
+  deliverableId: "del_juniper_video",
+  creatorName: "Ada Okafor",
+  brandName: "Juniper & Salt",
+  platform: "youtube_video",
+  creatorTimeZone: "Europe/London",
+  hold: { amount: "1500.00", reference: "7HK21934LM", deadline: "2026-11-01T23:59:00.000Z" },
+  review: { state: "window", endsAt: new Date(Date.now() + 31 * 3600_000).toISOString() },
+  draft: {
+    url: "https://media.cleared.test/draft.mp4",
+    urlExpiresAt: new Date(Date.now() + 3600_000).toISOString(),
+    durationSec: 408,
+    items: [
+      {
+        id: "it_juniper_code",
+        name: "Say the code TIDE15",
+        kind: "said",
+        checkedBy: "exact_match",
+        status: "passed",
+        briefLine: { number: 1, text: "Say the code TIDE15." },
+        evidence: { label: "Said at 2:10", text: "Use code TIDE15", startSec: 130, endSec: 133 },
+      },
+    ],
+  },
+  ...p,
+});
+
+/** This test's answer to `GET /brand/deals/{dealId}/deliverables/{deliverableId}`. */
+export const stubBrandPost = (post: BrandPost) =>
+  server.use(http.get(`${apiBaseUrl}/brand/deals/${post.dealId}/deliverables/${post.deliverableId}`, () => HttpResponse.json(post)));
+
 /** The contract's error body: `{ error: { code, … } }`. */
 export const apiError = (error: components["schemas"]["Error"]["error"], status: number) => HttpResponse.json({ error }, { status });
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { sessionEnded } from "@/lib/brand-deal/session-ended";
 import { removeObjection, saveObjection, type Objection } from "@/lib/brand-review/objection-draft";
 import type { BrandDeliverable } from "@/lib/brand-review/types";
 
@@ -27,16 +28,24 @@ export function useReviewActions(post: BrandDeliverable, setPost: (p: BrandDeliv
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // RW-FR-31: an item's own answer that failed shows its problem beside the item, not in the panel.
+  const [problemItem, setProblemItem] = useState<string | null>(null);
   const [unsent, setUnsent] = useState<Objection[] | null>(null);
   const [objecting, setObjecting] = useState(false);
   const [objectProblem, setObjectProblem] = useState<string | null>(null);
   const ids = { dealId: post.dealId, deliverableId: post.deliverableId };
 
-  async function run(call: () => ReturnType<typeof api.approveDraft>, onRefused?: (fresh: BrandDeliverable | null) => void) {
+  async function run(call: () => ReturnType<typeof api.approveDraft>, onRefused?: (fresh: BrandDeliverable | null) => void, itemId?: string) {
     setBusy(true);
     setProblem(null);
+    setProblemItem(itemId ?? null);
     const r = await call();
     setBusy(false);
+    // RW-FR-31: the session ended; nothing is cleared, so the same action can be tried again after opening the link.
+    if (!r.ok && r.error === "signed_out") {
+      setProblem(sessionEnded(post.creatorName));
+      return false;
+    }
     setConfirming(null);
     if (r.ok) {
       setPost(r.data);
@@ -59,6 +68,7 @@ export function useReviewActions(post: BrandDeliverable, setPost: (p: BrandDeliv
     confirming,
     busy,
     problem,
+    problemItem,
     unsent,
     objecting,
     objectProblem,
@@ -99,8 +109,8 @@ export function useReviewActions(post: BrandDeliverable, setPost: (p: BrandDeliv
       if (text.length > 500) return setObjectProblem("Keep it to 500 characters.");
       if (await run(() => api.objectToPost(ids.dealId, ids.deliverableId, text))) setObjecting(false);
     },
-    accept: (itemId: string) => run(() => api.acceptItem(ids.dealId, ids.deliverableId, itemId)),
-    askToFix: (itemId: string, note: string) => run(() => api.askToFix(ids.dealId, ids.deliverableId, itemId, note.trim() || undefined)),
+    accept: (itemId: string) => run(() => api.acceptItem(ids.dealId, ids.deliverableId, itemId), undefined, itemId),
+    askToFix: (itemId: string, note: string) => run(() => api.askToFix(ids.dealId, ids.deliverableId, itemId, note.trim() || undefined), undefined, itemId),
   };
 }
 

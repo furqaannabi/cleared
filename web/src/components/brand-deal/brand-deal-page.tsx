@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { holdsSummary } from "@/lib/brand-deal/hold-view";
+import { sessionEnded } from "@/lib/brand-deal/session-ended";
 import { brandTermsView } from "@/lib/brand-deal/terms-view";
 import type { BrandDeal } from "@/lib/brand-deal/types";
 import { CancelDeal } from "@/components/cancel/cancel-deal";
@@ -37,7 +38,8 @@ const LEDE: Record<BrandDeal["step"], (creator: string) => string> = {
 export function BrandDealPage({ dealId }: { dealId: string }) {
   const { deal, error, setDeal } = useBrandDeal(dealId);
 
-  if (error === "not_found")
+  // CH-FR-03 (1.4): the API answers 401 with no session.
+  if (error === "not_found" || error === "signed_out")
     return (
       <BrandFrame>
         <BrandMessage title="Open the link you were sent again">For your security, this page only opens from the link the creator sent you.</BrandMessage>
@@ -76,7 +78,7 @@ export function BrandDealPage({ dealId }: { dealId: string }) {
 function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal) => void }) {
   const notes = useNotes();
   const [sending, setSending] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [sendProblem, setSendProblem] = useState<string | null>(null);
   const [agreeing, setAgreeing] = useState(false);
   const [agreeProblem, setAgreeProblem] = useState<string | null>(null);
   const view = brandTermsView(deal);
@@ -105,6 +107,8 @@ function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal)
       notes.clear();
       return onDeal(r.data);
     }
+    // CH-FR-29: the session ended; the email and notes stay to try again after opening the link.
+    if (r.error === "signed_out") return setAgreeProblem(sessionEnded(deal.creatorName));
     if (r.error !== "rejected") return setAgreeProblem("We couldn’t reach Cleared. Try again.");
     // CH-FR-15: most likely the creator sent a new version while the brand was reading.
     const fresh = await api.getBrandDeal(deal.dealId);
@@ -119,13 +123,14 @@ function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal)
 
   async function send() {
     setSending(true);
-    setFailed(false);
+    setSendProblem(null);
     const r = await api.sendChanges(
       deal.dealId,
       notes.drafts.map(({ about, text }) => ({ about, text })),
     );
     setSending(false);
-    if (!r.ok) return setFailed(true);
+    // CH-FR-29: a session that ended keeps the notes to send again after opening the link.
+    if (!r.ok) return setSendProblem(r.error === "signed_out" ? sessionEnded(deal.creatorName) : "Your notes didn’t send. Try again.");
     notes.clear();
     onDeal(r.data);
   }
@@ -173,7 +178,7 @@ function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal)
       <div className={`grid gap-4 lg:sticky lg:top-6 ${deal.step === "agreed" ? "order-first lg:order-none" : ""}`}>
         <DraftsPanel deal={deal} />
         {deal.step === "agreed" && <HoldsPanel deal={deal} onDeal={onDeal} />}
-        <NotesPanel deal={deal} sending={sending} failed={failed} onSend={send} />
+        <NotesPanel deal={deal} sending={sending} problem={sendProblem} onSend={send} />
         {deal.step === "waiting_for_brand" && (
           <>
             <AgreePanel summary={view.summary} creator={deal.creatorName} agreeing={agreeing} problem={agreeProblem} onAgree={agree} />

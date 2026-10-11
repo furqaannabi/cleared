@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { sessionEnded } from "@/lib/brand-deal/session-ended";
 import { holdLine, holdsSummary } from "@/lib/brand-deal/hold-view";
 import { PLATFORM_LABEL } from "@/lib/checklist-builder/checklist-view";
 import type { BrandDeal, BrandPost } from "@/lib/brand-deal/types";
@@ -63,6 +64,8 @@ function HoldRow({ deal, post, onDeal }: { deal: BrandDeal; post: BrandPost; onD
     const r = await api.startHold(deal.dealId, post.deliverableId);
     setBusy(false);
     if (r.ok) setOrderId(r.data.orderId);
+    // CH-FR-29: the session ended; nothing was started, so Approve with PayPal stays to try again.
+    else if (r.error === "signed_out") setProblem(sessionEnded(deal.creatorName));
     else setProblem("That didn’t go through. Nothing was held. Try again.");
   }
 
@@ -73,6 +76,8 @@ function HoldRow({ deal, post, onDeal }: { deal: BrandDeal; post: BrandPost; onD
     const r = approved ? await api.confirmHold(deal.dealId, post.deliverableId, orderId) : await api.cancelHold(deal.dealId, post.deliverableId, orderId);
     setBusy(false);
     if (r.ok) onDeal(r.data);
+    // CH-FR-29: refused before reaching PayPal, so nothing was held; the brand opens the link and starts again.
+    else if (r.error === "signed_out") setProblem(sessionEnded(deal.creatorName));
     // The API's answer is lost; never guess at the money. Reload what the API says.
     else {
       const fresh = await api.getBrandDeal(deal.dealId);

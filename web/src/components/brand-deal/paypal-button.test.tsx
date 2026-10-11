@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
 import { server } from "@/mocks/node";
-import { aBrandDeal, stubBrandDeal } from "@/test/stub-api";
+import { aBrandDeal, apiError, stubBrandDeal } from "@/test/stub-api";
 import { BrandDealPage } from "./brand-deal-page";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
@@ -79,5 +79,28 @@ describe("CH-FR-17 (1.3) PayPal's own approval button", () => {
     agreedDeal(null);
     await userEvent.click(await screen.findByRole("button", { name: "Approve with PayPal" }));
     expect(await screen.findByText("PayPal isn’t connected in this build yet, so no hold can be approved.")).toBeVisible();
+  });
+});
+
+describe("CH-FR-29 (1.4) the session ends during a hold", () => {
+  const ended = "Your access to this deal has ended. Open the link Ada Okafor sent you, then try again here.";
+  const hold = `${apiBaseUrl}/brand/deals/deal_maple/posts/del_maple_video/hold`;
+
+  test("starting a hold says to open the link again, and Approve with PayPal stays to try again", async () => {
+    agreedDeal();
+    server.use(http.post(hold, () => apiError({ code: "signed_out" }, 401)));
+    await userEvent.click(await screen.findByRole("button", { name: "Approve with PayPal" }));
+    expect(await screen.findByText(ended)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Approve with PayPal" })).toBeEnabled();
+  });
+
+  test("finishing a hold says to open the link again, never that PayPal is still confirming", async () => {
+    agreedDeal();
+    server.use(http.post(`${hold}/approved`, () => apiError({ code: "signed_out" }, 401)));
+    await userEvent.click(await screen.findByRole("button", { name: "Approve with PayPal" }));
+    await userEvent.click(await screen.findByRole("button", { name: "PayPal: approve" }));
+    expect(await screen.findByText(ended)).toBeVisible();
+    expect(screen.queryByText(/couldn’t confirm this with PayPal/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Approve with PayPal" })).toBeEnabled();
   });
 });

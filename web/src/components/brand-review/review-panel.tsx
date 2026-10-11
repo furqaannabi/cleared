@@ -61,7 +61,7 @@ export function ReviewPanel({ post, view, actions, timeZone }: { post: BrandDeli
       {view.actions.object && actions.objections.map((o) => <Saved key={o.itemId} name={nameOf(o.itemId)} note={o.note} />)}
       {view.actions.object && actions.editing && n === 0 && <p className="text-meta text-ink-3">Writing an objection…</p>}
 
-      {actions.problem && (
+      {actions.problem && !actions.problemItem && (
         <p role="alert" className="text-meta font-bold text-fail">
           {actions.problem}
         </p>

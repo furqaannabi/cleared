@@ -23,6 +23,7 @@ type Item = BrandReviewView["items"][number];
 export function ItemReviewActions({ item, view, creator, actions }: { item: Item; view: BrandReviewView; creator: string; actions: ReviewActions }) {
   const [fixing, setFixing] = useState(false);
   const status = item.status.value;
+  const problem = actions.problemItem === item.id ? actions.problem : null;
   if (item.note && (status === "objected" || status === "fix_requested"))
     return (
       <p className="rounded-sm bg-latte-wash px-3 py-2.5 text-[13.5px] text-ink-2">
@@ -37,6 +38,7 @@ export function ItemReviewActions({ item, view, creator, actions }: { item: Item
           saveLabel={`Send to ${creator}`}
           required={false}
           busy={actions.busy}
+          problem={problem}
           onCancel={() => setFixing(false)}
           onSave={(note) => actions.askToFix(item.id, note)}
         />
@@ -49,6 +51,11 @@ export function ItemReviewActions({ item, view, creator, actions }: { item: Item
         <button type="button" onClick={() => setFixing(true)} className={OUTLINE}>
           Ask {creator} to fix it
         </button>
+        {problem && (
+          <p role="alert" className="w-full text-meta font-bold text-fail">
+            {problem}
+          </p>
+        )}
       </div>
     );
   }

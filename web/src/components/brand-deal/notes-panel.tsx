@@ -13,11 +13,11 @@ import { useNotes } from "./notes";
  *
  * @param deal - the deal as the brand sees it
  * @param sending - whether the notes are being sent
- * @param failed - the last send failed
+ * @param problem - why the last send failed, if it did
  * @param onSend - sends the notes
  * @see docs/specs/confirm-and-hold-frd.md CH-FR-10 to CH-FR-13
  */
-export function NotesPanel({ deal, sending, failed, onSend }: { deal: BrandDeal; sending: boolean; failed: boolean; onSend: () => void }) {
+export function NotesPanel({ deal, sending, problem, onSend }: { deal: BrandDeal; sending: boolean; problem: string | null; onSend: () => void }) {
   const { drafts } = useNotes();
   const creator = deal.creatorName;
   const sent = deal.step === "changes_requested";
@@ -63,9 +63,9 @@ export function NotesPanel({ deal, sending, failed, onSend }: { deal: BrandDeal;
                   {`Send ${n} ${n === 1 ? "change" : "changes"} to ${creator}`}
                 </button>
               )}
-              {failed && (
+              {problem && (
                 <p role="alert" className="text-meta font-bold text-fail">
-                  Your notes didn’t send. Try again.
+                  {problem}
                 </p>
               )}
             </>
