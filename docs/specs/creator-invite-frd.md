@@ -1,10 +1,10 @@
 # Creator invite: FRD
 
-**Status:** Signed by William (revision 1.2).
+**Status:** Signed by William (revision 1.3).
 
 **Surface:** Creator app. Step 2 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): once the checklist is ready, the creator sets the amount and deadline for each post, connects the YouTube or Instagram account the posts go on, gives the PayPal email to be paid at, and sends the brand a link. The brand's side of the link (confirm the checklist, approve the hold) is the next surface.
 
-**Scope of this build:** frontend only, against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). Signing in with Google or Instagram, storing tokens, making and expiring links, and sending email all run on the backend; the frontend shows what the API returns. Requirements tagged **Depends on backend** name their fallback.
+**Scope of this build:** frontend only. 1.3: on the live API, with the contract's shapes ([frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)); the differences from Furqaan's [deal set-up](deal-setup-frd.md) and [Instagram Reels](instagram-reels-frd.md) are settled below. Before 1.3: against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). Signing in with Google or Instagram, storing tokens, making and expiring links, and sending email all run on the backend; the frontend shows what the API returns. Requirements tagged **Depends on backend** name their fallback.
 
 ## Problem Statement
 
@@ -57,8 +57,8 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 | ID | Requirement |
 | --- | --- |
 | IN-FR-04 | **One block per deliverable,** named as on the checklist ("YouTube video", "Instagram Reel"), each with its amount and deadline. |
-| IN-FR-05 | **Amount.** In US dollars, shown with "$"; no currency choice. Accepts more than $0, at most two decimal places, up to $9,999,999.99. Anything else is explained beside the field ("Enter an amount in dollars, like 1200 or 1200.50"). Sent to the API as a decimal string (`"1200.00"`), never a number. Cleared sets no other ceiling. |
-| IN-FR-06 | **PayPal's limit. Depends on backend.** If the API turns an amount down (for example, above what one PayPal hold can be), its reason is shown beside that post's amount. Fallback: none needed; the mock never refuses a valid amount. |
+| IN-FR-05 | **Amount.** In US dollars, shown with "$"; no currency choice. Accepts more than $0, at most two decimal places, up to $9,999,999.99. Anything else is explained beside the field ("Enter an amount in dollars, like 1200 or 1200.50"). Sent to the API as a decimal string (`"1200.00"`), never a number. 1.3: one post is $20.00 to $10,000.00 ([fee and amount limits](../decisions/2026-10-08-cleared-fee-and-amount-limits.md)); outside that, beside the field before saving: "The least one post can be is $20.00." or "The most one post can be is $10,000.00.", and the post counts as not ready for Create link. |
+| IN-FR-06 | **The API's refusal (1.3).** If the API still refuses an amount when it is saved (400 with `amount_below_minimum` or `amount_above_maximum`, for instance after its settings change), IN-FR-05's same message shows beside that post's amount and it is not shown as saved. There is no `amountProblem` field. |
 | IN-FR-07 | **Deadline in days.** "Post within {n} days of {brand} approving the hold", 1 to 21 days, with a number field and − / + buttons. Above 21 it says "Up to 21 days. PayPal only holds money for 29 days, so Cleared keeps a margin." Below it shows an example: "If {brand} approves today, that's {date}." |
 | IN-FR-08 | **Total.** Under the posts: "Total for this deal: ${sum}, held as one hold per post." Shown only when every amount is valid. |
 
@@ -68,14 +68,14 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 | --- | --- |
 | IN-FR-09 | **Only what the posts need.** A YouTube card if any post is a YouTube video or Short; an Instagram card if any post is a Reel. |
 | IN-FR-10 | **Connected.** A connected card shows the account's name and "Connected". Accounts belong to the creator, so one connected on an earlier deal shows connected here. |
-| IN-FR-11 | **Connect. Depends on backend.** "Connect YouTube" (Google sign-in, read-only) or "Connect Instagram" (Instagram sign-in). The Instagram card says "Professional accounts only" before connecting. If the API reports the account isn't professional, the card says so and how to switch. Fallback (mocks): connecting succeeds at once with a synthetic account; no real sign-in. |
+| IN-FR-11 | **Connect (1.3).** "Connect YouTube" (Google, read-only) and "Connect Instagram" are links to the backend's `GET /connect/youtube?next=` and `/connect/instagram?next=`, with `next` the page they are on (the welcome page's rows too, SI-FR-09). The Instagram card says "Professional accounts only" before connecting. Back on the page: `connected=…` shows the card's connected state and nothing else; `connect=…` shows a message on that card: `failed` "We couldn't connect {YouTube \| Instagram}. Try again."; `declined` "YouTube isn't connected, because access wasn't allowed. Cleared only reads your channel." (for Instagram: "…Cleared only reads your Reels."); `no_channel` "That Google account has no YouTube channel. Connect the account that owns your channel."; `not_professional` "That Instagram account isn't a professional account. Switch it to Creator or Business in Instagram, then connect again." The page then takes the result out of the address, so a reload doesn't repeat it. |
 
 ### Payment
 
 | ID | Requirement |
 | --- | --- |
-| IN-FR-12 | **PayPal email.** "Your PayPal email", filled from the creator's profile if they've given one before. Must look like an email. Under it: "We send your payment here. Check it: a payment to the wrong email can't be pulled back." Saving it here updates the profile. |
-| IN-FR-13 | **The brand's email (optional).** "{brand}'s email (optional)". If given, Cleared also emails the link to it when the link is created. Must look like an email if filled. |
+| IN-FR-12 | **PayPal email.** "Your PayPal email", filled from the creator's profile if they've given one before. Must look like an email. Under it: "We send your payment here. Check it: a payment to the wrong email can't be pulled back." Saving it here updates the profile. 1.3: a new email reaches every payout not yet sent to PayPal; when some already are, a note under the field after saving lists them: "Saved. A payout already with PayPal still goes to {old email}: {brand} · {post}." (one line per post) ([PayPal email change](../decisions/2026-10-10-a-paypal-email-change-reaches-where-no-payout-has-started.md)). |
+| IN-FR-13 | **The brand's email (optional).** "{brand}'s email (optional)", with under it (1.3): "Only used if {brand} needs to act after your post is live. You send the link yourself." Cleared never emails the link ([no email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md)); the address is the fallback for the brand's two notices after publishing ([the brand's notices](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md)). Must look like an email if filled. |
 | IN-FR-14 | **How you'll be paid.** A fixed block, four lines, not editable: (1) "{brand} approves a hold for each post. The money is reserved, not taken." (2) "Your draft is checked against the checklist. If every item passes, {brand} has 48 hours to object. If they don't, it's approved. Anything that doesn't pass waits for you to fix it or for {brand} to accept it." (3) "Post by the deadline. Once the live post checks out, you're paid to your PayPal." (4) "Miss the deadline, and the hold goes back to {brand}." |
 
 ### Saving and the link
@@ -84,7 +84,7 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 | --- | --- |
 | IN-FR-15 | **Saved as you go.** Each amount, deadline and email saves through the API when it changes (on blur, or on − / +). A failed save says so beside the field with Try again, and is never shown as saved. Leaving and coming back shows what was saved. |
 | IN-FR-16 | **Create link.** "Create link for {brand}" is available when every post has a valid amount and deadline, every needed account is connected, and the PayPal email is valid. Until then it says the first thing left ("Add an amount for the Instagram Reel", "Connect Instagram", "Add your PayPal email") and how many more. Above the button, a one-line summary repeats the total and the PayPal email. |
-| IN-FR-17 | **Link created.** Creating the link saves the terms through the API and moves the deal to `waiting_for_brand`. The page then shows the terms read-only and the link with: Copy link ("Copied" for 2 seconds, announced), Share (the phone's share sheet, where the browser has one), "Anyone with this link can open this deal. Send it only to {brand}.", and when it expires ("Expires on {date}"). If a brand email was given: "We've also emailed it to {email}." |
+| IN-FR-17 | **Link created.** Creating the link saves the terms through the API and moves the deal to `waiting_for_brand`. The page then shows the terms read-only and the link with: Copy link ("Copied" for 2 seconds, announced), Share (the phone's share sheet, where the browser has one), "Anyone with this link can open this deal. Send it only to {brand}.", and when it expires ("Expires on {date}"). 1.3: no "We've also emailed it" line. Creating the link sends the creator's timezone as the browser reports it. |
 | IN-FR-18 | **Make a new link.** Turns the current link off and shows a new one, after a confirm: "The old link will stop working." |
 | IN-FR-19 | **Change terms.** Turns the link off, after a confirm ("{brand}'s link will stop working. You'll make a new one when you're done."), moves the deal back to `invite`, and makes the terms editable again. "Edit checklist" is available again too. |
 | IN-FR-20 | **Expired.** If the API reports the link expired, the page says "This link has expired" with "Make a new link". |
@@ -103,7 +103,7 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 | IN-BR-01 | A deadline is a number of days after the hold, 1 to 21. Its date is fixed when the brand approves the hold, never before (PRODUCT.md: deadlines are capped at 21 days after the hold). |
 | IN-BR-02 | Amounts are US dollars, as decimal strings with two places; never floats. One hold per post, for that post's amount. |
 | IN-BR-03 | A link carries one set of terms: the checklist, the amounts, the deadlines and the payment rules. Any change to them turns the link off; the brand can only approve the terms the creator set. |
-| IN-BR-04 | The link is unguessable, scoped to this deal, and expiring (CLAUDE.md "Invite links"). The frontend never stores it (no localStorage) or logs it; it always comes from the API. |
+| IN-BR-04 | The link is unguessable, scoped to this deal, and expiring (CLAUDE.md "Invite links"). The frontend never stores it (no localStorage) or logs it; it always comes from the API. 1.3: it is on the app's own address: `https`, or `http` only on `localhost` for local work. |
 | IN-BR-05 | The creator's PayPal email is shown only to the creator. The brand sees "Paid to the creator's PayPal". |
 | IN-BR-06 | The four payment rules (IN-FR-14) are fixed in v1. Nothing on this page changes the review window or what silence clears. |
 | IN-BR-07 | The link can't be created until every account the posts need is connected. |
@@ -154,13 +154,14 @@ interface CreatorProfile {
 | IN-FR-18 | `POST /deals/{id}/invite/link/renew`: turns the old link off, returns a new one |
 | IN-FR-19 | `DELETE /deals/{id}/invite/link`: turns the link off, `step` back to `invite` |
 | IN-BR-01 | Store `deadlineDays`; set the deadline date when the hold is approved |
+| 1.3 | Built (DS, IG): the connect routes and their results; `{ timezone }` on creating the link; amount refusals as codes; `postsKeepingEmail` on saving the PayPal email; the brand's email stored, nothing sent. IN-FR-06's PayPal maximum and IN-FR-13's emailing are withdrawn |
 
 ## Testing Decisions
 
 - Tests check what the creator sees and can do, named after the IN-FR they prove.
 - **Amount parser:** whole and two-place amounts become decimal strings; zero, negative, three places, letters and over the bound are refused with the right message; never goes through a float.
 - **Invite view model:** needed accounts per platform mix; the deadline bound and example date; the total only when every amount is valid; "what's left" in order with the count.
-- **Components:** amount and deadline entry and errors; − / + at 1 and 21; connect (mocked) and the professional-account message; PayPal email prefill and warning; brand email optional; a failed save beside its field; Create link gated, then the link view with Copy, Share, expiry, emailed-to; Make a new link and Change terms confirms; Edit checklist going back.
+- **Components (1.3: new behaviour on per-test stubs typed from the contract):** the amount limits, typed and refused; each connect result on its card, then gone from the address; the PayPal email note listing posts that keep the old email; the brand email's line; amount and deadline entry and errors; − / + at 1 and 21; connect (mocked) and the professional-account message; PayPal email prefill and warning; brand email optional; a failed save beside its field; Create link gated, then the link view with Copy, Share and expiry, sending the timezone; Make a new link and Change terms confirms; Edit checklist going back.
 - **End to end (Playwright, on MSW):** checklist ready → invite → amounts, deadlines, connect Instagram, PayPal email → Create link → copy; the rail shows "Waiting for brand"; Change terms back to editing. At 375 px and 1280 px.
 
 ## Out of Scope
@@ -168,13 +169,13 @@ interface CreatorProfile {
 - Cancelling or deleting a deal before the brand accepts. No money is held yet; a later revision decides it.
 - Showing whether the brand has opened the link (the brand's deal page).
 - The brand's side: confirming the checklist and approving the hold.
-- Real sign-in with Google or Instagram, real email sending, and PayPal's real amount limit (mocked; see Requests for Furqaan).
+- Emailing the link to the brand (1.3: never; the creator sends it).
 - Fees, tax, and currencies other than US dollars.
 - Disconnecting an account.
 
 ## Open items
 
-- **Link expiry length:** 7 days assumed until Furqaan sets it (IN-FR-17).
+- **Link expiry length:** the API's `expiresAt` is shown as it comes (IN-FR-17).
 - **Verifying the PayPal email** with PayPal: not in v1 (IN-FR-12).
 
 ## Revision
@@ -187,3 +188,5 @@ interface CreatorProfile {
 | 1.1 | Signed by William | none |
 | 1.2 | A brand's change request keeps the link on and the terms are versioned; the invite page shows the brand's notes and "Send updated terms", and each post's hold once the brand agrees (CH-FR-21 to CH-FR-25, CH-BR-04). The creator's own Change terms and Make a new link still turn the link off. Specified in [Confirm and hold](confirm-and-hold-frd.md) | [Brand asks for changes](../decisions/2026-10-08-brand-asks-for-changes-not-edits.md) |
 | 1.2 | Signed by William, with Confirm and hold 1.0 | none |
+| 1.3 | The move onto the live API, from the grill-me with William: connecting is the backend's redirect, with a message per result on the card (IN-FR-11); the brand's email stays, says what it's for, and the link is never emailed (IN-FR-13, IN-FR-17); one post is $20.00 to $10,000.00, checked before saving and on the API's refusal (IN-FR-05, IN-FR-06); a new PayPal email lists the payouts that keep the old one (IN-FR-12); the timezone is sent with the link; a local link may be `http` on localhost (IN-BR-04) | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md), [Fee and amount limits](../decisions/2026-10-08-cleared-fee-and-amount-limits.md), [PayPal email change](../decisions/2026-10-10-a-paypal-email-change-reaches-where-no-payout-has-started.md), [The brand's notices](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md) |
+| 1.3 | Signed by William | none |

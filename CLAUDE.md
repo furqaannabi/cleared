@@ -70,7 +70,7 @@ Chosen in `docs/PRODUCT.md`:
 | Backend tests | Bun's test runner against the Docker Postgres, with a fake PayPal behind the port; a small sandbox suite run by hand (see `docs/decisions/2026-10-08-backend-test-tooling.md`) |
 | Data | PostgreSQL on Amazon RDS, through Prisma. No DynamoDB |
 | Backend hosting | One container on Amazon ECS Fargate |
-| Sign-in | Creators sign in with Google, run by the backend directly, which sets an HttpOnly session; no Cognito; Instagram is a connection, not a sign-in; no demo account (see `docs/decisions/2026-10-09-creators-sign-in-with-google-directly.md`, which supersedes the Cognito part of `2026-10-08-creator-sign-in-through-the-backend.md`, and `docs/decisions/2026-10-11-no-demo-accounts.md`, which removes the demo account; William to agree) |
+| Sign-in | Creators sign in with Google, run by the backend directly, which sets an HttpOnly session; no Cognito; Instagram is a connection, not a sign-in; no demo account (see `docs/decisions/2026-10-09-creators-sign-in-with-google-directly.md`, which supersedes the Cognito part of `2026-10-08-creator-sign-in-through-the-backend.md`, and `docs/decisions/2026-10-11-no-demo-accounts.md`, which removes the demo account; agreed by William, 11 Oct) |
 | Files and secrets | S3, KMS |
 | Email | Resend, called over plain HTTPS, for the brand's two notices after a post is live and nothing else; everything else is a link the creator sends (see `docs/decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md` for which notices, and `docs/decisions/2026-10-10-resend-sends-the-brands-two-notices.md`, which supersedes its choice of Amazon SES; William to agree) |
 | Evidence table and brand dashboard | AG Grid and AG Studio, on `md:` and up; cards on phones (see `docs/decisions/2026-10-06-evidence-view-ag-grid.md`) |
@@ -82,7 +82,7 @@ Chosen in `docs/PRODUCT.md`:
 | Package manager and repo layout | pnpm workspace with `web/`, `backend/`, `contract/` (see `docs/decisions/2026-10-06-repo-layout-and-package-manager.md`; accepted by Furqaan, 9 Oct) |
 | Brand access | The invite link is swapped for an HttpOnly session scoped to one deal; no brand account in v1; PayPal login guards the holds (see `docs/decisions/2026-10-08-brand-access-by-link-session.md`; accepted by Furqaan, 9 Oct) |
 | Schema validation | Zod, for every API response and request body (see `docs/decisions/2026-10-06-schema-validation-zod.md`) |
-| Frontend mocks | MSW handlers over synthetic fixtures, dev only, shared by dev, Vitest and Playwright (see `docs/decisions/2026-10-06-frontend-mocks-msw.md`) |
+| Frontend mocks | None in dev or the hosted app: the frontend runs on the live API (`hack.furqaannabi.com`; a local backend on `localhost:4000` for local work). Vitest stubs each test's own requests with MSW, typed from `contract/`; Playwright runs against the live backend (see `docs/decisions/2026-10-11-frontend-on-the-live-api.md`, which supersedes part of `2026-10-06-frontend-mocks-msw.md`) |
 
 Everything behind the frontend uses AWS or the hackathon's sponsor tools, with one exception: Resend, for email. PRODUCT.md lists the sponsor tools not used; do not add them.
 
@@ -215,7 +215,7 @@ Route names are set in the specs.
 ### API calls
 
 - Never hardcode API paths in components. Use one typed client in `src/lib/api/`.
-- The frontend runs ahead of the backend against mocks. Mock shapes follow the agreed API contract; until that exists, they follow PRODUCT.md's terms and are marked provisional.
+- The frontend runs on the live API. Response shapes come from the generated contract in `contract/`, still checked with Zod at runtime. Pages not yet moved keep their provisional shapes until their slice moves them.
 - Never invent backend behaviour. If the frontend needs a field or endpoint the contract doesn't have, write it up for Furqaan instead of mocking it into existence.
 
 ### Motion
@@ -245,7 +245,7 @@ What must be covered (tooling is decided by ADR):
 | AI checks | A golden set of real sponsored clips with expected results per item. Schema-invalid output becomes unsure. A pass with an unverifiable timestamp is rejected |
 | Brief → checklist | Every item cites a real brief line. Ambiguous lines produce a question, not a guess |
 | Live check | YouTube: the unlisted draft switches to public and matches the record. Instagram: transcript and length match the draft. Mismatch or unavailable → manual approval |
-| Frontend | Components (with mocked API) plus E2E for the full deal: brief → invite → hold → draft check → review → publish → live check → paid |
+| Frontend | Components (with per-test stubs of the API, typed from the contract) plus E2E against the live backend for the full deal: brief → invite → hold → draft check → review → publish → live check → paid |
 
 Coverage target: ≥ 70% on components and lib code. CI blocks merge on any failing test.
 

@@ -1,10 +1,10 @@
 # Confirm and hold: FRD
 
-**Status:** Signed by William (revision 1.2).
+**Status:** Signed by William (revision 1.3).
 
 **Surface:** Both sides of step 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's deal page:** the brand opens the creator's link, reads the terms and every checklist with where each item came from, asks for changes or agrees, then approves one PayPal hold per post. **The creator's side:** the brand's notes beside what they're about, "Send updated terms", and each post's hold as it comes in.
 
-**Scope of this build:** frontend only, against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). Swapping the link for a session, versioning the terms, recording the agreement, every PayPal call and every money state run on the backend; the frontend starts actions and shows what the API returns. It never decides a money state. Requirements tagged **Depends on backend** name their fallback.
+**Scope of this build:** frontend only. 1.3: on the live API, with the contract's shapes, and PayPal's own approval button in the sandbox ([frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)). Before 1.3: against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). Swapping the link for a session, versioning the terms, recording the agreement, every PayPal call and every money state run on the backend; the frontend starts actions and shows what the API returns. It never decides a money state. Requirements tagged **Depends on backend** name their fallback.
 
 ## Problem Statement
 
@@ -105,6 +105,7 @@ The brand can "Ask for a change" on any item, line left out, amount or deadline,
 | ID | Requirement |
 | --- | --- |
 | CH-FR-14 | **Agree.** Above the button, one line: "You're agreeing to the checklist for {n} posts, {total} in total (one hold per post), and how payment works." The button is "Agree to these terms". If the brand has notes not yet sent, it reads "Agree without sending your {n} notes?" and the notes are discarded on agreeing. |
+| CH-FR-28 | **The brand's own email (1.3).** Above the button, an optional field "Your email (optional)", with under it: "We'll only email you if {creator}'s post needs your answer after it's live. {creator} won't see it." Checked like every email field; sent with the agreement as `email`. Empty, agreeing works the same. It is never shown to the creator ([the brand's notices](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md)). |
 | CH-FR-15 | **Out-of-date version.** Agreeing sends the version shown. If the API refuses it as out of date, the page reloads the terms and says "{creator} updated the terms. Check the changes before agreeing." |
 | CH-FR-16 | **Agreed.** The page says "Agreed · version {n} · {date}"; "Ask for a change" and the button are gone for good, and the holds appear (CH-FR-17). |
 
@@ -112,7 +113,7 @@ The brand can "Ask for a change" on any item, line left out, amount or deadline,
 
 | ID | Requirement |
 | --- | --- |
-| CH-FR-17 | **One hold per post.** After agreeing, each post's line gains its hold: "{post} · {amount}" and "Approve with PayPal". Each post is approved on its own. Above them: "{held} of {n} held". **Depends on backend;** on mocks a plain stand-in button calls the mock and nothing reaches PayPal. |
+| CH-FR-17 | **One hold per post.** After agreeing, each post's line gains its hold: "{post} · {amount}" and "Approve with PayPal". Each post is approved on its own. Above them: "{held} of {n} held". 1.3: "Approve with PayPal" opens PayPal's own button, loaded from PayPal with the deal's sandbox client id (`paypalClientId` on the brand's deal) and `intent=authorize`, so approving makes a hold, never a payment. Its order comes from `POST …/hold`, its approval goes to `POST …/hold/approved` and closing it to `POST …/hold/closed`; the page decides no money state (CH-BR, CLAUDE.md "Money"). If PayPal's button can't load, or reports an error: "PayPal didn't load. Nothing was held. Try again." Without a client id: "PayPal isn't connected in this build yet, so no hold can be approved." Mock builds keep the stand-in. |
 | CH-FR-18 | **Hold states,** each from the API, on that post's line: closed ("You closed PayPal. Nothing was held." and the button back); declined ("PayPal didn't approve this hold. Nothing was taken. Try again, or pick another way to pay in PayPal."); pending ("Checking with PayPal…", button off, the page asks the API again); unknown after that ("We couldn't confirm this with PayPal yet. Don't approve it again; this page will update."); held ("Held · {amount} · PayPal ref {reference}" and "{creator} posts by {date}"). "Held" is plain ink, never green. |
 | CH-FR-19 | **All held.** "All held. {creator} is making the posts." with each post's deadline date. Nothing on the page asks the brand for anything more in this step. |
 | CH-FR-20 | **Coming back.** While the session lasts, opening `/brand/deals/{dealId}` shows the deal as it stands: waiting for the creator's changes, agreed with holds, or all held. Agreement and holds already done are never offered again. Several people with the link each get their own session and see the same state. |
@@ -153,6 +154,7 @@ The brand can "Ask for a change" on any item, line left out, amount or deadline,
 - **Modules:** a pure **terms view for the brand**, turning the deal's terms, checklist, brief lines and questions into posts with their items, each item's source (brief line, added, or interpreted with the answer), the lines not on the checklist, the changes since the last version, and the agree summary; tested on its own. A pure **hold view**, turning each post's hold state from the API into its text, whether the button is on, and "{held} of {n} held". Components in a `brand-deal/` feature folder, each under ~200 lines; the terms sheet's rules and lines are shared with the invite page, worded per side.
 - **Data:** Zod schemas for the provisional API; the typed client gains the brand calls (swap, read, notes, agree, approve hold, hold status) and the creator calls (read notes, reply, send updated terms). MSW handlers keep the session, versions, notes, agreement and holds in memory.
 - **Mocks:** the seed gains a demo deal at `waiting_for_brand` with a working demo link. In mock builds only, the creator's link panel shows "Open as {brand}", so both sides can be clicked through in one browser; like every fixture, it never reaches a production build. The demo PayPal stand-in can be told to close, decline, stay pending or hold, so every state in CH-FR-18 can be shown.
+- **PayPal's button (1.3):** `@paypal/react-paypal-js`, PayPal's official React wrapper (William chose it over loading PayPal's script by hand). It replaces a hand-written script loader and the button's lifecycle; about 10 KB gzipped, on the brand's deal page only; PayPal's own script comes from PayPal. It fills the existing approval seam, so mock builds and tests keep the stand-in. No PayPal key is in the code: the client id comes from the API, and it is the sandbox's.
 - **Visual:** inherits DESIGN.md. Rendered mockups in `design/brand-deal/` before build, at 390 px and desktop; William picks.
 
 ## Mocks and the provisional contract
@@ -202,9 +204,10 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | CH-FR-10 to CH-FR-12 | `POST /brand/deals/{id}/notes` (the set, sent together); `step` becomes `changes_requested` |
 | CH-FR-13, CH-FR-24 | Terms versions: each send makes a new version; what changed between versions per item, amount and deadline |
 | CH-FR-14 to CH-FR-16 | `POST /brand/deals/{id}/agree` with the version; refuses an out-of-date version; `step` becomes `agreed` |
+| 1.3 | Built (DS): `email` on agreeing (CH-FR-28); `paypalClientId` on the brand's deal (CH-FR-17); the hold routes as above. The brand's deal differs from the page's in each post's `review` (a `what` list, the states `live_check` and `taking`); that moves with the brand review and publish and pay |
 | CH-FR-17 | `POST /brand/deals/{id}/posts/{deliverableId}/hold`: creates the PayPal order and returns `{ orderId }` for the approval step; refused before the brand agrees, for a held post, and while a hold is pending or unknown. `PayPal-Request-Id` on every create |
 | CH-FR-18 | `POST …/hold/approved` with `{ orderId }`: PayPal approved, so the API authorizes and returns the deal with the hold's state (`held` with reference and deadline, `declined`, `pending` or `unknown`). `POST …/hold/closed` with `{ orderId }`: the brand closed PayPal; the hold is `closed`. Both refuse an order id from another post |
-| CH-FR-17, CH-FR-18 | The PayPal JS SDK wiring for the approval step (the page calls the two endpoints above from its approve and cancel callbacks) |
+| CH-FR-17, CH-FR-18 | The PayPal JS SDK wiring for the approval step: 1.3, the frontend's, through `@paypal/react-paypal-js` |
 | Mocks only | `POST /__demo/paypal/next` with `{ outcome }` sets the Demo PayPal's next answer. It exists only in the MSW mocks and is never part of the real API |
 | CH-FR-19, CH-FR-21 | When every post is held, the deal leaves set-up; the deal summary's `openDeliverableId` per DC-FR-37 |
 | CH-FR-22, CH-FR-23 | Notes on the creator's invite and checklist; `PUT /deals/{id}/notes/{noteId}/reply` |
@@ -216,14 +219,13 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 - Tests check what the brand and creator see and can do, named after the CH-FR they prove.
 - **Terms view:** an item's source (brief line, added, interpreted with the answer); lines no item cites listed once; changes since the last version; the agree summary's count and total; never includes the PayPal email.
 - **Hold view:** each state's text and whether the button is on; "Held" only for `held`; "{held} of {n} held".
-- **Components:** the swap and the URL replaced; the one bad-link message; the terms read-only with the brand's rules; folding on phones; Ask for a change on each kind, edit and remove, send; the sent state; version marks and replies; Agree with and without unsent notes; out-of-date refusal; each hold state; coming back. Creator side: notes beside their targets, reply, Send updated terms gated, hold lines and "Open draft check".
+- **Components (1.3: new behaviour on per-test stubs typed from the contract):** the brand's email sent with the agreement, and agreeing without it; PayPal's approval wired to start, approved and closed (PayPal's button replaced by a stand-in in tests); PayPal failing to load; the swap and the URL replaced; the one bad-link message; the terms read-only with the brand's rules; folding on phones; Ask for a change on each kind, edit and remove, send; the sent state; version marks and replies; Agree with and without unsent notes; out-of-date refusal; each hold state; coming back. Creator side: notes beside their targets, reply, Send updated terms gated, hold lines and "Open draft check".
 - **End to end (Playwright, on MSW):** creator creates the link → opens it as the brand → asks for a change on an item and an amount → creator replies, changes and sends → the brand sees "Changed", agrees → approves both holds (one declined first, then held) → the creator's rail shows "All held" routing on. At 375 px and 1280 px; the token is absent from the URL after the swap.
 
 ## Out of Scope
 
 - Cancelling a deal, or a time limit for a brand that agrees but never approves a hold (no money is held, so no deadline runs).
 - Telling the creator the brand has opened the link.
-- Real PayPal JS SDK wiring and PayPal's branded button (a stand-in on mocks; see Requests for Furqaan).
 - Real email sending.
 - An emailed code or a brand account (the [decision](../decisions/2026-10-08-brand-access-by-link-session.md) leaves room for a code later).
 - Step 5 onward: the brand's review window, objections and accepting Unsure items (see the [brand review FRD](brand-review-frd.md)).
@@ -244,3 +246,6 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | 1.1 | Pointer: step 5, the brand's review, is specified in the [brand review FRD](brand-review-frd.md). No requirement changes | none |
 | 1.2 | Pointer: cancelling a deal or a post, including before the brand agrees (Out of Scope here), is specified in the [cancel FRD](cancel-frd.md). A cancelled deal's invite link answers as CH-FR-02. No requirement changes here | none |
 | 1.2 signed | Revision 1.2 signed by William | none |
+| 1.3 | The move onto the live API, from the grill-me with William: PayPal's own approval button through `@paypal/react-paypal-js`, sandbox, `intent=authorize`, with the client id from the API (CH-FR-17); the brand's own optional email when agreeing (new CH-FR-28); the hold routes and the session matched the contract; the `review` part of the brand's deal moves with its own slices | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md), [The brand's notices](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md) |
+| 1.3 signed | Revision 1.3 signed by William | none |
+| 1.3 | After signing: the brand's email was numbered CH-FR-26, which CH-FR-26 (mobile-first) already used; renumbered CH-FR-28. No change to any requirement's words | none |

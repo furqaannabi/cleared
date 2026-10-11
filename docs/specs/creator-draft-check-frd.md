@@ -1,10 +1,10 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.17). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.18). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus its side of step 5 (the brand's review: objections and approval, with the brand's side in the [brand review FRD](brand-review-frd.md)) and the released state.
 
-**Scope of this build:** frontend only, against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). Requirements tagged **Depends on backend** need data the backend has not agreed to provide; each one names its fallback.
+**Scope of this build:** frontend only. 1.18: on the live API, with the contract's shapes ([frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)), and with the draft upload specified (DC-FR-45). Before 1.18: against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). Requirements tagged **Depends on backend** need data the backend has not agreed to provide; each one names its fallback.
 
 ## Problem Statement
 
@@ -97,7 +97,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-05 | **Checking: item by item.** **Depends on backend.** Each item changes from Checking to its result as the API reports it, while the rest stay Checking. Fallback: all results appear together when the check finishes. |
 | DC-FR-06 | **Results.** Shown when the latest run has finished and at least one draft-check item is Fix needed, Unsure or Waiting for brand. |
 | DC-FR-07 | **Fully passing.** Shown when the API reports that the review window has started. The next-step bar names the brand and when the review window ends ("Glow Theory has until 9 Oct, 14:00 to review. If they say nothing, you're cleared to publish."). There is no primary action for the creator; "Copy link for {brand}" sits beside the next step (DC-FR-52). The brand's side is in the [brand review FRD](brand-review-frd.md). |
-| DC-FR-08 | **Check failed: the file.** When the API reports that the file could not be checked because of the file (unreadable, unsupported format, longer than the length cap, or not the same video as the YouTube unlisted upload), the page shows a banner saying what is wrong and what to do, with the action "Upload again". The length cap is a value from the API and is never hard-coded. |
+| DC-FR-08 | **Check failed: the file.** When the API reports that the file could not be checked because of the file (unreadable, unsupported format, or longer than the length cap; 1.18: never "not the same video", since the unlisted video is asked for at publishing), the page shows a banner saying what is wrong and what to do, with the action "Upload again". The length cap is a value from the API and is never hard-coded. |
 | DC-FR-09 | **Check failed: our side.** When the API reports a processing failure, the banner says it is not the creator's fault and what happens next. **Depends on backend** for automatic retry ("We're trying again; you don't need to do anything."). Fallback: "Something went wrong on our side checking this draft." with the action "Try again". |
 | DC-FR-10 | **Released.** When the API reports the hold was released (missed deadline or cancelled deal), the page is read-only: the last run's results stay visible, the upload and ask actions are removed, and the checklist has no Needs you tab (DC-FR-20). The next-step bar says what happened, when and, if the API says, who cancelled, and that nothing more can happen on this deliverable. There is no primary action. |
 | DC-FR-11 | **Deadline warning.** In the no draft, results and check failed states, when fewer than 3 days remain before the deliverable's deadline, the next-step bar leads with the time left ("2 days left to post."). This changes emphasis only, not any timing. |
@@ -110,7 +110,9 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-49 | **Objected item.** An item the brand objected to shows Objected by brand. Its evidence panel and expanded card say "The check passed this. {brand} asked you to change it:" followed by the brand's note, before the brief line. It has no ask action. A new draft clears it (DC-BR-04). |
 | DC-FR-50 | **Objected.** Shown when the API reports the brand objected. The next-step bar: "{brand} asked you to fix {n} items. Upload a new draft by {date}. If {brand} approves this draft instead, you're cleared to publish." Its primary action is "Upload new draft". The first objected item is selected on load. The deal steps keep Brand review as current. See [Objection settled by the two sides](../decisions/2026-10-08-objection-settled-by-the-two-sides.md). |
 | DC-FR-51 | **Approved.** Shown when the API reports the draft approved: a banner "{brand} approved this draft" or "No objection from {brand} in 48 hours, so this draft is approved", then "Don't publish yet. Cleared confirms {brand}'s hold with PayPal first." There is no primary action and no upload. The deal steps mark Brand review done and Publish current. |
-| DC-FR-52 | **Copy link for the brand.** While the brand has something to do on this deliverable (an ask waiting, the window open, or objected), the next step offers "Copy link for {brand}", and "We've emailed it to {email}" when the API says it did. The link is copied, never shown in full, stored or logged. **Depends on backend;** on mocks it copies the demo link. See [Fresh brand link per review](../decisions/2026-10-08-fresh-brand-link-per-review.md). |
+| DC-FR-52 | **Copy link for the brand.** While the brand has something to do on this deliverable (an ask waiting, the window open, or objected), the next step offers "Copy link for {brand}". The link is copied, never shown in full, stored or logged. 1.18: nothing is emailed, so no "We've emailed it" line. Beside it: "{brand} hasn't opened it yet." or "{brand} opened it on {date, time}." (from `reviewOpenedAt`). When the API marks the link expired: "This link has expired." with "Make a new link" in place of Copy; the new link (`POST /deliverables/{id}/review-link`) is copied, and that is announced. See [Fresh brand link per review](../decisions/2026-10-08-fresh-brand-link-per-review.md). |
+| DC-FR-53 | **A limit on drafts (1.18).** When the API refuses a draft at a limit (429 `draft_limit`), a banner in the draft area says which: the post's limit, "This post has had all the checks one post can have, so this draft can't be checked. Your last results stay as they are.", and the post's upload actions are hidden; the limit across everyone, "Cleared has checked all the video it can today. You can upload this draft from {time}." (the reset in the creator's local time; without one, "tomorrow"), and uploading stays available. No limit numbers are shown (DR-FR-06 to DR-FR-09). |
+| DC-FR-54 | **No hold yet (1.18).** When the API answers that the post isn't held (409 `not_held`), the page says "{brand} hasn't approved this post's hold yet. Its draft check opens once the money is held." with a link "See the deal's terms" to the deal's invite page. The brand's name comes from the deals list; without it, "The brand". |
 
 ### Checklist and evidence
 
@@ -199,7 +201,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | DC-FR-42 | Every animation honours `prefers-reduced-motion`. |
 | DC-FR-43 | Every interactive element is reachable by keyboard, has a visible focus ring and an accessible name; touch targets are at least 44 × 44 px; nothing depends on hover. |
 | DC-FR-44 | **One shared deadline date, with the viewer's own time.** A deliverable's deadline is the end of its day (23:59) in the creator's timezone, so the creator and the brand read the same date ("Post by 24 Oct"). When the viewer's timezone is different, the page adds when it ends for them ("ends 18:59 your time", or "ends 25 Oct, 07:59 your time" when their date differs). Countdowns (DC-FR-11) use the exact moment. |
-| DC-FR-45 | **Upload while the upload flow is unspecced.** When mocks are on, the upload actions (Upload draft, Upload new draft, Upload again) open the file picker and simulate a new run: the page shows Checking, then the new results with fresh evidence for the items that changed, from the mocks only; nothing is uploaded. When mocks are off, no upload button is shown until the upload flow's FRD is built. In mock builds the simulated run can be told its outcome: "passes every item" (the review window starts) or "one Unsure item" (RW-FR-28); the choice is supplied only by the mock gate, like Demo PayPal. |
+| DC-FR-45 | **The upload (1.18).** The upload actions (Upload draft, Upload new draft, Upload again) open the file picker for an MP4 or MOV. Before sending, the page checks what the browser can see: a type or extension other than MP4 or MOV shows DC-FR-08's wrong-format banner; over 1 GB: "This file is over 1 GB. Export a smaller file and upload it again."; a length over 15 minutes, read from the video's own metadata, shows DC-FR-08's too-long banner with the length and the cap. A length the browser can't read is left to the API. Nothing is sent when a check fails. The file then goes to the API in one request (`POST /deliverables/{id}/draft?fileName=`), with its progress on the draft area: "Uploading {file name} · {n}%" and Cancel. Leaving the page while uploading asks first ("Your draft is still uploading."). When the API answers, the page shows Checking (DC-FR-03, DC-FR-04). The API's refusals show the same words: 413 as over 1 GB, 422 as DC-FR-08's file banners (with the API's length and cap), 429 as DC-FR-53, 409 by reloading the post. The 1 GB and 15-minute figures are kept in one place in the code; the API's answer wins. In mock builds the upload is still simulated as before (nothing is sent), until the mocks are removed. |
 
 ## Business rules
 
@@ -300,6 +302,7 @@ Fields:
 | DC-FR-33 | Each deal summary's `deliverables: { id, platform, state }[]`, so the switcher can name each deliverable and show its step |
 | DC-FR-49 to DC-FR-51 | Deliverable states `objected` and `approved` (with `approvedBy: "brand" \| "window"` and `approvedAt`); item status `objected_by_brand` with `brandNote` (see RW Requests for Furqaan) |
 | DC-FR-52 | `reviewLink?: { url, emailedTo? }` while the brand has something to do on the deliverable |
+| 1.18 | Built (DR): the upload (`POST /deliverables/{id}/draft?fileName=` with the file as the body; 409, 413, 422, 429 refusals); `reviewLink` as `{ url, expiresAt, expired }`, `reviewOpenedAt` and `POST /deliverables/{id}/review-link`; `checkFailure` without `not_same_video`; 409 `not_held` on `GET /deliverables/{id}`; stage names as plain words; item results together when a run ends (DC-FR-05's fallback). DC-BR-02 stays: William keeps ask-the-brand for Unsure items only, answering Furqaan's question. The go-ahead, live check, capture and release fields move with publish and pay |
 
 ## Testing Decisions
 
@@ -307,14 +310,14 @@ Fields:
 - **Deliverable view model:** every state in DC-FR-01, the next-step copy and action for each state, DC-FR-11 at 3 days and just over, DC-FR-19, DC-FR-20 counts, DC-FR-21 and DC-BR-01 to DC-BR-06.
 - **Item status map:** every status has an icon and a word (never colour alone), Accepted by brand is never the pass colour, and each status sits in the right tab.
 - **API client:** schema-invalid responses become errors; not-found and not-a-party give the same outcome; the video URL refreshes once on expiry and then reports failure.
-- **Components:** each one with mocked API data, at 375 px and at desktop width. The ask-brand action appears only on Unsure items. DC-FR-46: the Suggested fix shows on Fix needed, Unsure, declined (after the brand's note) and Waiting for brand items, in the evidence panel and the expanded card, never on other statuses, never in the grid, and nothing at all when the hint is missing. The schema rejects a hint over 280 characters. DC-FR-48: the summary for fixed only, fixed and worse, worse only, a cancelled acceptance, more than three names, run 1 (none), and the fully passing line; re-selection when a run lands, and none on an ordinary load. The grid and the cards are tested for DC-FR-41 parity on the same fixture.
+- **Components (1.18: new behaviour on per-test stubs typed from the contract):** the upload's checks before sending, its progress and Cancel, each refusal; each draft limit; the review link's opened line, expiry and new link; no hold yet. Each one with mocked API data, at 375 px and at desktop width. The ask-brand action appears only on Unsure items. DC-FR-46: the Suggested fix shows on Fix needed, Unsure, declined (after the brand's note) and Waiting for brand items, in the evidence panel and the expanded card, never on other statuses, never in the grid, and nothing at all when the hint is missing. The schema rejects a hint over 280 characters. DC-FR-48: the summary for fixed only, fixed and worse, worse only, a cancelled acceptance, more than three names, run 1 (none), and the fully passing line; re-selection when a run lands, and none on an ordinary load. The grid and the cards are tested for DC-FR-41 parity on the same fixture.
 - **End to end (Playwright, on MSW):** every named mock scenario at 375 px and 1280 px, including selecting an item from the timeline, grid and card, Back through selection, asking and withdrawing, and the 9:16 deliverable.
 - Coverage of at least 70% on components and lib code.
 - There are no earlier tests in the repo; these are the first.
 
 ## Out of Scope
 
-- The upload flow: picking the file, the YouTube unlisted link and the length cap prompt.
+- The YouTube unlisted link (asked for at publishing, in the [publish and pay FRD](publish-and-pay-frd.md)).
 - The brand's side: in the [brand review FRD](brand-review-frd.md).
 - Run history beyond the change since the last run.
 - Steps 6 to 8 (the go-ahead, publishing, the live check, capture and payout, and the later release reasons) are specified in the [publish and pay FRD](publish-and-pay-frd.md).
@@ -326,8 +329,8 @@ Fields:
 ## Open items
 
 - **Furqaan to confirm** the `person` value for `checkedBy`.
-- **The length cap** on uploads (and the upload count) is not set. It is an AWS cost limit, owned by Furqaan or both.
-- **Upload draft action** (DC-FR-02, DC-FR-08): see DC-FR-45 until the upload flow's FRD is built.
+- *Closed in 1.18:* the length cap and the upload count ([limits on drafts](../decisions/2026-10-09-limits-on-drafts.md)).
+- *Closed in 1.18:* the upload (DC-FR-45).
 - **API contract**: the provisional shape above becomes the agreed contract, or is revised to match it.
 
 ## Revision
@@ -370,3 +373,5 @@ Fields:
 | 1.16 signed | Revision 1.16 signed by William | none |
 | 1.17 | Pointer: DC-FR-31's creator name in the rail opens the account menu (Sign out, or Leave the demo, and "Demo account"), per the [sign-in FRD](sign-in-frd.md) (SI-FR-11 to SI-FR-13). No requirement changes here | [Creator sign-in through the backend](../decisions/2026-10-08-creator-sign-in-through-the-backend.md) |
 | 1.17 signed | Revision 1.17 signed by William | none |
+| 1.18 | The move onto the live API, from the grill-me with William: the draft upload (DC-FR-45) with progress and Cancel, checked in the browser first (type, 1 GB, 15 minutes); draft limits (new DC-FR-53); the review link's opened line, expiry and new link, no emailing (DC-FR-52); a post with no hold (new DC-FR-54); no "not the same video" failure (DC-FR-08); DC-BR-02 kept, answering Furqaan | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md), [Limits on drafts](../decisions/2026-10-09-limits-on-drafts.md), [No email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md), [The unlisted video is asked for at publish](../decisions/2026-10-09-the-unlisted-video-is-asked-for-at-publish.md) |
+| 1.18 signed | Revision 1.18 signed by William | none |

@@ -1,10 +1,10 @@
 # Creator brief → checklist: FRD
 
-**Status:** Signed by William (revision 1.3).
+**Status:** Signed by William (revision 1.4).
 
 **Surface:** Creator app. Step 1 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): the creator starts a deal, names its posts, gives the brand's brief, and gets a checklist per post that cites the brief, with the AI's questions answered. Step 2 (amounts, deadlines, PayPal email, connecting accounts, inviting the brand) is the next surface.
 
-**Scope of this build:** frontend only, against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). The AI that reads the brief runs on the backend (Claude on Amazon Bedrock); the frontend sends the brief and shows what comes back. Requirements tagged **Depends on backend** name their fallback.
+**Scope of this build:** frontend only. 1.4: on the live API, with the contract's shapes ([frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)); the provisional shapes below matched the contract exactly. Before 1.4: against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). The AI that reads the brief runs on the backend (Claude on Amazon Bedrock); the frontend sends the brief and shows what comes back. Requirements tagged **Depends on backend** name their fallback.
 
 ## Problem Statement
 
@@ -59,6 +59,7 @@ A short "New deal" flow. The creator names the brand and the posts (deliverables
 | BC-FR-05 | **Limits.** Under 40 characters: "This looks too short to be a brief. Paste the whole thing." Over 20,000 characters: "Briefs can be up to 20,000 characters, about 8 pages." Both are said before sending, and the button stays available to try again. |
 | BC-FR-06 | **Upload a file. Depends on backend.** A PDF or .docx upload needs the backend to store the file and extract its text. Fallback: the page offers pasting only and says nothing about files. |
 | BC-FR-07 | **Reading.** After sending, the page shows "Reading your brief…" with the brief split into numbered lines, and marks each line as the AI reaches it; items appear under their lines as they arrive. **Depends on backend** for progress; fallback: the lines show with a single "Reading" state until the result arrives. The creator can leave; coming back shows the current state. |
+| BC-FR-24 | **A limit on reading (1.4).** When the API refuses the brief because a daily limit on reading is reached, nothing is read and the page says so under the button, keeping the pasted text and the button: for the creator's own limit, "You've reached today's limit on reading briefs. You can send this one from {time}."; for the limit across everyone, "Cleared has read all the briefs it can today. You can send this one from {time}." `{time}` is when the limit resets, in the creator's local time ("3:40 pm"); without a reset time, "…You can send this one tomorrow." No limit numbers are shown: they are the backend's settings (DS-FR-26 to DS-FR-28). |
 | BC-FR-08 | **Couldn't read.** If the API reports the AI could not read the brief, the page says "We couldn't read this brief." with Try again, and keeps the pasted text. |
 
 ### The checklist
@@ -148,13 +149,14 @@ interface Question {
 | BC-FR-16 | `POST /deals/{id}/checklist/ready`; the deal's `step` becomes `invite` |
 | DC-FR-37 | Each deal summary carries its `step`, so `/deals/{id}` can open the right page |
 | BC-BR-04 | Model output schema-validated; malformed output becomes a question |
+| BC-FR-24 (1.4) | Built (DS-FR-28): `POST /deals/{id}/brief` answers 429 with `{ error: { code: "read_limit", field: "creator" \| "overall", resetsAt?: string } }` |
 
 ## Testing Decisions
 
 - Tests check what the creator sees and can do, named after the BC-FR they prove.
 - **Checklist view model:** tab counts; lines with and without items; "Not checked" after leave-out or remove; Ready blocked by unanswered questions and empty deliverables, with the right "what is left" text; added items marked.
-- **Components:** stage 1 validation; brief limits; reading state; each question answer path (suggestion, own words, leave out, reopen); edit, remove, move, copy, add; Ready and the after-ready message; a failed save shown beside its item.
-- **End to end (Playwright, on MSW):** new deal → brief → reading → answer both questions → ready, at 375 px and 1280 px; the deal appears in the rail at "Checklist", then "Invite".
+- **Components:** stage 1 validation; brief limits; a limit on reading, each kind, with and without a reset time (1.4, per-test stubs typed from the contract); reading state; each question answer path (suggestion, own words, leave out, reopen); edit, remove, move, copy, add; Ready and the after-ready message; a failed save shown beside its item.
+- **End to end (Playwright; 1.4: against the live backend once signed-in runs exist, until then on MSW):** new deal → brief → reading → answer both questions → ready, at 375 px and 1280 px; the deal appears in the rail at "Checklist", then "Invite".
 
 ## Out of Scope
 
@@ -180,3 +182,5 @@ interface Question {
 | 1.2 | Signed by William | none |
 | 1.3 | At `changes_requested` the checklist page shows each of the brand's notes beside its item or brief line (CH-FR-22). Specified in [Confirm and hold](confirm-and-hold-frd.md) | [Brand asks for changes](../decisions/2026-10-08-brand-asks-for-changes-not-edits.md) |
 | 1.3 | Signed by William, with Confirm and hold 1.0 | none |
+| 1.4 | The move onto the live API: the routes, request bodies and `DealDraft` matched the contract, so the pages keep them, typed from it. Differences from Furqaan's [deal set-up](deal-setup-frd.md): no line-by-line progress (BC-FR-07's fallback shows) and no file upload (BC-FR-06's fallback shows). New BC-FR-24: what the page says at a daily limit on reading (William chose a message per limit over one message or the generic error) | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md) |
+| 1.4 | Signed by William | none |

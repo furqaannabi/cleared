@@ -42,7 +42,7 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-06 | [Evidence table and brand dashboard use AG Grid on tablet and up](2026-10-06-evidence-view-ag-grid.md) | Accepted |
 | 2026-10-06 | [Visual world is set by a design prototype in design/](2026-10-06-design-prototype-first.md) | Accepted |
 | 2026-10-06 | [Frontend stack for web/: Tailwind, Radix, Motion, Vitest and Playwright](2026-10-06-frontend-stack.md) | Accepted |
-| 2026-10-06 | [Frontend mocks are served with MSW](2026-10-06-frontend-mocks-msw.md) | Accepted |
+| 2026-10-06 | [Frontend mocks are served with MSW](2026-10-06-frontend-mocks-msw.md) | Superseded in part by [2026-10-11-frontend-on-the-live-api.md](2026-10-11-frontend-on-the-live-api.md): MSW stays for per-test stubs only |
 | 2026-10-07 | [Mock data is on by default in development](2026-10-07-mock-data-on-by-default-in-dev.md) | Accepted |
 | 2026-10-06 | [Repo layout: pnpm workspace with web/, backend/ and contract/](2026-10-06-repo-layout-and-package-manager.md) | Accepted |
 | 2026-10-06 | [API responses are validated with Zod](2026-10-06-schema-validation-zod.md) | Accepted |
@@ -96,4 +96,6 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-11 | [A Reel nobody gave a link for is not looked for](2026-10-11-a-reel-nobody-gave-a-link-for-is-not-looked-for.md) | Accepted |
 | 2026-10-11 | [Demo accounts read one real Instagram account the team owns](2026-10-11-demo-accounts-read-a-shared-instagram-account.md) | Superseded by [2026-10-11-no-demo-accounts.md](2026-10-11-no-demo-accounts.md) |
 | 2026-10-11 | [No Meta review of the app for the hackathon](2026-10-11-no-meta-review-for-the-hackathon.md) | Accepted |
-| 2026-10-11 | [No demo accounts: every creator signs in with Google](2026-10-11-no-demo-accounts.md) | Accepted |
+| 2026-10-11 | [No demo accounts: every creator signs in with Google](2026-10-11-no-demo-accounts.md) | Accepted; agreed by William, 11 Oct |
+| 2026-10-11 | [The frontend runs on the live API; tests stub their own requests](2026-10-11-frontend-on-the-live-api.md) | Accepted; superseded in part by [2026-10-11-mocks-go-in-one-last-slice.md](2026-10-11-mocks-go-in-one-last-slice.md): when the mocks go |
+| 2026-10-11 | [The shared mocks are removed in one last slice](2026-10-11-mocks-go-in-one-last-slice.md) | Accepted |
