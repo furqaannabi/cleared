@@ -24,9 +24,6 @@ export interface DraftSettings {
   maxChecks: number;
   /** How much video is checked in a day across everyone, in seconds (DR-FR-07). */
   dailySeconds: number;
-  /** How many drafts a demo account can have checked in total, and how long each may be (DR-FR-08). */
-  demoDrafts: number;
-  demoMaxSeconds: number;
   /** How long an address that reads a draft works for (DR-BR-12). */
   addressSeconds: number;
   /** How many times a check that failed on Cleared's side is tried again, and the first wait before one (DR-FR-23). */
@@ -35,8 +32,6 @@ export interface DraftSettings {
   /** How often the reading of a video is asked after, and how long it may take before it counts as failed. */
   pollSeconds: number;
   readingLimitSeconds: number;
-  /** Where the sample clip for demo accounts is kept. Without it there is no sample to check (DR-FR-50). */
-  sampleKey?: string;
   review: ReviewSettings;
 }
 
@@ -45,8 +40,6 @@ export const defaultDraftSettings: DraftSettings = {
   maxSeconds: 15 * 60,
   maxChecks: 10,
   dailySeconds: 300 * 60,
-  demoDrafts: 3,
-  demoMaxSeconds: 3 * 60,
   addressSeconds: 15 * 60,
   retries: 3,
   retryWaitSeconds: 30,
@@ -71,12 +64,9 @@ export type DraftRefused =
   /** A check is running, or a draft is already approved (DR-FR-01). */
   | { refused: "check_running" | "approved" }
   /** A limit on drafts was reached (DR-FR-09). `resetsAt` is when the daily one lifts. */
-  | { refused: "limit"; limit: "post" | "demo" | "overall"; resetsAt?: Date }
+  | { refused: "limit"; limit: "post" | "overall"; resetsAt?: Date }
   | { refused: "too_large" }
   | { refused: "file"; failure: FileFailure };
-
-/** Why the sample clip was not taken: only a demo account may use it, and the service must have one. */
-export type SampleRefused = DraftRefused | { refused: "not_demo" | "not_set_up" };
 
 export type RetryRefused = { refused: "not_found" | "not_held" | "released" } | /** No check of this post failed on Cleared's side. */ { refused: "no_failed_check" };
 
@@ -128,20 +118,17 @@ export function createDrafts(deps: {
   }
 
   /**
-   * Whether one more draft may be checked: for this post, for a demo account, and across everyone
-   * today (DR-FR-06 to DR-FR-08). `seconds` is the new draft's length once it is known; before the
+   * Whether one more draft may be checked: for this post, and across everyone today (DR-FR-06,
+   * DR-FR-07). `seconds` is the new draft's length once it is known; before the
    * file has been read it is zero, which asks only whether the day's total is already used up.
    */
   async function limitReached(
     db: Prisma.TransactionClient | PrismaClient,
-    who: { creatorId: string; demo: boolean; run: number },
+    post: { run: number },
     seconds: number,
     at: Date,
   ): Promise<Extract<DraftRefused, { refused: "limit" }> | undefined> {
-    if (who.run >= settings.maxChecks) return { refused: "limit", limit: "post" };
-    if (who.demo && (await db.draftUsage.count({ where: { creatorId: who.creatorId } })) >= settings.demoDrafts) {
-      return { refused: "limit", limit: "demo" };
-    }
+    if (post.run >= settings.maxChecks) return { refused: "limit", limit: "post" };
     const today = { at: { gt: new Date(at.getTime() - DAY_MS) } };
     const used = (await db.draftUsage.aggregate({ where: today, _sum: { seconds: true } }))._sum.seconds ?? 0;
     if (seconds === 0 ? used >= settings.dailySeconds : used + seconds > settings.dailySeconds) {
@@ -290,22 +277,16 @@ export function createDrafts(deps: {
    * Takes a draft for a held post (DR-FR-01 to DR-FR-05). In order: who is asking and whether the post
    * can take a draft, the limits that need no file, the file put into storage by `store`, the file read
    * to see what it really is, and then, in one transaction, the draft recorded and its check started as
-   * a job. A file refused at any point is deleted. `demoOnly` is for the sample clip (DR-FR-50).
+   * a job. A file refused at any point is deleted.
    */
   async function take(
     creatorId: string,
     deliverableId: string,
     name: string | undefined,
     store: (storageKey: string) => Promise<{ bytes: number } | "too_large">,
-    demoOnly = false,
-  ): Promise<DraftAccepted | SampleRefused> {
-    const post = await prisma.deliverable.findFirst({
-      where: { id: deliverableId, deal: { creatorId } },
-      include: { deal: { include: { creator: { select: { demo: true } } } } },
-    });
+  ): Promise<DraftAccepted | DraftRefused> {
+    const post = await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } } });
     if (!post) return { refused: "not_found" };
-    const demo = post.deal.creator.demo;
-    if (demoOnly && !demo) return { refused: "not_demo" };
     const hold = await holdOf(deliverableId);
     if (hold !== "held") return { refused: hold };
 
@@ -315,7 +296,7 @@ export function createDrafts(deps: {
     const before = (await loadReview(prisma, deliverableId, false))!;
     const allowed = review(before.state, { type: "draft_started", at }, settings.review);
     if (!allowed.ok) return { refused: allowed.reason as "check_running" | "approved" };
-    const early = await limitReached(prisma, { creatorId, demo, run: before.row.run }, 0, at);
+    const early = await limitReached(prisma, { run: before.row.run }, 0, at);
     if (early) return early;
 
     const draftId = crypto.randomUUID();
@@ -331,7 +312,7 @@ export function createDrafts(deps: {
     };
 
     // What the file is comes from reading it, never from its name or what the browser said (DR-FR-03).
-    const lengthCapSec = demo ? settings.demoMaxSeconds : settings.maxSeconds;
+    const lengthCapSec = settings.maxSeconds;
     const found = await media.probe(await storage.address(storageKey, settings.addressSeconds));
     const failure: FileFailure | undefined =
       found === "unreadable"
@@ -355,7 +336,7 @@ export function createDrafts(deps: {
       // A new draft cancels every ask, acceptance and objection, and ends the window (DR-FR-05).
       const start = review(current.state, { type: "draft_started", at }, settings.review);
       if (!start.ok) return { refused: start.reason as "check_running" | "approved" };
-      const limit = await limitReached(tx, { creatorId, demo, run: current.row.run }, found.durationSec, at);
+      const limit = await limitReached(tx, { run: current.row.run }, found.durationSec, at);
       if (limit) return limit;
 
       await tx.draft.create({
@@ -381,16 +362,6 @@ export function createDrafts(deps: {
     async send(creatorId: string, deliverableId: string, file: { name?: string; body: ReadableStream<Uint8Array> }): Promise<DraftAccepted | DraftRefused> {
       const taken = await take(creatorId, deliverableId, file.name, (storageKey) => storage.put(storageKey, file.body, { maxBytes: settings.maxBytes }));
       return taken as DraftAccepted | DraftRefused;
-    },
-
-    /**
-     * A demo account checks the ready-made sample clip in place of an upload (DR-FR-50). The post gets
-     * a copy of its own, which is checked, counted and later deleted like any draft. The sample stays.
-     */
-    async sendSample(creatorId: string, deliverableId: string): Promise<DraftAccepted | SampleRefused> {
-      const { sampleKey } = settings;
-      if (!sampleKey) return { refused: "not_set_up" };
-      return take(creatorId, deliverableId, "sample.mp4", (storageKey) => storage.copy(sampleKey, storageKey), true);
     },
 
     /**

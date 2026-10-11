@@ -3,13 +3,16 @@
  * the cookies it was given and the address it is on, and checks what comes back.
  */
 import { beforeEach, describe, expect, test } from "bun:test";
+import { FakeGoogle, type Person } from "../test/fake-google";
 import { createAccounts } from "./accounts/accounts";
 import { createApp } from "./app";
 import { prisma } from "./db";
-import { runDueJobs } from "./jobs/jobs";
+import { localSecrets } from "./secrets/secrets";
 import { createSessions } from "./sessions/sessions";
 
 const APP = "https://app.cleared.test";
+const API = "https://api.cleared.test";
+const sam: Person = { googleId: "google-1", name: "Sam Rivera", email: "sam@example.com", channel: null };
 const at = (iso: string) => new Date(iso);
 
 beforeEach(async () => {
@@ -22,8 +25,8 @@ beforeEach(async () => {
 /** The app with a clock the test moves by hand, and one browser that keeps the cookies it is given. */
 function setUp(startAt = "2026-10-09T09:00:00Z") {
   let now = at(startAt);
-  let address = "203.0.113.7";
-  const app = createApp({ prisma, appOrigin: APP, now: () => now, clientAddress: () => address });
+  const google = new FakeGoogle();
+  const app = createApp({ prisma, appOrigin: APP, apiOrigin: API, now: () => now, google, secrets: localSecrets(Buffer.alloc(32, 7).toString("base64")) });
   const cookies = new Map<string, string>();
 
   /** Sends a request as the browser on Cleared's own app would, and keeps any cookie set in the answer. */
@@ -57,46 +60,44 @@ function setUp(startAt = "2026-10-09T09:00:00Z") {
       cookies.set("cleared_session", await createSessions({ prisma, now: () => now }).start(creatorId));
       return creatorId;
     },
-    /** Presses "Try the demo account", which is a form posted from the app. */
-    tryDemo: (query = "") => send("POST", `/auth/demo${query}`, { form: true }),
+    /** Signs this browser in the way a person does: to Google, approve, and back. The answer is the one that sets the session. */
+    async signIn(query = "", person: Person = sam) {
+      const start = await send("GET", `/auth/google${query}`);
+      const state = new URL(start.headers.get("location")!).searchParams.get("state")!;
+      return send("GET", `/auth/google/callback?code=${google.approve(state, person)}&state=${state}`);
+    },
     timeIs: (iso: string) => {
       now = at(iso);
-    },
-    /** Runs every job that is due at the clock's time, as the service's worker would. */
-    runJobs: () => runDueJobs(prisma, createAccounts({ prisma, now: () => now }).handlers, { now, log: () => {} }),
-    from: (other: string) => {
-      address = other;
     },
   };
 }
 
-describe("DS-FR-06 try the demo account", () => {
-  test("one press makes a demo creator, signs the browser in and sends it into the app", async () => {
+describe("DS 1.2 there are no demo accounts: every creator signs in with Google", () => {
+  test("the old demo button signs nobody in and makes no creator, however it is pressed", async () => {
     const browser = setUp();
 
-    const response = await browser.tryDemo();
+    const asForm = await browser.send("POST", "/auth/demo", { form: true });
+    const asJson = await browser.send("POST", "/auth/demo", { body: {} });
 
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe(`${APP}/deals`);
-    const me = await browser.send("GET", "/me");
-    expect(me.status).toBe(200);
-    expect(await me.json()).toEqual({
-      name: expect.any(String),
-      demo: true,
-      welcomed: true,
-      paypalEmail: expect.stringContaining("@"),
-      accounts: [{ platform: "youtube", name: expect.any(String) }],
-    });
+    expect(asForm.status).toBe(415);
+    expect(asJson.status).toBe(404);
+    expect(browser.cookies.has("cleared_session")).toBe(false);
+    expect(await prisma.creator.count()).toBe(0);
   });
 
-  test("each visitor gets their own demo creator", async () => {
-    const first = setUp();
-    const second = setUp();
-    await first.tryDemo();
-    await second.tryDemo();
+  test("DS-FR-08 who is signed in no longer says whether the account is a demo", async () => {
+    const browser = setUp();
+    await browser.signIn();
 
-    expect(await prisma.creator.count({ where: { demo: true } })).toBe(2);
-    expect(first.cookies.get("cleared_session")).not.toBe(second.cookies.get("cleared_session"));
+    expect(await (await browser.send("GET", "/me")).json()).not.toHaveProperty("demo");
+  });
+
+  test("signing in schedules nothing: no account is ever deleted on a timer", async () => {
+    const browser = setUp();
+    await browser.signIn();
+
+    expect(await prisma.job.count()).toBe(0);
+    expect(createAccounts({ prisma, now: () => new Date() })).not.toHaveProperty("handlers");
   });
 });
 
@@ -122,7 +123,7 @@ describe("DS-BR-02 the session", () => {
   test("the cookie cannot be read by the page, is sent only over HTTPS, and is SameSite=Lax", async () => {
     const browser = setUp();
 
-    const response = await browser.tryDemo();
+    const response = await browser.signIn();
 
     const cookie = response.headers.getSetCookie().find((entry) => entry.startsWith("cleared_session="))!;
     expect(cookie).toContain("HttpOnly");
@@ -133,7 +134,7 @@ describe("DS-BR-02 the session", () => {
 
   test("the database keeps a hash of the token, never the token", async () => {
     const browser = setUp();
-    await browser.tryDemo();
+    await browser.signIn();
 
     const token = browser.cookies.get("cleared_session")!;
     const stored = JSON.stringify(await prisma.session.findMany());
@@ -144,7 +145,7 @@ describe("DS-BR-02 the session", () => {
 
   test("the token is in no response body or address", async () => {
     const browser = setUp();
-    const response = await browser.tryDemo();
+    const response = await browser.signIn();
     const token = browser.cookies.get("cleared_session")!;
 
     expect(response.headers.get("location")).not.toContain(token);
@@ -155,7 +156,7 @@ describe("DS-BR-02 the session", () => {
 describe("DS-FR-03 how long a session lasts", () => {
   test("14 days from its last use: using it keeps it alive", async () => {
     const browser = setUp("2026-10-09T09:00:00Z");
-    await browser.tryDemo();
+    await browser.signIn();
 
     browser.timeIs("2026-10-22T09:00:00Z");
     expect((await browser.send("GET", "/me")).status).toBe(200);
@@ -166,7 +167,7 @@ describe("DS-FR-03 how long a session lasts", () => {
 
   test("left unused for 14 days, it signs nobody in", async () => {
     const browser = setUp("2026-10-09T09:00:00Z");
-    await browser.tryDemo();
+    await browser.signIn();
 
     browser.timeIs("2026-10-23T09:00:00Z");
 
@@ -177,7 +178,7 @@ describe("DS-FR-03 how long a session lasts", () => {
 describe("DS-FR-05 sign out", () => {
   test("ends the session and clears the cookie", async () => {
     const browser = setUp();
-    await browser.tryDemo();
+    await browser.signIn();
 
     const response = await browser.send("POST", "/auth/sign-out");
 
@@ -189,7 +190,7 @@ describe("DS-FR-05 sign out", () => {
 
   test("the same cookie sent again signs nobody in", async () => {
     const browser = setUp();
-    await browser.tryDemo();
+    await browser.signIn();
     const token = browser.cookies.get("cleared_session")!;
     await browser.send("POST", "/auth/sign-out");
 
@@ -213,7 +214,6 @@ describe("DS-FR-02 the first sign-in makes the creator", () => {
     expect(await (await browser.send("GET", "/me")).json()).toEqual({
       name: "Sam Rivera",
       email: "sam@example.com",
-      demo: false,
       welcomed: false,
       accounts: [],
     });
@@ -303,13 +303,14 @@ describe("DS-BR-03 changing requests come only from Cleared's own app", () => {
     expect(await (await browser.send("GET", "/me")).json()).not.toHaveProperty("paypalEmail");
   });
 
-  test("a demo account cannot be started from another site", async () => {
+  test("no route takes a form: one posted from the app's own address is refused like any body that is not JSON", async () => {
     const browser = setUp();
+    await browser.signInWithGoogle();
 
-    const response = await browser.send("POST", "/auth/demo", { form: true, origin: "https://evil.example" });
+    const response = await browser.send("POST", "/auth/sign-out", { form: true });
 
-    expect(response.status).toBe(403);
-    expect(await prisma.creator.count()).toBe(0);
+    expect(response.status).toBe(415);
+    expect((await browser.send("GET", "/me")).status).toBe(200);
   });
 
   test("reading needs no origin, so a page opened directly still loads", async () => {
@@ -360,8 +361,16 @@ describe("the app's address is the only one browsers will let call the API with 
 });
 
 describe("DS-FR-04 back where they were going", () => {
+  /** A browser whose creator has signed in before and seen the welcome, so a sign-in lands where they were going. */
+  async function returning() {
+    const browser = setUp();
+    await browser.signIn();
+    await browser.send("POST", "/me/welcomed");
+    return browser;
+  }
+
   test("a path on Cleared's own app is used", async () => {
-    const response = await setUp().tryDemo("?next=%2Fdeals%2Fabc%3Ftab%3Dfix");
+    const response = await (await returning()).signIn("?next=%2Fdeals%2Fabc%3Ftab%3Dfix");
 
     expect(response.headers.get("location")).toBe(`${APP}/deals/abc?tab=fix`);
   });
@@ -373,70 +382,8 @@ describe("DS-FR-04 back where they were going", () => {
     ["not a path", "deals"],
     ["something with a line break in it", "/deals\\r\\nSet-Cookie: x=1"],
   ])("%s is dropped, and the visitor lands on the default page", async (_, next) => {
-    const response = await setUp().tryDemo(`?next=${encodeURIComponent(next)}`);
+    const response = await (await returning()).signIn(`?next=${encodeURIComponent(next)}`);
 
     expect(response.headers.get("location")).toBe(`${APP}/deals`);
-  });
-});
-
-describe("DS-FR-07 demo limits", () => {
-  test("the eleventh demo account in an hour from one address is refused, and the visitor is told in the app", async () => {
-    const browser = setUp("2026-10-09T09:00:00Z");
-    for (let made = 0; made < 10; made++) await browser.tryDemo();
-
-    const response = await browser.tryDemo();
-
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe(`${APP}/sign-in?problem=demo_limit`);
-    expect(await prisma.creator.count()).toBe(10);
-  });
-
-  test("another address is not affected, and the limit lifts after an hour", async () => {
-    const browser = setUp("2026-10-09T09:00:00Z");
-    for (let made = 0; made < 10; made++) await browser.tryDemo();
-
-    browser.from("198.51.100.4");
-    expect((await browser.tryDemo()).headers.get("location")).toBe(`${APP}/deals`);
-
-    browser.from("203.0.113.7");
-    browser.timeIs("2026-10-09T10:00:01Z");
-    expect((await browser.tryDemo()).headers.get("location")).toBe(`${APP}/deals`);
-  });
-
-  test("the visitor's address itself is not kept", async () => {
-    const browser = setUp();
-    await browser.tryDemo();
-
-    expect(JSON.stringify(await prisma.creator.findMany())).not.toContain("203.0.113.7");
-  });
-});
-
-describe("DS-FR-07 a demo account is deleted after 7 days", () => {
-  test("the creator, their session and their connected account all go", async () => {
-    const browser = setUp("2026-10-09T09:00:00Z");
-    await browser.tryDemo();
-
-    browser.timeIs("2026-10-16T09:00:00Z");
-    await browser.runJobs();
-
-    expect(await prisma.creator.count()).toBe(0);
-    expect(await prisma.session.count()).toBe(0);
-    expect(await prisma.connectedAccount.count()).toBe(0);
-    expect((await browser.send("GET", "/me")).status).toBe(401);
-  });
-
-  test("not before, and a creator who signed in with Google is never deleted", async () => {
-    const demo = setUp("2026-10-09T09:00:00Z");
-    await demo.tryDemo();
-    const real = setUp("2026-10-09T09:00:00Z");
-    await real.signInWithGoogle();
-
-    demo.timeIs("2026-10-16T08:59:00Z");
-    await demo.runJobs();
-    expect(await prisma.creator.count()).toBe(2);
-
-    demo.timeIs("2026-11-30T09:00:00Z");
-    await demo.runJobs();
-    expect(await prisma.creator.findMany()).toMatchObject([{ demo: false, name: "Sam Rivera" }]);
   });
 });

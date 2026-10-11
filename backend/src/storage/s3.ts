@@ -5,7 +5,7 @@
  *
  * Not yet proven against a real bucket: none exists for this account.
  */
-import { CopyObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { Storage } from "./port";
@@ -64,12 +64,6 @@ export function createS3Storage(config: { bucket: string; region: string; client
         if (error instanceof TooLarge || bytes >= maxBytes) return "too_large";
         throw error;
       }
-    },
-
-    async copy(fromKey, toKey) {
-      await client.send(new CopyObjectCommand({ Bucket, Key: toKey, CopySource: `${Bucket}/${encodeURIComponent(fromKey).replace(/%2F/g, "/")}` }));
-      const copied = await client.send(new HeadObjectCommand({ Bucket, Key: toKey }));
-      return { bytes: copied.ContentLength ?? 0 };
     },
 
     address: (key, seconds) => getSignedUrl(client, new GetObjectCommand({ Bucket, Key: key }), { expiresIn: seconds }),

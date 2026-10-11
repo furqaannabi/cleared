@@ -22,7 +22,7 @@ describe("DS-FR-47 the contract", () => {
 
     expect(paths).toEqual(
       expect.arrayContaining([
-        "/auth/demo",
+        "/auth/google",
         "/me",
         "/deals",
         "/deals/{dealId}/brief",
@@ -33,6 +33,9 @@ describe("DS-FR-47 the contract", () => {
       ]),
     );
     expect(paths).not.toContain("/webhooks/paypal");
+    // There are no demo accounts, so nothing made for them is offered (DS 1.2, DR 1.2).
+    expect(paths).not.toContain("/auth/demo");
+    expect(paths).not.toContain("/deliverables/{deliverableId}/draft/sample");
   });
 
   test("every error a route can answer with has the one error shape", () => {

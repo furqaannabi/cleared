@@ -90,8 +90,6 @@ export function heldWorld(
     ownItemKind?: "shown" | "written" | "disclosure" | "publication";
     /** Makes telling the money path that a draft is cleared fail, as a database error would. */
     clearingFails?: boolean;
-    /** The channel demo accounts read YouTube through, once the team has connected it (PT-FR-36). */
-    demoChannel?: string;
   } = {},
 ) {
   let now = at("2026-10-09T09:00:00Z");
@@ -108,7 +106,7 @@ export function heldWorld(
   const secrets = localSecrets(Buffer.alloc(32, 2).toString("base64"));
   /** What the service logged, to check nothing from a video is ever in it. */
   const logged: unknown[] = [];
-  const money = createMoney({ prisma, paypal, posts: createPublishedPosts({ prisma, now: clock, youtube, secrets, demoChannelId: options.demoChannel }), now: clock });
+  const money = createMoney({ prisma, paypal, posts: createPublishedPosts({ prisma, now: clock, youtube, secrets }), now: clock });
   const deals = createDeals({ prisma, now: clock, model: { read: async () => checklist } });
   const linkKeys = localLinkKeys(Buffer.alloc(32, 1).toString("base64"));
   const reviewLinks = createReviewLinks({ prisma, now: clock, appOrigin: APP, linkKeys, money });
@@ -138,7 +136,7 @@ export function heldWorld(
   });
   const notices = createNotices({ prisma, now: clock, links: reviewLinks, email, log: (...parts) => void logged.push(parts) });
   const reels = createReelPublishing({ prisma, instagram, secrets, money });
-  const publishing = createPublishing({ prisma, now: clock, youtube, secrets, demoChannelId: options.demoChannel, money, judge, notices, reels, log: (...parts) => void logged.push(parts) });
+  const publishing = createPublishing({ prisma, now: clock, youtube, secrets, money, judge, notices, reels, log: (...parts) => void logged.push(parts) });
   const accounts = createAccounts({ prisma, now: clock, onYouTubeConnected: publishing.youtubeConnected });
   const app = createApp({
     prisma,
@@ -181,13 +179,6 @@ export function heldWorld(
     const first = name.split(" ")[0]!.toLowerCase();
     const { creatorId } = await accounts.signInWithGoogle({ googleId: `google-${name}`, name, email: `${first}@example.com` });
     await accounts.connectYouTube(creatorId, { externalId: `channel-${first}`, name, refreshTokenEncrypted: await secrets.encrypt(`refresh-${first}`) });
-  }
-
-  /** A browser signed in to a fresh demo account, as "Try the demo account" does. */
-  async function demo() {
-    const browser = browserFor(app, APP);
-    await browser.send("POST", "/auth/demo", { form: true });
-    return browser;
   }
 
   /**
@@ -258,7 +249,6 @@ export function heldWorld(
     money,
     creator,
     reconnectYouTube,
-    demo,
     agreedDeal,
     /** A browser nobody has signed in to. */
     visitor: () => browserFor(app, APP),

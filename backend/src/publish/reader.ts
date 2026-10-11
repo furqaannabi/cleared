@@ -13,29 +13,15 @@ export interface ReaderDeps {
   youtube: YouTube;
   /** Decrypts a creator's stored access to YouTube. It is never logged or returned (DS-BR-14). */
   secrets: Secrets;
-  /**
-   * YouTube's id of the one real channel the team owns, which demo accounts read through (PT-FR-36;
-   * docs/decisions/2026-10-10-demo-accounts-read-a-shared-channel.md). The team connects it once, as
-   * any creator connects theirs. Without it a demo account's made-up channel cannot be read.
-   */
-  demoChannelId?: string;
 }
 
 export type Reader = ReturnType<typeof createReader>;
 
-export function createReader({ prisma, youtube, secrets, demoChannelId }: ReaderDeps) {
+export function createReader({ prisma, youtube, secrets }: ReaderDeps) {
   return {
-    /**
-     * The creator's connected channel and their stored access to it, if there is any that could work.
-     * A demo account's is the team's channel, read with the access the team gave when it connected it.
-     * Nothing else about a demo account differs: the same reads, the same rules.
-     */
+    /** The creator's own connected channel and their stored access to it, if there is any that could work. */
     async channelOf(creatorId: string): Promise<{ channelId: string; refreshToken: string } | undefined> {
-      const creator = await prisma.creator.findUnique({ where: { id: creatorId }, select: { demo: true } });
-      const account =
-        creator?.demo && demoChannelId
-          ? await prisma.connectedAccount.findFirst({ where: { platform: "youtube", externalId: demoChannelId, synthetic: false, creator: { demo: false } }, orderBy: { connectedAt: "desc" } })
-          : await prisma.connectedAccount.findUnique({ where: { creatorId_platform: { creatorId, platform: "youtube" } } });
+      const account = await prisma.connectedAccount.findUnique({ where: { creatorId_platform: { creatorId, platform: "youtube" } } });
       if (!account?.refreshTokenEncrypted) return undefined;
       try {
         return { channelId: account.externalId, refreshToken: await secrets.decrypt(account.refreshTokenEncrypted) };

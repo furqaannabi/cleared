@@ -3,15 +3,13 @@ import type { Payouts } from "../payouts/payouts";
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import type { Accounts } from "../accounts/accounts";
-import { ErrorSchema, fail, ownPath, requireCreator, sessionToken, signIn, signOut, type AppEnv } from "../http/http";
+import { ErrorSchema, fail, requireCreator, sessionToken, signOut, type AppEnv } from "../http/http";
 import type { Sessions } from "../sessions/sessions";
-import { NextSchema } from "./shared";
 
 const ProfileSchema = z
   .object({
     name: z.string(),
     email: z.string().optional(),
-    demo: z.boolean(),
     welcomed: z.boolean(),
     paypalEmail: z.string().optional(),
     accounts: z.array(z.object({ platform: z.enum(["youtube", "instagram"]), name: z.string() })),
@@ -31,34 +29,12 @@ export function registerAccountRoutes(
     sessions: Sessions;
     accounts: Accounts;
     appOrigin: string;
-    sessionDays: number;
-    /** The visitor's address, hashed, so demo accounts can be limited without keeping the address (DS-FR-07). */
-    madeFrom: (c: Context) => string;
     /** Carries a new PayPal email to the creator's posts that are not yet paid out (PT-FR-27). */
     payouts?: Pick<Payouts, "emailChanged">;
   },
 ) {
   const { sessions, accounts, appOrigin, payouts } = deps;
   const creator = requireCreator(sessions);
-
-  // A page the browser is sent to has no JSON answer to check, so it is described for the contract and
-  // handled as a plain route (DS-FR-47).
-  app.openAPIRegistry.registerPath({
-    method: "post",
-    path: "/auth/demo",
-    summary: "Try the demo account: a form the page posts, answered with a redirect into the app (DS-FR-06)",
-    request: { query: NextSchema },
-    responses: { 303: { description: "Signed in to a new demo account and sent to `next` or /deals; or to /sign-in?problem=demo_limit" } },
-  });
-
-  // "Try the demo account" is a form posted by the page, so the answer is a redirect into the app (DS-FR-06).
-  app.post("/auth/demo", async (c) => {
-    const demo = await accounts.startDemo(deps.madeFrom(c));
-    // The page was navigated here, so a refusal is shown by the app, not as an error body (DS-FR-07).
-    if (demo === "too_many") return c.redirect(`${appOrigin}/sign-in?problem=demo_limit`, 303);
-    signIn(c, await sessions.start(demo.creatorId), appOrigin, deps.sessionDays);
-    return c.redirect(`${appOrigin}${ownPath(c.req.query("next"), appOrigin) ?? "/deals"}`, 303);
-  });
 
   app.openapi(
     createRoute({

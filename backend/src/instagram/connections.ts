@@ -39,7 +39,7 @@ export function createInstagramConnections(deps: {
     async [RENEW_JOB]() {
       const at = now();
       const due = await prisma.connectedAccount.findMany({
-        where: { platform: "instagram", synthetic: false, refreshTokenEncrypted: { not: null }, tokenExpiresAt: { lt: new Date(at.getTime() + (TOKEN_DAYS - renewAfterDays) * DAY_MS) } },
+        where: { platform: "instagram", refreshTokenEncrypted: { not: null }, tokenExpiresAt: { lt: new Date(at.getTime() + (TOKEN_DAYS - renewAfterDays) * DAY_MS) } },
       });
       let renewed = 0;
       let lost = 0;
@@ -70,7 +70,7 @@ export function createInstagramConnections(deps: {
 
     /** Stores the account a creator connected, replacing any Instagram account they had (IG-FR-04). The token is encrypted here. */
     async store(creatorId: string, account: InstagramAccount, token: InstagramToken): Promise<void> {
-      const stored = { externalId: account.id, name: account.username, synthetic: false, refreshTokenEncrypted: await secrets.encrypt(token.token), tokenExpiresAt: token.expiresAt, connectedAt: now() };
+      const stored = { externalId: account.id, name: account.username, refreshTokenEncrypted: await secrets.encrypt(token.token), tokenExpiresAt: token.expiresAt, connectedAt: now() };
       await prisma.connectedAccount.upsert({
         where: { creatorId_platform: { creatorId, platform: "instagram" } },
         create: { creatorId, platform: "instagram", ...stored },

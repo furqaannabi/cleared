@@ -68,12 +68,6 @@ function setUp(settings: Partial<DealSettings> = {}) {
   return {
     creator,
     model,
-    /** A browser signed in to a fresh demo account. */
-    async demo() {
-      const browser = browserFor(app, APP);
-      await browser.send("POST", "/auth/demo", { form: true });
-      return browser;
-    },
     /** Runs every job that is due, as the service's worker would. */
     runJobs: () => runDueJobs(prisma, deals.handlers, { now, log: () => {} }),
     stranger: () => browserFor(app, APP),
@@ -500,16 +494,13 @@ describe("DS-FR-26 to DS-FR-28 limits on reading", () => {
     return response;
   }
 
-  test("a demo account can have 5 briefs read in total; the sixth is refused and reads nothing", async () => {
+  test("DS-FR-26 every creator has one limit: nobody is cut off after 5 briefs", async () => {
     const world = setUp();
-    const demo = await world.demo();
-    for (let read = 0; read < 5; read++) expect((await oneMoreRead(world, demo)).status).toBe(200);
+    const sam = await world.creator();
 
-    const sixth = await oneMoreRead(world, demo);
+    for (let read = 0; read < 6; read++) expect((await oneMoreRead(world, sam)).status).toBe(200);
 
-    expect(sixth.status).toBe(429);
-    expect(await sixth.json()).toEqual({ error: { code: "read_limit", field: "demo" } });
-    expect(world.model.asked).toHaveLength(5);
+    expect(world.model.asked).toHaveLength(6);
   });
 
   test("a creator can have 20 read in a day; the next is refused, saying when the limit lifts", async () => {

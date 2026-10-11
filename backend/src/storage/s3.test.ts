@@ -70,15 +70,6 @@ describe("what S3 is asked", () => {
     expect(sent.map((each) => each.name)).toEqual(["ListObjectsV2Command"]);
   });
 
-  test("a copy leaves the first file where it is, and reports the size of the new one", async () => {
-    const { sent, storage } = standIn({ HeadObjectCommand: () => ({ ContentLength: 900 }) });
-
-    expect(await storage.copy("samples/demo clip.mp4", "drafts/p/d")).toEqual({ bytes: 900 });
-
-    expect(sent[0]).toEqual({ name: "CopyObjectCommand", input: { Bucket: "cleared-drafts", Key: "drafts/p/d", CopySource: "cleared-drafts/samples/demo%20clip.mp4" } });
-    expect(sent.map((each) => each.name)).not.toContain("DeleteObjectCommand");
-  });
-
   test("an object is named for AWS's own services by bucket and key", () => {
     expect(standIn().storage.uri("drafts/p/d")).toBe("s3://cleared-drafts/drafts/p/d");
   });

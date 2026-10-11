@@ -73,7 +73,7 @@ describe("DS-FR-01 sign in with Google", () => {
     const response = await signIn(world);
 
     expect(response.status).toBe(303);
-    expect(await me(world)).toEqual({ name: "Sam Rivera", email: "sam@example.com", demo: false, welcomed: false, accounts: [] });
+    expect(await me(world)).toEqual({ name: "Sam Rivera", email: "sam@example.com", welcomed: false, accounts: [] });
   });
 
   test("what is kept in the browser while it is at Google cannot be read by the page, and goes when it is back", async () => {
@@ -227,7 +227,7 @@ describe("DS-FR-11 connect YouTube", () => {
     expect(response.headers.get("location")).toBe(`${APP}/deals/abc/invite?connected=youtube`);
     expect(await me(world)).toMatchObject({ accounts: [{ platform: "youtube", name: "Sam Makes" }] });
     expect(await prisma.connectedAccount.findMany()).toMatchObject([
-      { platform: "youtube", externalId: "UC-sam", name: "Sam Makes", synthetic: false },
+      { platform: "youtube", externalId: "UC-sam", name: "Sam Makes" },
     ]);
   });
 
@@ -254,13 +254,16 @@ describe("DS-FR-11 connect YouTube", () => {
     expect(await prisma.creator.count()).toBe(1);
   });
 
-  test("connecting again replaces the channel, including a demo account's made-up one", async () => {
+  test("connecting again replaces the channel", async () => {
     const world = setUp();
-    await world.browser.send("POST", "/auth/demo", { form: true });
-
+    await signIn(world);
     await connectYouTube(world);
 
-    expect(await prisma.connectedAccount.findMany()).toMatchObject([{ externalId: "UC-sam", synthetic: false }]);
+    await connectYouTube(world, { ...sam, channel: { id: "UC-second", name: "Sam's Second" } });
+
+    const connected = await prisma.connectedAccount.findMany();
+    expect(connected).toHaveLength(1);
+    expect(connected).toMatchObject([{ externalId: "UC-second", name: "Sam's Second" }]);
   });
 
   test("nobody signed in is sent to sign in, and nothing is asked of Google", async () => {

@@ -42,7 +42,7 @@ if (!env.tokenKey) {
 // the same Google client as sign-in, with each creator's own read-only access. Without Google set up,
 // nothing after approval can run.
 const secrets = localSecrets(env.tokenKey);
-const reader = env.google && { prisma, youtube: createYouTubeApi({ ...env.google, log }), secrets, demoChannelId: env.demoChannelId };
+const reader = env.google && { prisma, youtube: createYouTubeApi({ ...env.google, log }), secrets };
 // Made further down, once the money path exists. A creator who reconnects YouTube restarts what was waiting on it.
 let publishing: Publishing | undefined;
 
@@ -54,7 +54,7 @@ const deals = createDeals({
   model: createClaudeBriefModel({ model: env.briefModel, region: env.awsRegion, log }),
 });
 if (!env.google) {
-  console.warn("Google is not configured, so only the demo account can sign in. See backend/.env.example.");
+  console.warn("Google is not configured, so nobody can sign in. See backend/.env.example.");
 }
 
 // PayPal's sandbox, and the money path on top of it. Without credentials the API still starts in development.
@@ -97,7 +97,6 @@ const drafts =
       judge,
       videoModel: createNovaVideoModel({ model: env.drafts.videoModel, region: env.awsRegion, bucket: env.drafts.bucket, log }),
     },
-    settings: { ...defaultDraftSettings, sampleKey: env.drafts.sampleKey },
     log,
   });
 if (!drafts) {
@@ -123,8 +122,6 @@ const reels = instagram && createReelPublishing({ prisma, instagram, secrets, mo
 publishing = reader && money ? createPublishing({ ...reader, now, money, judge, notices, reels, log }) : undefined;
 if (!publishing) {
   console.warn("Google or PayPal is not configured, so no go-ahead can be given and no live check runs. See backend/.env.example.");
-} else if (!env.demoChannelId) {
-  console.warn("No demo YouTube channel is set, so a demo account's deal stops once its draft is approved. See backend/.env.example.");
 }
 
 const app = createApp({
@@ -148,9 +145,9 @@ const app = createApp({
   paypalClientId: env.paypal?.clientId,
 });
 
-// Timers and follow-ups: reading briefs, deleting demo accounts, and the money path's deadlines and
+// Timers and follow-ups: reading briefs, checking drafts and live posts, and the money path's deadlines and
 // unanswered PayPal calls.
-const handlers: JobHandlers = { ...accounts.handlers, ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers, ...instagramConnections?.handlers };
+const handlers: JobHandlers = { ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers, ...instagramConnections?.handlers };
 const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now() }) });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.once(signal, async () => {

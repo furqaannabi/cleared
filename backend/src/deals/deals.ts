@@ -135,9 +135,7 @@ export interface DealSettings {
   /** The shortest and longest brief that is read, in characters (DS-FR-17). */
   briefMin: number;
   briefMax: number;
-  /** How many briefs a demo account can have read in total (DS-FR-26). */
-  demoReads: number;
-  /** How many any other creator can have read in a day (DS-FR-26). */
+  /** How many a creator can have read in a day (DS-FR-26). */
   creatorReadsPerDay: number;
   /** How many are read in a day across everyone (DS-FR-27). */
   overallReadsPerDay: number;
@@ -146,7 +144,6 @@ export interface DealSettings {
 export const defaultDealSettings: DealSettings = {
   briefMin: 40,
   briefMax: 20_000,
-  demoReads: 5,
   creatorReadsPerDay: 20,
   overallReadsPerDay: 300,
 };
@@ -181,7 +178,7 @@ export type BriefRefused =
   | { refused: "reading_started" }
   | { refused: "too_short" | "too_long" }
   /** A limit on reading was reached (DS-FR-28). `resetsAt` is when a daily one lifts. */
-  | { refused: "read_limit"; limit: "demo" | "creator" | "overall"; resetsAt?: Date };
+  | { refused: "read_limit"; limit: "creator" | "overall"; resetsAt?: Date };
 
 /** Why a change to a deal's checklist was refused. */
 export type EditRefused =
@@ -259,7 +256,7 @@ export function createDeals(deps: {
    */
   async function limitReached(
     tx: Prisma.TransactionClient,
-    creator: { id: string; demo: boolean },
+    creator: { id: string },
     at: Date,
   ): Promise<Extract<BriefRefused, { refused: "read_limit" }> | undefined> {
     const dayAgo = new Date(at.getTime() - DAY_MS);
@@ -269,15 +266,9 @@ export function createDeals(deps: {
       return oldest ? new Date(oldest.at.getTime() + DAY_MS) : undefined;
     };
 
-    if (creator.demo) {
-      if ((await tx.briefRead.count({ where: { creatorId: creator.id } })) >= settings.demoReads) {
-        return { refused: "read_limit", limit: "demo" };
-      }
-    } else {
-      const mine = { creatorId: creator.id, at: { gt: dayAgo } };
-      if ((await tx.briefRead.count({ where: mine })) >= settings.creatorReadsPerDay) {
-        return { refused: "read_limit", limit: "creator", resetsAt: await resets(mine) };
-      }
+    const mine = { creatorId: creator.id, at: { gt: dayAgo } };
+    if ((await tx.briefRead.count({ where: mine })) >= settings.creatorReadsPerDay) {
+      return { refused: "read_limit", limit: "creator", resetsAt: await resets(mine) };
     }
     const everyones = { at: { gt: dayAgo } };
     if ((await tx.briefRead.count({ where: everyones })) >= settings.overallReadsPerDay) {

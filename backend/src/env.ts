@@ -26,7 +26,7 @@ function paypal(): { clientId: string; clientSecret: string; webhookId?: string 
 
 /**
  * Google's OAuth client, for signing in and connecting YouTube. In development the API starts without
- * it and only the demo account can sign in. In production it is required.
+ * it and nobody can sign in. In production it is required.
  */
 function google(): { clientId: string; clientSecret: string } | undefined {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -43,7 +43,7 @@ function google(): { clientId: string; clientSecret: string } | undefined {
  * starts without them and takes no draft. If the bucket is set, the Data Automation project and
  * profile must be too: a draft that is stored but can never be checked helps nobody.
  */
-function drafts(): { bucket: string; projectArn: string; profileArn: string; videoModel: string; sampleKey?: string } | undefined {
+function drafts(): { bucket: string; projectArn: string; profileArn: string; videoModel: string } | undefined {
   const bucket = process.env.DRAFTS_BUCKET;
   if (!bucket) return undefined;
   const projectArn = process.env.DATA_AUTOMATION_PROJECT_ARN;
@@ -51,7 +51,7 @@ function drafts(): { bucket: string; projectArn: string; profileArn: string; vid
   if (!projectArn || !profileArn) {
     throw new Error("DRAFTS_BUCKET is set, so DATA_AUTOMATION_PROJECT_ARN and DATA_AUTOMATION_PROFILE_ARN are needed too. See backend/.env.example.");
   }
-  return { bucket, projectArn, profileArn, videoModel: process.env.VIDEO_MODEL ?? "us.amazon.nova-pro-v1:0", sampleKey: process.env.SAMPLE_VIDEO_KEY || undefined };
+  return { bucket, projectArn, profileArn, videoModel: process.env.VIDEO_MODEL ?? "us.amazon.nova-pro-v1:0" };
 }
 
 /**
@@ -100,11 +100,6 @@ export const env = {
   drafts: drafts(),
   email: email(),
   instagram: instagram(),
-  /**
-   * YouTube's id of the one real channel the team owns, which demo accounts read through (PT-FR-36).
-   * The team connects it once, signed in as an ordinary creator. Without it a demo deal stops at approved.
-   */
-  demoChannelId: process.env.DEMO_YOUTUBE_CHANNEL_ID || undefined,
   /** The address of Cleared's own app: the only origin that may make changing requests (DS-BR-03). */
   appOrigin: process.env.APP_ORIGIN ?? "http://localhost:3000",
   paypal: paypal(),

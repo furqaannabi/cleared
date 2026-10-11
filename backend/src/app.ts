@@ -1,7 +1,5 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { getConnInfo } from "hono/bun";
 import { cors } from "hono/cors";
 import { createAccounts, type Accounts } from "./accounts/accounts";
 import { createBrand } from "./brand/brand";
@@ -47,8 +45,6 @@ export interface AppDeps {
   appOrigin?: string;
   /** The clock. Passed in so the app has none of its own. */
   now?: () => Date;
-  /** The address a request came from. Tests set it; the service reads the connection. */
-  clientAddress?: (c: Context) => string;
   /** The creators module. The service passes its own, so its jobs and its routes share one. */
   accounts?: Accounts;
   /** The deals module. The service passes its own, so its jobs and its routes share one. */
@@ -81,15 +77,6 @@ export interface AppDeps {
   maxDraftBytes?: number;
 }
 
-/** The address a request came from, as the connection reports it. */
-function connectionAddress(c: Context): string {
-  try {
-    return getConnInfo(c).remote.address ?? "unknown";
-  } catch {
-    return "unknown";
-  }
-}
-
 /**
  * The Hono app: the health check, PayPal's webhook, and the creator's and the brand's routes as the
  * deal set-up spec adds them.
@@ -99,7 +86,6 @@ export function createApp(deps: AppDeps) {
   const log = deps.log ?? console.error;
   const now = deps.now ?? (() => new Date());
   const appOrigin = deps.appOrigin ?? "http://localhost:3000";
-  const clientAddress = deps.clientAddress ?? connectionAddress;
   const app = new OpenAPIHono<AppEnv>({
     // A request that fails its schema gets the one error shape, naming the first field at fault (DS-FR-48).
     defaultHook: (result, c) => {
@@ -121,8 +107,8 @@ export function createApp(deps: AppDeps) {
     }),
   );
   // And the API itself refuses a changing request from anywhere else (DS-BR-03). PayPal's webhook has no
-  // origin and proves itself another way; the demo button is a form the page posts.
-  app.use("*", ownAppOnly(appOrigin, { noOrigin: ["/webhooks/paypal"], forms: ["/auth/demo"], files: [DRAFT_UPLOAD] }));
+  // origin and proves itself another way. No route takes a form.
+  app.use("*", ownAppOnly(appOrigin, { noOrigin: ["/webhooks/paypal"], files: [DRAFT_UPLOAD] }));
   // Every body but a draft's file is small. The file is cut off at its own limit as it is stored (DR-BR-17).
   const smallBody = bodyLimit({ maxSize: JSON_BODY_LIMIT, onError: (c) => fail(c, 413, "too_large") });
   app.use("*", (c, next) => (DRAFT_UPLOAD.test(c.req.path) ? next() : smallBody(c, next)));
@@ -135,9 +121,6 @@ export function createApp(deps: AppDeps) {
     accounts,
     payouts,
     appOrigin,
-    sessionDays: defaultSessionSettings.creatorDays,
-    // Only a hash of the address is kept.
-    madeFrom: (c) => new Bun.CryptoHasher("sha256").update(clientAddress(c)).digest("hex"),
   });
   const reviewLinks = deps.reviewLinks ?? createReviewLinks({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
   const cancelling = createCancelling({ prisma, now, money });

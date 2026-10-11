@@ -23,7 +23,7 @@ test("one real video is read with its owner's read-only access", async () => {
   if (!env.google || !env.tokenKey || !channelId || !videoId) {
     throw new Error("Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, TOKEN_KEY, YOUTUBE_TEST_CHANNEL_ID and YOUTUBE_TEST_VIDEO_ID to run this. See backend/.env.example.");
   }
-  const account = await prisma.connectedAccount.findFirst({ where: { platform: "youtube", externalId: channelId, synthetic: false }, orderBy: { connectedAt: "desc" } });
+  const account = await prisma.connectedAccount.findFirst({ where: { platform: "youtube", externalId: channelId }, orderBy: { connectedAt: "desc" } });
   if (!account?.refreshTokenEncrypted) throw new Error("That channel is not connected. Sign in to the app and connect YouTube first.");
   const used: Record<string, unknown>[] = [];
   const youtube = createYouTubeApi({ ...env.google, log: (message, details) => used.push({ message, ...details }) });
