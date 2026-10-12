@@ -174,7 +174,7 @@ describe("DS-FR-14 the deals list", () => {
         brandName: "Pine & Co",
         status: "Checklist",
         step: "checklist",
-        deliverables: [{ id: expect.any(String), platform: "youtube_short", state: "no_draft" }],
+        deliverables: [{ id: expect.any(String), platform: "youtube_short", state: "no_draft", needsCreator: false }],
       },
       {
         id: expect.any(String),
@@ -182,8 +182,8 @@ describe("DS-FR-14 the deals list", () => {
         status: "Checklist",
         step: "checklist",
         deliverables: [
-          { id: expect.any(String), platform: "youtube_video", state: "no_draft" },
-          { id: expect.any(String), platform: "youtube_short", state: "no_draft" },
+          { id: expect.any(String), platform: "youtube_video", state: "no_draft", needsCreator: false },
+          { id: expect.any(String), platform: "youtube_short", state: "no_draft", needsCreator: false },
         ],
       },
     ]);

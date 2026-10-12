@@ -71,7 +71,15 @@ export interface DealSummary {
   step?: Step;
   /** The post to open for a deal that has left set-up: the one whose next step is the creator's. */
   openDeliverableId?: string;
-  deliverables: { id: string; platform: Platform; state: PostState }[];
+  deliverables: {
+    id: string;
+    platform: Platform;
+    state: PostState;
+    /** Whether the post's next step is the creator's (AH-FR-04). Never so for a post that is not held, or closed. */
+    needsCreator: boolean;
+    /** Why a closed post is closed (AH-FR-03). */
+    closedBecause?: "never_held" | "cancelled";
+  }[];
 }
 
 /** A post's state from the draft check to paid, and whether its next step is the creator's. Read from the posts module. */
@@ -415,11 +423,18 @@ export function createDeals(deps: {
       const isClosed = (id: string) => closedByMoney.has(id) || (cancelled.has(id) && !held.has(id));
 
       const listed = deals.map((deal): DealSummary => {
-        const posts = deal.deliverables.map((post) => ({
-          id: post.id,
-          platform: post.platform as Platform,
-          state: (isClosed(post.id) ? "closed" : (described.get(post.id)?.state ?? "no_draft")) as PostState,
-        }));
+        const posts = deal.deliverables.map((post) => {
+          const closed = isClosed(post.id);
+          return {
+            id: post.id,
+            platform: post.platform as Platform,
+            state: (closed ? "closed" : (described.get(post.id)?.state ?? "no_draft")) as PostState,
+            // A held post's next step is the creator's unless the posts module says otherwise. Before the hold, a post waits on nobody: the step is the deal's.
+            needsCreator: !closed && held.has(post.id) && (described.get(post.id)?.needsCreator ?? true),
+            // A cancel is recorded with the post. A post closed with none recorded was never held (MP-FR-08).
+            ...(closed ? { closedBecause: cancelled.has(post.id) ? ("cancelled" as const) : ("never_held" as const) } : {}),
+          };
+        });
         const summary = { id: deal.id, brandName: deal.brandName };
         // Every post is closed, or was cancelled after it was held: the deal is cancelled, whatever step it reached.
         if (posts.length > 0 && posts.some((post) => cancelled.has(post.id)) && posts.every((post) => post.state === "closed" || (cancelled.has(post.id) && post.state === "released"))) {
@@ -437,7 +452,7 @@ export function createDeals(deps: {
           return { ...summary, status: `${STATUS.agreed} · ${heldCount} of ${open.length} held`, step: "agreed", deliverables: posts };
         }
         // Every post is held: set-up is over, and the status follows the draft check (DR-FR-28).
-        const next = afterSetUp(deal.brandName, open.map((post) => ({ ...post, needsCreator: described.get(post.id)?.needsCreator ?? true })));
+        const next = afterSetUp(deal.brandName, open);
         return { ...summary, ...next, deliverables: posts };
       });
       // A cancelled deal sits below the ones still running, each group newest first.

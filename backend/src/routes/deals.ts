@@ -60,6 +60,10 @@ const DealSummarySchema = z
         id: z.string(),
         platform: PlatformSchema,
         state: z.enum(["no_draft", "checking", "check_failed", "results", "fully_passing", "objected", "approved", "posting", "published", "captured", "paid", "approved_not_paid", "released", "closed"]),
+        // Whether the post's next step is the creator's (AH-FR-04).
+        needsCreator: z.boolean(),
+        // Why a closed post is closed: never held, or cancelled before it was (AH-FR-03).
+        closedBecause: z.enum(["never_held", "cancelled"]).optional(),
       }),
     ),
   })

@@ -213,7 +213,7 @@ describe("MP-FR-03 and MP-FR-04 approved and held", () => {
     const orderId = await approvedInPayPal(world, deliverableId);
     world.paypal.next("authorizeOrder", "declined");
 
-    expect(await world.money.holdApproved(deliverableId, orderId)).toEqual({ ok: true, hold: { state: "declined" } });
+    expect(await world.money.holdApproved(deliverableId, orderId)).toEqual({ ok: true, hold: { state: "declined", reason: "paypal_declined" } });
     expect(world.paypal.holds()).toHaveLength(0);
 
     expect(await world.money.startHold(deliverableId)).toMatchObject({ ok: true });

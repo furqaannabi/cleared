@@ -4209,6 +4209,9 @@ export interface components {
                 platform: "youtube_video" | "youtube_short" | "instagram_reel";
                 /** @enum {string} */
                 state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "published" | "captured" | "paid" | "approved_not_paid" | "released" | "closed";
+                needsCreator: boolean;
+                /** @enum {string} */
+                closedBecause?: "never_held" | "cancelled";
             }[];
         };
         Invite: {
@@ -4239,7 +4242,11 @@ export interface components {
         };
         Hold: {
             /** @enum {string} */
-            state: "not_started" | "closed" | "declined" | "pending" | "unknown" | "held";
+            state: "not_started" | "closed" | "declined" | "pending" | "unknown" | "held" | "not_held";
+            /** @enum {string} */
+            reason?: "paypal_declined" | "timed_out";
+            /** @enum {string} */
+            because?: "never_held" | "cancelled";
             reference?: string;
             deadline?: string;
         };

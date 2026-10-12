@@ -8,9 +8,14 @@ import type { MoneyState } from "./types";
 /**
  * One post's hold, in the states the confirm and hold spec shows (CH-FR-18).
  * pending covers both PayPal reviewing the hold and PayPal not having answered yet.
+ * A hold that is not there says why (account and history spec AH-FR-01, AH-FR-02).
  */
 export type HoldView =
-  | { state: "not_started" | "closed" | "declined" | "pending" | "unknown" }
+  | { state: "not_started" | "closed" | "pending" | "unknown" }
+  /** Nothing was taken and the brand can try again. timed_out: PayPal gave no answer in 24 hours (MP-FR-07). */
+  | { state: "declined"; reason: "paypal_declined" | "timed_out" }
+  /** The post was closed without a hold: none 7 days after the brand agreed (MP-FR-08), or cancelled first (MP-FR-34). */
+  | { state: "not_held"; because: "never_held" | "cancelled" }
   | {
       state: "held";
       reference: string;
@@ -146,9 +151,12 @@ export function holdView(state: MoneyState): HoldView {
     const { reference, heldAt, deadlineAt, guaranteeEndsAt, day28At } = state.hold;
     return { state: "held", reference, heldAt, deadlineAt, guaranteeEndsAt, day28At };
   }
+  // Closed for good, whatever its last attempt came to.
+  if (state.stage === "closed_not_held") return { state: "not_held", because: state.closed?.because ?? "never_held" };
   switch (state.attempt?.status) {
-    case "closed":
     case "declined":
+      return { state: "declined", reason: state.attempt.declinedBecause === "timed_out" ? "timed_out" : "paypal_declined" };
+    case "closed":
     case "unknown":
       return { state: state.attempt.status };
     case "authorizing":

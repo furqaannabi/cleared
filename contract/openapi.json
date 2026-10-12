@@ -490,12 +490,23 @@
                     "released",
                     "closed"
                   ]
+                },
+                "needsCreator": {
+                  "type": "boolean"
+                },
+                "closedBecause": {
+                  "type": "string",
+                  "enum": [
+                    "never_held",
+                    "cancelled"
+                  ]
                 }
               },
               "required": [
                 "id",
                 "platform",
-                "state"
+                "state",
+                "needsCreator"
               ]
             }
           }
@@ -621,7 +632,22 @@
               "declined",
               "pending",
               "unknown",
-              "held"
+              "held",
+              "not_held"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "paypal_declined",
+              "timed_out"
+            ]
+          },
+          "because": {
+            "type": "string",
+            "enum": [
+              "never_held",
+              "cancelled"
             ]
           },
           "reference": {

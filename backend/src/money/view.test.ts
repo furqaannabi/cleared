@@ -215,3 +215,33 @@ describe("MP-FR-30 when the creator can have a payout sent again", () => {
     expect(canSendAgain(paid)).toBe(false);
   });
 });
+
+describe("AH-FR-01, AH-FR-02 a hold that is not there says why", () => {
+  const hold = (state: MoneyState) => moneyView(state).hold;
+
+  test("a post closed with no hold 7 days after the brand agreed is not held, because it never was", () => {
+    const neverHeld = after(agreed, { type: "never_held_due", at: at("2026-10-17T08:00:00Z") });
+
+    expect(hold(neverHeld)).toEqual({ state: "not_held", because: "never_held" });
+  });
+
+  test("a post cancelled before it was held is not held, because it was cancelled, whatever its last attempt came to", () => {
+    expect(hold(after(agreed, { type: "cancel_requested", by: "creator", at: at("2026-10-11T10:00:00Z") }))).toEqual({ state: "not_held", because: "cancelled" });
+    expect(hold(after(authorizing, { type: "cancel_requested", by: "brand", at: at("2026-10-10T09:06:00Z") }))).toEqual({ state: "not_held", because: "cancelled" });
+  });
+
+  test("a hold PayPal declined says so, and one PayPal never answered says it timed out", () => {
+    const declined = after(authorizing, { type: "authorize_answered", attemptId: "att_1", outcome: "declined", at: at("2026-10-10T09:05:10Z") });
+    const stuck = after(authorizing, { type: "attempt_stuck_due", attemptId: "att_1", at: at("2026-10-11T09:05:00Z") });
+
+    expect(hold(declined)).toEqual({ state: "declined", reason: "paypal_declined" });
+    expect(hold(stuck)).toEqual({ state: "declined", reason: "timed_out" });
+  });
+
+  test("the other states are as they were", () => {
+    expect(hold(agreed)).toEqual({ state: "not_started" });
+    expect(hold(authorizing)).toEqual({ state: "pending" });
+    expect(hold(after(awaitingApproval, { type: "hold_closed", orderId: "ORDER-1", at: at("2026-10-10T09:03:00Z") }))).toEqual({ state: "closed" });
+    expect(hold(held)).toMatchObject({ state: "held" });
+  });
+});
