@@ -35,6 +35,17 @@ describe("SI-FR-11, SI-FR-12 the account menu", () => {
     await waitFor(async () => expect(await api.getProfile()).toEqual({ ok: false, error: "signed_out" }));
   });
 
+  test("1.2: Settings sits between the email and Sign out", async () => {
+    desktop();
+    stubSession(aProfile({ name: "Sam Rivera", email: "sam.rivera@example.com" }));
+    shell();
+    await userEvent.click(await screen.findByRole("button", { name: /Sam Rivera/ }));
+    const settings = screen.getByRole("link", { name: "Settings" });
+    expect(settings).toHaveAttribute("href", "/settings");
+    const order = [screen.getByText("sam.rivera@example.com"), settings, screen.getByRole("button", { name: "Sign out" })];
+    expect(order.every((el, i) => i === 0 || order[i - 1].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+  });
+
   test("1.1: there is no demo account; a profile that still says demo shows the email and Sign out", async () => {
     const user = userEvent.setup();
     desktop();

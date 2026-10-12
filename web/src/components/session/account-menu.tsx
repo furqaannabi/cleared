@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useOptionalSession } from "./use-session";
@@ -47,6 +48,10 @@ export function AccountMenu({ tone }: { tone: "rail" | "sheet" }) {
       {open && (
         <div id={id} className="absolute right-0 bottom-full left-0 mb-2 grid rounded-[14px] bg-surface p-1.5 text-ink shadow-[0_12px_32px_rgb(0_0_0/0.35)]">
           <span className="border-b border-line-soft px-3 pt-2.5 pb-2 text-[13px] text-ink-3">{me.email}</span>
+          {/* SI-FR-11 (1.2): Settings between the email and Sign out. */}
+          <Link href="/settings" className="flex min-h-11 items-center rounded-[10px] px-3 font-bold text-espresso hover:bg-latte-wash">
+            Settings
+          </Link>
           <button type="button" onClick={() => void signOut()} className="flex min-h-11 items-center rounded-[10px] px-3 text-left font-bold text-espresso hover:bg-latte-wash">
             Sign out
           </button>

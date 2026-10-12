@@ -18,6 +18,16 @@ export type { ApiError, ApiLimit, ApiResult } from "./answer";
  * @param options.baseUrl - the API's base URL
  * @see docs/decisions/2026-10-06-schema-validation-zod.md
  */
+// ST-FR-08, ST-FR-11: what stands in the way of disconnecting or deleting (requested shapes, settings FRD).
+const underWaySchema = z.array(
+  z.object({ dealId: z.string().min(1), deliverableId: z.string().min(1), brandName: z.string().min(1).max(120), platform: z.enum(["youtube_video", "youtube_short", "instagram_reel"]) }),
+);
+const openDealSchema = z.array(z.object({ dealId: z.string().min(1), brandName: z.string().min(1).max(120), why: z.enum(["held", "payout", "waiting_for_brand"]) }));
+export type UnderWay = z.infer<typeof underWaySchema>[number];
+export type OpenDeal = z.infer<typeof openDealSchema>[number];
+/** A disconnect or delete's answer: as any other, or refused with what's in the way. */
+export type RemovalResult<T, B> = ApiResult<T> | { ok: false; error: "rejected"; code: string; blocking: B[] };
+
 export function createApiClient({ baseUrl }: { baseUrl: string }) {
   async function request<S extends z.ZodType>(
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
@@ -39,6 +49,26 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     }
     // A body that isn't JSON reads as none; readAnswer decides what that means.
     return readAnswer(res.status, await res.json().catch(() => null), schema);
+  }
+
+  /** A bodiless request, kept as a Response so a refusal's details can be read (settings). */
+  async function send(method: "DELETE", path: string): Promise<Response | null> {
+    try {
+      return await fetch(`${baseUrl}${path}`, { method, credentials: "include", headers: { Accept: "application/json" } });
+    } catch {
+      return null;
+    }
+  }
+
+  /** Reads a removal's answer: a 409 with the expected code carries what's in the way; anything else reads as usual. */
+  async function removal<S extends z.ZodType, B>(res: Response | null, schema: S, code: string, blocking: z.ZodType<B[]>): Promise<RemovalResult<z.infer<S>, B>> {
+    if (!res) return { ok: false, error: "unavailable" };
+    const json = await res.json().catch(() => null);
+    if (res.status === 409) {
+      const refused = z.object({ error: z.object({ code: z.literal(code), blocking }) }).safeParse(json);
+      if (refused.success) return { ok: false, error: "rejected", code, blocking: refused.data.error.blocking };
+    }
+    return readAnswer(res.status, json, schema);
   }
 
   /**
@@ -182,6 +212,23 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     markWelcomeSeen: () => request("POST", "/me/welcomed", creatorProfileSchema),
     /** SI-FR-12: ends the session. */
     signOut: () => request("POST", "/auth/sign-out", z.object({})),
+    /**
+     * ST-FR-07, ST-FR-08: disconnect a YouTube or Instagram account. Requested of
+     * Furqaan (settings FRD); used only behind the account-removal flag. A refusal
+     * names the posts under way on that platform.
+     */
+    disconnectAccount: async (platform: "youtube" | "instagram"): Promise<RemovalResult<z.infer<typeof creatorProfileSchema>, UnderWay>> =>
+      removal(await send("DELETE", `/connect/${platform}`), creatorProfileSchema, "post_under_way", underWaySchema),
+    /**
+     * ST-FR-10, ST-FR-11: delete the creator's account. Requested of Furqaan
+     * (settings FRD); used only behind the account-removal flag. A refusal lists
+     * the open deals in the way; success answers 204.
+     */
+    deleteAccount: async (): Promise<RemovalResult<null, OpenDeal>> => {
+      const res = await send("DELETE", "/me");
+      if (res && res.status === 204) return { ok: true, data: null };
+      return removal(res, z.null(), "deal_open", openDealSchema);
+    },
     /** IN-FR-12: save the PayPal email payments go to. */
     setPaypalEmail: (email: string) => request("PUT", "/me/paypal-email", profileAfterEmailSchema, { email }),
     /** Mock builds only (IN-FR-11, 1.3): connects an account and answers where the backend would return; the real flow is a link. */
