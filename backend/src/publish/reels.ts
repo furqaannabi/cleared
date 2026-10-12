@@ -61,9 +61,11 @@ export interface ReelSettings {
   maxBytes: number;
   /** How long the address that reads the fetched video works for. */
   addressSeconds: number;
-  /** How often the reading of the fetched video is asked after, and how long it may take before it is started afresh. */
+  /** How often the reading of the fetched video is asked after, and how long it may take before it counts as failed. */
   pollSeconds: number;
   readingLimitSeconds: number;
+  /** How many readings of a fetched video may fail before it counts as not fetched. Each one is paid for (IG-FR-26). */
+  maxReadings: number;
   /** The wait before a check that could not read Instagram, fetch the video or reach the judge tries again. It doubles each time, up to the longest wait (IG-FR-26). */
   retryFirstSeconds: number;
   retryLongestSeconds: number;
@@ -76,6 +78,7 @@ export const defaultReelSettings: ReelSettings = {
   addressSeconds: 15 * 60,
   pollSeconds: 10,
   readingLimitSeconds: 30 * 60,
+  maxReadings: 3,
   retryFirstSeconds: 60,
   retryLongestSeconds: 3600,
 };
@@ -216,8 +219,10 @@ export function createReelPublishing(deps: {
       const read = await use.speech.result(check.speechJobId);
       if (read.state === "working" && at.getTime() - (check.readingSince ?? at).getTime() <= settings.readingLimitSeconds * 1000) return poll;
       if (read.state !== "done") {
+        // A reading that failed, or ran past its time, was paid for. After the last one allowed the video counts as not fetched, and the brand looks.
+        const { failedReadings } = await prisma.liveCheck.update({ where: { deliverableId }, data: { speechJobId: null, readingSince: null, failedReadings: { increment: 1 } } });
+        if (failedReadings >= settings.maxReadings) return decided(deliverableId, "not_fetched", "reading_failed", key);
         // The next try reads the fetched video afresh.
-        await prisma.liveCheck.update({ where: { deliverableId }, data: { speechJobId: null, readingSince: null } });
         return failed("reading");
       }
       // What was said is untrusted: it is compared with the draft's words by code, and never obeyed (IG-BR-09).

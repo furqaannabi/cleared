@@ -522,6 +522,9 @@ model LiveCheck {
   fetchedSec    Float?
   speechJobId   String?
   readingSince  DateTime?
+  /// How many readings of a Reel's fetched video ended as failed or ran past their time. After the
+  /// third the video counts as not fetched, and no more are started (IG-FR-26).
+  failedReadings Int      @default(0)
 }
 
 // A post that was cancelled (publish to paid spec PT-FR-28 to PT-FR-32): who cancelled, when, and the
