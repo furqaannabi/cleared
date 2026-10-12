@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home B: the statement and the work</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hm.css"><style>
+/* desktop: money on the left, the work on the right; history across under both */
+.h-desk .hb-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;align-items:start;margin-top:18px}
+.hb-col{display:grid;gap:16px;margin-top:16px}
+.h-desk .hb-col{margin-top:0}
+/* the statement: three lines like a bank statement, Paid last and largest */
+.hb-stmt{padding:6px 18px 4px}
+.hb-line{display:grid;grid-template-columns:10px 1fr auto;gap:4px 12px;align-items:baseline;padding:14px 0;border-top:1px solid var(--line-soft)}
+.hb-line:first-child{border-top:0}
+.hb-line i{width:10px;height:10px;border-radius:50%;align-self:center;border:2px solid var(--marigold-chip)}
+.hb-line.way i{background:linear-gradient(90deg,var(--marigold) 50%,transparent 50%)}
+.hb-line.paid i{background:var(--marigold);border-color:var(--marigold)}
+.hb-ln{font-weight:700;font-size:14.5px}
+.hb-ln small{display:block;font-weight:500;color:var(--ink-3);font-size:13px}
+.hb-amt{font-family:var(--head);font-size:24px;font-weight:800;letter-spacing:-.01em;text-align:right}
+.hb-line.paid{border-top:1px solid var(--line)}
+.hb-line.paid .hb-amt{font-size:32px}
+.hb-stuck{grid-column:2/4;margin-top:4px}
+.h-stuck{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--fail);min-height:44px;text-decoration:none;background:var(--fail-tint);border:1px solid var(--fail-line);border-radius:10px;padding:8px 10px}
+.h-stuck svg{width:16px;height:16px;flex:none}
+.h-stuck span{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--fail-line)}
+.hb-fee{padding:10px 0 12px;border-top:1px solid var(--line-soft)}
+/* figures: three small tiles in one row of text, each with its line */
+.hb-figs{padding:16px 18px;display:grid;gap:14px}
+.hb-fig{display:grid;grid-template-columns:1fr 110px;gap:2px 14px;align-items:center}
+.hb-fv{font-size:15px}.hb-fv b{font-size:17px}
+.hb-fl{font-size:13px;color:var(--ink-3)}
+.hb-chart{padding:16px 18px}
+.hb-ch{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+/* deals as the work: grouped, Needs you on a warm wash */
+.hb-grp{padding:4px 0}
+.hb-gh{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.02em;padding:14px 18px 6px;display:flex;justify-content:space-between}
+.hb-gh span{font-weight:600}
+.hb-grp:first-child{background:var(--latte-wash);border-radius:20px 20px 0 0}
+.hb-grp:first-child .hb-gh{color:var(--ink)}
+.hb-deal{display:grid;grid-template-columns:1fr 18px;gap:8px 12px;align-items:center;padding:12px 18px;text-decoration:none;border-top:1px solid var(--line-soft);min-height:44px}
+.hb-gh+.hb-deal{border-top:0}
+.hb-deal>svg{width:18px;height:18px;color:var(--ink-3);grid-column:2;grid-row:1/span 2}
+.hb-brand{font-weight:800}
+.hb-posts{display:grid;gap:6px}
+.hb-post{display:flex;gap:10px;align-items:center}
+.hb-post .h-mk{width:26px;height:26px;border-radius:8px}
+.hb-post>span:last-child{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline}
+.hb-pn{font-size:13.5px;color:var(--ink-2)}
+.hb-grp+.hb-grp{border-top:1px solid var(--line)}
+.hb-hist{margin-top:28px}
+.hb-hh{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.hb-hh p{flex-basis:100%;order:3}
+.h-desk .hb-hh p{flex-basis:auto;order:0;margin-right:auto}
+</style></head><body><main class="h-doc">
+<h1>B · The statement and the work</h1>
+<p class="h-why">Quieter: no big marigold card. The money reads like a bank statement in a white panel: Held for you, On its way, then Paid, ruled off and largest at the foot, each with a small marigold stage mark (ring, half, full) rather than colour. A stuck payout sits under its line as a fail-tinted link. From <code>lg:</code> the page splits: the money, the counts and "Paid each month" on the left; the deals on the right, Needs you on a latte wash at the top. The history runs full width under both. On phones it stacks in the spec's order. Example data.</p>
+<p class="h-state">Home with money, a stuck payout and a full history: 390 px, then desktop at 1280 px</p>
+<div class="h-pair" id="pair"></div>
+<p class="h-state">No deals yet (HM-FR-03)</p>
+<div class="h-pair" id="empty"></div>
+</main>
+<script src="hm.js"></script><script>
+function page(desk){
+  const ln=(cls,lab,t,extra="")=>`<div class="hb-line ${cls}"><i aria-hidden="true"></i><p class="hb-ln">${lab}<small>${t.posts}</small></p><p class="hb-amt">${t.amount}</p>${extra}</div>`;
+  const money=`<section aria-labelledby="ym" class="h-panel"><h2 class="h-sec" id="ym" style="padding:16px 18px 0">Your money</h2><div class="hb-stmt">
+    ${ln("","Held for you",TOTALS.held)}${ln("way","On its way",TOTALS.way,`<div class="hb-stuck">${stuckLine()}</div>`)}${ln("paid","Paid",TOTALS.paid)}
+    <p class="h-quiet hb-fee">What you receive, after Cleared’s 5% fee.</p></div></section>`;
+  const figs=`<section aria-labelledby="hd" class="h-panel hb-figs"><h2 class="h-sec" id="hd">How you’re doing</h2>${FIGURES.map(f=>`<div class="hb-fig"><div><p class="hb-fv">${f.name}: <b>${f.value}</b></p><p class="hb-fl">${f.line}</p></div>${spark(f.pts)}</div>`).join("")}</section>`;
+  const chart=`<section aria-labelledby="pm" class="h-panel hb-chart"><div class="hb-ch"><h2 class="h-sec" id="pm">Paid each month</h2><span class="h-quiet">What you received</span></div>${bars()}</section>`;
+  const dl=`<section aria-labelledby="dd"><h2 class="h-sec" id="dd" style="margin-bottom:12px">Deals</h2><div class="h-panel">${deals("hb")}</div></section>`;
+  const hist=`<section aria-labelledby="ph" class="hb-hist"><div class="hb-hh"><h2 class="h-sec" id="ph">Payment history</h2><p class="h-quiet">Every paid post, with its PayPal references.</p><a class="h-btn" href="#">${I.down}Download CSV</a></div>${desk?grid():cards()}</section>`;
+  return `<p class="h-title">Home</p>`+(desk?`<div class="hb-cols"><div class="hb-col">${money}${figs}${chart}</div>${dl}</div>`:`<div class="hb-col">${money}${figs}${chart}${dl}</div>`)+hist;
+}
+function empty(){return `<p class="h-title">Home</p><div class="h-panel" style="margin-top:16px;padding:40px 20px;text-align:center"><p class="h-sec">You have no deals yet.</p><a class="h-btn" style="margin-top:16px;background:var(--espresso);color:#fff;border-color:var(--espresso)" href="#">Start a deal</a></div>`}
+document.getElementById("pair").innerHTML=`<div class="h-phone">${topBar()}<div class="h-page">${page(false)}</div></div><div class="h-desk">${rail()}<div class="h-main">${page(true)}</div></div>`;
+document.getElementById("empty").innerHTML=`<div class="h-phone">${topBar()}<div class="h-page">${empty()}</div></div>`;
+</script></body></html>

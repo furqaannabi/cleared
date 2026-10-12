@@ -1,0 +1,85 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home A: the money card leads</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hm.css"><style>
+/* the money card, stretched into a three-stage track */
+.ha-money{background:var(--marigold);border-radius:20px;box-shadow:var(--shadow-money);overflow:hidden;position:relative;margin-top:16px}
+.ha-money::after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:rgb(255 255 255/.22);top:-90px;right:-70px;pointer-events:none}
+.ha-track{display:grid;position:relative;z-index:1}
+.ha-stage{padding:16px 18px;color:var(--marigold-ink)}
+.ha-stage+.ha-stage{border-top:1px solid rgb(35 26 0/.14)}
+.ha-lab{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--marigold-ink-2)}
+.ha-lab svg{width:16px;height:16px}
+.ha-amt{font-family:var(--head);font-size:30px;font-weight:800;line-height:1.1;margin-top:4px;letter-spacing:-.01em}
+.ha-cnt{font-size:13px;color:var(--marigold-ink-2);margin-top:2px}
+.ha-stage.paid .ha-amt{font-size:34px}
+.ha-foot{background:var(--surface);padding:12px 18px;position:relative;z-index:1;display:grid;gap:6px}
+.h-stuck{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--fail);text-decoration:none;min-height:44px;align-items:center}
+.h-stuck svg{width:18px;height:18px;flex:none}
+.h-stuck b{color:var(--fail)}
+.h-stuck span{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--fail-line)}
+.h-desk .ha-track{grid-template-columns:1fr 1fr 1.15fr}
+.h-desk .ha-stage{padding:22px 26px}
+.h-desk .ha-stage+.ha-stage{border-top:0;border-left:1px solid rgb(35 26 0/.14)}
+.h-desk .ha-amt{font-size:34px}.h-desk .ha-stage.paid .ha-amt{font-size:38px}
+.h-desk .ha-foot{padding:12px 26px}
+/* how you're doing */
+.ha-doing{margin-top:20px;padding:18px}
+.ha-figs{display:grid;gap:0;margin-top:12px}
+.ha-fig{display:grid;grid-template-columns:1fr 96px;gap:4px 14px;align-items:center;padding:12px 0;border-top:1px solid var(--line-soft)}
+.ha-fig:first-child{border-top:0;padding-top:4px}
+.ha-fn{font-size:13.5px;font-weight:700;color:var(--ink-2)}
+.ha-fv{font-size:19px;font-weight:800;line-height:1.2}
+.ha-fl{font-size:13px;color:var(--ink-3)}
+.ha-chart{margin-top:14px;padding-top:16px;border-top:1px solid var(--line)}
+.ha-ch{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ha-ch b{font-size:15px}
+.h-desk .ha-doing{padding:22px 26px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:34px}
+.h-desk .ha-figs{margin-top:12px}
+.h-desk .ha-chart{margin-top:0;padding-top:0;border-top:0;border-left:1px solid var(--line-soft);padding-left:34px}
+.h-desk .h-bars{height:190px}
+/* deals */
+.ha-deals{margin-top:28px}
+.ha-dp{margin-top:12px;padding:6px 18px}
+.ha-grp{padding:12px 0}
+.ha-grp+.ha-grp{border-top:1px solid var(--line)}
+.ha-gh{font-size:13.5px;font-weight:700;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.ha-gh span{font-size:12px;color:var(--ink-3);font-weight:600}
+.ha-deal{display:grid;grid-template-columns:1fr 18px;gap:6px 12px;align-items:center;padding:12px 0;text-decoration:none;border-top:1px solid var(--line-soft);min-height:44px}
+.ha-gh+.ha-deal{border-top:0}
+.ha-deal>svg{width:18px;height:18px;color:var(--ink-3);grid-column:2;grid-row:1/span 2}
+.ha-brand{font-weight:800;font-size:15.5px}
+.ha-posts{display:grid;gap:8px}
+.ha-post{display:flex;gap:10px;align-items:center}
+.ha-post>span:last-child{display:flex;flex-direction:column}
+.ha-pn{font-size:13.5px;color:var(--ink-2)}
+.h-desk .ha-dp{padding:8px 26px}
+.h-desk .ha-deal{grid-template-columns:220px 1fr 18px}
+.h-desk .ha-deal>svg{grid-column:3;grid-row:1}
+.h-desk .ha-posts{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* history */
+.ha-hist{margin-top:28px}
+.ha-hh{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+</style></head><body><main class="h-doc">
+<h1>A · The money card leads</h1>
+<p class="h-why">The rail's money card, stretched into home's headline: one marigold card whose three stages run Held for you → On its way → Paid, left to right from <code>lg:</code>, stacked on phones, with Paid the largest. Anything stuck sits in a white footer on the card, in the fail colour, linking to the post. Under it, one white panel "How you're doing": the three counts with their trend lines on the left, "Paid each month" on the right. Then the deals in Needs you, Under way and Finished, and the history as the grid (cards on phones) with Download CSV. Example data.</p>
+<p class="h-state">Home with money, a stuck payout and a full history: 390 px, then desktop at 1280 px</p>
+<div class="h-pair" id="pair"></div>
+<p class="h-state">No deals yet (HM-FR-03)</p>
+<div class="h-pair" id="empty"></div>
+</main>
+<script src="hm.js"></script><script>
+function page(desk){
+  const st=(cls,ic,lab,t)=>`<div class="ha-stage ${cls}"><p class="ha-lab">${ic}${lab}</p><p class="ha-amt">${t.amount}</p><p class="ha-cnt">${t.posts}</p></div>`;
+  return `<p class="h-title">Home</p>
+  <section aria-label="Your money" class="ha-money"><div class="ha-track">${st("",I.lock,"Held for you",TOTALS.held)}${st("",I.clock,"On its way",TOTALS.way)}${st("paid",I.check,"Paid",TOTALS.paid)}</div>
+  <div class="ha-foot"><p class="h-quiet">What you receive, after Cleared’s 5% fee.</p>${stuckLine()}</div></section>
+  <section aria-labelledby="doing" class="h-panel ha-doing"><div><h2 class="h-sec" id="doing">How you’re doing</h2><div class="ha-figs">${FIGURES.map(f=>`<div class="ha-fig"><div><p class="ha-fn">${f.name}</p><p class="ha-fv">${f.value}</p><p class="ha-fl">${f.line}</p></div>${spark(f.pts)}</div>`).join("")}</div></div>
+  <div class="ha-chart"><div class="ha-ch"><b>Paid each month</b><span class="h-quiet">What you received</span></div>${bars()}</div></section>
+  <section aria-labelledby="dl" class="ha-deals"><h2 class="h-sec" id="dl">Deals</h2><div class="h-panel ha-dp">${deals("ha")}</div></section>
+  <section aria-labelledby="ph" class="ha-hist"><div class="ha-hh"><h2 class="h-sec" id="ph">Payment history</h2><a class="h-btn" href="#">${I.down}Download CSV</a></div>${desk?grid():cards()}</section>`;
+}
+function empty(){return `<p class="h-title">Home</p><div class="h-panel" style="margin-top:16px;padding:40px 20px;text-align:center"><p class="h-sec">You have no deals yet.</p><a class="h-btn" style="margin-top:16px;background:var(--espresso);color:#fff;border-color:var(--espresso)" href="#">Start a deal</a></div>`}
+document.getElementById("pair").innerHTML=`<div class="h-phone">${topBar()}<div class="h-page">${page(false)}</div></div><div class="h-desk">${rail()}<div class="h-main">${page(true)}</div></div>`;
+document.getElementById("empty").innerHTML=`<div class="h-phone">${topBar()}<div class="h-page">${empty()}</div></div>`;
+</script></body></html>
