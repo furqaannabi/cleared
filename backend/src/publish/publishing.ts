@@ -113,7 +113,7 @@ export function createPublishing(
       if (post?.platform === REEL) return deps.reels ? deps.reels.liveCheck(deliverableId, attempts) : stop(deliverableId, null);
       const view = await money?.view(deliverableId);
       // Once the hold is taken or given back there is nothing left for a check to decide.
-      if (!post || !money || !judge || view?.stage !== "held") return stop(deliverableId, null);
+      if (!post?.deal.creatorId || !money || !judge || view?.stage !== "held") return stop(deliverableId, null);
 
       const tryLater = { retryAt: new Date(now().getTime() + Math.min(settings.retryFirstSeconds * 2 ** (attempts - 1), settings.retryLongestSeconds) * 1000) };
       const channel = await channelOf(post.deal.creatorId);

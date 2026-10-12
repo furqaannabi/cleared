@@ -52,7 +52,7 @@ export function createPayouts(deps: { prisma: PrismaClient; money?: Pick<Money, 
      */
     async sendAgain(creatorId: string, deliverableId: string): Promise<{ sent: true } | { refused: "not_found" } | { refused: "money"; reason: MoneyRefusal }> {
       const post = await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } }, include: { deal: { include: { creator: true } } } });
-      if (!post || !money) return { refused: "not_found" };
+      if (!post?.deal.creator || !money) return { refused: "not_found" };
       const view = await money.creatorView(deliverableId);
       const email = post.deal.creator.paypalEmail;
       if (view?.payout?.canSendAgain && email && email !== view.payoutEmail) await money.changePayoutEmail(deliverableId, email);

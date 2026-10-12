@@ -70,7 +70,9 @@ export function createRulings(deps: { prisma: PrismaClient; now: () => Date; mon
         const view = await money.view(deliverableId);
         if (view?.waitingOn?.for !== "cleared_to_rule") continue;
         const post = await prisma.deliverable.findUnique({ where: { id: deliverableId }, include: { deal: { include: { creator: { select: { name: true } } } } } });
-        if (!post) continue;
+        // A post can wait on a ruling only while its creator's account exists: deleting is refused while it is held.
+        const creator = post?.deal.creator;
+        if (!post || !creator) continue;
         const [video, check, results, version] = await Promise.all([
           prisma.postVideo.findUnique({ where: { deliverableId } }),
           prisma.liveCheck.findUnique({ where: { deliverableId } }),
@@ -82,7 +84,7 @@ export function createRulings(deps: { prisma: PrismaClient; now: () => Date; mon
           deliverableId,
           dealId: post.dealId,
           brandName: post.deal.brandName,
-          creatorName: post.deal.creator.name,
+          creatorName: creator.name,
           platform: post.platform,
           amount: view.amounts.amount,
           objection: view.waitingOn.objection,

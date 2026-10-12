@@ -34,6 +34,12 @@ export class FakeGoogle implements GooglePort {
   private readonly tokens = new Map<string, Person>();
   private failNextExchange = false;
   private sequence = 0;
+  /** Every token it was asked to revoke, in order. */
+  readonly revoked: string[] = [];
+  /** Makes revoking fail: Google says no, or cannot be reached at all. */
+  revokeFails?: "refused" | "unreachable";
+  /** Called as Google is asked to revoke, so a test can look at what Cleared still holds at that moment. */
+  onRevoke?: () => Promise<void>;
 
   signInUrl(input: Started): string {
     this.started.push(input);
@@ -68,6 +74,13 @@ export class FakeGoogle implements GooglePort {
     const person = this.tokens.get(accessToken);
     if (!person) return "unavailable" as const;
     return person.channel ?? ("none" as const);
+  }
+
+  async revoke(token: string): Promise<boolean> {
+    await this.onRevoke?.();
+    this.revoked.push(token);
+    // The real port never throws: an unreachable Google is a no, like a refusal.
+    return this.revokeFails === undefined;
   }
 
   // What a test controls

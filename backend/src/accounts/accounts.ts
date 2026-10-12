@@ -4,6 +4,7 @@
  * (docs/decisions/2026-10-11-no-demo-accounts.md).
  */
 import type { PrismaClient } from "../generated/prisma/client";
+import { accountOf, postsUnderWay } from "./under-way";
 
 /** What `GET /me` returns (DS-FR-08). The PayPal email is the creator's own; no brand route returns it (DS-BR-13). */
 export interface Profile {
@@ -11,8 +12,12 @@ export interface Profile {
   email?: string;
   welcomed: boolean;
   paypalEmail?: string;
-  accounts: { platform: "youtube" | "instagram"; name: string }[];
+  /** `inUse`: a post on that platform is under way, so the account cannot be disconnected now (AH-FR-12). */
+  accounts: { platform: "youtube" | "instagram"; name: string; inUse: boolean }[];
 }
+
+/** The order connected accounts are listed in. */
+const ORDER = ["youtube", "instagram"];
 
 export type Accounts = ReturnType<typeof createAccounts>;
 
@@ -69,14 +74,17 @@ export function createAccounts(deps: {
     async profile(creatorId: string): Promise<Profile | undefined> {
       const creator = await prisma.creator.findUnique({ where: { id: creatorId }, include: { accounts: true } });
       if (!creator) return undefined;
+      const inUse = new Set((await postsUnderWay(prisma, creatorId)).map((post) => accountOf(post.platform)));
       return {
         name: creator.name,
         email: creator.email ?? undefined,
         welcomed: creator.welcomedAt !== null,
         paypalEmail: creator.paypalEmail ?? undefined,
+        // Always YouTube and then Instagram, whichever was connected first: the database keeps no order of its own.
         accounts: creator.accounts
           .filter((account) => account.platform === "youtube" || account.platform === "instagram")
-          .map((account) => ({ platform: account.platform as "youtube" | "instagram", name: account.name })),
+          .sort((first, second) => ORDER.indexOf(first.platform) - ORDER.indexOf(second.platform))
+          .map((account) => ({ platform: account.platform as "youtube" | "instagram", name: account.name, inUse: inUse.has(account.platform as "youtube" | "instagram") })),
       };
     },
   };

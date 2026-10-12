@@ -76,7 +76,108 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete the signed-in creator's account. What they made and said is deleted; each held post's money records are kept with no name or email (AH-FR-15 to AH-FR-21) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted. Every session of the creator has ended, and the session cookie is cleared */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Refused with `deal_open`: a post is held, a payout is not settled, or a brand may still agree or hold. Each deal in the way is listed once in `blocking` with why, and nothing was deleted */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connect/{platform}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect YouTube or Instagram: the stored access and the connected account are deleted, and Google is asked to revoke (AH-FR-10 to AH-FR-13) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    platform: "youtube" | "instagram";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The creator's profile, without that account. The same if it was not connected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Profile"];
+                    };
+                };
+                /** @description Not a platform that can be connected */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Refused with `post_under_way`: a post on that platform is held and not yet paid or released. Each is listed in `blocking`, and nothing was deleted */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -181,6 +282,51 @@ export interface paths {
                 };
             };
         };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in creator's payment history: every post of theirs that has ever had a hold, newest hold first (AH-FR-05) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description One row for each post that has had a hold */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payment"][];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -4100,17 +4246,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        Profile: {
-            name: string;
-            email?: string;
-            welcomed: boolean;
-            paypalEmail?: string;
-            accounts: {
-                /** @enum {string} */
-                platform: "youtube" | "instagram";
-                name: string;
-            }[];
-        };
         Error: {
             error: {
                 code: string;
@@ -4120,7 +4255,28 @@ export interface components {
                 lengthCapSec?: number;
                 /** @enum {string} */
                 by?: "creator" | "brand";
+                blocking?: {
+                    dealId: string;
+                    brandName: string;
+                    deliverableId?: string;
+                    /** @enum {string} */
+                    platform?: "youtube_video" | "youtube_short" | "instagram_reel";
+                    /** @enum {string} */
+                    why?: "held" | "payout" | "waiting_for_brand";
+                }[];
             };
+        };
+        Profile: {
+            name: string;
+            email?: string;
+            welcomed: boolean;
+            paypalEmail?: string;
+            accounts: {
+                /** @enum {string} */
+                platform: "youtube" | "instagram";
+                name: string;
+                inUse: boolean;
+            }[];
         };
         ProfileAfterEmail: components["schemas"]["Profile"] & {
             postsKeepingEmail: components["schemas"]["PostKeepingEmail"][];
@@ -4130,6 +4286,32 @@ export interface components {
             dealId: string;
             brandName: string;
             email: string;
+        };
+        Payment: {
+            dealId: string;
+            deliverableId: string;
+            brandName: string;
+            /** @enum {string} */
+            platform: "youtube_video" | "youtube_short" | "instagram_reel";
+            amountMinor: number;
+            feeMinor?: number;
+            receivedMinor?: number;
+            /** @enum {string} */
+            currency: "USD";
+            /** @enum {string} */
+            stage: "held" | "captured" | "paid" | "released" | "approved_not_paid";
+            payout?: {
+                /** @enum {string} */
+                state: "sending" | "cancelling" | "delayed" | "unclaimed" | "failed" | "paid";
+                reference?: string;
+                at?: string;
+            };
+            holdReference: string;
+            heldAt: string;
+            deadline: string;
+            publishedAt?: string;
+            paidAt?: string;
+            firstCheckPassed?: boolean;
         };
         DealDraft: {
             id: string;
@@ -4209,6 +4391,9 @@ export interface components {
                 platform: "youtube_video" | "youtube_short" | "instagram_reel";
                 /** @enum {string} */
                 state: "no_draft" | "checking" | "check_failed" | "results" | "fully_passing" | "objected" | "approved" | "posting" | "published" | "captured" | "paid" | "approved_not_paid" | "released" | "closed";
+                needsCreator: boolean;
+                /** @enum {string} */
+                closedBecause?: "never_held" | "cancelled";
             }[];
         };
         Invite: {
@@ -4239,7 +4424,11 @@ export interface components {
         };
         Hold: {
             /** @enum {string} */
-            state: "not_started" | "closed" | "declined" | "pending" | "unknown" | "held";
+            state: "not_started" | "closed" | "declined" | "pending" | "unknown" | "held" | "not_held";
+            /** @enum {string} */
+            reason?: "paypal_declined" | "timed_out";
+            /** @enum {string} */
+            because?: "never_held" | "cancelled";
             reference?: string;
             deadline?: string;
         };

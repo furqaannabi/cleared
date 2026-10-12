@@ -1,6 +1,6 @@
 # Instagram Reels: FRD
 
-**Status:** Signed by Furqaan (revision 1.1). It adds Instagram to what William's invite, publish and pay, and profile pages call; those additions are listed for him. One of its decisions is product behaviour he shares (no Meta review for the hackathon) and is recorded as Furqaan's for him to agree.
+**Status:** Signed by Furqaan (revision 1.2). It adds Instagram to what William's invite, publish and pay, and profile pages call; those additions are listed for him. One of its decisions is product behaviour he shares (no Meta review for the hackathon) and is recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. Instagram Reels through the whole of [How a deal runs](../PRODUCT.md#how-a-deal-runs): a creator connects their Instagram account, a deal can hold a Reel, and the Reel gets its own go-ahead, its own way of saying "I've posted it", and its own live check. Everything else a Reel needs already exists and is not rebuilt: the checklist, the draft check on the file, the review, the money path, the brand's decisions, cancelling and rulings.
 
@@ -100,13 +100,13 @@ What Instagram will not show, Cleared does not guess: the paid-partnership label
 | ID | Requirement |
 | --- | --- |
 | IG-FR-19 | **A job,** started with the change that records the Reel. It reads the Reel's record from Instagram once: that it is still on the creator's account, that it is a Reel, its caption, and the address of its video. |
-| IG-FR-20 | **The video is fetched once,** from the address Instagram's API returned and no other, into the private bucket beside the draft, under the draft's own limit on size. Its length is read from the file and its speech is read as a draft's is. It is deleted once the match is decided. |
+| IG-FR-20 | **The video is fetched once,** from the address Instagram's API returned and no other, into the private bucket beside the draft, under the draft's own limit on size. Its length is read from the file and its speech is read as a draft's is. It is deleted once the match is decided. (1.2) A video larger than the draft's limit, or of a kind the service does not read, is not kept and counts as one that could not be fetched (IG-FR-24). |
 | IG-FR-21 | **The match,** by fixed code ([decision](../decisions/2026-10-11-a-live-reel-is-matched-by-length-then-words.md)). The live Reel is the approved draft when its length is within 2 seconds of the draft's and at least 90% of the draft's spoken words are in the live Reel in the same order, compared after the same normalising as the draft check (DR-FR-13). It is **not the approved file** when the length is more than 2 seconds off, or under 50% of the words are there. It **cannot be decided** in between, or when the draft has fewer than 20 spoken words to compare. |
 | IG-FR-22 | **Decided once.** The match is recorded with the Reel. A later check of the same Reel reads the caption again and does not fetch or read the video again. |
 | IG-FR-23 | **Each item checked at the live check** gets a result with evidence from the live Reel. A written item that carries a link, code or hashtag is matched by code in the caption. A written item that needs judgment goes to Claude with the caption, and its pass counts only if the words it quotes are in the caption. A publication item passes when the Reel is on the creator's account. A disclosure item is never decided: the paid-partnership label is not in Instagram's API. |
-| IG-FR-24 | **One answer for the money path,** the worst finding winning, by the rule already signed for YouTube ([decision](../decisions/2026-10-10-which-live-check-finding-gives-which-answer.md)): **cannot be fixed** when the live Reel is not the approved file; **fixable** when a required link, code or hashtag is missing from the caption, or a written item is judged missing; **cannot decide** when the Reel's video cannot be fetched (Instagram gives no address for one with licensed music), when the match cannot be decided, when the checklist has a disclosure item, or when a written item's judgment is unsure; **passed** otherwise. |
+| IG-FR-24 | **One answer for the money path,** the worst finding winning, by the rule already signed for YouTube ([decision](../decisions/2026-10-10-which-live-check-finding-gives-which-answer.md)): **cannot be fixed** when the live Reel is not the approved file; **fixable** when a required link, code or hashtag is missing from the caption, or a written item is judged missing; **cannot decide** when the Reel's video cannot be fetched (Instagram gives no address for one with licensed music; and, from 1.2, a video that is too large, of a kind the service does not read, or whose reading failed three times), when the match cannot be decided, when the checklist has a disclosure item, or when a written item's judgment is unsure; **passed** otherwise. |
 | IG-FR-25 | **The answer is given to the money path** (MP-FR-17 to MP-FR-21), and each item's result and the answer are recorded with when the check ran, as for YouTube (PT-FR-14). What follows is publish to paid's, unchanged: the creator's time to fix and "check again" (PT-FR-15), the brand's confirm, object and accept with its link and its email (PT-FR-18 to PT-FR-23), the creator's and the brand's views (PT-FR-23, PT-FR-24), cancelling and rulings. |
-| IG-FR-26 | **When Instagram fails** (an error, a timeout or a rate limit), or the video cannot be fetched or read for a reason that may pass, the check gives the money path no answer and tries again with growing waits (PT-FR-16). |
+| IG-FR-26 | **When Instagram fails** (an error, a timeout or a rate limit), or the video cannot be fetched or read for a reason that may pass, the check gives the money path no answer and tries again with growing waits (PT-FR-16). (1.2) The reading of a fetched video is tried at most three times ([decision](../decisions/2026-10-12-a-reels-reading-is-tried-three-times.md)). After a third failed reading the video counts as one that could not be fetched (IG-FR-24), and the brand is asked. A failed reading is one that ended as failed or ran past its time limit; a call that could not be made is not counted. Instagram failing, and the video failing to download, are tried again without a limit. |
 | IG-FR-27 | **Lost access, and a Reel that is gone,** give no answer either. The check stops and the creator's post says to reconnect Instagram, or that the Reel could not be found. Reconnecting starts the check again (PT-FR-17). |
 | IG-FR-28 | **What both sides are shown** gains, for a Reel: the live post's link as Instagram gave it; and, among the things the check could not decide, the paid-partnership label, a video that could not be fetched, and a match that could not be decided. |
 
@@ -151,11 +151,11 @@ What Instagram will not show, Cleared does not guess: the paid-partnership label
   - **Routes:** thin. Each checks the session, validates the body, calls a module and maps the answer.
 - **The money path is not changed.**
 - **The approved draft's reading is not made again.** The draft check keeps what it read beside the draft's file until the draft is deleted, and the match reads it from there.
-- **Schema.** The stored connection gains when its token ends. The record of the video a post was published as becomes the record of the post on its platform: the platform's id for it, the platform's own link and date, and for a Reel the match once decided. The list of platforms gains the Reel.
+- **Schema.** The stored connection gains when its token ends. The record of the video a post was published as becomes the record of the post on its platform: the platform's id for it, the platform's own link and date, and for a Reel the match once decided. The list of platforms gains the Reel. (1.2) The live check counts a Reel's failed readings.
 - **Paths** follow William's specs: connecting mirrors YouTube's (`/connect/instagram` and its callback); the go-ahead takes no link for a Reel; "I've posted it" takes the Reel's link.
 - **No new library.** Instagram is called with plain HTTPS, as Google and YouTube are.
-- **Settings,** each with the value in this spec as its default: the app's id and secret; the 2-second and 90%, 50% and 20-word limits of the match; how many of the account's recent media are searched (100); and how old a token is before it is renewed (7 days).
-- **Cost.** Each Reel is read by Data Automation one more time, at its live check. Nothing else an AI does is repeated.
+- **Settings,** each with the value in this spec as its default: the app's id and secret; the 2-second and 90%, 50% and 20-word limits of the match; how many of the account's recent media are searched (100); and how old a token is before it is renewed (7 days). (1.2) And how many times a fetched video is read (3).
+- **Cost.** Each Reel is read by Data Automation one more time, at its live check. Nothing else an AI does is repeated. (1.2) A reading that fails is paid for too, so a Reel costs at most three readings.
 
 ### Requests for William
 
@@ -186,6 +186,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **The go-ahead:** no call to PayPal before the account is read; each refusal.
 - **No link:** a go-ahead that ends, and a deadline that comes, with no Reel recorded see nothing published, and Instagram is not asked.
 - **Connecting:** the token is stored encrypted and never returned; a declined or failed connection stores nothing; a connection cannot be finished in another session; a token is renewed by the job and one that cannot be is lost access.
+- **The limit on readings (1.2):** a reading that fails once or twice is tried again and can still pass; a third failure gives "cannot decide" with the video not fetched, and no fourth reading is started; Instagram failing and a failed download never count towards it; a video too large or of a kind not read is never called the wrong file.
 - **Against the real service, by hand:** IG-FR-01, first; then one whole Reel deal with a tester account.
 
 ## Out of Scope
@@ -213,6 +214,11 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **IG-FR-24:** a checklist with a disclosure item makes every such Reel "cannot decide", so it never passes without the brand.
 - **IG-FR-27:** a Reel that is gone from Instagram gives no answer, as a YouTube video that is gone does (PT-FR-17).
 
+**Added in revision 1.2 and accepted by Furqaan at sign-off.** Two cases the build met that the spec had not stated; both are built as written here.
+
+- **IG-FR-20:** a live Reel's video larger than the draft's limit is cut off, kept nowhere, and counts as not fetched.
+- **IG-FR-20:** a video of a kind the service does not read has no length to compare, and counts as not fetched. It is never "not the approved file".
+
 **To verify, by IG-FR-01, before anything is built.**
 
 - That a media's link, short code, date, format and caption come back for the account's own Reels, and that the short code is the one in the link a person copies from Instagram.
@@ -238,3 +244,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.0 | Signed by Furqaan, with the nine items added while drafting accepted as written | none |
 | 1.1 | Demo accounts are removed, so the shared demo Instagram account goes (IG-FR-29) with its setting. Until Meta reviews the app, Instagram works for the team's tester accounts only | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
 | 1.1 | Signed by Furqaan | none |
+| 1.2 | A fetched video is read at most three times, then the brand is asked (IG-FR-26). A video too large, or of a kind the service does not read, counts as not fetched (IG-FR-20, IG-FR-24) | [Three readings](../decisions/2026-10-12-a-reels-reading-is-tried-three-times.md) |
+| 1.2 | Signed by Furqaan | none |

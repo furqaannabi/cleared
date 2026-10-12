@@ -29,7 +29,11 @@ export const NoteSchema = z
  */
 export const HoldSchema = z
   .object({
-    state: z.enum(["not_started", "closed", "declined", "pending", "unknown", "held"]),
+    state: z.enum(["not_started", "closed", "declined", "pending", "unknown", "held", "not_held"]),
+    // Why a declined hold was declined: by PayPal, or because PayPal gave no answer in 24 hours (AH-FR-02).
+    reason: z.enum(["paypal_declined", "timed_out"]).optional(),
+    // Why a post was closed without a hold: none 7 days after the brand agreed, or cancelled first (AH-FR-01).
+    because: z.enum(["never_held", "cancelled"]).optional(),
     reference: z.string().optional(),
     deadline: z.string().optional(),
   })

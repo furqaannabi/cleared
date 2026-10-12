@@ -202,7 +202,8 @@ model ConnectedAccount {
 // read or change it (DS-BR-01).
 model Deal {
   id        String @id @default(uuid())
-  creatorId String
+  /// Null once its creator's account is deleted: what is kept of the deal then points to nobody (AH-FR-18).
+  creatorId String?
   /// The brand's name, as the creator typed it. Plain text.
   brandName String
   /// checklist, invite, waiting_for_brand, changes_requested or agreed.
@@ -225,7 +226,7 @@ model Deal {
   agreedVersion Int?
   createdAt DateTime
 
-  creator      Creator         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator      Creator?        @relation(fields: [creatorId], references: [id], onDelete: SetNull)
   deliverables Deliverable[]
   items        ChecklistItem[]
   questions    Question[]
@@ -422,6 +423,9 @@ model DraftCheck {
   failures       Int       @default(0)
   /// The reading of the video that Data Automation is doing, or has done, for the running check.
   speechJobId    String?
+  /// Whether the first check that finished passed every item (AH-FR-09). Null while none has, and
+  /// for a post checked more than once before this was recorded.
+  firstCheckPassed Boolean?
 }
 
 // One checklist item's result in a post's latest finished run, with the creator's ask about it and the
@@ -522,6 +526,9 @@ model LiveCheck {
   fetchedSec    Float?
   speechJobId   String?
   readingSince  DateTime?
+  /// How many readings of a Reel's fetched video ended as failed or ran past their time. After the
+  /// third the video counts as not fetched, and no more are started (IG-FR-26).
+  failedReadings Int      @default(0)
 }
 
 // A post that was cancelled (publish to paid spec PT-FR-28 to PT-FR-32): who cancelled, when, and the

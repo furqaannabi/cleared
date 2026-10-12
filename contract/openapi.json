@@ -7,6 +7,81 @@
   },
   "components": {
     "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "field": {
+                "type": "string"
+              },
+              "resetsAt": {
+                "type": "string"
+              },
+              "lengthSec": {
+                "type": "number"
+              },
+              "lengthCapSec": {
+                "type": "number"
+              },
+              "by": {
+                "type": "string",
+                "enum": [
+                  "creator",
+                  "brand"
+                ]
+              },
+              "blocking": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "dealId": {
+                      "type": "string"
+                    },
+                    "brandName": {
+                      "type": "string"
+                    },
+                    "deliverableId": {
+                      "type": "string"
+                    },
+                    "platform": {
+                      "type": "string",
+                      "enum": [
+                        "youtube_video",
+                        "youtube_short",
+                        "instagram_reel"
+                      ]
+                    },
+                    "why": {
+                      "type": "string",
+                      "enum": [
+                        "held",
+                        "payout",
+                        "waiting_for_brand"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dealId",
+                    "brandName"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "code"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
       "Profile": {
         "type": "object",
         "properties": {
@@ -36,11 +111,15 @@
                 },
                 "name": {
                   "type": "string"
+                },
+                "inUse": {
+                  "type": "boolean"
                 }
               },
               "required": [
                 "platform",
-                "name"
+                "name",
+                "inUse"
               ]
             }
           }
@@ -49,44 +128,6 @@
           "name",
           "welcomed",
           "accounts"
-        ]
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "object",
-            "properties": {
-              "code": {
-                "type": "string"
-              },
-              "field": {
-                "type": "string"
-              },
-              "resetsAt": {
-                "type": "string"
-              },
-              "lengthSec": {
-                "type": "number"
-              },
-              "lengthCapSec": {
-                "type": "number"
-              },
-              "by": {
-                "type": "string",
-                "enum": [
-                  "creator",
-                  "brand"
-                ]
-              }
-            },
-            "required": [
-              "code"
-            ]
-          }
-        },
-        "required": [
-          "error"
         ]
       },
       "ProfileAfterEmail": {
@@ -131,6 +172,108 @@
           "dealId",
           "brandName",
           "email"
+        ]
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "dealId": {
+            "type": "string"
+          },
+          "deliverableId": {
+            "type": "string"
+          },
+          "brandName": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "youtube_video",
+              "youtube_short",
+              "instagram_reel"
+            ]
+          },
+          "amountMinor": {
+            "type": "integer"
+          },
+          "feeMinor": {
+            "type": "integer"
+          },
+          "receivedMinor": {
+            "type": "integer"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD"
+            ]
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "held",
+              "captured",
+              "paid",
+              "released",
+              "approved_not_paid"
+            ]
+          },
+          "payout": {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "sending",
+                  "cancelling",
+                  "delayed",
+                  "unclaimed",
+                  "failed",
+                  "paid"
+                ]
+              },
+              "reference": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "holdReference": {
+            "type": "string"
+          },
+          "heldAt": {
+            "type": "string"
+          },
+          "deadline": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string"
+          },
+          "paidAt": {
+            "type": "string"
+          },
+          "firstCheckPassed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dealId",
+          "deliverableId",
+          "brandName",
+          "platform",
+          "amountMinor",
+          "currency",
+          "stage",
+          "holdReference",
+          "heldAt",
+          "deadline"
         ]
       },
       "DealDraft": {
@@ -490,12 +633,23 @@
                     "released",
                     "closed"
                   ]
+                },
+                "needsCreator": {
+                  "type": "boolean"
+                },
+                "closedBecause": {
+                  "type": "string",
+                  "enum": [
+                    "never_held",
+                    "cancelled"
+                  ]
                 }
               },
               "required": [
                 "id",
                 "platform",
-                "state"
+                "state",
+                "needsCreator"
               ]
             }
           }
@@ -621,7 +775,22 @@
               "declined",
               "pending",
               "unknown",
-              "held"
+              "held",
+              "not_held"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "paypal_declined",
+              "timed_out"
+            ]
+          },
+          "because": {
+            "type": "string",
+            "enum": [
+              "never_held",
+              "cancelled"
             ]
           },
           "reference": {
@@ -2453,6 +2622,34 @@
       }
     },
     "/me": {
+      "delete": {
+        "summary": "Delete the signed-in creator's account. What they made and said is deleted; each held post's money records are kept with no name or email (AH-FR-15 to AH-FR-21)",
+        "responses": {
+          "204": {
+            "description": "Deleted. Every session of the creator has ended, and the session cookie is cleared"
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Refused with `deal_open`: a post is held, a payout is not settled, or a brand may still agree or hold. Each deal in the way is listed once in `blocking` with why, and nothing was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "summary": "The signed-in creator (DS-FR-08)",
         "responses": {
@@ -2468,6 +2665,67 @@
           },
           "401": {
             "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connect/{platform}": {
+      "delete": {
+        "summary": "Disconnect YouTube or Instagram: the stored access and the connected account are deleted, and Google is asked to revoke (AH-FR-10 to AH-FR-13)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "youtube",
+                "instagram"
+              ]
+            },
+            "required": true,
+            "name": "platform",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The creator's profile, without that account. The same if it was not connected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a platform that can be connected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Refused with `post_under_way`: a post on that platform is held and not yet paid or released. Each is listed in `blocking`, and nothing was deleted",
             "content": {
               "application/json": {
                 "schema": {
@@ -2546,6 +2804,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/payments": {
+      "get": {
+        "summary": "The signed-in creator's payment history: every post of theirs that has ever had a hold, newest hold first (AH-FR-05)",
+        "responses": {
+          "200": {
+            "description": "One row for each post that has had a hold",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Payment"
+                  }
                 }
               }
             }

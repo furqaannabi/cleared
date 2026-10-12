@@ -1,4 +1,5 @@
 import { createAccounts } from "./accounts/accounts";
+import { createAccountRemoval } from "./accounts/removal";
 import { createApp } from "./app";
 import { createClaudeBriefModel } from "./briefs/claude";
 import { createClaudeJudge } from "./checks/claude-judge";
@@ -24,6 +25,7 @@ import { createPublishedPosts } from "./publish/published-posts";
 import { createPublishing, type Publishing } from "./publish/publishing";
 import { createReelPublishing } from "./publish/reels";
 import { createYouTubeApi } from "./publish/youtube-api";
+import { SECRET_MIN_LENGTH } from "./routes/test-session";
 import { createReviewLinks } from "./review/links";
 import { createReview } from "./review/review";
 import { createSandboxPayPal } from "./paypal/sandbox-paypal";
@@ -104,6 +106,8 @@ const drafts =
     },
     log,
   });
+// Drafts are deleted 30 days after their post ends, by a daily job. Not waited for, as below: this file must load without waiting.
+drafts?.scheduleExpiry().catch((error: unknown) => log("The daily clear-out of old drafts could not be scheduled", { error: error instanceof Error ? error.name : "unknown" }));
 if (!drafts) {
   console.warn("No bucket for drafts is configured, so no draft can be sent or checked. See backend/.env.example.");
 }
@@ -136,6 +140,19 @@ if (!publishing) {
   console.warn("Google or PayPal is not configured, so no go-ahead can be given and no live check runs. See backend/.env.example.");
 }
 
+// Disconnecting an account and deleting one. A deleted account's files leave the bucket by a job.
+const google = env.google && createGoogle({ ...env.google, log });
+const removal = createAccountRemoval({ prisma, now, google, secrets, money, storage, log });
+
+// Said at start-up, so that nobody finds out from a failing test run. The secret itself is never printed.
+if (env.testSessionSecret) {
+  console.warn(
+    env.testSessionSecret.length >= SECRET_MIN_LENGTH
+      ? "TEST_SESSION_SECRET is set: end-to-end tests can be signed in as the test creator. Unset it on a server tests do not run against."
+      : `TEST_SESSION_SECRET is set but shorter than ${SECRET_MIN_LENGTH} characters, so it is ignored and there is no test session. Make one with: openssl rand -base64 48`,
+  );
+}
+
 const app = createApp({
   prisma,
   accounts,
@@ -148,7 +165,9 @@ const app = createApp({
   storage,
   appOrigin: env.appOrigin,
   apiOrigin: env.apiOrigin,
-  google: env.google && createGoogle({ ...env.google, log }),
+  google,
+  removal,
+  testSession: env.testSessionSecret ? { secret: env.testSessionSecret } : undefined,
   instagram,
   instagramConnections,
   secrets,
@@ -159,7 +178,7 @@ const app = createApp({
 
 // Timers and follow-ups: reading briefs, checking drafts and live posts, and the money path's deadlines and
 // unanswered PayPal calls.
-const handlers: JobHandlers = { ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers, ...instagramConnections?.handlers };
+const handlers: JobHandlers = { ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers, ...instagramConnections?.handlers, ...removal.handlers };
 const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now() }) });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.once(signal, async () => {

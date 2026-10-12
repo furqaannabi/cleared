@@ -248,6 +248,85 @@ describe("IG-FR-26 a check that could not look gives no answer, and tries again"
   });
 });
 
+describe("IG-FR-26 (1.2) a fetched video is read at most three times", () => {
+  const liveReadings = (world: HeldWorld) => world.speech.started.filter((key) => key.startsWith("live/")).length;
+  /** Lets a day go by, the worker running every two hours. */
+  async function overADay(world: HeldWorld) {
+    for (let pass = 0; pass < 12; pass++) {
+      await overAMinute(world, 2);
+      world.timeIs(new Date(world.now().getTime() + 2 * 3600 * 1000).toISOString());
+    }
+  }
+
+  test("after a third failed reading the video counts as not fetched: the brand is asked to confirm, and no fourth reading is started", async () => {
+    const world = heldWorld();
+    const reel = await liveReel(world);
+    world.speech.down = "reading";
+
+    await overADay(world);
+
+    expect(liveReadings(world)).toBe(3);
+    expect(await reel.recorded()).toMatchObject({ fileMatch: "not_fetched" });
+    expect(await reel.check()).toMatchObject({ running: false, answer: "cannot_decide", undecided: ["reel_not_fetched"], failedReadings: 3 });
+    expect((await reel.brandReads()).review).toMatchObject({ state: "confirm", what: ["reel_not_fetched"] });
+    // Fetched once, and gone now that the match is settled.
+    expect(world.downloads).toHaveLength(1);
+    expect(reel.fetched().kept).toEqual([]);
+
+    world.speech.down = undefined;
+    await overADay(world);
+    expect(liveReadings(world)).toBe(3);
+  });
+
+  test("a reading that runs past its time limit is a failed reading too", async () => {
+    const world = heldWorld({ reels: { readingLimitSeconds: 20 } });
+    const reel = await liveReel(world);
+    world.speech.stillWorking = 10_000;
+
+    await overADay(world);
+
+    expect(liveReadings(world)).toBe(3);
+    expect(await reel.check()).toMatchObject({ answer: "cannot_decide", undecided: ["reel_not_fetched"] });
+  });
+
+  test("two failed readings and then a good one still pass", async () => {
+    const world = heldWorld();
+    const reel = await liveReel(world);
+    world.speech.down = "reading";
+    // The first reading fails within the minute; the second is started two minutes later, and fails too.
+    await overAMinute(world);
+    world.timeIs("2026-10-09T12:05:00Z");
+    await overAMinute(world);
+    expect(await reel.check()).toMatchObject({ running: true, answer: null, failedReadings: 2 });
+
+    world.speech.down = undefined;
+    world.timeIs("2026-10-09T14:00:00Z");
+    await overAMinute(world);
+
+    expect(await reel.check()).toMatchObject({ answer: "passed" });
+    expect(liveReadings(world)).toBe(3);
+  });
+
+  test.each([
+    ["a reading that could not be started", (world: HeldWorld) => void (world.speech.down = "start"), (world: HeldWorld) => void (world.speech.down = undefined)],
+    ["a video that could not be downloaded", (world: HeldWorld) => void (world.downloading.fails = true), (world: HeldWorld) => void (world.downloading.fails = false)],
+    ["Instagram failing", (world: HeldWorld) => void (world.instagram.down = true), (world: HeldWorld) => void (world.instagram.down = false)],
+  ])("%s is not a reading and never counts: it is tried for as long as it takes", async (_what, breaks, mends) => {
+    const world = heldWorld();
+    const reel = await liveReel(world);
+    breaks(world);
+
+    await overADay(world);
+
+    expect(await reel.check()).toMatchObject({ running: true, answer: null, failedReadings: 0 });
+    expect(await reel.recorded()).toMatchObject({ fileMatch: "pending" });
+
+    mends(world);
+    await overADay(world);
+    expect(await reel.check()).toMatchObject({ answer: "passed" });
+  });
+});
+
 describe("IG-FR-27 lost access, and a Reel that is gone", () => {
   test("when access to Instagram is lost the check stops with no answer, the post says to reconnect, and reconnecting starts it again", async () => {
     const world = heldWorld();

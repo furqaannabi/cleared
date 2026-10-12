@@ -47,7 +47,8 @@ export function createNotices(deps: {
       const link = await links.addressToSend(notice.deliverableId);
       const own = post?.deal.brandNoticeEmail;
       const to = own ?? post?.deal.brandEmail;
-      if (!post || !email || !link || !to) {
+      const creator = post?.deal.creator;
+      if (!post || !creator || !email || !link || !to) {
         await none();
         return log?.("No notice was emailed to the brand: the creator's post carries the link", { deliverableId: notice.deliverableId, kind: notice.kind });
       }
@@ -55,7 +56,7 @@ export function createNotices(deps: {
       const check = notice.kind === "accept" ? await prisma.liveCheck.findUnique({ where: { deliverableId: notice.deliverableId } }) : null;
       const message = noticeEmail({
         kind: notice.kind === "accept" ? "accept" : "confirm",
-        creatorName: post.deal.creator.name,
+        creatorName: creator.name,
         brandName: post.deal.brandName,
         platform: post.platform,
         endsAt: notice.endsAt,

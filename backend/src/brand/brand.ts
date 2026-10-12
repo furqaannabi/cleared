@@ -117,7 +117,8 @@ export function createBrand(deps: {
 
   async function dealOf(deal: Row): Promise<BrandDeal | undefined> {
     const [version, before] = deal.versions;
-    if (!version) return undefined;
+    // A deal whose creator's account was deleted is kept only as a money record, and is shown to nobody (AH-FR-18).
+    if (!version || !deal.creator) return undefined;
     const sent = version.terms as unknown as TermsSnapshot;
     const changed = whatChanged(before?.terms as unknown as TermsSnapshot | undefined, sent);
     // Only an agreed deal's posts have money, so only then is the money path asked.
@@ -257,6 +258,7 @@ export function createBrand(deps: {
         if (versionShown !== version.number) return { refused: "out_of_date" };
 
         // Where the creator is paid, read only to hand to the money path. It is never returned (DS-BR-13).
+        if (!deal.creatorId) return { refused: "not_waiting_for_brand" };
         const { paypalEmail } = await tx.creator.findUniqueOrThrow({ where: { id: deal.creatorId }, select: { paypalEmail: true } });
         if (!paypalEmail || !deal.timezone) throw new Error("A deal sent to its brand has no PayPal email or no timezone");
 

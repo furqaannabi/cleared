@@ -16,6 +16,7 @@
     "test:youtube": "bun test ./sandbox/youtube.sandbox.ts",
     "test:instagram": "bun test ./sandbox/instagram.sandbox.ts",
     "rulings": "bun src/commands/rulings.ts",
+    "delete-account": "bun src/commands/delete-account.ts",
     "golden": "bun sandbox/golden.ts",
     "contract": "bun src/contract/contract.ts",
     "sandbox:hold": "bun sandbox/make-hold.ts",

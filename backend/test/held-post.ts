@@ -26,6 +26,8 @@ import { createSessions } from "../src/sessions/sessions";
 import { browserFor, type Browser } from "./browser";
 import { FakeJudge, FakeSpeech, FakeVideoModel } from "./fake-checks";
 import { FakeEmail } from "./fake-email";
+import { FakeGoogle } from "./fake-google";
+import { createAccountRemoval } from "../src/accounts/removal";
 import { FakeInstagram } from "./fake-instagram";
 import { FakeMedia } from "./fake-media";
 import { FakePayPal } from "./fake-paypal";
@@ -105,6 +107,7 @@ export function heldWorld(
   const videoModel = new FakeVideoModel();
   const youtube = new FakeYouTube();
   const email = new FakeEmail();
+  const google = new FakeGoogle();
   const instagram = new FakeInstagram(clock);
   const secrets = localSecrets(Buffer.alloc(32, 2).toString("base64"));
   /** What the service logged, to check nothing from a video is ever in it. */
@@ -151,6 +154,7 @@ export function heldWorld(
   const publishing = createPublishing({ prisma, now: clock, youtube, secrets, money, judge, notices, reels, log: (...parts) => void logged.push(parts) });
   const accounts = createAccounts({ prisma, now: clock, onYouTubeConnected: publishing.youtubeConnected });
   const instagramConnections = createInstagramConnections({ prisma, now: clock, instagram, secrets, onConnected: publishing.instagramConnected });
+  const removal = createAccountRemoval({ prisma, now: clock, google, secrets, money, storage, log });
   const app = createApp({
     prisma,
     appOrigin: APP,
@@ -164,6 +168,7 @@ export function heldWorld(
     storage,
     paypalClientId: "sandbox-public-client-id",
     linkKeys,
+    removal,
   });
   const json = async <Body>(response: Response) => (await response.json()) as Body;
 
@@ -255,7 +260,7 @@ export function heldWorld(
     return { sam, maya, deal: read, posts, post: posts[0]! };
   }
 
-  const runJobs = () => runDueJobs(prisma, { ...deals.handlers, ...money.handlers, ...drafts.handlers, ...review.handlers, ...publishing.handlers, ...notices.handlers }, { now, log: () => {} });
+  const runJobs = () => runDueJobs(prisma, { ...deals.handlers, ...money.handlers, ...drafts.handlers, ...review.handlers, ...publishing.handlers, ...notices.handlers, ...removal.handlers }, { now, log: () => {} });
 
   return {
     app,
@@ -266,6 +271,9 @@ export function heldWorld(
     judge,
     videoModel,
     youtube,
+    google,
+    /** Disconnecting and deleting, as the routes and the command call it. */
+    removal,
     instagram,
     /** Every address a Reel's video was fetched from, and a way to make fetching fail. */
     downloads,
@@ -281,6 +289,8 @@ export function heldWorld(
     visitor: () => browserFor(app, APP),
     /** One creator, one brand and one held post: the usual start of a draft check. */
     heldPost: async (deal: Parameters<typeof agreedDeal>[1] = {}) => agreedDeal(await creator(), deal),
+    /** Makes sure the daily clear-out of old drafts is waiting, as the service does when it starts. */
+    scheduleDraftExpiry: () => drafts.scheduleExpiry(),
     /** Runs every job that is due, as the service's worker would. */
     runJobs,
     /**

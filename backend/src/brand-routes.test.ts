@@ -832,6 +832,7 @@ describe("DS-FR-42 agreed", () => {
 
 interface Hold {
   state: string;
+  reason?: string;
   reference?: string;
   deadline?: string;
 }
@@ -967,7 +968,8 @@ describe("DS-FR-44 approved or closed", () => {
     const response = await holdApproved(maya, deal.id, video, orderId);
 
     expect(response.status).toBe(200);
-    expect(holdsOf((await response.json()) as WithHolds)[video]).toEqual({ state });
+    // A declined hold says it was PayPal that declined it (AH-FR-02).
+    expect(holdsOf((await response.json()) as WithHolds)[video]).toEqual(state === "declined" ? { state, reason: "paypal_declined" } : { state });
   });
 
   test("a brand that closes PayPal has nothing held, and can start again", async () => {
@@ -1067,8 +1069,8 @@ describe("DS-FR-46 the creator's side", () => {
       // The post whose next step is the creator's: the first, as neither has a draft yet.
       openDeliverableId: video,
       deliverables: [
-        { id: video, platform: "youtube_video", state: "no_draft" },
-        { id: short, platform: "youtube_short", state: "no_draft" },
+        { id: video, platform: "youtube_video", state: "no_draft", needsCreator: true },
+        { id: short, platform: "youtube_short", state: "no_draft", needsCreator: true },
       ],
     });
   });

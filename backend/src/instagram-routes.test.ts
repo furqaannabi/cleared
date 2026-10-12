@@ -111,7 +111,7 @@ describe("IG-FR-03, IG-FR-04 coming back approved", () => {
 
     expect(response.headers.get("location")).toBe(`${APP}/deals/abc/invite?connected=instagram`);
     expect(await stored()).toMatchObject([{ platform: "instagram", externalId: "17841400000000001", name: "sam.rivera", tokenExpiresAt: at("2026-12-10T09:00:00Z") }]);
-    expect(((await me(world)) as { accounts: unknown[] }).accounts).toEqual([{ platform: "instagram", name: "sam.rivera" }]);
+    expect(((await me(world)) as { accounts: unknown[] }).accounts).toEqual([{ platform: "instagram", name: "sam.rivera", inUse: false }]);
   });
 
   test("IG-BR-02 the token is stored encrypted, and is in nothing the page is sent", async () => {
