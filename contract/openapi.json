@@ -36,11 +36,15 @@
                 },
                 "name": {
                   "type": "string"
+                },
+                "inUse": {
+                  "type": "boolean"
                 }
               },
               "required": [
                 "platform",
-                "name"
+                "name",
+                "inUse"
               ]
             }
           }
@@ -78,6 +82,43 @@
                   "creator",
                   "brand"
                 ]
+              },
+              "blocking": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "dealId": {
+                      "type": "string"
+                    },
+                    "brandName": {
+                      "type": "string"
+                    },
+                    "deliverableId": {
+                      "type": "string"
+                    },
+                    "platform": {
+                      "type": "string",
+                      "enum": [
+                        "youtube_video",
+                        "youtube_short",
+                        "instagram_reel"
+                      ]
+                    },
+                    "why": {
+                      "type": "string",
+                      "enum": [
+                        "held",
+                        "payout",
+                        "waiting_for_brand"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dealId",
+                    "brandName"
+                  ]
+                }
               }
             },
             "required": [
@@ -2573,6 +2614,67 @@
                 "schema": {
                   "type": "object",
                   "properties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connect/{platform}": {
+      "delete": {
+        "summary": "Disconnect YouTube or Instagram: the stored access and the connected account are deleted, and Google is asked to revoke (AH-FR-10 to AH-FR-13)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "youtube",
+                "instagram"
+              ]
+            },
+            "required": true,
+            "name": "platform",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The creator's profile, without that account. The same if it was not connected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a platform that can be connected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Refused with `post_under_way`: a post on that platform is held and not yet paid or released. Each is listed in `blocking`, and nothing was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }

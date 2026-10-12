@@ -26,6 +26,8 @@ import { createSessions } from "../src/sessions/sessions";
 import { browserFor, type Browser } from "./browser";
 import { FakeJudge, FakeSpeech, FakeVideoModel } from "./fake-checks";
 import { FakeEmail } from "./fake-email";
+import { FakeGoogle } from "./fake-google";
+import { createAccountRemoval } from "../src/accounts/removal";
 import { FakeInstagram } from "./fake-instagram";
 import { FakeMedia } from "./fake-media";
 import { FakePayPal } from "./fake-paypal";
@@ -105,6 +107,7 @@ export function heldWorld(
   const videoModel = new FakeVideoModel();
   const youtube = new FakeYouTube();
   const email = new FakeEmail();
+  const google = new FakeGoogle();
   const instagram = new FakeInstagram(clock);
   const secrets = localSecrets(Buffer.alloc(32, 2).toString("base64"));
   /** What the service logged, to check nothing from a video is ever in it. */
@@ -164,6 +167,7 @@ export function heldWorld(
     storage,
     paypalClientId: "sandbox-public-client-id",
     linkKeys,
+    removal: createAccountRemoval({ prisma, google, secrets, log }),
   });
   const json = async <Body>(response: Response) => (await response.json()) as Body;
 
@@ -266,6 +270,7 @@ export function heldWorld(
     judge,
     videoModel,
     youtube,
+    google,
     instagram,
     /** Every address a Reel's video was fetched from, and a way to make fetching fail. */
     downloads,

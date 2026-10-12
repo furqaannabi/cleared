@@ -3,6 +3,8 @@ import type { Payouts } from "../payouts/payouts";
 import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import type { Accounts } from "../accounts/accounts";
+import type { AccountRemoval } from "../accounts/removal";
+import { PLATFORMS } from "../deals/platforms";
 import { ErrorSchema, fail, requireCreator, sessionToken, signOut, type AppEnv } from "../http/http";
 import type { Sessions } from "../sessions/sessions";
 
@@ -12,7 +14,8 @@ const ProfileSchema = z
     email: z.string().optional(),
     welcomed: z.boolean(),
     paypalEmail: z.string().optional(),
-    accounts: z.array(z.object({ platform: z.enum(["youtube", "instagram"]), name: z.string() })),
+    // `inUse`: a post on that platform is held or not yet paid, so the account cannot be disconnected now (AH-FR-12).
+    accounts: z.array(z.object({ platform: z.enum(["youtube", "instagram"]), name: z.string(), inUse: z.boolean() })),
   })
   .openapi("Profile");
 
@@ -31,9 +34,11 @@ export function registerAccountRoutes(
     appOrigin: string;
     /** Carries a new PayPal email to the creator's posts that are not yet paid out (PT-FR-27). */
     payouts?: Pick<Payouts, "emailChanged">;
+    /** Disconnects an account (AH-FR-10). */
+    removal: Pick<AccountRemoval, "disconnect">;
   },
 ) {
-  const { sessions, accounts, appOrigin, payouts } = deps;
+  const { sessions, accounts, appOrigin, payouts, removal } = deps;
   const creator = requireCreator(sessions);
 
   app.openapi(
@@ -60,6 +65,31 @@ export function registerAccountRoutes(
     const profile = await accounts.profile(c.get("creatorId"));
     return profile ? c.json(profile, 200) : fail(c, 401, "signed_out");
   };
+
+  app.openapi(
+    createRoute({
+      method: "delete",
+      path: "/connect/{platform}",
+      summary: "Disconnect YouTube or Instagram: the stored access and the connected account are deleted, and Google is asked to revoke (AH-FR-10 to AH-FR-13)",
+      middleware: [creator] as const,
+      request: { params: z.object({ platform: z.enum(["youtube", "instagram"]) }) },
+      responses: {
+        200: json(ProfileSchema, "The creator's profile, without that account. The same if it was not connected"),
+        400: json(ErrorSchema, "Not a platform that can be connected"),
+        401: json(ErrorSchema, "Nobody is signed in"),
+        409: json(ErrorSchema, "Refused with `post_under_way`: a post on that platform is held and not yet paid or released. Each is listed in `blocking`, and nothing was deleted"),
+      },
+    }),
+    async (c) => {
+      const done = await removal.disconnect(c.get("creatorId"), c.req.valid("param").platform);
+      if ("refused" in done) {
+        const blocking = done.blocking.map((post) => ({ ...post, platform: post.platform as (typeof PLATFORMS)[number] }));
+        return c.json({ error: { code: done.refused, blocking } }, 409);
+      }
+      const profile = await accounts.profile(c.get("creatorId"));
+      return profile ? c.json(profile, 200) : fail(c, 401, "signed_out");
+    },
+  );
 
   app.openapi(
     createRoute({

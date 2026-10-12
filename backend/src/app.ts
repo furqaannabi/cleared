@@ -1,6 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
+import { createAccountRemoval, type AccountRemoval } from "./accounts/removal";
 import { createAccounts, type Accounts } from "./accounts/accounts";
 import { createBrand } from "./brand/brand";
 import type { PrismaClient } from "./generated/prisma/client";
@@ -55,6 +56,8 @@ export interface AppDeps {
   apiOrigin?: string;
   /** Google, for signing in and connecting YouTube. Left out when it is not set up. */
   google?: GooglePort;
+  /** Disconnects an account. Made here from `google` and `secrets` when left out. */
+  removal?: AccountRemoval;
   /** Instagram, for connecting an account (IG-FR-02). Left out when it is not set up. */
   instagram?: InstagramPort;
   /** Stores a connected Instagram account with its token encrypted. Made here from `instagram` and `secrets` when left out. */
@@ -123,6 +126,7 @@ export function createApp(deps: AppDeps) {
     accounts,
     payouts,
     appOrigin,
+    removal: deps.removal ?? createAccountRemoval({ prisma, google: deps.google, secrets: deps.secrets }),
   });
   registerPaymentRoutes(app, { sessions, payments: createPaymentHistory({ prisma, money }) });
   const reviewLinks = deps.reviewLinks ?? createReviewLinks({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });

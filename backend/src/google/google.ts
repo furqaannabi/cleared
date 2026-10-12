@@ -9,6 +9,7 @@ import type { GoogleExchange, GooglePort } from "./port";
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const KEYS_URL = "https://www.googleapis.com/oauth2/v3/certs";
+const REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 const CHANNELS_URL = "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true";
 /** Google issues identity tokens under either name. */
 const ISSUERS = ["https://accounts.google.com", "accounts.google.com"];
@@ -142,6 +143,23 @@ export function createGoogle(config: GoogleConfig): GooglePort {
         return { id: first.id, name: typeof first.snippet?.title === "string" ? first.snippet.title : first.id };
       } catch {
         return "unavailable";
+      }
+    },
+
+    async revoke(token) {
+      try {
+        const response = await send(REVOKE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ token }).toString(),
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+        // Only the status is kept. Google's own words for a refusal can repeat the token.
+        if (!response.ok) config.log?.("Google would not revoke a token", { status: response.status });
+        return response.ok;
+      } catch {
+        config.log?.("Google could not be reached to revoke a token", {});
+        return false;
       }
     },
   };

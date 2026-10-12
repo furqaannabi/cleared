@@ -37,6 +37,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/connect/{platform}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect YouTube or Instagram: the stored access and the connected account are deleted, and Google is asked to revoke (AH-FR-10 to AH-FR-13) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    platform: "youtube" | "instagram";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The creator's profile, without that account. The same if it was not connected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Profile"];
+                    };
+                };
+                /** @description Not a platform that can be connected */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Refused with `post_under_way`: a post on that platform is held and not yet paid or released. Each is listed in `blocking`, and nothing was deleted */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -4154,6 +4219,7 @@ export interface components {
                 /** @enum {string} */
                 platform: "youtube" | "instagram";
                 name: string;
+                inUse: boolean;
             }[];
         };
         Error: {
@@ -4165,6 +4231,15 @@ export interface components {
                 lengthCapSec?: number;
                 /** @enum {string} */
                 by?: "creator" | "brand";
+                blocking?: {
+                    dealId: string;
+                    brandName: string;
+                    deliverableId?: string;
+                    /** @enum {string} */
+                    platform?: "youtube_video" | "youtube_short" | "instagram_reel";
+                    /** @enum {string} */
+                    why?: "held" | "payout" | "waiting_for_brand";
+                }[];
             };
         };
         ProfileAfterEmail: components["schemas"]["Profile"] & {

@@ -209,3 +209,31 @@ describe("DS-FR-11 reading the creator's channel", () => {
     expect(await standIn({ channels: { status } }).google.channel("access-1")).toBe("unavailable");
   });
 });
+
+describe("AH-FR-13 asking Google to revoke a token it gave", () => {
+  test("the token is sent to Google's revoke address as a form, and Google's yes is reported", async () => {
+    const { google, sent } = standIn({ token: async () => ({ status: 200 }) });
+
+    expect(await google.revoke("refresh-1")).toBe(true);
+    const request = sent.at(-1)!;
+    expect(request.method).toBe("POST");
+    expect(request.url.toString()).toBe("https://oauth2.googleapis.com/revoke");
+    expect(request.headers.get("content-type")).toBe("application/x-www-form-urlencoded");
+    expect([...request.body]).toEqual([["token", "refresh-1"]]);
+  });
+
+  test("a refusal, and Google not answering, are both a no, and nothing is thrown", async () => {
+    expect(await standIn({ token: async () => ({ status: 400, json: { error: "invalid_token" } }) }).google.revoke("refresh-1")).toBe(false);
+    expect(await standIn({ token: () => "network_error" }).google.revoke("refresh-1")).toBe(false);
+  });
+
+  test("AH-BR-06 a failure is logged with its status only, never the token", async () => {
+    const { google, logged } = standIn({ token: async () => ({ status: 400, json: { error: "invalid_token", error_description: "refresh-1 is not valid" } }) });
+
+    await google.revoke("refresh-1");
+
+    expect(logged).toHaveLength(1);
+    expect(JSON.stringify(logged)).not.toContain("refresh-1");
+  });
+});
+

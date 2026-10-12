@@ -38,4 +38,10 @@ export interface GooglePort {
   exchange(input: { code: string; codeVerifier: string; nonce: string; redirectUri: string }): Promise<GoogleExchange>;
   /** The person's own YouTube channel, read with their access token. */
   channel(accessToken: string): Promise<{ id: string; name: string } | "none" | "unavailable">;
+  /**
+   * Asks Google to withdraw a token it gave, and with it the access the person granted (account and
+   * history spec AH-FR-13). True if Google says it has. It never throws: the caller has already
+   * deleted its own copy, and a no changes nothing.
+   */
+  revoke(token: string): Promise<boolean>;
 }

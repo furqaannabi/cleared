@@ -30,6 +30,22 @@ export const ErrorSchema = z
       lengthCapSec: z.number().optional(),
       /** For a post that was already cancelled: who cancelled it (PT-FR-29). */
       by: z.enum(["creator", "brand"]).optional(),
+      /**
+       * For a refusal to disconnect an account or delete one: what is in the way, the caller's own deals
+       * only (AH-FR-11, AH-FR-16). A post in the way of disconnecting is named with its platform; a deal
+       * in the way of deleting says why. The brand's name is the creator's own plain text.
+       */
+      blocking: z
+        .array(
+          z.object({
+            dealId: z.string(),
+            brandName: z.string(),
+            deliverableId: z.string().optional(),
+            platform: z.enum(["youtube_video", "youtube_short", "instagram_reel"]).optional(),
+            why: z.enum(["held", "payout", "waiting_for_brand"]).optional(),
+          }),
+        )
+        .optional(),
     }),
   })
   .openapi("Error");
