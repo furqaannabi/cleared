@@ -1,10 +1,10 @@
 # Cancel: FRD
 
-**Status:** Signed by William (revision 1.1). The cancel rules are the money path FRD's (Furqaan's).
+**Status:** Signed by William (revision 1.2). The cancel rules are the money path FRD's (Furqaan's).
 
 **Surface:** Both sides, from the invite until the go-ahead. **The creator's side:** "Cancel this post" on the draft check page (`/deals/{id}/deliverables/{id}`) and on each post's line on the invite page (`/deals/{id}/invite`), and "Cancel the deal" on the invite page. **The brand's side:** "Cancel this post" on the review page (`/brand/deals/{id}/deliverables/{id}`) and on each post's line on the deal page (`/brand/deals/{id}`), and "Cancel the deal" on the deal page. After a cancel, both sides see the post as cancelled: released, or closed if nothing was held.
 
-**Scope of this build:** frontend only, against provisional mocks. The rules are the [money path FRD](money-path-frd.md)'s (MP, signed by Furqaan): either side can cancel while there is no go-ahead and nothing is published (MP-FR-33); a held post's hold is released (MP-FR-32); a post not yet held is closed, and a hold attempt waiting at PayPal is stopped there first (MP-FR-34). The page asks; the API decides and says why when it refuses. The one thing the money path doesn't have yet, the note to the other side, is a [request for Furqaan](#requests-for-furqaan).
+**Scope of this build:** frontend only. 1.2: on the live API; the four cancel routes and the `Cancel` and `Cancelled` shapes match the contract as built ([frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)). Before 1.2: against provisional mocks. The rules are the [money path FRD](money-path-frd.md)'s (MP, signed by Furqaan): either side can cancel while there is no go-ahead and nothing is published (MP-FR-33); a held post's hold is released (MP-FR-32); a post not yet held is closed, and a hold attempt waiting at PayPal is stopped there first (MP-FR-34). The page asks; the API decides and says why when it refuses. The one thing the money path doesn't have yet, the note to the other side, is a [request for Furqaan](#requests-for-furqaan).
 
 ## Problem Statement
 
@@ -84,6 +84,7 @@ Each post has a quiet "Cancel this post" while it can be cancelled, on both side
 | CN-FR-16 | **Mocks.** No new seed and no demo control: Pine & Co (invite), Maple & Moss (waiting for the brand), Kora Audio (held, no draft) and the Juniper video and Reel (in review) can be cancelled; the Juniper Short once it has the go-ahead, and Wren Coffee (paid), show why they can't. "Reset demo data" restores them. The other side is seen through the brand link in the same browser. |
 | CN-FR-17 | Mobile-first at 375 px: the sheet full-screen with the actions at the bottom, every target at least 44 px, no sideways scroll. |
 | CN-FR-18 | Every control named ("Cancel this post", "Cancel the deal", "Keep it"); the note labelled; the outcome announced politely; reduced motion respected. |
+| CN-FR-19 | **The session ended (1.2).** When the API answers 401 to cancelling, the confirmation stays open with the note kept, as for a network failure (CN-FR-08), and says for the brand "Your access to this deal has ended. Open the link {creator} sent you, then try again here." (CH-FR-29, RW-FR-31) and for the creator "You've been signed out. Sign in again to carry on." (as the draft check's actions). Never "That didn't go through" for a 401. |
 
 ## Business rules
 
@@ -138,6 +139,7 @@ POST /brand/deals/{dealId}/posts/{id}/cancel      { note?: string }   // brand; 
 ## Testing Decisions
 
 - Tests check what each side sees and can do, named after the CN-FR they prove.
+- **1.2, on per-test stubs:** a 401 on each of the four cancel calls keeps the confirmation and the note and shows CN-FR-19's line for that side.
 - **View (pure):** the button or the why-line for every state on each side; the money sentence held, not held, with an attempt waiting; the cancelled wording by each side with and without a note; the deal's list of outcomes.
 - **Mock API:** refused during a go-ahead and once published; held → released with reason cancelled and who; not held → closed; a waiting attempt stopped; the note stored and capped; an invite link refused once the deal is fully cancelled; the brand never sees the creator's PayPal email.
 - **Components:** the confirmation inline and as a sheet, the note's count, Cancelling…, Keep it returning focus, a lost race showing its reason, the closed state.
@@ -162,3 +164,5 @@ POST /brand/deals/{dealId}/posts/{id}/cancel      { note?: string }   // brand; 
 | 1.0 | Signed by William | none |
 | 1.1 | Contract, found while building: a post not yet held has no draft check page, so the invite page and the brand's deal page cancel through their own routes (`POST /deals/{id}/invite/posts/{id}/cancel`, `POST /brand/deals/{id}/posts/{id}/cancel`), each answering with that page's data, and their posts carry `cancel` and `cancelled`. A side's own note isn't repeated back to it. No other requirement changes | none |
 | 1.1 signed | Revision 1.1 signed by William | none |
+| 1.2 | The move onto the live API, from the grill-me with William: the routes and shapes match the contract; a 401 on cancelling keeps the confirmation and the note and says the session ended, worded per side (new CN-FR-19) | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md) |
+| 1.2 signed | Revision 1.2 signed by William | none |
