@@ -1,10 +1,10 @@
 # Publish and pay: FRD
 
-**Status:** Signed by William (revision 1.2). The money rules are the money path FRD's (Furqaan's).
+**Status:** Signed by William (revision 1.3). The money rules are the money path FRD's (Furqaan's).
 
 **Surface:** Both sides of steps 6 to 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The creator's side:** the draft check page past "Approved" (DC-FR-51): the go-ahead, "I've posted it", the live check in the checklist, and the money card through captured and paid, including every "not paid yet". **The brand's side:** the Drafts panel and the review page past "Approved" (RW-FR-22): confirming or objecting to a post the live check couldn't decide, accepting a post that failed, and paid.
 
-**Scope of this build:** frontend only, against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). The rules are the [money path FRD](money-path-frd.md)'s (MP, signed by Furqaan) and are not re-decided here: the 48-hour go-ahead (MP-FR-10 to MP-FR-15), what follows publishing (MP-FR-16 to MP-FR-23), capture and payout (MP-FR-24 to MP-FR-31) and release (MP-FR-32). The page starts actions and shows what the API returns. It never decides a money state, works out a fee, or times anything that moves money.
+**Scope of this build:** frontend only. 1.3: on the live API, with the contract's shapes and the backend's publish to paid ([PT](publish-to-paid-frd.md)) and Instagram ([IG](instagram-reels-frd.md)) specs ([frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)). Before 1.3: against provisional mocks (see [Mocks and the provisional contract](#mocks-and-the-provisional-contract)). The rules are the [money path FRD](money-path-frd.md)'s (MP, signed by Furqaan) and are not re-decided here: the 48-hour go-ahead (MP-FR-10 to MP-FR-15), what follows publishing (MP-FR-16 to MP-FR-23), capture and payout (MP-FR-24 to MP-FR-31) and release (MP-FR-32). The page starts actions and shows what the API returns. It never decides a money state, works out a fee, or times anything that moves money.
 
 ## Problem Statement
 
@@ -71,7 +71,7 @@ Cancelling is not in this spec; it gets its own.
 
 | ID | Requirement |
 | --- | --- |
-| PP-FR-01 | **Get the go-ahead.** At "Approved" (DC-FR-51), the next step's action is "Get the go-ahead", with "Ask when you're about to post. It lasts up to 48 hours." While the API answers: "Checking {brand}'s hold with PayPal…", the action off. |
+| PP-FR-01 | **Get the go-ahead.** At "Approved" (DC-FR-51), the next step's action is "Get the go-ahead", with "Ask when you're about to post. It lasts up to 48 hours." While the API answers: "Checking {brand}'s hold with PayPal…", the action off. 1.3: for a YouTube post the action sits with an inline field, "Your unlisted video's link", with the hint "Upload the approved draft to your channel as unlisted, then paste its link.", built like PP-FR-07's field; the link is sent with the ask (PT-FR-01). A refusal shows under the field (PP-FR-37). For a Reel there is no field (IG). While PayPal is being asked the API reports `confirming`: the same "Checking {brand}'s hold with PayPal…", the action off, and the page asks the API again every few seconds until it answers. |
 | PP-FR-02 | **Go-ahead.** "You can post now. Post before {time}" with the viewer's own time as DC-FR-44, a countdown that moves from the API's end time, and the action "I've posted it". The money card shows Confirmed (DC-FR-27). The page shows only the end time the API gives. |
 | PP-FR-03 | **Wait until.** "PayPal can renew {brand}'s hold from {time}. Ask again then." The action stays, off until that time. |
 | PP-FR-04 | **Not confirmed.** "PayPal couldn't confirm {brand}'s hold, so don't post yet. We've told {brand} to check their PayPal. You can ask again." The action is "Ask again". |
@@ -82,8 +82,9 @@ Cancelling is not in this spec; it gets its own.
 | ID | Requirement |
 | --- | --- |
 | PP-FR-06 | **I've posted it: YouTube.** Opens an inline confirmation: "Is the video public on your channel? We check it's the same video you uploaded as unlisted." with "Yes, it's public" and "Not yet". |
-| PP-FR-07 | **I've posted it: Instagram.** Opens an inline field "Your Reel's link" (an `https://www.instagram.com/reel/…` or `/p/…` link, checked for that shape before sending; the API decides whether it's on the creator's account) and "Check my Reel". A refused link: "That Reel isn't on {account}'s account. Check the link." or the API's reason. |
-| PP-FR-08 | **If they forget.** The go-ahead line says "If you forget to tap, we check your {platform} when your go-ahead ends." |
+| PP-FR-07 | **I've posted it: Instagram.** Opens an inline field "Your Reel's link" (an `https://www.instagram.com/reel/…` or `/p/…` link, checked for that shape before sending; the API decides whether it's on the creator's account) and "Check my Reel". A refused link: "That Reel isn't on {account}'s account. Check the link." or the API's reason. 1.3: the link is sent as `{ url }` (IG); refusals as PP-FR-37. **Depends on backend:** the Instagram routes aren't built yet. |
+| PP-FR-08 | **If they forget.** The go-ahead line says "If you forget to tap, we check your {platform} when your go-ahead ends." 1.3: for a Reel this line is instead "Give us your Reel's link before {deadline}. We don't look for it." (IG). |
+| PP-FR-37 | **Refusals, in plain words (1.3).** Each under the field or action it answers. The go-ahead: not a YouTube link, "That isn't a YouTube video link. Copy it from YouTube Studio or the video's Share button."; not found, "We couldn't find that video on YouTube. Check the link."; not on the channel, "That video isn't on {channel}. Use a video from the channel you connected."; not the approved file, "That video isn't the draft {brand} approved. Upload the approved file as it was, without re-editing it."; private, "That video is private. Make it unlisted so we can check it."; reconnect YouTube, "We can't read your YouTube channel any more." with "Reconnect YouTube"; already published, "This post is already published with a different video. The go-ahead stays with that one." I've posted it: not public yet, "Your video isn't public yet. Make it public, then tap again."; no video, "We don't have your video's link yet. Get the go-ahead first."; not found, "We couldn't find your video on YouTube. Check it's still on your channel."; reconnect YouTube as above; YouTube unavailable (also Check again), "YouTube isn't answering right now. Try again in a few minutes." Check again outside the fix window: "The time to fix this post has ended." and the page reloads. A Reel: not an Instagram link, "That isn't an Instagram link."; not found, "We couldn't find that Reel on {account}."; not a Reel, "That link is a post, not a Reel."; reconnect Instagram, "We can't read your Instagram account any more." with "Reconnect Instagram". |
 
 ### The live check (creator)
 
@@ -92,10 +93,13 @@ Cancelling is not in this spec; it gets its own.
 | PP-FR-09 | **Checking.** After posting: a banner "Checking your live post…", the "At live check" items show Checking (DC-FR-13), and "View your post" links to it. |
 | PP-FR-10 | **Results in the checklist.** Each "At live check" item takes its live result: Passed or Fix needed, with evidence from the live post ("Description has juniperandsalt.com/ada"), as DC-FR-12. Items judged at the draft check keep their draft results. |
 | PP-FR-11 | **Passed.** Banner: "Your live post checked out." The money card moves on (PP-FR-17). |
-| PP-FR-12 | **Fixable.** Banner: "{n} items to fix on your live post. Fix them and check again before {time}." with "Check again". The failing items are selected first and say what's missing. If the window ends, the release shows (PP-FR-22). |
+| PP-FR-12 | **Fixable.** Banner: "{n} items to fix on your live post. Fix them and check again before {time}." with "Check again". The failing items are selected first and say what's missing. If the window ends, the release shows (PP-FR-22). 1.3: while a check again runs (the API's `checking`), the banner stays and the action reads "Checking again…", off. |
 | PP-FR-13 | **Not fixable.** Banner: "Your live post doesn't match the approved draft." (or the API's reason) and "{brand} has until {time} to accept it anyway. If they don't, the hold goes back to them." No action for the creator. |
-| PP-FR-14 | **Couldn't decide.** Banner: "We couldn't check {what} automatically." and "{brand} has until {time} to confirm. If they say nothing, you're paid. If they object, a person at Cleared decides." |
+| PP-FR-14 | **Couldn't decide.** Banner: "We couldn't check {what} automatically." and "{brand} has until {time} to confirm. If they say nothing, you're paid. If they object, a person at Cleared decides." 1.3: `{what}` is the API's list in words, joined with "and": the file record, "whether it's the same file"; paid promotion, "YouTube's paid promotion label"; a written item, "a written item"; for a Reel, "Instagram's paid partnership label", "whether the Reel could be read", "whether it's the approved Reel". |
 | PP-FR-15 | **Objected after posting.** "{brand} objected to the live post: “{reason}”. A person at Cleared decides by {date}." |
+| PP-FR-38 | **Can't check yet (1.3).** Reconnect: "We can't read your YouTube channel, so your live post isn't checked yet." then "Reconnect YouTube and we check it straight away. Your deadline still runs." with "Reconnect YouTube" (Instagram the same, worded for it). Not found: "We can't find your video on YouTube." then "Make sure it's still on {channel} and public, then tap I've posted it again. Your deadline still runs." with "I've posted it" (PT-FR-17). |
+| PP-FR-39 | **Approved after posting (1.3).** Who approved it: "{brand} confirmed your live post."; "{brand} didn't answer in 48 hours, so your live post is approved."; "{brand} accepted your live post."; "A person at Cleared approved your live post." Until the capture arrives, under it: "Collecting {brand}'s payment with PayPal…". |
+| PP-FR-40 | **The brand's link for a live post (1.3).** When the brand's decision on a live post is due and the API sends a review link (Cleared has no email for the brand, PT), the link line leads with "{brand} has to {confirm, or accept} your live post by {time}. We don't have their email, so send them this link.", then DC-FR-52's Copy link, opened line and Make a new link. During a draft review nothing changes. |
 
 ### Money (creator)
 
@@ -105,9 +109,9 @@ Cancelling is not in this spec; it gets its own.
 | PP-FR-17 | **Captured.** "Captured · {amount} · PayPal ref {ref}" and "Sending {payout} to {email} ({amount} less Cleared's 5% fee of {fee})." |
 | PP-FR-18 | **Paid.** "Paid · {payout} · PayPal ref {ref}", the date, and a cleared seal. The deal steps all show done; the next step says "Cleared. Nothing more to do on this post." |
 | PP-FR-19 | **Unclaimed.** "PayPal is holding {payout} for {email}. Accept it in PayPal with that email." When the API allows it, "Send it again" (the API cancels the unclaimed one first, MP-FR-30). |
-| PP-FR-20 | **Failed or returned.** "{payout} couldn't be paid to {email}." and the API's reason in plain words, then "Correct your PayPal email" in place (as IN-FR-12, saved to the profile) and "Send it again". Offered only when the API allows it. |
+| PP-FR-20 | **Failed or returned.** "{payout} couldn't be paid to {email}." and the API's reason in plain words, then "Correct your PayPal email" in place (as IN-FR-12, saved to the profile) and "Send it again". Offered only when the API allows it. 1.3: the reason in words: returned, "PayPal sent it back: there's no PayPal account for that email, or it can't receive money."; blocked, "PayPal blocked the payment to that account."; denied, "PayPal turned the payment down for that account."; failed, "PayPal couldn't complete it." |
 | PP-FR-21 | **Capture refused.** "Approved. PayPal couldn't take {brand}'s payment yet. We try again until {date} and have told {brand}." No action. At the end without success: "Approved, not paid" (PP-FR-23). |
-| PP-FR-22 | **Released, every reason.** The released state (DC-FR-10, DC-FR-29) names the reason in plain words: the deadline passed with no approved post; cancelled (and by whom); day 28; the fix window ended with {items} still failing; {brand} didn't accept the post within 48 hours; a person at Cleared ruled not to pay; {brand}'s hold couldn't be confirmed before the deadline. With the date, and that nothing more can happen. |
+| PP-FR-22 | **Released, every reason.** The released state (DC-FR-10, DC-FR-29) names the reason in plain words: the deadline passed with no approved post; cancelled (and by whom); day 28; the fix window ended with {items} still failing; {brand} didn't accept the post within 48 hours; a person at Cleared ruled not to pay; {brand}'s hold couldn't be confirmed before the deadline. With the date, and that nothing more can happen. 1.3: the release's PayPal reference shows only when the API sends one; the contract has none yet (Requests for Furqaan). |
 | PP-FR-23 | **Approved, not paid.** "This post was approved, but PayPal never let Cleared collect {brand}'s payment, so you weren't paid through Cleared." Final; no action. |
 | PP-FR-35 | **Payout delayed on Cleared's side** (MP-FR-45). The Paid step is current, not a problem: "Sending {payout} to {email} is delayed", then "The delay is on Cleared's side, with our PayPal account. Your money is safe with Cleared, and we keep trying until it's sent. There's nothing you need to do." No action (MP-FR-30) and no time for the next try. The heading stays "Captured from {brand}". |
 | PP-FR-36 | **Sending again after an unclaimed payout** (MP-FR-30). While PayPal cancels the unclaimed payout: the Paid step is current, "Sending {payout} again", then "PayPal is cancelling the unclaimed payment first, then we send it to {email}." No action; the page keeps checking as it does while sending. |
@@ -117,19 +121,20 @@ Cancelling is not in this spec; it gets its own.
 
 | ID | Requirement |
 | --- | --- |
-| PP-FR-25 | **Drafts lines.** RW-FR-01's lines continue: "{creator} has the go-ahead · posts by {date}"; "Posted · checking the live post"; "Confirm the post · {time left}" and "Review post" (needs the brand); "Accept the post? · {time left}" and "Review post" (needs the brand); "A person at Cleared is deciding"; "Paid · {amount} taken"; "Approved, not paid"; and the release reason. Posts that need the brand come first (RW-FR-02). |
-| PP-FR-26 | **The live post.** Once posted, the review page shows "View the live post" (opening the platform in a new tab) and each "At live check" item's live result. |
+| PP-FR-25 | **Drafts lines.** RW-FR-01's lines continue: "{creator} has the go-ahead · posts by {date}"; "Posted · checking the live post"; "Confirm the post · {time left}" and "Review post" (needs the brand); "Accept the post? · {time left}" and "Review post" (needs the brand); "A person at Cleared is deciding"; "Paid · {amount} taken"; "Approved, not paid"; and the release reason. Posts that need the brand come first (RW-FR-02). 1.3: "Approved · taking your {amount}" while PayPal is asked for the money, and "Payment failed at PayPal · we try again until {date}" for a refused capture. |
+| PP-FR-26 | **The live post.** Once posted, the review page shows "View the live post" (opening the platform in a new tab) and each "At live check" item's live result. 1.3: the live results come in the post's own items; each is matched to the checklist by item id, and an "At live check" item takes its live status and evidence in the same grid and cards. Items not in them keep their draft result. |
 | PP-FR-27 | **Confirm or object.** When the check couldn't decide: why ("We couldn't check {what} automatically"), "If you say nothing by {time}, {creator} is paid.", "Confirm the post" (inline confirmation: "Confirm? Your {amount} is taken and {creator} is paid.") and "Object" (a reason, required, plain text up to 500 characters; "A person at Cleared will decide. Your money stays held until then."). |
-| PP-FR-28 | **Accept anyway.** When the post failed and can't be fixed: what failed, "If you don't accept it by {time}, the hold comes back to you.", and "Accept the post anyway" (inline confirmation: "Accept? Your {amount} is taken and {creator} is paid."). |
+| PP-FR-28 | **Accept anyway.** When the post failed and can't be fixed: what failed, "If you don't accept it by {time}, the hold comes back to you.", and "Accept the post anyway" (inline confirmation: "Accept? Your {amount} is taken and {creator} is paid."). 1.3: what failed, from the API's reason: not on the channel, "The live post isn't on {creator}'s connected channel."; not the approved file, "The live post isn't the draft you approved." PP-FR-27's `{what}` uses PP-FR-14's words. |
 | PP-FR-29 | **With Cleared.** "You objected: “{reason}”. A person at Cleared decides by {date}. Your money stays held until then." |
 | PP-FR-30 | **Taken and paid.** "Your {amount} was taken on {date} · PayPal ref {ref}", then "{creator} was paid." The brand never sees the creator's payout email or the payout's own problems; while a payout is unsettled the brand reads "Your {amount} was taken. {creator}'s payment is on its way.", including while it is delayed or being sent again (PP-FR-35, PP-FR-36). |
 | PP-FR-31 | **Released, for the brand.** "Your {amount} came back to you on {date}" and the reason from the brand's side. A capture PayPal refused: "Your payment for this post failed at PayPal. Check your PayPal funding; we try again until {date}." |
+| PP-FR-41 | **Taking (1.3).** Once paying is approved and PayPal is being asked for the money: "Approved. Taking your {amount} with PayPal…". No actions; the page asks the API again every few seconds. |
 
 ### Mocks, responsive and accessibility
 
 | ID | Requirement |
 | --- | --- |
-| PP-FR-32 | **Demo controls (mock builds only),** each a dashed "Demo (mocks only)" box supplied only by the mock gate, never in a real build: the go-ahead's answer (go-ahead, wait until, not confirmed); the live check's result (passed, fixable, not fixable, couldn't decide); the payout's result (paid, unclaimed, failed, won't send), with "Try the payout again now" while one is delayed; the mock tries a delayed payout again every 6 hours with the outcome selected then, and shows an unclaimed payout being cancelled for about 3 seconds after "Send it again"; "End the 48 hours now" on the brand's decisions. The seed gains a paid post with every reference. |
+| PP-FR-32 | **Demo controls (mock builds only),** each a dashed "Demo (mocks only)" box supplied only by the mock gate, never in a real build: the go-ahead's answer (go-ahead, wait until, not confirmed); the live check's result (passed, fixable, not fixable, couldn't decide); the payout's result (paid, unclaimed, failed, won't send), with "Try the payout again now" while one is delayed; the mock tries a delayed payout again every 6 hours with the outcome selected then, and shows an unclaimed payout being cancelled for about 3 seconds after "Send it again"; "End the 48 hours now" on the brand's decisions. The seed gains a paid post with every reference. 1.3: they go with the mocks in the last slice ([mocks go in one last slice](../decisions/2026-10-11-mocks-go-in-one-last-slice.md)). |
 | PP-FR-33 | Mobile-first at 375 px: banners and the money card in the DC-FR-47 order, every target at least 44 px, the creator's action in the phone bar (DC-FR-30), the brand's in its dock (RW-FR-29), no sideways scroll. |
 | PP-FR-34 | Every control named ("Confirm the post", "Check my Reel"); state changes announced politely; a countdown announced only when it crosses the last hour; reduced motion respected (the paid seal stamps only with motion allowed). |
 
@@ -154,6 +159,28 @@ Cancelling is not in this spec; it gets its own.
 - **Visual:** inherits DESIGN.md, the draft check and the brand review. Mockups in `design/publish-and-pay/` before build, at 390 px and desktop; William picks.
 
 ## Mocks and the provisional contract
+
+### On the live API (1.3)
+
+The routes match the contract: `POST /deliverables/{id}/go-ahead` with `{ videoUrl }`, `…/posted`, `…/live-check/again`, `…/payout/again`, and the brand's `…/post/confirm`, `…/post/object` with `{ reason }` and `…/post/accept`. The page's schemas take the contract's shapes and are checked both ways at compile time against `CreatorPost`, `BrandPost` and `BrandDeal`; Zod still checks every answer. Differences from the provisional shapes below:
+
+| Difference | 1.3 |
+| --- | --- |
+| The go-ahead gains `confirming` | PP-FR-01 |
+| The live check gains `reconnect_youtube`, `video_not_found`, `approved` with `by`, and `checking` on fixable | PP-FR-38, PP-FR-39, PP-FR-12 |
+| `undecided.what` and the brand's `confirm.what` are lists of codes; `not_fixable.reason` and `accept.reason` are codes | PP-FR-14, PP-FR-28 |
+| A refused capture comes in `capture` as `{ refused, retryUntil }`; the page's `captureRefused` goes | PP-FR-21 |
+| The brand gains `taking`; the deal page gains `capture_refused` and the whole `taken` | PP-FR-25, PP-FR-41 |
+| The brand's live results come in `post.items` | PP-FR-26 |
+| `payout.reason` is a code | PP-FR-20 |
+| No `releaseReference` | PP-FR-22; asked of Furqaan |
+| `run`, `brief` and `post.url` are always sent; the currency is USD | The schemas follow |
+| A Reel: no link at the go-ahead, `{ url }` at posting, new refusals and couldn't-decide codes (IG) | Built to IG on stubs; **depends on backend** until the routes exist |
+
+The demo controls (PP-FR-32) and the shared mocks stay until the last slice.
+
+Before 1.3:
+
 
 ```ts
 // Provisional. Added to the creator's deliverable (DC).
@@ -203,13 +230,17 @@ Each maps to a function his money module already has (MP "Implementation Decisio
 | PP-FR-25 to PP-FR-31 | `GET /brand/deals/{id}/deliverables/{id}` and the Drafts summary gain the states above, never the creator's payout email; `POST …/post/confirm`, `POST …/post/object` with `{ reason }` (≤ 500, plain text), `POST …/post/accept` |
 | Mocks only | `POST /__demo/go-ahead/next`, `/__demo/live-check/next`, `/__demo/payout/next` with `{ outcome }` (now also `wont_send`), `/__demo/payout/{deliverableId}/try-again`, and `/__demo/brand/{deliverableId}/end-48h`. MSW only, never part of the real API |
 | Security | Every changing request protected from cross-site requests, as DC's |
+| PP-FR-22 (1.3) | `releaseReference` on the creator's post: the void's PayPal id, so a released hold shows its reference like every other stage |
+| PP-FR-07, PP-FR-37 (1.3) | The Instagram routes from the IG spec: the go-ahead without a link, `posted` with `{ url }`, and the codes listed there. Their types in `contract/` |
+| Live end to end (1.3) | Test-only routes, accepted only with the secret held in CI, to put a post into the later states (a live check's result, a payout's result, the brand's 48 hours ended). Until then the live run is done by hand in the sandbox with a real unlisted video |
 
 ## Testing Decisions
 
 - Tests check what each side sees and can do, named after the PP-FR they prove.
 - **Views (pure):** every later state's banner, next step and action; the countdown and its last hour; every release reason on each side; the money lines for captured, paid, delayed, cancelling, unclaimed, failed, capture refused, approved not paid; never "post now" without a go-ahead; the brand never sees the payout email.
 - **Components:** the go-ahead's three answers and the run-out; "I've posted it" for YouTube and a Reel (link shape, refusal); fixable with Check again; the brand's confirm and object (reason required) and accept, each with its confirmation and silence line; the money card's problems with Send it again and the email fix; the demo controls only in mock builds.
-- **End to end (Playwright, on MSW):** an approved post → go-ahead → I've posted it → couldn't decide → the brand confirms → captured → paid, on both sides; and fixable → check again → passed; at 375 px and 1280 px.
+- **1.3:** new and changed behaviour on per-test stubs typed from the contract: the go-ahead's link field and every refusal, confirming, reconnect and not found, check again in flight, approved by each, the payout reasons, the brand's taking and live results in the checklist, the live post's link line, and the Reel's side. Live end to end by hand in the sandbox until Furqaan's test routes exist.
+- **End to end (Playwright, on MSW, before 1.3):** an approved post → go-ahead → I've posted it → couldn't decide → the brand confirms → captured → paid, on both sides; and fixable → check again → passed; at 375 px and 1280 px.
 
 ## Out of Scope
 
@@ -232,3 +263,5 @@ Each maps to a function his money module already has (MP "Implementation Decisio
 | 1.1 | PP-FR-35 and PP-FR-36 added, from a grill-me session with William: a payout PayPal won't send shows as delayed on Cleared's side with nothing for the creator to do, and an unclaimed payout being cancelled shows as sending again. Neither changes the deals list or the brand's view. PP-FR-24, PP-FR-30 and PP-FR-32 and the contract follow. Shows MP-FR-45 and MP-FR-30 (money path 1.3). Signed by William | none |
 | 1.2 | Pointer: cancelling (Out of Scope here, "its own spec next") is specified in the [cancel FRD](cancel-frd.md); the released reason "cancelled (and by whom)" in PP-FR-22 and PP-FR-31 follows CN-FR-10. No requirement changes here | none |
 | 1.2 signed | Revision 1.2 signed by William | none |
+| 1.3 | The move onto the live API, from the grill-me with William: the go-ahead takes the unlisted video's link in an inline field (PP-FR-01, PT-FR-01); every refusal in plain words (new PP-FR-37); confirming, reconnect and not found (new PP-FR-38), check again in flight, approved by whom (new PP-FR-39), couldn't-decide codes in words; the payout reasons; the release reference only when sent; the brand's taking (new PP-FR-41), refused capture line, accept reasons and live results inside the checklist; the live post's link when there's no brand email (new PP-FR-40); the Reel side built to the IG spec on stubs; schemas locked to the contract | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md), [Video with the go-ahead](../decisions/2026-10-10-the-unlisted-video-is-given-with-the-go-ahead.md), [Mocks go in one last slice](../decisions/2026-10-11-mocks-go-in-one-last-slice.md) |
+| 1.3 signed | Revision 1.3 signed by William | none |
