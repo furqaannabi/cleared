@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.22). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.23). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus its side of step 5 (the brand's review: objections and approval, with the brand's side in the [brand review FRD](brand-review-frd.md)) and the released state.
 
@@ -178,6 +178,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | ID | Requirement |
 | --- | --- |
 | DC-FR-31 | **Rail (desktop) and top bar (tablet and phone).** Logo, a deals list (each row: initials avatar, brand name, one-line status such as "Brand review · 31h left", linking to that deal) and the creator's name. On tablet and phone the deals list opens from a "Deals" button (44 px target) as a full-screen sheet. (1.19) "Home" (`/deals`, [creator home](creator-home-frd.md) HM-FR-01) is the first link in the rail and the sheet, marked current on home. (1.20) The Cleared logo in the rail and the top bar links to the landing page (`/`), named "Cleared, home page". Payouts are on home; Connected accounts are in Settings (ST). (1.21) "Home" becomes "Overview" (`/deals`, HM-FR-01), and "Payments" (`/payments`, HM-FR-23) is the second link in the rail and the sheet, marked current on Payments; Payments shows only with the payments flag on (HM-FR-20). (1.22) There is no payments flag any more (HM 1.4): Payments is always shown. |
+| DC-FR-55 | **Folding the rail (1.23).** From `lg:`, a button at the foot of the rail, above the creator's name, folds it to a slim rail about 64 px wide and back. Its icon is a panel with its left side marked; its name is "Collapse sidebar" or "Expand sidebar", and `aria-expanded` says which. Folded, the rail keeps, in order: the logo mark (linking to `/`), New deal, Overview and Payments as their icons, each deal as its initials avatar (the current one marked), and the creator's avatar opening the account menu. Each keeps its name for screen readers and shows it as a tooltip on hover and keyboard focus; the deals' one-line status is left out. The page takes the width given back. The key `[` folds or unfolds it from anywhere, except while typing in a field. The choice is remembered in this browser (local storage; if storage is blocked, the rail opens unfolded) and is never sent anywhere. The width changes over about 200 ms, at once with reduced motion. Below `lg:` nothing changes: the top bar and the Deals sheet stay as they are. |
 | DC-FR-32 | **Header.** Breadcrumb (Deals › brand › deliverable), title (brand and deliverable), and meta: run number, video length, deadline. |
 | DC-FR-33 | **Deliverable switcher.** When a deal has more than one deliverable, pill tabs under the title, one per deliverable, each showing platform and current step, each a link to that deliverable. On phones the pill row scrolls horizontally. |
 | DC-FR-34 | **Deal steps.** The seven steps (Checklist agreed, Held, Draft check, Brand review, Publish, Live check, Paid) with done, current and upcoming marked. On phones they become a dot track with "Step N of 7 · {step}". |
@@ -383,3 +384,5 @@ Fields:
 | 1.21 signed | Revision 1.21 signed by William | none |
 | 1.22 | DC-FR-31's Payments link is always shown, the payments flag being retired (HM 1.4) | none |
 | 1.22 signed | Revision 1.22 signed by William | none |
+| 1.23 | From a grill-me with William: the rail can fold to a slim icon rail from `lg:` (new DC-FR-55), with a button at its foot and the `[` key, remembered in the browser | none |
+| 1.23 signed | Revision 1.23 signed by William | none |
