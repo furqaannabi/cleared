@@ -147,6 +147,9 @@ describe("DC-FR-55 (1.23) folding the rail", () => {
     expect(unfold).toHaveAttribute("aria-expanded", "false");
     for (const name of ["New deal", "Overview", "Payments", "Glow Theory"]) expect(within(rail()).getByRole("link", { name: new RegExp(name) })).toBeInTheDocument();
     expect(within(rail()).queryByText("Draft check")).toBeNull();
+    // DC-FR-55 (1.24): at the top of the rail, before New deal.
+    const order = Array.from(rail().querySelectorAll("a, button")).map((el) => el.getAttribute("aria-label") ?? el.textContent);
+    expect(order.indexOf("Expand sidebar")).toBeLessThan(order.findIndex((n) => n?.includes("New deal")));
     unmount();
     open();
     expect(within(rail()).getByRole("button", { name: "Expand sidebar" })).toBeVisible();

@@ -436,7 +436,8 @@ describe("DC-FR-34 deal steps", () => {
   test("PP-FR-24: posting is at Publish, published at Live check, captured at Paid, paid all done", () => {
     expect(stepsFor("posting").summary).toBe("Step 5 of 7 · Publish");
     expect(stepsFor("published").summary).toBe("Step 6 of 7 · Live check");
-    expect(stepsFor("captured").summary).toBe("Step 7 of 7 · Paid");
+    // DC-FR-34 (1.25): the payout is on its way, not paid.
+    expect(stepsFor("captured").summary).toBe("Step 7 of 7 · Payout on its way");
     const paid = stepsFor("paid");
     expect(paid.items.every((s) => s.state === "done")).toBe(true);
     expect(paid.summary).toBe("Cleared · paid");

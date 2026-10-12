@@ -52,11 +52,14 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
       >
         <SkipLink />
         <aside aria-label="Main" className={`sticky top-0 z-20 flex h-dvh flex-col bg-espresso-deep py-[22px] ${folded ? "px-2" : "px-3.5"}`}>
-          {/* DC-FR-31 (1.20): the logo goes to the landing page. */}
-          <Link href="/" aria-label="Cleared, home page" className={`rounded-nav ${folded ? "self-center px-1.5" : "self-start px-2.5"}`}>
-            <Logo mark={folded} />
-          </Link>
-          <span className="mt-[22px] grid gap-1 px-0.5">
+          {/* DC-FR-31 (1.20): the logo goes to the landing page; DC-FR-55 (1.24): the fold beside it, or under the seal when folded. */}
+          <div className={folded ? "grid justify-items-center gap-2" : "flex items-center justify-between gap-2"}>
+            <Link href="/" aria-label="Cleared, home page" className={`rounded-nav ${folded ? "px-1.5" : "px-2.5"}`}>
+              <Logo mark={folded} />
+            </Link>
+            <FoldButton folded={folded} onToggle={toggleFolded} />
+          </div>
+          <span className={`${folded ? "mt-3" : "mt-[22px]"} grid gap-1 px-0.5`}>
             <NewDealLink tone="rail" slim={folded} />
             <PageLinks tone="rail" page={page} slim={folded} />
           </span>
@@ -69,9 +72,8 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
             </p>
           )}
           <DealsBody load={deals} currentDealId={currentDealId} tone="rail" slim={folded} />
-          {/* SI-FR-11: the creator's name, with Sign out, at the foot of the rail; DC-FR-55: the fold above it. */}
-          <div className="mt-auto grid gap-2 pt-4">
-            <FoldButton folded={folded} onToggle={toggleFolded} />
+          {/* SI-FR-11: the creator's name, with Sign out, at the foot of the rail. */}
+          <div className="mt-auto pt-4">
             <AccountMenu tone="rail" slim={folded} />
           </div>
         </aside>
@@ -203,8 +205,9 @@ function NewDealLink({ tone, slim = false }: { tone: "rail" | "sheet"; slim?: bo
 }
 
 /**
- * Folds the desktop rail to its icons and back (DC-FR-55), named for what it
- * does next, with `aria-expanded` saying whether the rail is open.
+ * Folds the desktop rail to its icons and back (DC-FR-55), at the top of the
+ * rail (1.24): an icon named for what it does next, shown as a tooltip, with
+ * `aria-expanded` saying whether the rail is open.
  */
 function FoldButton({ folded, onToggle }: { folded: boolean; onToggle: () => void }) {
   const label = folded ? "Expand sidebar" : "Collapse sidebar";
@@ -214,15 +217,14 @@ function FoldButton({ folded, onToggle }: { folded: boolean; onToggle: () => voi
       onClick={onToggle}
       aria-expanded={!folded}
       aria-label={label}
-      className={`group relative flex min-h-11 items-center gap-2.5 rounded-nav text-[13.5px] font-semibold text-white/70 hover:bg-white/8 hover:text-white ${folded ? "justify-center" : "px-2.5"}`}
+      className="group relative grid size-11 flex-none place-items-center rounded-nav text-white/70 hover:bg-white/8 hover:text-white"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-[18px]">
         <rect x="3" y="4" width="18" height="16" rx="2" />
         <path d="M9 4v16" />
         <path d={folded ? "M13 10l2 2-2 2" : "M15 10l-2 2 2 2"} />
       </svg>
-      {!folded && <span aria-hidden="true">Collapse</span>}
-      {folded && <RailTip>Expand sidebar</RailTip>}
+      <RailTip>{label}</RailTip>
     </button>
   );
 }

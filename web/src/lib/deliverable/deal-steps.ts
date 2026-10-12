@@ -44,7 +44,8 @@ export function dealSteps(d: Deliverable): DealStepsView {
   const current = CURRENT[d.state];
   return {
     items: DEAL_STEPS.map((label, i) => ({ label, state: i < current ? "done" : i === current ? "current" : "upcoming" })),
-    summary: `Step ${current + 1} of ${DEAL_STEPS.length} · ${DEAL_STEPS[current]}`,
+    // DC-FR-34 (1.25): the step keeps its name; the summary says where the money is.
+    summary: `Step ${current + 1} of ${DEAL_STEPS.length} · ${stepLabel(d.state)}`,
   };
 }
 
@@ -54,6 +55,8 @@ export function stepLabel(state: Deliverable["state"]): string {
   if (state === "no_draft") return "Waiting for your draft";
   if (state === "paid") return "Paid";
   if (state === "approved_not_paid") return "Approved, not paid";
+  // DC-FR-33 (1.25): taken from the brand, not yet with the creator; never "Paid".
+  if (state === "captured") return "Payout on its way";
   return DEAL_STEPS[CURRENT[state]];
 }
 
