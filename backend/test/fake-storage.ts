@@ -27,6 +27,10 @@ export class FakeStorage implements Storage {
     return `https://bucket.test/${key}?good-for=${seconds}`;
   }
 
+  async read(key: string) {
+    return this.files.get(key);
+  }
+
   async delete(key: string) {
     this.files.delete(key);
   }

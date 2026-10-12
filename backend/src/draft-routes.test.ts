@@ -214,8 +214,8 @@ describe("DR-FR-03, DR-FR-04 the file itself", () => {
 });
 
 describe("DR-FR-06 to DR-FR-09 limits on drafts", () => {
-  /** How many drafts the stand-in storage was ever handed. */
-  const stored = (world: HeldWorld) => world.storage.everStored.length;
+  /** How many drafts the stand-in storage was ever handed. What was said in a draft is kept beside it, and is not one. */
+  const stored = (world: HeldWorld) => world.storage.everStored.filter((key) => !key.endsWith(".heard.json")).length;
 
   test("a post can be checked 10 times; the eleventh draft is refused and nothing of it is read", async () => {
     const world = heldWorld();

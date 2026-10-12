@@ -32,7 +32,6 @@ export function capped(body: ReadableStream<Uint8Array>, maxBytes: number): Read
 
 /** What the rest of the service needs of S3 beyond the storage port: reading a small object whole, and naming one for AWS's own services. */
 export interface S3Storage extends Storage {
-  read(key: string): Promise<Uint8Array>;
   /** The object's address as AWS services take it: s3://bucket/key. Never a link anyone can open. */
   uri(key: string): string;
 }
@@ -83,9 +82,15 @@ export function createS3Storage(config: { bucket: string; region: string; client
     },
 
     async read(key) {
-      const object = await client.send(new GetObjectCommand({ Bucket, Key: key }));
-      if (!object.Body) throw new Error("The stored object has no content");
-      return object.Body.transformToByteArray();
+      try {
+        const object = await client.send(new GetObjectCommand({ Bucket, Key: key }));
+        if (!object.Body) throw new Error("The stored object has no content");
+        return await object.Body.transformToByteArray();
+      } catch (error) {
+        // Nothing stored under that key. Anything else is the bucket failing, and is not hidden.
+        if (error instanceof Error && (error.name === "NoSuchKey" || error.name === "NotFound")) return undefined;
+        throw error;
+      }
     },
 
     uri: (key) => `s3://${Bucket}/${key}`,

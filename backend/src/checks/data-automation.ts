@@ -108,11 +108,15 @@ export function createDataAutomation(config: {
   /** The account's Data Automation profile for the region. */
   profileArn: string;
   /** Reads a small object from the drafts bucket whole. */
-  read: (key: string) => Promise<Uint8Array>;
+  read: (key: string) => Promise<Uint8Array | undefined>;
   client?: Pick<BedrockDataAutomationRuntimeClient, "send">;
 }): SpeechAndText {
   const client = config.client ?? new BedrockDataAutomationRuntimeClient({ region: config.region });
-  const json = async (uri: string) => JSON.parse(new TextDecoder().decode(await config.read(keyOf(config.bucket, uri)))) as unknown;
+  const json = async (uri: string) => {
+    const stored = await config.read(keyOf(config.bucket, uri));
+    if (!stored) throw new Error("Data Automation's result is not where it said it wrote it");
+    return JSON.parse(new TextDecoder().decode(stored)) as unknown;
+  };
 
   return {
     async start(videoKey) {

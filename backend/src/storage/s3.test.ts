@@ -70,6 +70,29 @@ describe("what S3 is asked", () => {
     expect(sent.map((each) => each.name)).toEqual(["ListObjectsV2Command"]);
   });
 
+  test("a small object is read whole, and one that is not there reads as nothing", async () => {
+    const there = standIn({ GetObjectCommand: () => ({ Body: { transformToByteArray: async () => new Uint8Array([1, 2, 3]) } }) });
+    expect(await there.storage.read("drafts/p/d.heard.json")).toEqual(new Uint8Array([1, 2, 3]));
+    expect(there.sent[0]).toEqual({ name: "GetObjectCommand", input: { Bucket: "cleared-drafts", Key: "drafts/p/d.heard.json" } });
+
+    const missing = standIn({
+      GetObjectCommand: () => {
+        throw Object.assign(new Error("The specified key does not exist."), { name: "NoSuchKey" });
+      },
+    });
+    expect(await missing.storage.read("drafts/p/none")).toBeUndefined();
+  });
+
+  test("a failure of the bucket itself is not mistaken for nothing being there", async () => {
+    const down = standIn({
+      GetObjectCommand: () => {
+        throw Object.assign(new Error("Service Unavailable"), { name: "ServiceUnavailable" });
+      },
+    });
+
+    expect(down.storage.read("drafts/p/d.heard.json")).rejects.toThrow("Service Unavailable");
+  });
+
   test("an object is named for AWS's own services by bucket and key", () => {
     expect(standIn().storage.uri("drafts/p/d")).toBe("s3://cleared-drafts/drafts/p/d");
   });

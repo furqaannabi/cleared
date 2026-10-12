@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import type { Browser } from "../test/browser";
 import { heldWorld, resetDatabase } from "../test/held-post";
 import { prisma } from "./db";
+import { heardIn, heardKey } from "./drafts/heard";
 
 beforeEach(resetDatabase);
 
@@ -118,6 +119,46 @@ describe("DR-FR-10, DR-FR-21, DR-FR-22 a draft is checked and its run recorded",
   });
 });
 
+describe("what was said in a draft is kept beside its file, for matching a live Reel to it (IG-FR-21)", () => {
+  const draftOf = (post: string) => prisma.draft.findFirstOrThrow({ where: { deliverableId: post }, orderBy: { createdAt: "desc" } });
+
+  test("once the video has been read, what was said is kept under the draft's own key and can be read back", async () => {
+    const world = heldWorld();
+    const { sam, post } = await world.heldPost();
+    await sendDraft(sam, post);
+
+    await world.finishChecks();
+
+    const draft = await draftOf(post);
+    expect(await heardIn(world.storage, draft.storageKey)).toEqual(world.speech.speech);
+    expect([...world.storage.files.keys()].every((key) => key.startsWith(draft.storageKey))).toBe(true);
+  });
+
+  test("DR-BR-19 when a newer draft's run finishes, what was said in the older one goes with its file", async () => {
+    const world = heldWorld();
+    const { sam, post } = await world.heldPost();
+    await sendDraft(sam, post);
+    await world.finishChecks();
+    const first = await draftOf(post);
+
+    await sendDraft(sam, post, "second.mp4");
+    await world.finishChecks();
+
+    expect(await heardIn(world.storage, first.storageKey)).toBeUndefined();
+    expect(await heardIn(world.storage, (await draftOf(post)).storageKey)).toEqual(world.speech.speech);
+  });
+
+  test("DR-BR-18 nothing that was said is logged", async () => {
+    const world = heldWorld();
+    const { sam, post } = await world.heldPost();
+    await sendDraft(sam, post);
+
+    await world.finishChecks();
+
+    expect(JSON.stringify(world.logged)).not.toContain("sponsored by Glow Serum");
+  });
+});
+
 describe("DR-FR-22, DR-BR-19 a second draft", () => {
   test("its run is the second, each item remembers what it was, and the first file is deleted when the second finishes", async () => {
     const world = heldWorld();
@@ -143,7 +184,8 @@ describe("DR-FR-22, DR-BR-19 a second draft", () => {
     ]);
     const drafts = await prisma.draft.findMany();
     expect(drafts.map((draft) => draft.fileName)).toEqual(["second.mp4"]);
-    expect([...world.storage.files.keys()]).toEqual([drafts[0]!.storageKey]);
+    // The second draft's file, and what was said in it. Nothing of the first is left.
+    expect([...world.storage.files.keys()].sort()).toEqual([drafts[0]!.storageKey, heardKey(drafts[0]!.storageKey)].sort());
   });
 
   test("a new draft ends the window the draft before it had opened, at once", async () => {
@@ -221,7 +263,7 @@ describe("DR-FR-23 when a service fails", () => {
     await world.finishChecks();
     expect(await check(post)).toMatchObject({ phase: "done", run: 1 });
     // The same file, checked again: nothing was uploaded and nothing more was counted.
-    expect(world.storage.everStored).toHaveLength(1);
+    expect(world.storage.everStored.filter((key) => !key.endsWith(".heard.json"))).toHaveLength(1);
     expect(await prisma.draftUsage.count()).toBe(1);
   });
 

@@ -4,6 +4,7 @@
  * sent, and what a finished run means for the post, is decided by the review rules; what each item's
  * result is, by the check. This module joins them to storage, the database and the jobs table.
  */
+import { keepHeard } from "./heard";
 import { checkDraft, ServiceFailed, type CheckItem as ChecklistItem, type ItemResult, type Stage } from "../checks/check";
 import type { Judge, SpeechAndText, VideoModel } from "../checks/ports";
 import { Prisma, type PrismaClient } from "../generated/prisma/client";
@@ -238,6 +239,9 @@ export function createDrafts(deps: {
           await prisma.draftCheck.update({ where: { deliverableId }, data: { speechJobId: null } });
           throw new ServiceFailed("the reading of the video");
         }
+
+        // What was said is kept beside the draft, so a live Reel can be matched to it without reading it again (IG-FR-21).
+        await keepHeard(storage, draft.storageKey, read.speech);
 
         const address = await storage.address(draft.storageKey, settings.addressSeconds);
         const results = await checkDraft({

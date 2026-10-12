@@ -11,6 +11,8 @@ export interface Storage {
   put(key: string, body: ReadableStream<Uint8Array>, options: { maxBytes: number }): Promise<{ bytes: number } | "too_large">;
   /** An address that reads the file for `seconds`, and then stops working. Never logged (DR-BR-18). */
   address(key: string, seconds: number): Promise<string>;
+  /** A small stored object, whole. Nothing if nothing is stored there. A failure of the store itself is thrown. */
+  read(key: string): Promise<Uint8Array | undefined>;
   delete(key: string): Promise<void>;
   /** Deletes everything whose key starts with `prefix`. */
   deleteUnder(prefix: string): Promise<void>;
