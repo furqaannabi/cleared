@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { legalPagesOn } from "@/lib/legal/flag";
 import { Logo } from "@/components/shell/logo";
 import { InstagramOnlyNote, SignInButton } from "./sign-in-buttons";
 
@@ -16,6 +18,20 @@ export function SignInPage({ next }: { next?: string | null }) {
         <h1 className="font-head text-[28px] leading-tight font-bold">Sign in to see your deals</h1>
         <SignInButton next={next} fullWidth />
         <InstagramOnlyNote />
+        {/* SI-FR-01 (1.3): once the legal pages are linked (LG-FR-14). */}
+        {legalPagesOn() && (
+          <p className="text-[13.5px] text-ink-3">
+            By signing in you agree to the{" "}
+            <Link href="/terms" className="font-bold text-espresso underline underline-offset-2">
+              terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="font-bold text-espresso underline underline-offset-2">
+              privacy policy
+            </Link>
+            .
+          </p>
+        )}
       </div>
     </main>
   );

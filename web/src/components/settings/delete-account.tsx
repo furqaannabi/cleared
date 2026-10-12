@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useRef, useState } from "react";
+import { legalPagesOn } from "@/lib/legal/flag";
 import { api } from "@/lib/api";
 import type { OpenDeal } from "@/lib/api/client";
 import { FIELD, OUTLINE } from "./styles";
@@ -44,6 +46,12 @@ export function DeleteAccount() {
             Delete account
           </h2>
           {!open && !blocking && <p className="text-[13.5px] text-ink-3">Removes your profile and your connected accounts.</p>}
+          {/* ST-FR-10 (1.2): once the legal pages are linked (LG-FR-14). */}
+          {legalPagesOn() && (
+            <Link href="/data-deletion" className="inline-flex min-h-11 items-center text-[13.5px] font-bold text-espresso underline underline-offset-3">
+              How deleting works
+            </Link>
+          )}
         </div>
         {!open && (
           <button

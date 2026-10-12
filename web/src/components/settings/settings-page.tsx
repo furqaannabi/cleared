@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
+import { legalPagesOn } from "@/lib/legal/flag";
 import { useSession } from "@/components/session/use-session";
 import { api } from "@/lib/api";
 import { settingsView } from "@/lib/settings/settings-view";
@@ -45,7 +47,7 @@ export function SettingsPage({ removal = ACCOUNT_REMOVAL }: { removal?: boolean 
           <AccountRows rows={view.accounts} onMe={setMe} />
         </Section>
       </div>
-      <p className="mt-3">
+      <p className="mt-3 flex flex-wrap items-center gap-x-5">
         <button
           type="button"
           onClick={async () => {
@@ -56,6 +58,17 @@ export function SettingsPage({ removal = ACCOUNT_REMOVAL }: { removal?: boolean 
         >
           Sign out
         </button>
+        {/* ST-FR-09 (1.2): once the legal pages are linked (LG-FR-14). */}
+        {legalPagesOn() && (
+          <>
+            <Link href="/privacy" className={TEXT_LINK}>
+              Privacy policy
+            </Link>
+            <Link href="/terms" className={TEXT_LINK}>
+              Terms
+            </Link>
+          </>
+        )}
       </p>
       {view.deleteAccount && <DeleteAccount />}
     </main>

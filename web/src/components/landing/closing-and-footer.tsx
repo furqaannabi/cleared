@@ -1,3 +1,4 @@
+import { LegalLinks } from "@/components/legal/legal-links";
 import { WayIn } from "./way-in";
 
 /**
@@ -51,6 +52,10 @@ export function LandingFooter() {
             MIT licence
           </a>
         </p>
+        {/* LP-FR-12 (1.7): the legal pages, once linked (LG-FR-14). */}
+        <div className="md:col-span-3">
+          <LegalLinks tone="dark" />
+        </div>
       </div>
     </footer>
   );
