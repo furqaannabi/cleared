@@ -1,6 +1,6 @@
 # Settings: FRD
 
-**Status:** Signed by William (revision 1.2). Disconnecting and deleting the account are product behaviour shared with Furqaan, who builds their routes; they are written here as requests.
+**Status:** Signed by William (revision 1.3). Disconnecting and deleting the account are product behaviour shared with Furqaan, who builds their routes; they are written here as requests.
 
 **Surface:** The creator's account settings at `/settings`: the signed-in email, the PayPal email, the connected YouTube and Instagram accounts, signing out, and (behind a flag until the backend has them) disconnecting an account and deleting the account. Reached from the account menu on the creator's name ([sign-in](sign-in-frd.md) SI-FR-11). The brand has no account and no settings.
 
@@ -52,17 +52,17 @@ One settings page, reached from the name menu, that says who is signed in, where
 | ID | Requirement |
 | --- | --- |
 | ST-FR-06 | **Each platform.** A row each for YouTube and Instagram. Connected: the account's name from the profile and "Reconnect". Not connected: "Not connected" and "Connect YouTube" or "Connect Instagram". Both actions are the existing connect links (IN 1.3), coming back to `/settings`, and the result shows as it does there. Instagram keeps its note that only professional accounts can connect. |
-| ST-FR-07 | **Disconnect (behind the flag).** A connected row also offers "Disconnect". It opens an inline confirmation: "Disconnect {name}? Cleared stops reading it. You can connect it again later." with "Disconnect" and "Keep it". Sent as `DELETE /connect/{platform}`; the row then shows Not connected. |
-| ST-FR-08 | **Refused while a post is under way.** When a post on that platform is held and not yet paid or released, disconnecting is refused and the row says: "You can't disconnect {platform} while a post is under way: {brand} · {post}." (each post named; "and {n} more" past three). The API decides; the page shows its answer, and offers no Disconnect while the profile says one is under way. |
+| ST-FR-07 | **Disconnect (behind the flag).** A connected row also offers "Disconnect". It opens an inline confirmation: "Disconnect {name}? Cleared stops reading it. You can connect it again later." with "Disconnect" and "Keep it". Sent as `DELETE /connect/{platform}`; the row then shows Not connected. (1.3) Always offered on a connected account the profile does not say is in use; no flag. |
+| ST-FR-08 | **Refused while a post is under way.** When a post on that platform is held and not yet paid or released, disconnecting is refused and the row says: "You can't disconnect {platform} while a post is under way: {brand} · {post}." (each post named; "and {n} more" past three). The API decides; the page shows its answer, and offers no Disconnect while the profile says one is under way. (1.3) When the profile says the account is in use (`accounts[].inUse`, AH-FR-12), the row has no Disconnect and says under the account's name: "In use by a post under way. You can disconnect it once that post is paid or its hold goes back." Reconnect stays. A refusal from the API (a post started since the page loaded) still shows the line above, naming each post. |
 
 ### Signing out and deleting
 
 | ID | Requirement |
 | --- | --- |
 | ST-FR-09 | **Sign out.** "Sign out" at the end of the page, doing what the menu's does (SI-FR-12). (1.2) With `NEXT_PUBLIC_LEGAL_PAGES` on, "Privacy policy" and "Terms" sit beside it, linking to `/privacy` and `/terms` ([legal pages](legal-pages-frd.md) LG-FR-15). |
-| ST-FR-10 | **Delete account (behind the flag).** "Delete account" at the very end, apart from the rest. When nothing is open it opens an inline confirmation saying what happens: "Your profile, your connected accounts and your drafts are deleted. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and email removed. This can't be undone." A field "Type delete to confirm" and "Delete my account", on only once "delete" is typed. Sent as `DELETE /me`; on success the creator is signed out and lands on the home page. (1.2) With `NEXT_PUBLIC_LEGAL_PAGES` on, the section also links "How deleting works" to `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-15). |
+| ST-FR-10 | **Delete account (behind the flag).** "Delete account" at the very end, apart from the rest. When nothing is open it opens an inline confirmation saying what happens: "Your profile, your connected accounts and your drafts are deleted. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and email removed. This can't be undone." A field "Type delete to confirm" and "Delete my account", on only once "delete" is typed. Sent as `DELETE /me`; on success the creator is signed out and lands on the home page. (1.2) With `NEXT_PUBLIC_LEGAL_PAGES` on, the section also links "How deleting works" to `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-15). (1.3) Always offered; no flag. The confirmation says, as AH-FR-17 to AH-FR-21 do: "Your profile, your connected accounts, your drafts, and each deal's brief, checklist and check results are deleted, and brands' links to your deals stop working. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed. Signing in again starts a new, empty account. This can't be undone." Before it opens, the section says "Removes your profile, your connected accounts and everything in your deals." |
 | ST-FR-11 | **Refused while anything is open.** While any deal has a post held and not yet paid or released, a payout not settled, or is waiting on its brand, deleting is refused and the section lists what's in the way, one line per deal ("Glow Theory: a post is held"), and says: "Finish or cancel these first." No confirmation opens. The API decides; the page shows its answer. |
-| ST-FR-12 | **The flag.** Disconnecting and deleting show only when the build flag `NEXT_PUBLIC_ACCOUNT_REMOVAL` is "enabled". It stays off until Furqaan's routes and their types are in `contract/`; then turning it on is the only change. With it off, neither shows, and nothing says they're coming. |
+| ST-FR-12 | **The flag.** Disconnecting and deleting show only when the build flag `NEXT_PUBLIC_ACCOUNT_REMOVAL` is "enabled". It stays off until Furqaan's routes and their types are in `contract/`; then turning it on is the only change. With it off, neither shows, and nothing says they're coming. (1.3) **Retired.** Both routes are in the contract and live (AH 1.0): Disconnect and Delete account always show, as ST-FR-07, ST-FR-08 and ST-FR-10 say. |
 
 ### Responsive and accessibility
 
@@ -94,10 +94,10 @@ One settings page, reached from the name menu, that says who is signed in, where
 
 | For | Needs |
 | --- | --- |
-| ST-FR-07, ST-FR-08 | `DELETE /connect/{platform}`: removes the stored access and the connected account. Refused with 409 `post_under_way` and the posts in the way as `error.blocking` (`{ dealId, deliverableId, brandName, platform }[]`) while a post on that platform is held and not yet paid or released. Answers the profile |
-| ST-FR-08 | The profile says, per connected account, whether it can be disconnected now, so the page can leave Disconnect out (for instance `accounts[].inUse: true`) |
-| ST-FR-10, ST-FR-11 | `DELETE /me`: refused with 409 `deal_open` and what's in the way as `error.blocking` (`{ dealId, brandName, why: "held" \| "payout" \| "waiting_for_brand" }[]`) while anything is open. Otherwise deletes the profile, tokens and drafts, keeps the money records with the name and email removed, ends every session, and answers 204 |
-| ST-FR-10 | What is kept and for how long: Furqaan's call with William; the privacy policy will say it |
+| ST-FR-07, ST-FR-08 | `DELETE /connect/{platform}`: removes the stored access and the connected account. Refused with 409 `post_under_way` and the posts in the way as `error.blocking` (`{ dealId, deliverableId, brandName, platform }[]`) while a post on that platform is held and not yet paid or released. Answers the profile (1.3) Answered by AH 1.0 (AH-FR-10, AH-FR-11). |
+| ST-FR-08 | The profile says, per connected account, whether it can be disconnected now, so the page can leave Disconnect out (for instance `accounts[].inUse: true`) (1.3) Answered: `accounts[].inUse` (AH-FR-12). |
+| ST-FR-10, ST-FR-11 | `DELETE /me`: refused with 409 `deal_open` and what's in the way as `error.blocking` (`{ dealId, brandName, why: "held" \| "payout" \| "waiting_for_brand" }[]`) while anything is open. Otherwise deletes the profile, tokens and drafts, keeps the money records with the name and email removed, ends every session, and answers 204 (1.3) Answered by AH 1.0 (AH-FR-15, AH-FR-16). |
+| ST-FR-10 | What is kept and for how long: Furqaan's call with William; the privacy policy will say it (1.3) Answered: AH-FR-17, AH-FR-18 and AH-FR-24. |
 | All | The routes and their types in `contract/` |
 
 ## Testing Decisions
@@ -129,3 +129,5 @@ One settings page, reached from the name menu, that says who is signed in, where
 | 1.1 signed | Revision 1.1 signed by William | none |
 | 1.2 | From the legal pages grill-me: Privacy policy and Terms beside Sign out, and How deleting works in Delete account, behind the legal flag ([legal pages](legal-pages-frd.md)) | none |
 | 1.2 signed | Revision 1.2 signed by William | none |
+| 1.3 | From the Settings grill-me with William, now that Furqaan's routes are live (AH 1.0): the flag is retired (ST-FR-12); an account in use says so in place of Disconnect (ST-FR-08); the delete confirmation says all that AH-FR-17 to AH-FR-21 delete and keep (ST-FR-10); the requests answered | none |
+| 1.3 signed | Revision 1.3 signed by William | none |
