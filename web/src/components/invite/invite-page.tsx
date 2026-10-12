@@ -26,7 +26,7 @@ import { useInvite } from "./use-invite";
  * a sponsorship terms sheet, what is left before the link, and the link.
  *
  * @param dealId - the deal
- * @see docs/specs/creator-invite-frd.md IN-FR-01 to IN-FR-22
+ * @see docs/specs/creator-invite-frd.md IN-FR-01 to IN-FR-23
  */
 export function InvitePage({ dealId }: { dealId: string }) {
   const { invite, profile, error, reload, setInvite, setProfile } = useInvite(dealId);
@@ -111,7 +111,7 @@ export function InvitePage({ dealId }: { dealId: string }) {
               ) : (
                 <>
                   <BeforeYouSend invite={invite} view={view} save={save} problems={problems} onInvite={takeInvite} />
-                  <CreateLinkBar invite={invite} view={view} paypalEmail={profile.paypalEmail} save={save} problems={problems} onInvite={takeInvite} />
+                  <CreateLinkBar invite={invite} view={view} paypalEmail={profile.paypalEmail} save={save} problems={problems} onInvite={takeInvite} reload={reload} />
                 </>
               )}
               {/* CN-FR-02: the deal's cancel, under the side panel. */}

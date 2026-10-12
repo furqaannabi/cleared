@@ -17,6 +17,7 @@ export interface RefusalNames {
 
 const NOT_A_LINK = "That isn’t a YouTube video link. Copy it from YouTube Studio or the video’s Share button.";
 const YOUTUBE_DOWN = "YouTube isn’t answering right now. Try again in a few minutes.";
+const INSTAGRAM_DOWN = "Instagram isn’t answering right now. Try again in a few minutes.";
 
 /**
  * A refusal from the go-ahead, "I've posted it" or Check again, in plain
@@ -34,6 +35,8 @@ export function refusal(action: RefusedAction, code: string | undefined, names: 
   if (code === "reconnect_youtube") return { text: "We can’t read your YouTube channel any more.", reconnect: "youtube" };
   if (code === "reconnect_instagram") return { text: "We can’t read your Instagram account any more.", reconnect: "instagram" };
   if (code === "youtube_unavailable") return { text: YOUTUBE_DOWN };
+  // PP-FR-37 (1.4): on every action, as YouTube's.
+  if (code === "instagram_unavailable") return { text: INSTAGRAM_DOWN };
   if (action === "go_ahead") {
     const words: Record<string, string> = {
       not_a_youtube_link: NOT_A_LINK,

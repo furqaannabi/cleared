@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { formatAmount } from "@/lib/invite/amount";
 import type { InviteView } from "@/lib/invite/invite-view";
+import { linkRefusal } from "@/lib/invite/link-refusal";
 import type { DealInvite } from "@/lib/invite/types";
 import { SaveProblem } from "./save-problem";
 import type { Save, SaveProblems } from "./save";
@@ -9,7 +11,8 @@ import type { Save, SaveProblems } from "./save";
  * "Create link for {brand}", held back until every term is in place, with the
  * first thing left and how many more. While answering the brand's notes it is
  * "Send updated terms to {brand}" instead, held back the same way (CH-FR-24).
- * Fixed to the bottom on phones.
+ * Fixed to the bottom on phones. Refused for something not in place, it
+ * says why and has the page read itself again (IN-FR-23).
  *
  * @param invite - the deal's invite terms
  * @param view - the invite view model
@@ -17,7 +20,8 @@ import type { Save, SaveProblems } from "./save";
  * @param save - runs a change against the API
  * @param problems - fields whose last save failed
  * @param onInvite - takes the invite with its new link
- * @see docs/specs/creator-invite-frd.md IN-FR-16
+ * @param reload - reads the invite and the profile again
+ * @see docs/specs/creator-invite-frd.md IN-FR-16, IN-FR-23
  */
 export function CreateLinkBar({
   invite,
@@ -26,6 +30,7 @@ export function CreateLinkBar({
   save,
   problems,
   onInvite,
+  reload,
 }: {
   invite: DealInvite;
   view: InviteView;
@@ -33,8 +38,20 @@ export function CreateLinkBar({
   save: Save;
   problems: SaveProblems;
   onInvite: (invite: DealInvite) => void;
+  reload: () => void;
 }) {
   const update = invite.step === "changes_requested";
+  const [refused, setRefused] = useState<string | null>(null);
+  const send = () => {
+    setRefused(null);
+    return save("link", () => (update ? api.sendUpdatedTerms(invite.dealId) : api.createInviteLink(invite.dealId)), onInvite, (failure) => {
+      const why = linkRefusal(failure.code, update);
+      if (!why) return false;
+      setRefused(why);
+      reload();
+      return true;
+    });
+  };
   return (
     <section
       aria-label={update ? "Send updated terms" : "Create link"}
@@ -52,14 +69,15 @@ export function CreateLinkBar({
       <button
         type="button"
         aria-disabled={!view.canCreate || undefined}
-        onClick={() =>
-          view.canCreate && save("link", () => (update ? api.sendUpdatedTerms(invite.dealId) : api.createInviteLink(invite.dealId)), onInvite)
-        }
+        onClick={() => view.canCreate && send()}
         className="inline-flex min-h-12 items-center justify-center rounded-pill bg-espresso px-6 text-body-strong font-bold text-surface hover:bg-espresso-hover aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
       >
         {update ? `Send updated terms to ${invite.brandName}` : `Create link for ${invite.brandName}`}
       </button>
       <SaveProblem retry={problems.link} />
+      <p role="status" className="text-meta font-bold text-fail empty:hidden">
+        {refused}
+      </p>
     </section>
   );
 }

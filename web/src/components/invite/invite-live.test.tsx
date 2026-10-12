@@ -114,3 +114,60 @@ describe("IN-FR-17 (1.3) creating the link", () => {
     expect(sent).toEqual({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
   });
 });
+
+describe("IN-FR-23 (1.4) a refused link says why and re-reads the page", () => {
+  const filled = (i: Partial<Parameters<typeof anInvite>[0]> = {}) =>
+    anInvite({
+      posts: [
+        { deliverableId: "del_pine_video", platform: "youtube_video", itemCount: 3, amount: "1200.00", deadlineDays: 14 },
+        { deliverableId: "del_pine_reel", platform: "instagram_reel", itemCount: 2, amount: "450.00", deadlineDays: 10 },
+      ],
+      ...i,
+    });
+  const both = [
+    { platform: "youtube" as const, name: "Ada Okafor" },
+    { platform: "instagram" as const, name: "ada.makes" },
+  ];
+
+  test("Instagram not connected: the words, no Try again, and Connect Instagram back from a second read", async () => {
+    const invite = filled();
+    stubInvite(invite);
+    let reads = 0;
+    server.use(
+      http.get(`${apiBaseUrl}/me`, () => {
+        reads += 1;
+        // The page first believes Instagram is connected; the API knows it isn't.
+        return HttpResponse.json(aProfile({ paypalEmail: "ada@example.com", accounts: reads === 1 ? both : both.slice(0, 1) }));
+      }),
+      http.post(`${apiBaseUrl}/deals/${invite.dealId}/invite/link`, () => apiError({ code: "instagram_not_connected" }, 409)),
+    );
+    render(<InvitePage dealId={invite.dealId} />);
+    await userEvent.click(await screen.findByRole("button", { name: "Create link for Pine & Co" }));
+    expect(await screen.findByText("Connect Instagram before you create the link.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+    expect(await screen.findByRole("link", { name: "Connect Instagram" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Create link for Pine & Co" })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  test("Send updated terms refused for a missing PayPal email ends with sending the updated terms", async () => {
+    const invite = filled({ step: "changes_requested" });
+    stubSession(aProfile({ paypalEmail: "ada@example.com", accounts: both }));
+    stubInvite(invite);
+    server.use(http.post(`${apiBaseUrl}/deals/${invite.dealId}/invite/send`, () => apiError({ code: "paypal_email_missing" }, 409)));
+    render(<InvitePage dealId={invite.dealId} />);
+    await userEvent.click(await screen.findByRole("button", { name: "Send updated terms to Pine & Co" }));
+    expect(await screen.findByText("Add your PayPal email before you send the updated terms.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+  });
+
+  test("any other refusal keeps “We couldn’t save that.” with Try again", async () => {
+    const invite = filled();
+    stubSession(aProfile({ paypalEmail: "ada@example.com", accounts: both }));
+    stubInvite(invite);
+    server.use(http.post(`${apiBaseUrl}/deals/${invite.dealId}/invite/link`, () => apiError({ code: "not_allowed" }, 409)));
+    render(<InvitePage dealId={invite.dealId} />);
+    await userEvent.click(await screen.findByRole("button", { name: "Create link for Pine & Co" }));
+    expect(await screen.findByText(/We couldn’t save that\./)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+  });
+});

@@ -29,6 +29,10 @@ describe("PP-FR-37 refusals, in plain words", () => {
     expect(refusal("posted", code, who)).toEqual({ text });
   });
 
+  test.each(["go_ahead", "posted", "check_again"] as const)("PP-FR-37 (1.4): Instagram not answering, on %s", (action) => {
+    expect(refusal(action, "instagram_unavailable", who)).toEqual({ text: "Instagram isn’t answering right now. Try again in a few minutes." });
+  });
+
   test("reconnecting is offered with its words, for YouTube and Instagram", () => {
     expect(refusal("go_ahead", "reconnect_youtube", who)).toEqual({ text: "We can’t read your YouTube channel any more.", reconnect: "youtube" });
     expect(refusal("posted", "reconnect_instagram", who)).toEqual({ text: "We can’t read your Instagram account any more.", reconnect: "instagram" });
