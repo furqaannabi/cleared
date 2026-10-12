@@ -1,6 +1,6 @@
 # Creator home: FRD
 
-**Status:** Signed by William (revision 1.2). The payments route is a request for Furqaan; the money sections stay behind a flag until it is in `contract/`.
+**Status:** Signed by William (revision 1.3). The payments route is a request for Furqaan; the money sections stay behind a flag until it is in `contract/`.
 
 **Surface:** The creator's home, in two pages (1.2). The overview at `/deals`: the money overview, the performance figures and the deals with what needs the creator first; signing in and the landing page's button land here. Payments at `/payments`: what was paid each month and the payment history with its CSV. The brand has no home.
 
@@ -78,7 +78,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-15 | **Needs you first.** Deals with a post waiting on the creator come first under "Needs you", the rest under "Under way" and then "Finished" (every post paid, released or closed). Waiting on the creator: the deal at the checklist, invite or changes-requested step, or a post with no draft, a failed check, results to act on, an objection, or an approved draft without a go-ahead; or a payout that failed or wasn't claimed. Newest first within each. Each row: brand, each post's platform and state in the rail's words, linking where the rail's row links (DC-FR-37). |
+| HM-FR-15 | **Needs you first.** Deals with a post waiting on the creator come first under "Needs you", the rest under "Under way" and then "Finished" (every post paid, released or closed). Waiting on the creator: the deal at the checklist, invite or changes-requested step, or a post with no draft, a failed check, results to act on, an objection, or an approved draft without a go-ahead; or a payout that failed or wasn't claimed. Newest first within each. Each row: brand, each post's platform and state in the rail's words, linking where the rail's row links (DC-FR-37). 1.3: whether a post waits on the creator is the API's `needsCreator` (AH-FR-04), in place of the rule above; a payout that failed or wasn't claimed still counts, from the payments. A closed post is Finished and reads "Closed · never held" or "Cancelled", as its `closedBecause` says (AH-FR-03). |
 
 ### Payments (1.2)
 
@@ -135,7 +135,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 | For | Needs |
 | --- | --- |
 | HM-FR-05 to HM-FR-19 | `GET /me/payments`: one row per post that has ever had a hold, for the signed-in creator only: `dealId`, `deliverableId`, `brandName`, `platform`, `amountMinor`, `feeMinor`, `receivedMinor`, `currency`, `stage` (`held`, `captured`, `paid`, `released`, `closed`), `payout` (`state` as on `CreatorPost`, `reference`, `at`) when captured, `holdReference`, `heldAt`, `deadline`, `publishedAt`, `paidAt`, and `firstCheckPassed` (true, false, or null while no check has finished) |
-| HM-FR-15 | Whether a post is waiting on the creator is worked out here from `GET /deals` states; if the API would rather say it (`deliverables[].needsCreator`), the page uses that |
+| HM-FR-15 | Whether a post is waiting on the creator is worked out here from `GET /deals` states; if the API would rather say it (`deliverables[].needsCreator`), the page uses that. 1.3: the API says it (AH-FR-04) |
 | All | The route and its types in `contract/` |
 
 ## Testing Decisions
@@ -167,3 +167,5 @@ One home page that answers "where's my money?" first: three totals in what the c
 | 1.1 signed | Revision 1.1 signed by William | none |
 | 1.2 | From a grill-me with William: home splits into an overview at `/deals` (title and rail link "Overview"; the money overview, How you're doing without the chart, the deals) and Payments at `/payments` (new HM-FR-23: Paid each month, then the history and CSV; second in the rail). New HM-FR-24, the line for the year (William picked option 2 of `design/home/payments.html`); HM-FR-25, "See payments" under Paid; HM-FR-26, nothing paid yet. With the flag off, no Payments page or link | none |
 | 1.2 signed | Revision 1.2 signed by William | none |
+| 1.3 | From the contract-alignment grill-me with William: Needs you reads the API's `needsCreator` (AH-FR-04), with stuck payouts still counted from the payments; a closed post reads "Closed · never held" or "Cancelled" (AH-FR-03) (HM-FR-15) | none |
+| 1.3 signed | Revision 1.3 signed by William | none |
