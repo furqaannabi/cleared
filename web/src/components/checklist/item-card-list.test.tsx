@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { expect, test } from "vitest";
-import { glowTheoryVideo } from "@/mocks/fixtures/deliverables";
+import { glowTheoryVideo } from "@/test/fixtures/deliverables";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import { ItemCardList } from "./item-card-list";
 

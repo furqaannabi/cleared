@@ -1,14 +1,17 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { seededPosts, stubPosts } from "@/test/creator-posts";
+import { server } from "@/test/server";
 import { apiError } from "@/test/stub-api";
 import { DraftCheckPage } from "./draft-check-page";
 
 // jsdom can't read a video's length; the browser's reading is stood in for.
 vi.mock("@/lib/draft/check-draft-file", async (real) => ({ ...(await real<object>()), readVideoLength: async () => 408 }));
+
+beforeEach(() => void stubPosts(...seededPosts()));
 
 const draftRoute = `${apiBaseUrl}/deliverables/del_glow_video/draft`;
 const file = (name = "cut3.mp4", size?: number) => {

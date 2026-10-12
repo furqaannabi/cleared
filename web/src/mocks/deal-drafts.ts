@@ -4,7 +4,7 @@ import { apiBaseUrl } from "@/lib/api";
 import type { dealDraftSchema } from "@/lib/api/schemas";
 import { allHeld, brandNotes, heldCount, isRevising } from "./brand-deals";
 import { checkedByFor, nextId, readBrief } from "./brief-reader";
-import { juniperDraft } from "./fixtures/juniper";
+import { juniperDraft } from "@/test/fixtures/juniper";
 import { findDeliverable } from "./store";
 
 type Draft = z.infer<typeof dealDraftSchema>;

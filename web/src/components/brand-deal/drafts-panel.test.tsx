@@ -1,11 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
-import { api } from "@/lib/api";
+import { aJuniperDeal, stubMapleDeal } from "@/test/brand-deal";
+import { stubBrandDeal } from "@/test/stub-api";
 import { BrandDealPage } from "./brand-deal-page";
 
 describe("RW-FR-01, RW-FR-02 each post's draft on the brand's deal page", () => {
   test("lists each held post's draft, what needs the brand first, each linking to its review", async () => {
-    await api.openBrandLink("demo_juniper");
+    stubBrandDeal(aJuniperDeal());
     render(<BrandDealPage dealId="deal_juniper" />);
     const drafts = await screen.findByRole("region", { name: "Drafts" });
     const rows = within(drafts).getAllByRole("group");
@@ -19,7 +20,7 @@ describe("RW-FR-01, RW-FR-02 each post's draft on the brand's deal page", () => 
   });
 
   test("before any draft check exists there is no Drafts panel", async () => {
-    await api.openBrandLink("demo_maple");
+    stubMapleDeal();
     render(<BrandDealPage dealId="deal_maple" />);
     await screen.findByRole("heading", { level: 1 });
     expect(screen.queryByRole("region", { name: "Drafts" })).toBeNull();

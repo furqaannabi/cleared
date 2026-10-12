@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
 import { api } from "@/lib/api";
+import { runOnMockBackend } from "./mock-backend";
+
+/* The mock backend's cancelling, which Playwright runs on until the live suite. */
+runOnMockBackend();
 
 const creator = async (id: string) => {
   const r = await api.getDeliverable(id);

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
-import { glowTheoryVideo } from "@/mocks/fixtures/deliverables";
+import { glowTheoryVideo } from "@/test/fixtures/deliverables";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
 import ChecklistGrid from "./checklist-grid";
 

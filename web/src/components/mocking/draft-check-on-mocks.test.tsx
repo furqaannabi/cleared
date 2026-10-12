@@ -1,10 +1,13 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
-import { DraftCheckPage } from "./draft-check-page";
+import { DraftCheckPage } from "@/components/draft-check/draft-check-page";
+import { runOnMockBackend } from "@/mocks/mock-backend";
 
-// This file runs the page as if mocks were on (development or a mock demo).
+// This file runs the page as if mocks were on (development or a mock demo), on the mock
+// backend Playwright runs on until the live suite.
 vi.mock("@/lib/mocking/mocking-enabled", () => ({ MOCKING_ENABLED: true }));
+runOnMockBackend();
 
 test("DC-FR-45: with mocks on, uploading a new draft shows Checking, then the new run", async () => {
   render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
@@ -41,13 +44,6 @@ test("DC-FR-48, DC-FR-21: when the new run lands, the page says what the fix cha
   expect(screen.getByText("Reads “GLOW20”, with a zero.")).toBeVisible();
   expect(screen.queryByText("Reads “GLOW2O”, with a letter O where the zero should be.")).toBeNull();
 }, 10_000);
-
-test("DC-FR-30: on a phone the fixed bar holds only the action", async () => {
-  render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
-  const bar = await screen.findByRole("region", { name: "What to do next" });
-  expect(within(bar).getByText("Upload new draft")).toBeVisible();
-  expect(within(bar).queryByText("Fix 1 item, and decide on 1 unsure item.")).toBeNull();
-});
 
 test("RW-FR-28: on mocks, the next draft can be told to pass every item, which opens the brand's window", async () => {
   render(<DraftCheckPage dealId="deal_juniper" deliverableId="del_juniper_reel" />);

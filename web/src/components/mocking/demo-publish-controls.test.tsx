@@ -4,6 +4,9 @@ import { describe, expect, test, vi } from "vitest";
 import { DemoPublishControls } from "@/components/mocking/demo-publish-controls";
 import type { Deliverable } from "@/lib/deliverable/types";
 import { findDeliverable } from "@/mocks/store";
+import { runOnMockBackend } from "@/mocks/mock-backend";
+
+runOnMockBackend();
 
 const captured = (payout: Deliverable["payout"]) => Object.assign(findDeliverable("del_wren_video")!, { state: "captured", payout }) as Deliverable;
 

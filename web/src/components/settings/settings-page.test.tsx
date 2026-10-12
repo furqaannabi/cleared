@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { AppShell } from "@/components/shell/app-shell";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { server } from "@/test/server";
 import { aProfile, stubSession, type Profile } from "@/test/stub-api";
 import { SettingsPage } from "./settings-page";
 

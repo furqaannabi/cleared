@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { server } from "@/test/server";
 import { aBrandPost, apiError, stubBrandPost } from "@/test/stub-api";
 import { BrandReviewPage } from "./brand-review-page";
 

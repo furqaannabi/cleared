@@ -2,28 +2,28 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
-import { api, apiBaseUrl } from "@/lib/api";
-import { setReadingSpeed } from "@/mocks/deal-drafts";
-import { server } from "@/mocks/node";
+import { apiBaseUrl } from "@/lib/api";
+import { aReadDraft, stubDealDraft } from "@/test/deal-draft";
+import { server } from "@/test/server";
+import { aDealDraft, recordRequests, type DealDraft } from "@/test/stub-api";
 import { ChecklistPage } from "./checklist-page";
 
-const BRIEF = [
-  "Thanks for partnering with Glow Theory on the Dew Drop serum launch!",
-  "In the YouTube video, say “Glow Theory” in the first 60 seconds.",
-  "Mention us early in the Reel.",
-  "Say and show the code GLOW20.",
-  "Keep it fun and authentic!",
-  "Mark the post as a paid promotion.",
-].join("\n");
+type Item = DealDraft["items"][number];
+const added = (d: DealDraft, i: Partial<Item> & Pick<Item, "id" | "deliverableId" | "name">): DealDraft => ({
+  ...d,
+  items: [...d.items, { kind: "said", addedByCreator: false, checkedBy: "ai_timestamp", ...i }],
+});
+const answered = (d: DealDraft, id: string, answer: NonNullable<DealDraft["questions"][number]["answer"]>): DealDraft => ({
+  ...d,
+  questions: d.questions.map((q) => (q.id === id ? { ...q, answer } : q)),
+});
 
+/** Glow Theory's read brief on the checklist page; `deal.on` answers a change. */
 async function openChecklist() {
-  setReadingSpeed(0);
-  const r = await api.createDeal({ brandName: "Glow Theory", deliverables: [{ platform: "youtube_video" }, { platform: "instagram_reel" }] });
-  if (!r.ok) throw new Error(r.error);
-  await api.submitBrief(r.data.id, BRIEF);
-  render(<ChecklistPage dealId={r.data.id} />);
+  const deal = stubDealDraft(aReadDraft());
+  render(<ChecklistPage dealId="deal_glow" />);
   await screen.findByRole("heading", { name: "The brief" });
-  return r.data.id;
+  return deal;
 }
 const questions = () => screen.getByRole("region", { name: /questions? to answer/ });
 const items = () => screen.getByRole("list", { name: "Checklist items" });
@@ -58,17 +58,24 @@ describe("BC-FR-09 to BC-FR-12 the checklist", () => {
 
 describe("BC-FR-13 questions", () => {
   test("a suggested answer turns the line into an item on its post", async () => {
-    await openChecklist();
+    const deal = await openChecklist();
+    const sent = recordRequests();
+    deal.on("put", "/questions/:questionId", (d, { body }) =>
+      added(answered(d, "q_glow_early", body), { id: "it_glow_early", deliverableId: "del_glow_reel", name: "Mentions Glow Theory in the first 10 seconds", kind: "timing", briefLine: 3 }),
+    );
     expect(screen.getByRole("heading", { name: "2 questions to answer" })).toBeVisible();
     await userEvent.click(within(questions()).getByRole("button", { name: "In the first 10 seconds" }));
     await waitFor(() => expect(screen.getByRole("heading", { name: "1 question to answer" })).toBeVisible());
     expect(within(brief()).getAllByRole("listitem")[2]).toHaveTextContent("1 item");
     await userEvent.click(screen.getByRole("tab", { name: /Instagram Reel/ }));
     expect(within(items()).getByText("Mentions Glow Theory in the first 10 seconds")).toBeVisible();
+    expect(sent).toContainEqual({ method: "PUT", path: "/deals/deal_glow/questions/q_glow_early", body: { kind: "suggestion", text: "In the first 10 seconds" } });
   });
 
   test("own words, and leaving a line out", async () => {
-    await openChecklist();
+    const deal = await openChecklist();
+    const sent = recordRequests();
+    deal.on("put", "/questions/:questionId", (d, { body, params }) => answered(d, params.questionId, body));
     await userEvent.click(within(questions()).getAllByRole("button", { name: "Something else" })[0]);
     await userEvent.type(within(questions()).getByLabelText("Your answer"), "Says Glow Theory before the first cut");
     await userEvent.click(within(questions()).getByRole("button", { name: "Save answer" }));
@@ -76,12 +83,22 @@ describe("BC-FR-13 questions", () => {
     await userEvent.click(within(questions()).getByRole("button", { name: "Leave it out" }));
     await waitFor(() => expect(screen.queryByRole("region", { name: /questions? to answer/ })).toBeNull());
     expect(within(brief()).getAllByRole("listitem")[4]).toHaveTextContent("Not checked");
+    expect(sent.map((r) => r.body)).toEqual([{ kind: "own_words", text: "Says Glow Theory before the first cut" }, { kind: "left_out" }]);
   });
 });
 
 describe("BC-FR-14, BC-FR-15 changing items", () => {
   test("edit wording, copy, move and remove from an item's menu", async () => {
-    await openChecklist();
+    const deal = await openChecklist();
+    deal.on("patch", "/items/:itemId", (d, { body, params }) => ({
+      ...d,
+      items: d.items.map((i) => (i.id === params.itemId ? { ...i, name: (body as { name: string }).name } : i)),
+    }));
+    deal.on("post", "/items/:itemId/copy", (d, { body, params }) => {
+      const from = d.items.find((i) => i.id === params.itemId)!;
+      return added(d, { ...from, id: `${from.id}_copy`, deliverableId: (body as { deliverableId: string }).deliverableId });
+    });
+    deal.on("delete", "/items/:itemId", (d, { params }) => ({ ...d, items: d.items.filter((i) => i.id !== params.itemId) }));
     await userEvent.click(within(items()).getByRole("button", { name: "Change “Says the code GLOW20”" }));
     await userEvent.click(screen.getByRole("menuitem", { name: "Edit wording" }));
     const box = within(items()).getByLabelText("Wording");
@@ -100,13 +117,16 @@ describe("BC-FR-14, BC-FR-15 changing items", () => {
   });
 
   test("add an item the brief doesn't mention, marked as added by you", async () => {
-    await openChecklist();
+    const deal = await openChecklist();
+    const sent = recordRequests();
+    deal.on("post", "/items", (d, { body }) => added(d, { ...(body as Pick<Item, "deliverableId" | "name" | "kind">), id: "it_glow_pack", addedByCreator: true }));
     await userEvent.click(screen.getByRole("button", { name: "Add an item" }));
     await userEvent.type(screen.getByLabelText("What should the post do?"), "Shows the serum’s packaging");
     await userEvent.selectOptions(screen.getByLabelText("Kind"), "shown");
     await userEvent.click(screen.getByRole("button", { name: "Add" }));
-    const added = await within(items()).findByText("Shows the serum’s packaging");
-    expect(added.closest("li")).toHaveTextContent("Added by you, not in the brief");
+    const shown = await within(items()).findByText("Shows the serum’s packaging");
+    expect(shown.closest("li")).toHaveTextContent("Added by you, not in the brief");
+    expect(sent).toContainEqual({ method: "POST", path: "/deals/deal_glow/items", body: { deliverableId: "del_glow_video", name: "Shows the serum’s packaging", kind: "shown" } });
   });
 
   test("BC-FR-18: a failed save says so beside the item, and isn't shown as saved", async () => {
@@ -121,7 +141,9 @@ describe("BC-FR-14, BC-FR-15 changing items", () => {
 
 describe("BC-FR-16, BC-FR-17 checklist ready", () => {
   test("waits for every question, then saves and says what's next", async () => {
-    await openChecklist();
+    const deal = await openChecklist();
+    deal.on("put", "/questions/:questionId", (d, { body, params }) => answered(d, params.questionId, body));
+    deal.on("post", "/checklist/ready", (d) => ({ ...d, step: "invite", ready: true }));
     const ready = screen.getByRole("button", { name: "Checklist ready" });
     expect(ready).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("Answer 2 questions first.")).toBeVisible();
@@ -139,17 +161,16 @@ describe("BC-FR-16, BC-FR-17 checklist ready", () => {
     expect(within(items()).queryByRole("button", { name: /^Change/ })).toBeNull();
     expect(screen.queryByRole("button", { name: "Add an item" })).toBeNull();
     // IN-FR-01: straight on to the invite step.
-    expect(screen.getByRole("link", { name: "Set amounts and invite Glow Theory" })).toHaveAttribute("href", expect.stringMatching(/^\/deals\/[^/]+\/invite$/));
+    expect(screen.getByRole("link", { name: "Set amounts and invite Glow Theory" })).toHaveAttribute("href", "/deals/deal_glow/invite");
   });
 });
 
 describe("BC-FR-22, BC-FR-23 going back from the checklist page", () => {
   test("before the brief is sent, Posts links to the posts page", async () => {
-    const r = await api.createDeal({ brandName: "Glow Theory", deliverables: [{ platform: "youtube_video" }] });
-    if (!r.ok) throw new Error(r.error);
-    render(<ChecklistPage dealId={r.data.id} />);
+    stubDealDraft(aDealDraft());
+    render(<ChecklistPage dealId="deal_new" />);
     const steps = await screen.findByRole("list", { name: "New deal steps" });
-    expect(within(steps).getByRole("link", { name: /Posts/ })).toHaveAttribute("href", `/deals/${r.data.id}/posts`);
+    expect(within(steps).getByRole("link", { name: /Posts/ })).toHaveAttribute("href", "/deals/deal_new/posts");
   });
 
   test("once the brief is read, Posts is set and says so; Brief links to the brief", async () => {

@@ -6,7 +6,7 @@ import { cancelHandlers, dealCancelled } from "./cancel";
 import { isSignedIn, sessionHandlers } from "./session";
 import { publishHandlers } from "./publish";
 import { dealDraftHandlers, draftSummaries } from "./deal-drafts";
-import { deals } from "./fixtures/deals";
+import { deals } from "@/test/fixtures/deals";
 import { inviteHandlers } from "./invites";
 import { findDeliverable } from "./store";
 

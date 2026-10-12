@@ -7,7 +7,7 @@ import type { creatorProfileSchema, dealInviteSchema } from "@/lib/api/schemas";
 import { nextId } from "./brief-reader";
 import { brandNotes, creatorExtras } from "./brand-deals";
 import { findDraft } from "./deal-drafts";
-import { JUNIPER, JUNIPER_TERMS, JUNIPER_TOKEN } from "./fixtures/juniper";
+import { JUNIPER, JUNIPER_TERMS, JUNIPER_TOKEN } from "@/test/fixtures/juniper";
 
 type Invite = z.infer<typeof dealInviteSchema>;
 type Profile = z.infer<typeof creatorProfileSchema>;

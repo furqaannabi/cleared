@@ -8,7 +8,7 @@ import type { Deliverable } from "@/lib/deliverable/types";
 import { findDraft } from "./deal-drafts";
 import { canCreate, dealForToken, inviteFor, payoutEmail, postTerms, restartLink } from "./invites";
 import { addDeliverable } from "./store";
-import { JUNIPER, juniperHolds } from "./fixtures/juniper";
+import { JUNIPER, juniperHolds } from "@/test/fixtures/juniper";
 import { postReview } from "./brand-review";
 
 type BrandDeal = z.infer<typeof brandDealSchema>;

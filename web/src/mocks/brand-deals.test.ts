@@ -1,7 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { api } from "@/lib/api";
-import { setNextHoldOutcome } from "@/mocks/brand-deals";
-import { setReadingSpeed } from "@/mocks/deal-drafts";
+import { setNextHoldOutcome } from "./brand-deals";
+import { setReadingSpeed } from "./deal-drafts";
+import { runOnMockBackend } from "./mock-backend";
+
+/* The mock backend's the brand's deal and its holds, which Playwright runs on until the live suite. */
+runOnMockBackend();
 
 const tokenOf = (url: string) => url.split("/b/")[1];
 

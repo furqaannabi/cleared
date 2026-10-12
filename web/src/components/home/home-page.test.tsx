@@ -3,7 +3,7 @@ import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { AppShell } from "@/components/shell/app-shell";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { server } from "@/test/server";
 import type { PaymentRow } from "@/lib/home/payment-row";
 import { aPayment } from "@/lib/home/test-rows";
 import { aProfile, stubDeals, stubPayments, stubSession, type DealSummary } from "@/test/stub-api";

@@ -2,16 +2,31 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { server } from "@/test/server";
+import { apiError } from "@/test/stub-api";
 import { OpenLink } from "./open-link";
 
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 
+/** The API's answer to opening a link: Maple & Moss's deal link, a review link for Juniper & Salt's video, and nothing else. */
+const LINKS: Record<string, { dealId: string; deliverableId?: string }> = {
+  tok_maple: { dealId: "deal_maple" },
+  tok_review: { dealId: "deal_juniper", deliverableId: "del_juniper_video" },
+};
+beforeEach(() =>
+  server.use(
+    http.post(`${apiBaseUrl}/b/:token/session`, ({ params }) => {
+      const session = LINKS[params.token as string];
+      return session ? HttpResponse.json(session) : apiError({ code: "link_not_found" }, 404);
+    }),
+  ),
+);
+
 describe("CH-FR-01 opening the link", () => {
   test("says it's opening, then replaces the URL with the deal's, so the token leaves the address bar", async () => {
-    render(<OpenLink token="demo_maple" />);
+    render(<OpenLink token="tok_maple" />);
     expect(screen.getByText("Opening your deal…")).toBeVisible();
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/brand/deals/deal_maple"));
   });
@@ -19,7 +34,7 @@ describe("CH-FR-01 opening the link", () => {
 
 describe("RW-FR-03 a review link", () => {
   test("lands on its post", async () => {
-    render(<OpenLink token="review_del_juniper_video" />);
+    render(<OpenLink token="tok_review" />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/brand/deals/deal_juniper/deliverables/del_juniper_video"));
   });
 });
@@ -35,7 +50,7 @@ describe("CH-FR-02 a link that doesn't work", () => {
 
 test("when Cleared can't be reached, it says so and offers to try again, without calling the link dead", async () => {
   server.use(http.post(`${apiBaseUrl}/b/:token/session`, () => HttpResponse.error(), { once: true }));
-  render(<OpenLink token="demo_maple" />);
+  render(<OpenLink token="tok_maple" />);
   expect(await screen.findByText("We couldn’t reach Cleared. Check your connection and try again.")).toBeVisible();
   expect(screen.queryByText("This link doesn’t work any more")).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "Try again" }));

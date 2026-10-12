@@ -2,7 +2,7 @@ import type { components } from "contract";
 import { http, HttpResponse } from "msw";
 import { apiBaseUrl } from "@/lib/api";
 import type { PaymentRow } from "@/lib/home/payment-row";
-import { server } from "@/mocks/node";
+import { server } from "./server";
 
 /** The creator's profile as the contract's `GET /me` answers it. */
 export type Profile = components["schemas"]["Profile"];
@@ -163,3 +163,34 @@ export const stubDeals = (deals: DealSummary[]) => server.use(http.get(`${apiBas
 
 /** This test's answer to the requested `GET /me/payments` (creator home FRD; not in the contract yet). */
 export const stubPayments = (rows: PaymentRow[]) => server.use(http.get(`${apiBaseUrl}/me/payments`, () => HttpResponse.json(rows)));
+
+/** One request the page sent: its method, its path after the API's base (with query), as the contract names it, and its JSON body, if any. */
+export interface SentRequest {
+  method: string;
+  path: string;
+  body?: unknown;
+}
+
+/**
+ * Records every request the page sends during this test, so a test can check
+ * what was sent, or that nothing was (ADR 2026-10-12, Vitest leaves the shared
+ * mocks). Bodies are read from a copy, so the stub still reads the original.
+ */
+export function recordRequests(): SentRequest[] {
+  const sent: SentRequest[] = [];
+  server.events.on("request:start", ({ request }) => {
+    const url = new URL(request.url);
+    const base = new URL(apiBaseUrl, url).pathname.replace(/\/$/, "");
+    const path = url.pathname.startsWith(base) ? url.pathname.slice(base.length) : url.pathname;
+    const entry: SentRequest = { method: request.method, path: path + url.search };
+    sent.push(entry);
+    void request
+      .clone()
+      .text()
+      .then((text) => {
+        if (text) entry.body = JSON.parse(text);
+      })
+      .catch(() => {});
+  });
+  return sent;
+}

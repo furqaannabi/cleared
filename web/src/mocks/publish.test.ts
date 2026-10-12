@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { api } from "@/lib/api";
-import { endBrandWait, setDemoGoAhead, setDemoLiveCheck, setDemoPayout, tryPayoutNow } from "@/mocks/demo-publish";
+import { endBrandWait, setDemoGoAhead, setDemoLiveCheck, setDemoPayout, tryPayoutNow } from "./demo-publish";
+import { runOnMockBackend } from "./mock-backend";
+
+/* The mock backend's publish and pay, which Playwright runs on until the live suite. */
+runOnMockBackend();
 
 const DEAL = "deal_juniper";
 const SHORT = "del_juniper_short"; // approved, a YouTube Short

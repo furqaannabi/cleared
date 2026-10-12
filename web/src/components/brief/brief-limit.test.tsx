@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
 import { ChecklistPage } from "@/components/checklist-builder/checklist-page";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { server } from "@/test/server";
 import { aDealDraft, apiError } from "@/test/stub-api";
 
 const BRIEF = "Thanks for partnering with Glow Theory!\nSay and show the code GLOW20.\nMention us early in the Reel.";

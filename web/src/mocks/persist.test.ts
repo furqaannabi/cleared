@@ -2,6 +2,9 @@ import { describe, expect, test } from "vitest";
 import { api } from "@/lib/api";
 import { restoreMockData, snapshotMockData } from "./persist";
 import { resetMockData } from "./store";
+import { runOnMockBackend } from "./mock-backend";
+
+runOnMockBackend();
 
 describe("Mock data kept in the browser", () => {
   test("a fresh start restored from the saved data still has the brand's notes, its session and new ids don't clash", async () => {

@@ -1,9 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { deals } from "@/test/fixtures/deals";
+import { server } from "@/test/server";
+import { aProfile, stubDeals, stubSession } from "@/test/stub-api";
 import { AppShell } from "./app-shell";
 
 function screenWidth(px: number) {
@@ -15,6 +17,10 @@ function screenWidth(px: number) {
   }));
 }
 afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => {
+  stubSession(aProfile());
+  stubDeals(deals);
+});
 
 const shell = () =>
   render(

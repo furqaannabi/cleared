@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { server } from "@/test/server";
 import { aBrandDeal, apiError, stubBrandDeal } from "@/test/stub-api";
 import { BrandDealPage } from "./brand-deal-page";
 

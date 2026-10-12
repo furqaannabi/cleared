@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
+import { aProfile, stubSession } from "@/test/stub-api";
 import { NewDealPage } from "./new-deal-page";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -15,6 +16,7 @@ describe("BC-FR-21 the new deal page", () => {
   });
 
   test("the preview of the terms sheet fills in as the creator types", async () => {
+    stubSession(aProfile());
     render(<NewDealPage />);
     const preview = screen.getByRole("region", { name: "Taking shape: the terms the brand will see" });
     expect(within(preview).getAllByRole("listitem").map((l) => l.querySelector("b")?.textContent)).toEqual(["YouTube video"]);

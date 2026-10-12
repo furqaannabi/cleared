@@ -1,14 +1,19 @@
 import { render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { deals } from "@/test/fixtures/deals";
+import { server } from "@/test/server";
+import { stubDeals } from "@/test/stub-api";
 import { DealRedirect } from "./deal-redirect";
 import { DealsProvider } from "./use-deals";
 
 const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
-beforeEach(() => replace.mockClear());
+beforeEach(() => {
+  replace.mockClear();
+  stubDeals(deals);
+});
 
 describe("DC-FR-37 opening a deal", () => {
   test("opens the deliverable the API says needs the creator", async () => {

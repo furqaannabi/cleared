@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
-import { glowTheoryVideo } from "@/mocks/fixtures/deliverables";
+import { glowTheoryVideo } from "@/test/fixtures/deliverables";
 import { BriefSheet } from "./brief-sheet";
 
 const brief = glowTheoryVideo.brief!;

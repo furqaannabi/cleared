@@ -1,8 +1,8 @@
 import { http, HttpResponse } from "msw";
 import { expect, test } from "vitest";
-import { server } from "./node";
+import { server } from "./server";
 
-// Tooling check: the shared MSW server answers handled requests and rejects the rest.
+// Tooling check: the tests' MSW server answers a stubbed request and fails any other.
 const TEST_URL = "https://msw-check.test/ping";
 
 test("a handled request gets the mocked response", async () => {

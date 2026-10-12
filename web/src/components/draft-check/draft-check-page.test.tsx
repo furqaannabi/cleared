@@ -1,11 +1,35 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { afterEach, describe, expect, test, vi } from "vitest";
-import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { DealsProvider } from "@/components/shell/use-deals";
+import { apiBaseUrl } from "@/lib/api";
+import type { Deliverable } from "@/lib/deliverable/types";
+import { seededPosts, stubPosts } from "@/test/creator-posts";
+import { deals } from "@/test/fixtures/deals";
+import { juniperDeliverables } from "@/test/fixtures/juniper";
+import { server } from "@/test/server";
+import { stubDeals } from "@/test/stub-api";
 import { DraftCheckPage } from "./draft-check-page";
+
+type Item = Deliverable["items"][number];
+const withItem = (d: Deliverable, id: string, change: Partial<Item>): Deliverable => ({ ...d, items: d.items.map((i) => (i.id === id ? { ...i, ...change } : i)) });
+
+let posts: ReturnType<typeof stubPosts>;
+beforeEach(() => {
+  // The seeded posts, and Juniper & Salt's three, in the creator's deals.
+  const juniper = juniperDeliverables(Date.now());
+  posts = stubPosts(...seededPosts(), ...juniper);
+  stubDeals([
+    ...deals,
+    { id: "deal_juniper", brandName: "Juniper & Salt", status: "Draft check", deliverables: juniper.map((d) => ({ id: d.id, platform: d.platform, state: d.state })) },
+  ]);
+  // DC-FR-14, DC-FR-15: asking the brand makes an item wait for them; withdrawing makes it unsure again.
+  posts.on("del_glow_video", "post", "/items/:itemId/ask", (d, { params }) =>
+    withItem(d, params.itemId, { status: "waiting_for_brand", askedAt: new Date().toISOString(), askable: false }),
+  );
+  posts.on("del_glow_video", "delete", "/items/:itemId/ask", (d, { params }) => withItem(d, params.itemId, { status: "unsure", askedAt: undefined, askable: true }));
+});
 
 describe("creator draft check page", () => {
   test("DC-FR-39: shows the page's shape while loading, announced to screen readers", () => {
@@ -141,6 +165,12 @@ describe("creator draft check page", () => {
   });
 
   test("DC-FR-09: after a check failed on our side, Try again restarts it", async () => {
+    posts.on("del_glow_failed_ours", "post", "/check/retry", (d) => ({
+      ...d,
+      state: "checking",
+      checkFailure: undefined,
+      items: d.items.map((i) => (i.status === "at_live_check" ? i : { ...i, status: "checking" })),
+    }));
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
     expect(await screen.findByText("Try the check again. Your draft doesn’t need to change.")).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -264,6 +294,13 @@ describe("creator draft check page", () => {
     for (let i = 1; i < order.length; i++) {
       expect(Boolean(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
     }
+  });
+
+  test("DC-FR-30: on a phone the fixed bar holds only the action", async () => {
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_video" />);
+    const bar = await screen.findByRole("region", { name: "What to do next" });
+    expect(within(bar).getByText("Upload new draft")).toBeVisible();
+    expect(within(bar).queryByText("Fix 1 item, and decide on 1 unsure item.")).toBeNull();
   });
 
   test("DC-FR-30: on a phone there is no fixed bar when there is nothing to do", async () => {

@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { api } from "@/lib/api";
-import { connectMockAccount } from "@/mocks/invites";
+import { connectMockAccount } from "./invites";
+import { runOnMockBackend } from "./mock-backend";
+
+/* The mock backend's the brand's notes and the creator's answer to them, which Playwright runs on until the live suite. */
+runOnMockBackend();
 
 /** The demo deal after the brand sent two notes: one on an item, one on the Reel's amount. */
 async function changesAsked() {

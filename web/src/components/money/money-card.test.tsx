@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
-import { glowTheoryVideo } from "@/mocks/fixtures/deliverables";
+import { glowTheoryVideo } from "@/test/fixtures/deliverables";
 import type { Deliverable } from "@/lib/deliverable/types";
 import { MoneyCard } from "./money-card";
 

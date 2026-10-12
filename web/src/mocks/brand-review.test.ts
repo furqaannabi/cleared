@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { api } from "@/lib/api";
-import { endReviewWindow } from "@/mocks/demo-review";
+import { endReviewWindow } from "./demo-review";
+import { runOnMockBackend } from "./mock-backend";
+
+/* The mock backend's brand review, which Playwright runs on until the live suite. */
+runOnMockBackend();
 
 const DEAL = "deal_juniper";
 const VIDEO = "del_juniper_video";

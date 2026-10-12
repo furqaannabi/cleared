@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
 import type { Deliverable } from "@/lib/deliverable/types";
-import { server } from "@/mocks/node";
+import { server } from "@/test/server";
 import { CopyReviewLink } from "@/components/draft-check/review-status";
 import { SessionProvider } from "@/components/session/use-session";
 import { aCreatorPost, aProfile, apiError, stubSession } from "@/test/stub-api";

@@ -1,17 +1,32 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test } from "vitest";
 import { http, HttpResponse } from "msw";
-import { api, apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { beforeEach, describe, expect, test } from "vitest";
+import { apiBaseUrl } from "@/lib/api";
+import type { Deliverable } from "@/lib/deliverable/types";
+import { stubPosts } from "@/test/creator-posts";
+import { juniperDeliverables } from "@/test/fixtures/juniper";
+import { server } from "@/test/server";
 import { DraftCheckPage } from "./draft-check-page";
 
 const DEAL = "deal_juniper";
+const LINK = { url: "https://cleared.example/b/review_del_juniper_video", expiresAt: "2026-10-14T12:00:00.000Z", expired: false };
+
+/** Juniper & Salt's three posts as the creator reads them; the video, in its review window, has the brand's link. */
+const juniper = (): Deliverable[] => juniperDeliverables(Date.now()).map((d) => (d.id === "del_juniper_video" ? { ...d, reviewLink: LINK } : d));
+const post = (id: string) => juniper().find((d) => d.id === id)!;
+beforeEach(() => void stubPosts(...juniper()));
 
 describe("DC-FR-49, DC-FR-50 the brand objected", () => {
   test("names how many items and the deadline; the objected item says the check passed it, with the brand's note", async () => {
-    await api.openBrandLink("demo_juniper");
-    await api.sendObjections(DEAL, "del_juniper_video", [{ itemId: "jv_3", note: "Say it slower." }]);
+    const video = post("del_juniper_video");
+    stubPosts({
+      ...video,
+      state: "objected",
+      objectedAt: new Date().toISOString(),
+      reviewWindowEndsAt: undefined,
+      items: video.items.map((i) => (i.id === "jv_3" ? { ...i, status: "objected_by_brand", brandNote: "Say it slower." } : i)),
+    });
     render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_video" />);
     expect(await within(await screen.findByRole("region", { name: "What happens next" })).findByText(/^Juniper & Salt asked you to fix 1 item\. Upload a new draft by /)).toBeVisible();
     const checklist = screen.getByRole("region", { name: "Checklist" });
@@ -40,7 +55,7 @@ describe("DC-FR-52 a link for the brand", () => {
     const { unmount } = render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_video" />);
     await user.click(await screen.findByRole("button", { name: "Copy link for Juniper & Salt" }));
     expect(await screen.findByText("Copied")).toBeVisible();
-    expect(await navigator.clipboard.readText()).toBe("https://cleared.example/b/review_del_juniper_video");
+    expect(await navigator.clipboard.readText()).toBe(LINK.url);
     unmount();
     render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_short" />);
     await screen.findByRole("region", { name: "Draft approved" });
@@ -50,12 +65,10 @@ describe("DC-FR-52 a link for the brand", () => {
 
 describe("DC-FR-52 (1.18) the brand's link: opened, expired, made again", () => {
   const route = `${apiBaseUrl}/deliverables/del_juniper_video`;
-  /** The post as the mocks have it, with this test's review link. */
+  /** Juniper & Salt's video, with this test's review link. */
   async function withLink(link: { expired: boolean }, reviewOpenedAt?: string) {
-    const base = await api.getDeliverable("del_juniper_video");
-    if (!base.ok) throw new Error(base.error);
     const post = {
-      ...base.data,
+      ...juniper().find((d) => d.id === "del_juniper_video")!,
       reviewLink: { url: "https://cleared.example/b/rev_juniper", expiresAt: "2026-10-14T12:00:00.000Z", ...link },
       ...(reviewOpenedAt ? { reviewOpenedAt } : {}),
     };

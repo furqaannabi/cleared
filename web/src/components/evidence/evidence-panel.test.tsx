@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import { SeekProvider } from "@/components/player/seek";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
-import { glowTheoryVideo } from "@/mocks/fixtures/deliverables";
+import { glowTheoryVideo } from "@/test/fixtures/deliverables";
 import { EvidencePanel } from "./evidence-panel";
 
 const view = deliverableView(glowTheoryVideo, new Date("2026-10-06T12:00:00Z"));

@@ -1,29 +1,53 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test } from "vitest";
-import { DemoPayPal } from "@/components/mocking/demo-paypal";
-import { api } from "@/lib/api";
+import { http, HttpResponse } from "msw";
+import type { ReactNode } from "react";
+import { describe, expect, test, vi } from "vitest";
+import { apiBaseUrl } from "@/lib/api";
+import { stubMapleDeal } from "@/test/brand-deal";
+import { server } from "@/test/server";
+import type { BrandDeal } from "@/test/stub-api";
 import { BrandDealPage } from "./brand-deal-page";
-import { PayPalApprovalProvider } from "./paypal-approval";
 
-/** The demo deal, agreed, with the demo PayPal standing in for PayPal's approval step. */
-async function openAgreed() {
-  await api.openBrandLink("demo_maple");
-  await api.agree("deal_maple", 1);
-  render(
-    <PayPalApprovalProvider approval={DemoPayPal}>
-      <BrandDealPage dealId="deal_maple" />
-    </PayPalApprovalProvider>,
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
+
+// PayPal's script can't load here: a stand-in offers PayPal's approve and close.
+vi.mock("@paypal/react-paypal-js", () => ({
+  PayPalScriptProvider: ({ children }: { children: ReactNode }) => children,
+  PayPalButtons: (p: { createOrder: () => Promise<string>; onApprove: () => Promise<void>; onCancel: () => void }) => (
+    <div>
+      <button type="button" onClick={async () => { await p.createOrder(); await p.onApprove(); }}>PayPal: approve</button>
+      <button type="button" onClick={() => p.onCancel()}>PayPal: close</button>
+    </div>
+  ),
+}));
+
+type Hold = BrandDeal["posts"][number]["hold"];
+const POST_IDS: Record<string, string> = { "YouTube video": "del_maple_video", "Instagram Reel": "del_maple_reel", "YouTube Short": "del_maple_short" };
+
+/**
+ * Maple & Moss's deal, agreed, with PayPal's sandbox client id. Each post's
+ * approval answers with the hold in `answers` (held unless set); closing PayPal
+ * answers that nothing was held.
+ */
+async function openAgreed(answers: Record<string, Hold> = {}) {
+  const deal = stubMapleDeal({ step: "agreed", agreedAt: new Date().toISOString(), paypalClientId: "sandbox-client-id" });
+  const withHold = (d: BrandDeal, id: string, hold: Hold): BrandDeal => ({ ...d, posts: d.posts.map((p) => (p.deliverableId === id ? { ...p, hold } : p)) });
+  server.use(http.post(`${apiBaseUrl}/brand/deals/deal_maple/posts/:deliverableId/hold`, () => HttpResponse.json({ orderId: "5O190127TN364715T" })));
+  deal.on("post", "/posts/:deliverableId/hold/approved", (d, { params }) =>
+    withHold(d, params.deliverableId, answers[params.deliverableId] ?? { state: "held", reference: `AUTH-${params.deliverableId}`, deadline: "2026-10-26" }),
   );
+  deal.on("post", "/posts/:deliverableId/hold/closed", (d, { params }) => withHold(d, params.deliverableId, { state: "closed" }));
+  render(<BrandDealPage dealId="deal_maple" />);
   await screen.findByRole("region", { name: /^Holds/ });
 }
 const holds = () => screen.getByRole("region", { name: /^Holds/ });
 const row = (name: string) => within(holds()).getByRole("group", { name });
 
-/** Approves a post's hold with one of the demo PayPal's answers. */
-async function approve(post: string, answer: string) {
+/** Opens PayPal for a post and approves, or closes it. */
+async function approve(post: string, button: "PayPal: approve" | "PayPal: close" = "PayPal: approve") {
   await userEvent.click(within(row(post)).getByRole("button", { name: "Approve with PayPal" }));
-  await userEvent.click(await within(row(post)).findByRole("button", { name: answer }));
+  await userEvent.click(await within(row(post)).findByRole("button", { name: button }));
 }
 
 describe("CH-FR-17 one hold per post, after agreeing", () => {
@@ -36,9 +60,9 @@ describe("CH-FR-17 one hold per post, after agreeing", () => {
 
 describe("CH-FR-18 each hold's state", () => {
   test("approved: Held with the PayPal reference and the date the creator posts by; the count goes up", async () => {
-    await openAgreed();
-    await approve("YouTube video", "Approve");
-    expect(await within(row("YouTube video")).findByText(/^Held · \$1,200\.00 · PayPal ref DEMO-\w+ · Ada Okafor posts by \d{1,2} \w{3}$/)).toBeVisible();
+    await openAgreed({ del_maple_video: { state: "held", reference: "7HK21934LM", deadline: "2026-10-26" } });
+    await approve("YouTube video");
+    expect(await within(row("YouTube video")).findByText("Held · $1,200.00 · PayPal ref 7HK21934LM · Ada Okafor posts by 26 Oct")).toBeVisible();
     expect(within(row("YouTube video")).queryByRole("button", { name: "Approve with PayPal" })).toBeNull();
     expect(within(holds()).getByRole("heading", { name: "Holds · 1 of 3 held" })).toBeVisible();
     const sheet = screen.getByRole("region", { name: "Sponsorship terms" });
@@ -46,22 +70,22 @@ describe("CH-FR-18 each hold's state", () => {
   });
 
   test("declined: says nothing was taken, and the button is back", async () => {
-    await openAgreed();
-    await approve("Instagram Reel", "Approve, but the card is declined");
+    await openAgreed({ del_maple_reel: { state: "declined" } });
+    await approve("Instagram Reel");
     expect(await within(row("Instagram Reel")).findByText(/^PayPal didn’t approve this hold\. Nothing was taken\./)).toBeVisible();
     expect(within(row("Instagram Reel")).getByRole("button", { name: "Approve with PayPal" })).toBeEnabled();
   });
 
   test("closed: nothing was held, and the button is back", async () => {
     await openAgreed();
-    await approve("YouTube Short", "Close PayPal");
+    await approve("YouTube Short", "PayPal: close");
     expect(await within(row("YouTube Short")).findByText("You closed PayPal. Nothing was held.")).toBeVisible();
     expect(within(row("YouTube Short")).getByRole("button", { name: "Approve with PayPal" })).toBeEnabled();
   });
 
   test("CH-BR-05: still checking with PayPal, the button is off", async () => {
-    await openAgreed();
-    await approve("YouTube Short", "Approve, but PayPal is slow");
+    await openAgreed({ del_maple_short: { state: "pending" } });
+    await approve("YouTube Short");
     expect(await within(row("YouTube Short")).findByText("Checking with PayPal…")).toBeVisible();
     expect(within(row("YouTube Short")).getByRole("button", { name: "Approve with PayPal" })).toBeDisabled();
   });
@@ -70,17 +94,8 @@ describe("CH-FR-18 each hold's state", () => {
 describe("CH-FR-19, CH-FR-20 all held, and coming back", () => {
   test("once every post is held it says so, and coming back shows the same", async () => {
     await openAgreed();
-    for (const post of ["YouTube video", "Instagram Reel", "YouTube Short"]) await approve(post, "Approve");
+    for (const post of Object.keys(POST_IDS)) await approve(post);
     expect(await within(holds()).findByText("All held. Ada Okafor is making the posts.")).toBeVisible();
     expect(within(holds()).queryByRole("button", { name: "Approve with PayPal" })).toBeNull();
   });
-});
-
-test("without PayPal wired into this build, the page says so instead of offering a button that can't work", async () => {
-  await api.openBrandLink("demo_maple");
-  await api.agree("deal_maple", 1);
-  render(<BrandDealPage dealId="deal_maple" />);
-  const panel = await screen.findByRole("region", { name: /^Holds/ });
-  await userEvent.click(within(panel).getAllByRole("button", { name: "Approve with PayPal" })[0]);
-  expect(await within(panel).findByText("PayPal isn’t connected in this build yet, so no hold can be approved.")).toBeVisible();
 });

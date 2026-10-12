@@ -2,13 +2,26 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
-import { api, apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { apiBaseUrl } from "@/lib/api";
+import { aMapleDeal, stubMapleDeal } from "@/test/brand-deal";
+import { server } from "@/test/server";
+import { apiError, recordRequests, type BrandDeal } from "@/test/stub-api";
 import { BrandDealPage } from "./brand-deal-page";
 
-/** The seeded demo deal (Maple & Moss), opened from its link. */
+type Note = NonNullable<BrandDeal["notes"]>[number];
+
+/**
+ * Maple & Moss's deal, opened from its link. Sending notes answers with them
+ * sent; agreeing answers with the deal agreed today.
+ */
 async function openDeal() {
-  await api.openBrandLink("demo_maple");
+  const deal = stubMapleDeal();
+  deal.on("post", "/notes", (d, { body }) => ({
+    ...d,
+    step: "changes_requested",
+    notes: (body as { notes: Omit<Note, "id" | "version">[] }).notes.map((n, i) => ({ ...n, id: `note_${i + 1}`, version: d.version })),
+  }));
+  deal.on("post", "/agree", (d) => ({ ...d, step: "agreed", agreedAt: new Date().toISOString() }));
   render(<BrandDealPage dealId="deal_maple" />);
   await screen.findByRole("heading", { level: 1, name: "Your deal with Ada Okafor" });
 }
@@ -17,6 +30,7 @@ const post = (name: string) => within(sheet()).getByRole("group", { name });
 
 describe("CH-FR-03 no session", () => {
   test("asks for the link again, and never offers sign-in", async () => {
+    server.use(http.get(`${apiBaseUrl}/brand/deals/deal_maple`, () => apiError({ code: "signed_out" }, 401)));
     render(<BrandDealPage dealId="deal_maple" />);
     expect(await screen.findByRole("heading", { name: "Open the link you were sent again" })).toBeVisible();
     expect(screen.queryByText(/sign in/i)).toBeNull();
@@ -152,21 +166,19 @@ describe("CH-FR-14 to CH-FR-16 agreeing", () => {
 
   test("with notes not sent, the button says so, and agreeing drops them", async () => {
     await openDeal();
+    const sent = recordRequests();
     await note("Anything else about this deal?", "Your note about this deal", "Could we add a Short?");
     await userEvent.click(screen.getByRole("button", { name: "Agree without sending your 1 note?" }));
     expect(await screen.findByText(/^Agreed · version 1/)).toBeVisible();
     expect(screen.queryByText("Could we add a Short?")).toBeNull();
-    const d = await api.getBrandDeal("deal_maple");
-    expect(d.ok && d.data.notes).toEqual([]);
+    expect(sent.filter((r) => r.method === "POST")).toEqual([{ method: "POST", path: "/brand/deals/deal_maple/agree", body: { version: 1 } }]);
   });
 
   test("CH-FR-15: an out-of-date version is refused, and the page reloads the new one and says why", async () => {
     await openDeal();
-    const now = await api.getBrandDeal("deal_maple");
-    if (!now.ok) throw new Error(now.error);
     server.use(
-      http.post(`${apiBaseUrl}/brand/deals/:dealId/agree`, () => HttpResponse.json({ message: "Out of date" }, { status: 409 }), { once: true }),
-      http.get(`${apiBaseUrl}/brand/deals/:dealId`, () => HttpResponse.json({ ...now.data, version: 2 })),
+      http.post(`${apiBaseUrl}/brand/deals/:dealId/agree`, () => apiError({ code: "out_of_date" }, 409), { once: true }),
+      http.get(`${apiBaseUrl}/brand/deals/:dealId`, () => HttpResponse.json(aMapleDeal({ version: 2 }))),
     );
     await userEvent.click(screen.getByRole("button", { name: "Agree to these terms" }));
     expect(await screen.findByText("Ada Okafor updated the terms. Check the changes before agreeing.")).toBeVisible();
@@ -176,13 +188,11 @@ describe("CH-FR-14 to CH-FR-16 agreeing", () => {
 
 describe("CH-FR-13 the new version", () => {
   test("marks what changed and shows each earlier note with the creator's reply", async () => {
-    await api.openBrandLink("demo_maple");
-    const now = await api.getBrandDeal("deal_maple");
-    if (!now.ok) throw new Error(now.error);
-    const items = now.data.items.map((i) => (i.id === "it_maple_link" ? { ...i, changed: true } : i));
-    const posts = now.data.posts.map((p, n) => (n === 1 ? { ...p, changed: ["amount" as const] } : p));
+    const now = aMapleDeal();
+    const items = now.items.map((i) => (i.id === "it_maple_link" ? { ...i, changed: true } : i));
+    const posts = now.posts.map((p, n) => (n === 1 ? { ...p, changed: ["amount" as const] } : p));
     const notes = [{ id: "n1", about: { kind: "item" as const, itemId: "it_maple_link" }, text: "Use our tracking link.", reply: "Done, it’s maplemoss.com/ada.", version: 1 }];
-    server.use(http.get(`${apiBaseUrl}/brand/deals/:dealId`, () => HttpResponse.json({ ...now.data, version: 2, items, posts, notes })));
+    stubMapleDeal({ version: 2, items, posts, notes });
     render(<BrandDealPage dealId="deal_maple" />);
     expect(await screen.findByText("Version 2")).toBeVisible();
     expect(within(post("YouTube video")).getByRole("listitem", { name: "maplemoss.com/ada in the description" })).toHaveTextContent("Changed");

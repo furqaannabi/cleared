@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
 import { api, apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { server } from "@/test/server";
 import { apiError } from "@/test/stub-api";
 
 const draft = `${apiBaseUrl}/deliverables/del_glow_video/draft`;

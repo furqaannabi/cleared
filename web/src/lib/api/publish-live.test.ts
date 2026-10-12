@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { http } from "msw";
 import { api, apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { server } from "@/test/server";
 import { aCreatorPost, apiError, stubCreatorPost, type CreatorPost } from "@/test/stub-api";
 
 /* PP 1.3: the creator's post past Approved, as the contract answers it. */

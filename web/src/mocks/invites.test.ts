@@ -1,7 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { api } from "@/lib/api";
-import { connectMockAccount } from "@/mocks/invites";
-import { setReadingSpeed } from "@/mocks/deal-drafts";
+import { setReadingSpeed } from "./deal-drafts";
+import { connectMockAccount } from "./invites";
+import { runOnMockBackend } from "./mock-backend";
+
+/* The mock backend's invite, which Playwright runs on until the live suite. */
+runOnMockBackend();
 
 const BRIEF = ["In the YouTube video, say “Glow Theory” in the first 60 seconds.", "Say and show the code GLOW20.", "Mark the post as a paid promotion."].join("\n");
 

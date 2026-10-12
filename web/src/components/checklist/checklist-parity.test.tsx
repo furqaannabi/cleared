@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { describeStatus } from "@/lib/checklist/item-status";
 import { itemTime } from "@/lib/checklist/item-labels";
 import { deliverableView } from "@/lib/deliverable/deliverable-view";
-import { glowTheoryVideo } from "@/mocks/fixtures/deliverables";
+import { glowTheoryVideo } from "@/test/fixtures/deliverables";
 import ChecklistGrid from "./checklist-grid";
 import { ItemCard } from "./item-card";
 

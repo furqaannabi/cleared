@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { api } from "@/lib/api";
-import { setReadingSpeed } from "@/mocks/deal-drafts";
+import { setReadingSpeed } from "./deal-drafts";
+import { runOnMockBackend } from "./mock-backend";
+
+/* The mock backend's brief → checklist, which Playwright runs on until the live suite. */
+runOnMockBackend();
 
 const BRIEF = [
   "Thanks for partnering with Glow Theory on the Dew Drop serum launch!",

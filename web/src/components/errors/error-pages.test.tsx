@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
-import { server } from "@/mocks/node";
+import { server } from "@/test/server";
 import { aProfile, stubSession } from "@/test/stub-api";
 import { ErrorMessage } from "./error-message";
 import { NotFoundPage } from "./not-found-page";
