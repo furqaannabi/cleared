@@ -4,6 +4,7 @@
  */
 import { beforeEach, describe, expect, test } from "bun:test";
 import { heldWorld, resetDatabase, type HeldWorld } from "../test/held-post";
+import { CAPTION, CODE, LINK, postedReel } from "../test/live-reel";
 import { prisma } from "./db";
 
 beforeEach(resetDatabase);
@@ -95,17 +96,31 @@ describe("IG-BR-03 a Reel is never taken down YouTube's path", () => {
     expect((await world.money.view(reel.post))!.goAhead).toEqual({ state: "none" });
   });
 
-  test("nor can a Reel be said to be posted that way: no live check starts and the money path is told nothing", async () => {
+  test("nor can a Reel be said to be posted with a YouTube video: no live check starts and the money path is told nothing", async () => {
     const world = heldWorld();
     const reel = await approvedReel(world);
 
-    const response = await reel.sam.send("POST", `/deliverables/${reel.post}/posted`);
+    const response = await reel.sam.send("POST", `/deliverables/${reel.post}/posted`, { body: { url: `https://youtu.be/${VIDEO}` } });
 
-    expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({ error: { code: "not_set_up" } });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: { code: "not_an_instagram_link", field: "url" } });
     expect(world.youtube.reads).toEqual([]);
     expect(await prisma.liveCheck.count()).toBe(0);
     expect((await world.money.view(reel.post))!.publishedAt).toBeNull();
+  });
+
+  test("a YouTube post takes no link when it is said to be posted", async () => {
+    const world = heldWorld();
+    const held = await world.heldPost();
+
+    const withLink = await held.sam.send("POST", `/deliverables/${held.post}/posted`, { body: { url: "https://www.instagram.com/reel/DAbC1dEfGhI/" } });
+    const empty = await held.sam.send("POST", `/deliverables/${held.post}/posted`, { body: {} });
+
+    expect(withLink.status).toBe(400);
+    expect(await withLink.json()).toEqual({ error: { code: "invalid", field: "url" } });
+    // An empty body asks the same as none: there is no video given for a go-ahead yet.
+    expect(await empty.json()).toEqual({ error: { code: "no_video" } });
+    expect(world.instagram.searches).toEqual([]);
   });
 
   test("a YouTube post still needs its video's link", async () => {
@@ -290,5 +305,151 @@ describe("IG-FR-13 lost access to Instagram", () => {
 
     world.instagram.down = false;
     expect((await reel.goAhead()).status).toBe(200);
+  });
+});
+
+const waiting = () => prisma.job.count({ where: { name: "live_check", status: "pending" } });
+
+describe("IG-FR-14 to IG-FR-16 \"I've posted it\", with the Reel's link", () => {
+  test("the Reel is found among the creator's own media and recorded, the money path is told, and the live check starts", async () => {
+    const world = heldWorld();
+    const reel = await postedReel(world);
+    world.timeIs("2026-10-09T12:00:00Z");
+
+    const response = await reel.posted();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      platform: "instagram_reel",
+      state: "published",
+      post: { url: `https://www.instagram.com/reel/${CODE}/`, publishedAt: "2026-10-09T12:00:00.000Z" },
+      liveCheck: { state: "checking" },
+    });
+    expect(world.instagram.searches).toEqual([{ token: "ig-token-sam", shortCode: CODE, searched: 100 }]);
+    expect(await reel.recorded()).toMatchObject({ videoId: reel.media!.id, shortCode: CODE, link: `https://www.instagram.com/reel/${CODE}/`, fileMatch: "pending", seenPublicAt: new Date("2026-10-09T12:00:00Z") });
+    expect((await reel.money()).publishedAt).toEqual(new Date("2026-10-09T12:00:00Z"));
+    expect(await reel.check()).toMatchObject({ running: true, answer: null });
+    expect(await waiting()).toBe(1);
+  });
+
+  test("IG-BR-08 the link the creator typed is never fetched, and YouTube has no part in it", async () => {
+    const world = heldWorld();
+    const reel = await postedReel(world);
+
+    await reel.posted();
+
+    expect(world.downloads).toEqual([]);
+    expect(world.youtube.reads).toEqual([]);
+  });
+
+  test.each([
+    ["text that is not a link", "my reel", 400, { code: "not_an_instagram_link", field: "url" }],
+    ["a profile, not a Reel", "https://www.instagram.com/sam/", 400, { code: "not_an_instagram_link", field: "url" }],
+    ["another site dressed as Instagram", `https://www.instagram.com.evil.example/reel/${CODE}/`, 400, { code: "not_an_instagram_link", field: "url" }],
+    ["no link at all", null, 400, { code: "invalid", field: "url" }],
+  ])("%s is refused, and Instagram is not asked", async (_what, url, status, error) => {
+    const world = heldWorld();
+    const reel = await postedReel(world);
+
+    const response = await reel.posted(url);
+
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ error });
+    expect(world.instagram.searches).toEqual([]);
+    expect(await reel.recorded()).toBeNull();
+  });
+
+  test("IG-BR-07 a Reel on someone else's account is not found, whatever the link says", async () => {
+    const world = heldWorld();
+    const reel = await postedReel(world, { onInstagram: false });
+    await world.creator("Ada Okafor");
+    world.instagram.hasPost("ig-ada", CODE, { caption: CAPTION });
+
+    const response = await reel.posted();
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "reel_not_found" } });
+    expect(await reel.recorded()).toBeNull();
+    expect((await reel.money()).publishedAt).toBeNull();
+    expect(await waiting()).toBe(0);
+  });
+
+  test("a post on the creator's account that is not a Reel is said not to be one", async () => {
+    const world = heldWorld();
+    const reel = await postedReel(world, { onInstagram: { isReel: false } });
+
+    const response = await reel.posted(`https://www.instagram.com/p/${CODE}/`);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "not_a_reel" } });
+    expect(await reel.recorded()).toBeNull();
+  });
+
+  test.each([
+    ["the creator's access to Instagram no longer works", (world: HeldWorld) => void world.instagram.lost.add("ig-token-sam"), 409, "reconnect_instagram"],
+    ["Instagram itself fails", (world: HeldWorld) => void (world.instagram.down = true), 503, "instagram_unavailable"],
+  ])("when %s the answer says so, and nothing changes", async (_what, happens, status, code) => {
+    const world = heldWorld();
+    const reel = await postedReel(world);
+    happens(world);
+
+    const response = await reel.posted();
+
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ error: { code } });
+    expect(await reel.recorded()).toBeNull();
+    expect((await reel.money()).publishedAt).toBeNull();
+    expect(await waiting()).toBe(0);
+  });
+
+  test("saying so again starts nothing new, and a different Reel cannot be given once one is recorded", async () => {
+    const world = heldWorld();
+    const reel = await postedReel(world);
+    world.instagram.hasPost("ig-sam", "AnotherReel1", { caption: CAPTION });
+    await reel.posted();
+    world.instagram.searches.length = 0;
+
+    expect((await reel.posted()).status).toBe(200);
+    const other = await reel.posted("https://www.instagram.com/reel/AnotherReel1/");
+
+    expect(other.status).toBe(409);
+    expect(await other.json()).toEqual({ error: { code: "already_published" } });
+    expect(await waiting()).toBe(1);
+    expect(world.instagram.searches).toEqual([]);
+    expect(await reel.recorded()).toMatchObject({ shortCode: CODE });
+  });
+
+  test("IG-BR-11 only the Reel's own creator can say so", async () => {
+    const world = heldWorld();
+    const reel = await postedReel(world);
+
+    expect((await reel.posted(LINK, await world.creator("Ada Okafor"))).status).toBe(404);
+    expect((await reel.posted(LINK, reel.maya)).status).toBe(401);
+    expect(world.instagram.searches).toEqual([]);
+    expect(await reel.recorded()).toBeNull();
+  });
+});
+
+describe("IG-FR-17 a Reel's link is taken once the draft is approved, with or without a go-ahead", () => {
+  test("posted without asking for the go-ahead, at the creator's own risk: it is recorded and checked all the same", async () => {
+    const world = heldWorld();
+    const reel = await postedReel(world, { goAhead: false });
+
+    expect((await reel.posted()).status).toBe(200);
+
+    expect(await reel.recorded()).toMatchObject({ shortCode: CODE });
+    expect(await waiting()).toBe(1);
+  });
+
+  test("before the draft is approved there is nothing to post, and Instagram is not asked", async () => {
+    const world = heldWorld();
+    const reel = await checkedReel(world);
+    world.instagram.hasPost("ig-sam", CODE);
+
+    const response = await reel.sam.send("POST", `/deliverables/${reel.post}/posted`, { body: { url: LINK } });
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "not_approved" } });
+    expect(world.instagram.searches).toEqual([]);
   });
 });

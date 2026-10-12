@@ -6,9 +6,11 @@
  * are never logged or put in an error (IG-BR-02, IG-BR-12).
  *
  * Reading the account and renewing a token are as the by-hand check saw Instagram answer
- * (`pnpm test:instagram`). The exchange of a code is as Meta documents it and is not yet proven.
+ * (`pnpm test:instagram`). The exchange of a code, and everything about an account's media (its
+ * fields, how the next page is asked for, what a Reel that is gone answers), are as Meta documents
+ * them and are not yet proven: the tester account had no media to read.
  */
-import type { InstagramAccount, InstagramPort, InstagramToken } from "./port";
+import type { InstagramAccount, InstagramMedia, InstagramPort, InstagramToken } from "./port";
 
 const AUTHORIZE_URL = "https://www.instagram.com/oauth/authorize";
 const CODE_URL = "https://api.instagram.com/oauth/access_token";
@@ -19,6 +21,40 @@ const TIMEOUT_MS = 15_000;
 /** Meta's code for a token it no longer takes: revoked, expired or not one of its own. */
 const TOKEN_REFUSED = 190;
 const PROFESSIONAL = ["BUSINESS", "MEDIA_CREATOR"];
+/** Meta's code for an object that does not exist, or that this token may not read. */
+const NO_SUCH_OBJECT = 100;
+const MEDIA_FIELDS = "id,shortcode,permalink,media_type,media_product_type,timestamp,caption,media_url";
+/** The most Instagram returns in one listing. */
+const PAGE = 100;
+const MEDIA_ID = /^\d{5,30}$/;
+const INSTAGRAM_HOSTS = new Set(["www.instagram.com", "instagram.com"]);
+
+/** An https address, or nothing. With `hosts`, only one on those hosts. */
+function httpsAddress(value: unknown, hosts?: Set<string>): string | undefined {
+  if (typeof value !== "string" || value.length > 4000 || !URL.canParse(value)) return undefined;
+  const url = new URL(value);
+  if (url.protocol !== "https:" || url.username || url.password) return undefined;
+  return !hosts || hosts.has(url.hostname) ? value : undefined;
+}
+
+/** One of an account's media, from Instagram's own description of it. Nothing if it is not in the shape Meta documents. */
+function mediaFrom(item: unknown): InstagramMedia | undefined {
+  const { id, shortcode, permalink, media_product_type: kind, timestamp, caption, media_url: video } = (item ?? {}) as Record<string, unknown>;
+  if ((typeof id !== "string" && typeof id !== "number") || typeof shortcode !== "string" || !shortcode) return undefined;
+  const link = httpsAddress(permalink, INSTAGRAM_HOSTS);
+  const postedAt = typeof timestamp === "string" ? new Date(timestamp) : undefined;
+  const videoUrl = httpsAddress(video);
+  return {
+    id: String(id),
+    shortCode: shortcode,
+    isReel: kind === "REELS",
+    ...(link ? { link } : {}),
+    ...(postedAt && !Number.isNaN(postedAt.getTime()) ? { postedAt } : {}),
+    // Untrusted text, kept to Instagram's own limit. It is searched and quoted, never obeyed (IG-BR-09).
+    caption: typeof caption === "string" ? caption.slice(0, 2200) : "",
+    ...(videoUrl ? { videoUrl } : {}),
+  };
+}
 
 type Json = Record<string, unknown>;
 
@@ -97,6 +133,37 @@ export function createInstagramApi(config: {
       const { username, account_type: type } = answer.body;
       if ((typeof id !== "string" && typeof id !== "number") || typeof username !== "string" || !username) throw new Error("Instagram's answer for an account was not in the shape it documents");
       return { id: String(id), username: username.slice(0, 120), professional: typeof type === "string" && PROFESSIONAL.includes(type) };
+    },
+
+    async findMedia(token, shortCode, searched) {
+      let after: string | undefined;
+      for (let seen = 0; seen < searched; ) {
+        const answer = await read("an account's media", "/me/media", { fields: MEDIA_FIELDS, limit: String(Math.min(PAGE, searched - seen)), ...(after ? { after } : {}), access_token: token });
+        if (tokenRefused(answer)) return "no_access";
+        if (answer.status !== 200 || !Array.isArray(answer.body.data)) throw new Error(`Instagram answered ${answer.status} for an account's media`);
+        for (const item of answer.body.data) {
+          const media = mediaFrom(item);
+          if (media?.shortCode === shortCode) return media;
+        }
+        seen += answer.body.data.length;
+        // The next page is asked for by the cursor alone. An address Instagram sends is never followed.
+        const next = (answer.body.paging as { cursors?: { after?: unknown } } | undefined)?.cursors?.after;
+        if (answer.body.data.length === 0 || typeof next !== "string" || !next) break;
+        after = next;
+      }
+      return "not_found";
+    },
+
+    async media(token, mediaId) {
+      // An id is only ever one of Instagram's own. Anything else is no media, and goes nowhere.
+      if (!MEDIA_ID.test(mediaId)) return "not_found";
+      const answer = await read("one of an account's media", `/${mediaId}`, { fields: MEDIA_FIELDS, access_token: token });
+      if (tokenRefused(answer)) return "no_access";
+      const code = (answer.body.error as { code?: unknown } | undefined)?.code;
+      if (answer.status === 404 || (answer.status === 400 && code === NO_SUCH_OBJECT)) return "not_found";
+      const media = answer.status === 200 ? mediaFrom(answer.body) : undefined;
+      if (!media) throw new Error(`Instagram answered ${answer.status} for one of an account's media`);
+      return media;
     },
 
     async renew(token) {

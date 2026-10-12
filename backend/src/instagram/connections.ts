@@ -24,6 +24,8 @@ export function createInstagramConnections(deps: {
   secrets: Secrets;
   /** How old a token is before it is renewed, in days (IG-FR-06). */
   renewAfterDays?: number;
+  /** Told once a creator's account is stored, so a live check that stopped for lost access can start again (IG-FR-27). */
+  onConnected?: (creatorId: string) => Promise<void>;
   /** Told how a renewal went, with ids and counts only. */
   log?: (message: string, details: Record<string, unknown>) => void;
 }) {
@@ -76,6 +78,7 @@ export function createInstagramConnections(deps: {
         create: { creatorId, platform: "instagram", ...stored },
         update: stored,
       });
+      await deps.onConnected?.(creatorId);
     },
 
     /** Makes sure the daily renewal is waiting to run. Called when the service starts; calling it again changes nothing. */

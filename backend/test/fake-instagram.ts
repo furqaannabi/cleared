@@ -3,7 +3,7 @@
  * that started it, the code it handed back, and the tokens it has given. A test plays the person at
  * Instagram's screen with `approve`, and can revoke access or take Instagram down.
  */
-import type { InstagramAccount, InstagramPort, InstagramToken } from "../src/instagram/port";
+import type { InstagramAccount, InstagramMedia, InstagramPort, InstagramToken } from "../src/instagram/port";
 
 export interface InstagramPerson {
   id: string;
@@ -27,6 +27,11 @@ export class FakeInstagram implements InstagramPort {
   readonly lost = new Set<string>();
   /** Makes every call fail, as Instagram being down would. */
   down = false;
+  /** Every search for one of an account's media, and every read of one: whose access, and what for. */
+  readonly searches: { token: string; shortCode: string; searched: number }[] = [];
+  readonly mediaReads: { token: string; mediaId: string }[] = [];
+  /** Each account's own media, newest first, by the account's id. */
+  private readonly posts = new Map<string, InstagramMedia[]>();
   private readonly codes = new Map<string, { redirectUri: string; person: InstagramPerson }>();
   private readonly tokens = new Map<string, InstagramPerson>();
   private sequence = 0;
@@ -60,7 +65,52 @@ export class FakeInstagram implements InstagramPort {
     return this.issue(person);
   }
 
+  async findMedia(token: string, shortCode: string, searched: number): Promise<InstagramMedia | "not_found" | "no_access"> {
+    this.searches.push({ token, shortCode, searched });
+    if (this.down) throw new Error("Instagram answered 500 for an account's media");
+    const person = this.tokens.get(token);
+    if (!person || this.lost.has(token)) return "no_access";
+    return (this.posts.get(person.id) ?? []).slice(0, searched).find((media) => media.shortCode === shortCode) ?? "not_found";
+  }
+
+  async media(token: string, mediaId: string): Promise<InstagramMedia | "not_found" | "no_access"> {
+    this.mediaReads.push({ token, mediaId });
+    if (this.down) throw new Error("Instagram answered 500 for one of an account's media");
+    const person = this.tokens.get(token);
+    if (!person || this.lost.has(token)) return "no_access";
+    return (this.posts.get(person.id) ?? []).find((media) => media.id === mediaId) ?? "not_found";
+  }
+
   // What a test controls
+
+  /**
+   * A post on an account, newest first. Left alone it is a Reel whose video can be fetched, with no
+   * caption. Returns it, so a test can read its id.
+   */
+  hasPost(accountId: string, shortCode: string, post: Partial<InstagramMedia> = {}): InstagramMedia {
+    const media: InstagramMedia = {
+      id: `1800000000000${String(++this.sequence).padStart(4, "0")}`,
+      shortCode,
+      isReel: true,
+      link: `https://www.instagram.com/reel/${shortCode}/`,
+      postedAt: this.now(),
+      caption: "",
+      videoUrl: `https://video.cdninstagram.test/${shortCode}.mp4?sig=signed`,
+      ...post,
+    };
+    this.posts.set(accountId, [media, ...(this.posts.get(accountId) ?? [])]);
+    return media;
+  }
+
+  /** Changes a post, as its owner would in Instagram: a new caption, say. */
+  editPost(accountId: string, shortCode: string, change: Partial<InstagramMedia>): void {
+    this.posts.set(accountId, (this.posts.get(accountId) ?? []).map((media) => (media.shortCode === shortCode ? { ...media, ...change } : media)));
+  }
+
+  /** Deletes a post, as its owner could at any time. */
+  removePost(accountId: string, shortCode: string): void {
+    this.posts.set(accountId, (this.posts.get(accountId) ?? []).filter((media) => media.shortCode !== shortCode));
+  }
 
   /** A token that already works for this person, as one stored by an earlier connection would. */
   has(token: string, person: InstagramPerson): void {

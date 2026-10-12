@@ -9,6 +9,7 @@
 import type { PrismaClient } from "../generated/prisma/client";
 import type { TermsSnapshot } from "../invites/terms";
 import type { Money, MoneyRefusal } from "../money/money";
+import { linkTo } from "../posts/later";
 
 /** One post waiting for a ruling. The objection and the evidence are untrusted text, shown as text (PT-BR-10). */
 export interface Waiting {
@@ -86,7 +87,7 @@ export function createRulings(deps: { prisma: PrismaClient; now: () => Date; mon
           amount: view.amounts.amount,
           objection: view.waitingOn.objection,
           ...(view.hold.state === "held" ? { ruleBy: view.hold.day28At } : {}),
-          ...(video ? { postUrl: `https://www.youtube.com/watch?v=${video.videoId}` } : {}),
+          ...(video ? { postUrl: linkTo(video) } : {}),
           ...(check
             ? {
                 liveCheck: {

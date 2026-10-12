@@ -59,10 +59,13 @@ export const CancelBodySchema = z.object({ note: z.string().trim().max(300).opti
  * Where a post stands for the brand once its draft is approved (publish to paid spec PT-FR-23). It
  * never holds the creator's PayPal email or anything about a payout but whether it arrived (PT-BR-09).
  */
+/** What a live check could not decide, so the brand is told what it is confirming. The last three are a Reel's (IG-FR-28). */
+export const UndecidedSchema = z.array(z.enum(["file_record", "paid_promotion", "written_item", "reel_not_fetched", "reel_match", "paid_partnership_label"]));
+
 export const BrandLaterStates = [
   z.object({ state: z.literal("posting"), postBy: z.string() }),
   z.object({ state: z.enum(["live_check", "taking", "approved_not_paid"]) }),
-  z.object({ state: z.literal("confirm"), endsAt: z.string(), what: z.array(z.enum(["file_record", "paid_promotion", "written_item"])) }),
+  z.object({ state: z.literal("confirm"), endsAt: z.string(), what: UndecidedSchema }),
   z.object({ state: z.literal("accept"), endsAt: z.string(), reason: z.enum(["not_your_channel", "not_the_approved_file"]) }),
   z.object({ state: z.literal("with_cleared"), reason: z.string(), ruleBy: z.string() }),
   z.object({ state: z.literal("capture_refused"), retryUntil: z.string() }),

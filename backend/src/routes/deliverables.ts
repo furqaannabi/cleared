@@ -5,7 +5,7 @@ import { PLATFORMS } from "../deals/deals";
 import type { Drafts } from "../drafts/drafts";
 import type { Cancelling } from "../cancel/cancelling";
 import { ErrorSchema, fail, requireCreator, type AppEnv } from "../http/http";
-import { CancelBodySchema, CancelSchema, CancelledSchema } from "./shared";
+import { CancelBodySchema, CancelSchema, CancelledSchema, UndecidedSchema } from "./shared";
 import type { Posts } from "../posts/posts";
 import type { Payouts } from "../payouts/payouts";
 import type { Publishing } from "../publish/publishing";
@@ -76,11 +76,12 @@ const CreatorPostSchema = z
     post: z.object({ url: z.string(), publishedAt: z.string() }).optional(),
     liveCheck: z
       .discriminatedUnion("state", [
-        z.object({ state: z.enum(["checking", "passed", "reconnect_youtube", "video_not_found"]) }),
+        // A check that could not look says why: the creator reconnects the account, or the post is gone (PT-FR-17, IG-FR-27).
+        z.object({ state: z.enum(["checking", "passed", "reconnect_youtube", "video_not_found", "reconnect_instagram", "reel_not_found"]) }),
         z.object({ state: z.literal("approved"), by: z.enum(["brand_confirmed", "brand_silence", "brand_accepted", "cleared"]) }),
         z.object({ state: z.literal("fixable"), fixBy: z.string(), checking: z.literal(true).optional() }),
         z.object({ state: z.literal("not_fixable"), reason: z.enum(["not_your_channel", "not_the_approved_file"]), brandBy: z.string() }),
-        z.object({ state: z.literal("undecided"), what: z.array(z.enum(["file_record", "paid_promotion", "written_item"])), brandBy: z.string() }),
+        z.object({ state: z.literal("undecided"), what: UndecidedSchema, brandBy: z.string() }),
         z.object({ state: z.literal("objected"), reason: z.string(), ruleBy: z.string() }),
       ])
       .optional(),
@@ -362,27 +363,43 @@ export function registerDeliverableRoutes(
     createRoute({
       method: "post",
       path: "/deliverables/{deliverableId}/posted",
-      summary: "\"I've posted it\": the recorded video is read, and if it is public the live check starts (PT-FR-08)",
+      summary:
+        "\"I've posted it\". A YouTube post sends nothing: the recorded video is read, and if it is public the live check starts. A Reel sends its link: it is found among the creator's own media, recorded, and its live check starts (PT-FR-08, IG-FR-14 to IG-FR-17)",
       middleware: [creator] as const,
-      request: postId,
+      request: {
+        ...postId,
+        // No body at all asks the same as an empty one: a YouTube post has nothing to send.
+        body: { required: false, content: { "application/json": { schema: z.object({ url: z.string().max(4000).optional() }) } } },
+      },
       responses: {
         200: json(CreatorPostSchema, "The post: it was seen public, and its live check has started"),
+        400: json(ErrorSchema, "The link is not a link to an Instagram Reel; or a Reel gave no link, or a YouTube post gave one"),
         401: json(ErrorSchema, "Nobody is signed in"),
         404: json(ErrorSchema, "No such post, or it is not this creator's"),
-        409: json(ErrorSchema, "Nothing changed: the video is not public yet, no video was given for a go-ahead, the video is gone, YouTube must be reconnected, or the money path refused, each with its own code"),
-        503: json(ErrorSchema, "YouTube could not be read, or this service is not set up to read it. Try again"),
+        409: json(
+          ErrorSchema,
+          "Nothing changed: the video is not public yet, no video was given for a go-ahead, the video is gone, the draft is not approved, the Reel is not on the creator's account or is not a Reel, another Reel is already recorded, YouTube or Instagram must be reconnected, or the money path refused, each with its own code",
+        ),
+        503: json(ErrorSchema, "YouTube or Instagram could not be read, or this service is not set up to read it. Try again"),
       },
     }),
     async (c) => {
       if (!publishing) return fail(c, 503, "not_set_up");
       const { deliverableId } = c.req.valid("param");
-      const posted = await publishing.posted(c.get("creatorId"), deliverableId);
+      const posted = await publishing.posted(c.get("creatorId"), deliverableId, c.req.valid("json")?.url);
       if ("refused" in posted) {
         switch (posted.refused) {
           case "not_found":
             return fail(c, 404, "not_found");
+          case "not_an_instagram_link":
+            return fail(c, 400, "not_an_instagram_link", "url");
+          case "link_needed":
+          case "link_not_taken":
+            // The same answer as any body that does not fit: the link is there when it should not be, or the other way round.
+            return fail(c, 400, "invalid", "url");
           case "youtube_unavailable":
-            return fail(c, 503, "youtube_unavailable");
+          case "instagram_unavailable":
+            return fail(c, 503, posted.refused);
           case "not_set_up":
             return fail(c, 503, "not_set_up");
           case "money":
