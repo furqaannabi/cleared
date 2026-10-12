@@ -28,6 +28,8 @@ import { DRAFT_UPLOAD, registerDeliverableRoutes } from "./routes/deliverables";
 import { registerGoogleRoutes } from "./routes/google";
 import { registerInstagramRoutes } from "./routes/instagram";
 import { registerInviteRoutes } from "./routes/invite";
+import { registerPaymentRoutes } from "./routes/payments";
+import { createPaymentHistory } from "./payments/history";
 import type { Secrets } from "./secrets/secrets";
 import { createSessions, defaultSessionSettings } from "./sessions/sessions";
 import type { Storage } from "./storage/port";
@@ -122,6 +124,7 @@ export function createApp(deps: AppDeps) {
     payouts,
     appOrigin,
   });
+  registerPaymentRoutes(app, { sessions, payments: createPaymentHistory({ prisma, money }) });
   const reviewLinks = deps.reviewLinks ?? createReviewLinks({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });
   const cancelling = createCancelling({ prisma, now, money });
   const posts = createPosts({ prisma, now, storage: deps.storage, money, links: reviewLinks, cancels: cancelling.describe });

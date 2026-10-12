@@ -133,6 +133,108 @@
           "email"
         ]
       },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "dealId": {
+            "type": "string"
+          },
+          "deliverableId": {
+            "type": "string"
+          },
+          "brandName": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "youtube_video",
+              "youtube_short",
+              "instagram_reel"
+            ]
+          },
+          "amountMinor": {
+            "type": "integer"
+          },
+          "feeMinor": {
+            "type": "integer"
+          },
+          "receivedMinor": {
+            "type": "integer"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD"
+            ]
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "held",
+              "captured",
+              "paid",
+              "released",
+              "approved_not_paid"
+            ]
+          },
+          "payout": {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "sending",
+                  "cancelling",
+                  "delayed",
+                  "unclaimed",
+                  "failed",
+                  "paid"
+                ]
+              },
+              "reference": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "holdReference": {
+            "type": "string"
+          },
+          "heldAt": {
+            "type": "string"
+          },
+          "deadline": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string"
+          },
+          "paidAt": {
+            "type": "string"
+          },
+          "firstCheckPassed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dealId",
+          "deliverableId",
+          "brandName",
+          "platform",
+          "amountMinor",
+          "currency",
+          "stage",
+          "holdReference",
+          "heldAt",
+          "deadline"
+        ]
+      },
       "DealDraft": {
         "type": "object",
         "properties": {
@@ -2572,6 +2674,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/payments": {
+      "get": {
+        "summary": "The signed-in creator's payment history: every post of theirs that has ever had a hold, newest hold first (AH-FR-05)",
+        "responses": {
+          "200": {
+            "description": "One row for each post that has had a hold",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Payment"
+                  }
                 }
               }
             }

@@ -188,6 +188,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in creator's payment history: every post of theirs that has ever had a hold, newest hold first (AH-FR-05) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description One row for each post that has had a hold */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payment"][];
+                    };
+                };
+                /** @description Nobody is signed in */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deals": {
         parameters: {
             query?: never;
@@ -4130,6 +4175,32 @@ export interface components {
             dealId: string;
             brandName: string;
             email: string;
+        };
+        Payment: {
+            dealId: string;
+            deliverableId: string;
+            brandName: string;
+            /** @enum {string} */
+            platform: "youtube_video" | "youtube_short" | "instagram_reel";
+            amountMinor: number;
+            feeMinor?: number;
+            receivedMinor?: number;
+            /** @enum {string} */
+            currency: "USD";
+            /** @enum {string} */
+            stage: "held" | "captured" | "paid" | "released" | "approved_not_paid";
+            payout?: {
+                /** @enum {string} */
+                state: "sending" | "cancelling" | "delayed" | "unclaimed" | "failed" | "paid";
+                reference?: string;
+                at?: string;
+            };
+            holdReference: string;
+            heldAt: string;
+            deadline: string;
+            publishedAt?: string;
+            paidAt?: string;
+            firstCheckPassed?: boolean;
         };
         DealDraft: {
             id: string;

@@ -422,6 +422,9 @@ model DraftCheck {
   failures       Int       @default(0)
   /// The reading of the video that Data Automation is doing, or has done, for the running check.
   speechJobId    String?
+  /// Whether the first check that finished passed every item (AH-FR-09). Null while none has, and
+  /// for a post checked more than once before this was recorded.
+  firstCheckPassed Boolean?
 }
 
 // One checklist item's result in a post's latest finished run, with the creator's ask about it and the

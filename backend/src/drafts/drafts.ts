@@ -185,6 +185,12 @@ export function createDrafts(deps: {
       });
       await saveState(tx, deliverableId, done.state);
       await tx.draftCheck.update({ where: { deliverableId }, data: { stage: null, failures: 0, speechJobId: null } });
+      // The first check to finish is recorded as having passed every item or not, once and for good (AH-FR-09).
+      // An item that waits for the live check is not one this check could fail.
+      if (done.state.run === 1) {
+        const passed = done.state.items.every((item) => item.result === "passed" || item.result === "at_live_check");
+        await tx.draftCheck.updateMany({ where: { deliverableId, firstCheckPassed: null }, data: { firstCheckPassed: passed } });
+      }
       await applyEffects(tx, deliverableId, done.effects, { at, links });
 
       const older = await tx.draft.findMany({ where: { deliverableId, id: { not: draftId } } });
