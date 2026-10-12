@@ -216,16 +216,14 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** SI-FR-12: ends the session. */
     signOut: () => request("POST", "/auth/sign-out", z.object({})),
     /**
-     * ST-FR-07, ST-FR-08: disconnect a YouTube or Instagram account. Requested of
-     * Furqaan (settings FRD); used only behind the account-removal flag. A refusal
-     * names the posts under way on that platform.
+     * ST-FR-07, ST-FR-08: disconnect a YouTube or Instagram account (AH-FR-10,
+     * AH-FR-11). A refusal names the posts under way on that platform.
      */
     disconnectAccount: async (platform: "youtube" | "instagram"): Promise<RemovalResult<z.infer<typeof creatorProfileSchema>, UnderWay>> =>
       removal(await send("DELETE", `/connect/${platform}`), creatorProfileSchema, "post_under_way", underWaySchema),
     /**
-     * ST-FR-10, ST-FR-11: delete the creator's account. Requested of Furqaan
-     * (settings FRD); used only behind the account-removal flag. A refusal lists
-     * the open deals in the way; success answers 204.
+     * ST-FR-10, ST-FR-11: delete the creator's account (AH-FR-15, AH-FR-16). A
+     * refusal lists the open deals in the way; success answers 204.
      */
     deleteAccount: async (): Promise<RemovalResult<null, OpenDeal>> => {
       const res = await send("DELETE", "/me");

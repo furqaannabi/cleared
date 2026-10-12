@@ -11,22 +11,18 @@ import { DeleteAccount } from "./delete-account";
 import { GettingPaid } from "./getting-paid";
 import { TEXT_LINK } from "./styles";
 
-/** ST-FR-12: disconnecting and deleting, off until Furqaan's routes are in the contract. */
-export const ACCOUNT_REMOVAL = process.env.NEXT_PUBLIC_ACCOUNT_REMOVAL === "enabled";
-
 /**
  * The creator's settings (design A, the quiet list, with the profile band):
  * who is signed in, where the money goes, which accounts Cleared reads,
- * Sign out, and (behind the flag) Delete account apart at the end.
+ * Sign out, and Delete account apart at the end.
  *
- * @param removal - whether disconnecting and deleting show (the build flag; tests)
- * @see docs/specs/settings-frd.md ST-FR-01 to ST-FR-14; design/settings/option-a.html
+ * @see docs/specs/settings-frd.md ST-FR-01 to ST-FR-14 (1.3); design/settings/option-a.html
  */
-export function SettingsPage({ removal = ACCOUNT_REMOVAL }: { removal?: boolean }) {
+export function SettingsPage() {
   const { load, setMe } = useSession();
   if (load.status !== "signed_in") return null;
   const me = load.me;
-  const view = settingsView(me, { removal });
+  const view = settingsView(me);
   return (
     <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[860px] px-4 pt-4 pb-16 focus:outline-none md:px-6 md:pt-7 lg:px-9">
       <h1 className="font-head text-page-title-phone font-bold md:text-page-title">Settings</h1>
@@ -70,7 +66,7 @@ export function SettingsPage({ removal = ACCOUNT_REMOVAL }: { removal?: boolean 
           </>
         )}
       </p>
-      {view.deleteAccount && <DeleteAccount />}
+      <DeleteAccount />
     </main>
   );
 }

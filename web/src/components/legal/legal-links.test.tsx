@@ -12,11 +12,11 @@ afterEach(() => vi.unstubAllEnvs());
 const on = () => vi.stubEnv("NEXT_PUBLIC_LEGAL_PAGES", "enabled");
 const LEGAL = /^(privacy|terms|data deletion|privacy policy|how deleting works)$/i;
 
-async function settings(removal: boolean) {
+async function settings() {
   stubSession(aProfile());
   render(
     <AppShell currentDealId={null}>
-      <SettingsPage removal={removal} />
+      <SettingsPage />
     </AppShell>,
   );
   await screen.findByRole("heading", { level: 1, name: "Settings" });
@@ -36,7 +36,7 @@ describe("LG-FR-14 with the legal flag off", () => {
   });
 
   test("nor does Settings", async () => {
-    await settings(true);
+    await settings();
     expect(screen.queryAllByRole("link", { name: LEGAL })).toHaveLength(0);
   });
 });
@@ -62,7 +62,7 @@ describe("LG-FR-15 with the legal flag on", () => {
 
   test("ST 1.2: Settings has Privacy policy and Terms beside Sign out, and How deleting works in Delete account", async () => {
     on();
-    await settings(true);
+    await settings();
     expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", "/privacy");
     expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
     expect(screen.getByRole("link", { name: "How deleting works" })).toHaveAttribute("href", "/data-deletion");

@@ -2,28 +2,26 @@ import { describe, expect, test } from "vitest";
 import { aProfile } from "@/test/stub-api";
 import { settingsView } from "./settings-view";
 
-describe("ST-FR-02 to ST-FR-12 the settings view", () => {
+describe("ST-FR-02 to ST-FR-10 the settings view", () => {
   test("the profile band: initials, name and the Google email", () => {
-    expect(settingsView(aProfile({ name: "Ada Okafor", email: "ada.okafor@gmail.com" }), { removal: false })).toMatchObject({
+    expect(settingsView(aProfile({ name: "Ada Okafor", email: "ada.okafor@gmail.com" }))).toMatchObject({
       initials: "AO",
       name: "Ada Okafor",
       signedInAs: "Signed in with Google as ada.okafor@gmail.com",
     });
-    expect(settingsView(aProfile({ email: undefined }), { removal: false }).signedInAs).toBeNull();
+    expect(settingsView(aProfile({ email: undefined })).signedInAs).toBeNull();
   });
 
-  test("ST-FR-06: each platform connected by name, or not connected", () => {
-    const v = settingsView(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes", inUse: false }] }), { removal: false });
+  test("ST-FR-06, ST-FR-07 (1.3): each platform connected by name, or not connected; Disconnect on a connected one, no flag", () => {
+    const v = settingsView(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes", inUse: false }] }));
     expect(v.accounts).toEqual([
-      { platform: "youtube", label: "YouTube", name: "Ada Makes", disconnect: false },
-      { platform: "instagram", label: "Instagram", name: null, disconnect: false },
+      { platform: "youtube", label: "YouTube", name: "Ada Makes", disconnect: true, inUse: false },
+      { platform: "instagram", label: "Instagram", name: null, disconnect: false, inUse: false },
     ]);
   });
 
-  test("ST-FR-07, ST-FR-12: Disconnect and Delete only with the flag on, and Disconnect only on a connected account", () => {
-    const v = settingsView(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes", inUse: false }] }), { removal: true });
-    expect(v.accounts.map((a) => a.disconnect)).toEqual([true, false]);
-    expect(v.deleteAccount).toBe(true);
-    expect(settingsView(aProfile(), { removal: false }).deleteAccount).toBe(false);
+  test("ST-FR-08 (1.3): an account in use by a post under way has no Disconnect, and says so", () => {
+    const v = settingsView(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes", inUse: true }] }));
+    expect(v.accounts[0]).toMatchObject({ disconnect: false, inUse: true });
   });
 });

@@ -80,6 +80,10 @@ function Row({ row, onMe, result }: { row: AccountRow; onMe: (me: CreatorProfile
           <small className="text-[13.5px] text-ink-3">
             {row.name ? `${row.label} · connected` : row.platform === "instagram" ? "Not connected. Professional accounts only." : "Not connected."}
           </small>
+          {/* ST-FR-08 (1.3): in use by a post under way, so no Disconnect yet. */}
+          {row.inUse && (
+            <small className="mt-0.5 block text-[13.5px] text-ink-2">In use by a post under way. You can disconnect it once that post is paid or its hold goes back.</small>
+          )}
         </span>
         {row.name ? (
           <span className="flex gap-3.5 max-[420px]:w-full max-[420px]:pl-12">

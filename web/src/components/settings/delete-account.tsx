@@ -45,7 +45,7 @@ export function DeleteAccount() {
           <h2 id={`${id}-h`} className="text-[15px] font-bold">
             Delete account
           </h2>
-          {!open && !blocking && <p className="text-[13.5px] text-ink-3">Removes your profile and your connected accounts.</p>}
+          {!open && !blocking && <p className="text-[13.5px] text-ink-3">Removes your profile, your connected accounts and everything in your deals.</p>}
           {/* ST-FR-10 (1.2): once the legal pages are linked (LG-FR-14). */}
           {legalPagesOn() && (
             <Link href="/data-deletion" className="inline-flex min-h-11 items-center text-[13.5px] font-bold text-espresso underline underline-offset-3">
@@ -83,7 +83,8 @@ export function DeleteAccount() {
       {open && (
         <div className="mt-1">
           <p className="max-w-[60ch] text-[13.5px] text-ink-3">
-            Your profile, your connected accounts and your drafts are deleted. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and email removed.{" "}
+            Your profile, your connected accounts, your drafts, and each deal’s brief, checklist and check results are deleted, and brands’ links to your deals stop working. Cleared
+            keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed. Signing in again starts a new, empty account.{" "}
             <b className="text-ink">This can’t be undone.</b>
           </p>
           <label htmlFor={id} className="mt-3 mb-1.5 block text-body-strong font-bold">
