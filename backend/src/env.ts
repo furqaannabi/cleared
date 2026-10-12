@@ -92,6 +92,11 @@ export const env = {
    * settings too and bring keys of their own.
    */
   tokenKey: process.env.TOKEN_KEY || undefined,
+  /**
+   * The secret that lets end-to-end tests be signed in as the one test creator (AH-FR-25). Unset on
+   * any server that tests do not run against: there is then no such route. It is never logged.
+   */
+  testSessionSecret: process.env.TEST_SESSION_SECRET || undefined,
   /** Bedrock's id for the model that reads briefs, and the AWS region it is called in. */
   briefModel: process.env.BRIEF_MODEL ?? "anthropic.claude-opus-5-5",
   awsRegion: process.env.AWS_REGION ?? "us-east-1",

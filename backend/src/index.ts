@@ -25,6 +25,7 @@ import { createPublishedPosts } from "./publish/published-posts";
 import { createPublishing, type Publishing } from "./publish/publishing";
 import { createReelPublishing } from "./publish/reels";
 import { createYouTubeApi } from "./publish/youtube-api";
+import { SECRET_MIN_LENGTH } from "./routes/test-session";
 import { createReviewLinks } from "./review/links";
 import { createReview } from "./review/review";
 import { createSandboxPayPal } from "./paypal/sandbox-paypal";
@@ -143,6 +144,15 @@ if (!publishing) {
 const google = env.google && createGoogle({ ...env.google, log });
 const removal = createAccountRemoval({ prisma, now, google, secrets, money, storage, log });
 
+// Said at start-up, so that nobody finds out from a failing test run. The secret itself is never printed.
+if (env.testSessionSecret) {
+  console.warn(
+    env.testSessionSecret.length >= SECRET_MIN_LENGTH
+      ? "TEST_SESSION_SECRET is set: end-to-end tests can be signed in as the test creator. Unset it on a server tests do not run against."
+      : `TEST_SESSION_SECRET is set but shorter than ${SECRET_MIN_LENGTH} characters, so it is ignored and there is no test session. Make one with: openssl rand -base64 48`,
+  );
+}
+
 const app = createApp({
   prisma,
   accounts,
@@ -157,6 +167,7 @@ const app = createApp({
   apiOrigin: env.apiOrigin,
   google,
   removal,
+  testSession: env.testSessionSecret ? { secret: env.testSessionSecret } : undefined,
   instagram,
   instagramConnections,
   secrets,

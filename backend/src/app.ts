@@ -30,6 +30,7 @@ import { registerGoogleRoutes } from "./routes/google";
 import { registerInstagramRoutes } from "./routes/instagram";
 import { registerInviteRoutes } from "./routes/invite";
 import { registerPaymentRoutes } from "./routes/payments";
+import { TEST_SESSION_PATH, testSession, usable, type TestSessionConfig } from "./routes/test-session";
 import { createPaymentHistory } from "./payments/history";
 import type { Secrets } from "./secrets/secrets";
 import { createSessions, defaultSessionSettings } from "./sessions/sessions";
@@ -46,6 +47,8 @@ export interface AppDeps {
   log?: (...parts: unknown[]) => void;
   /** The address of Cleared's own app. The only origin that may make changing requests (DS-BR-03). */
   appOrigin?: string;
+  /** The secret that lets end-to-end tests be signed in as the one test creator (AH-FR-25). Without it there is no such route. */
+  testSession?: TestSessionConfig;
   /** The clock. Passed in so the app has none of its own. */
   now?: () => Date;
   /** The creators module. The service passes its own, so its jobs and its routes share one. */
@@ -111,6 +114,12 @@ export function createApp(deps: AppDeps) {
       maxAge: 600,
     }),
   );
+  // A session for end-to-end tests, only when the server was given a secret long enough to count (AH-FR-25).
+  // It is placed ahead of the origin check because a test runner has no origin: the secret is its guard,
+  // and without the right one the request goes on to everything below as if this were not here.
+  if (usable(deps.testSession)) {
+    app.use(TEST_SESSION_PATH, testSession({ prisma, now, appOrigin, config: deps.testSession, log: (message, details) => log(message, JSON.stringify(details)) }));
+  }
   // And the API itself refuses a changing request from anywhere else (DS-BR-03). PayPal's webhook has no
   // origin and proves itself another way. No route takes a form.
   app.use("*", ownAppOnly(appOrigin, { noOrigin: ["/webhooks/paypal"], files: [DRAFT_UPLOAD] }));
