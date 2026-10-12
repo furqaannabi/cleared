@@ -1,0 +1,131 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings B: the account header</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="st.css"><style>
+.b-me{display:flex;align-items:center;gap:14px;padding:18px;border-radius:20px;background:var(--latte);margin-top:14px}
+.b-me b{width:52px;height:52px;border-radius:50%;background:var(--marigold);color:var(--marigold-ink);display:grid;place-items:center;font-size:18px;flex:none}
+.b-me .b-n{font-family:var(--head);font-size:21px;font-weight:700;line-height:1.1}
+.b-me .s-link{margin-left:auto}
+.b-grid{display:grid;gap:16px;margin-top:16px}
+.s-desk .b-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+.b-sec{padding:18px}
+.b-h{font-family:var(--head);font-size:21px;font-weight:700;margin-bottom:4px}
+.b-hs{color:var(--ink-3);font-size:13.5px;margin-bottom:12px}
+.b-line{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0}
+.b-v{font-weight:700;font-size:15px}
+.b-acct{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap;border-top:1px solid var(--line-soft)}
+.b-acct:first-of-type{border-top:0}
+
+.b-who{flex:1;min-width:0}
+.b-acts{display:flex;gap:14px}
+.b-pp{display:grid}
+.b-danger{margin-top:16px;padding:18px;background:var(--latte-wash);border:1px solid var(--latte-line);border-radius:20px}
+.b-open{margin:8px 0 6px 18px;color:var(--ink);font-size:14px}
+@media(max-width:420px){.b-acts{width:100%;padding-left:48px}}
+</style></head><body><main class="s-doc">
+<h1>B · The account header</h1><p class="s-why">The creator leads: initials on marigold, their name in Bricolage and the Google email on a latte band, with Sign out beside it. Getting paid and Connected accounts are two panels side by side from <code>md:</code>, each account a row with its platform's mark, thin rules between. Delete account sits apart on latte-wash at the end.</p>
+<p class="s-state">Default: everything connected</p><div class="s-pair">
+<div class="s-phone"><div class="s-top"><span class="s-logo"><i></i>Cleared</span><span>Deals</span></div><div class="s-page"><p class="s-title">Settings</p>
+<div class="b-me"><b>AO</b><div><p class="b-n">Ada Okafor</p><p class="s-quiet">Signed in with Google as ada.okafor@gmail.com</p></div></div>
+<div class="b-grid">
+<section class="s-panel b-sec" aria-label="Getting paid"><p class="b-h">Getting paid</p><p class="b-hs">Where Cleared sends your payouts.</p><div class="b-line"><div><p class="b-v">ada@example.com</p><p class="s-quiet">Every payout goes here, after Cleared’s 5% fee.</p></div><button class="s-link" aria-label="Change your PayPal email">Change</button></div></section>
+<section class="s-panel b-sec" aria-label="Connected accounts"><p class="b-h">Connected accounts</p><p class="b-hs">Cleared only reads them, to check your posts.</p><div class="b-acct"><span class="s-mark yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3Z"/></svg></span><div class="b-who"><p class="b-v">Ada Makes</p><p class="s-quiet">YouTube · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><div class="b-acct"><span class="s-mark ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span><div class="b-who"><p class="b-v">@adamakes</p><p class="s-quiet">Instagram · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div></section>
+</div>
+<p style="margin-top:14px"><button class="s-link">Sign out</button></p>
+<div class="b-danger"><div class="b-line"><div><p class="b-v">Delete account</p><p class="s-quiet">Removes your profile and your connected accounts.</p></div><button class="s-link" style="color:var(--fail)">Delete account</button></div></div></div></div>
+<div class="s-desk"><aside class="s-rail"><span class="s-logo"><i></i>Cleared</span><span class="s-nav">Deals</span>
+<div class="s-row"><b>GT</b><span>Glow Theory<small>Live check</small></span></div>
+<div class="s-row"><b style="background:#dcebff;color:#1f4e9c">JS</b><span>Juniper &amp; Salt<small>Paid</small></span></div>
+<div class="s-row s-me"><b>AO</b><span>Ada Okafor<small>Creator</small></span></div></aside><div class="s-main"><p class="s-title">Settings</p>
+<div class="b-me"><b>AO</b><div><p class="b-n">Ada Okafor</p><p class="s-quiet">Signed in with Google as ada.okafor@gmail.com</p></div><button class="s-link">Sign out</button></div>
+<div class="b-grid">
+<section class="s-panel b-sec" aria-label="Getting paid"><p class="b-h">Getting paid</p><p class="b-hs">Where Cleared sends your payouts.</p><div class="b-line"><div><p class="b-v">ada@example.com</p><p class="s-quiet">Every payout goes here, after Cleared’s 5% fee.</p></div><button class="s-link" aria-label="Change your PayPal email">Change</button></div></section>
+<section class="s-panel b-sec" aria-label="Connected accounts"><p class="b-h">Connected accounts</p><p class="b-hs">Cleared only reads them, to check your posts.</p><div class="b-acct"><span class="s-mark yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3Z"/></svg></span><div class="b-who"><p class="b-v">Ada Makes</p><p class="s-quiet">YouTube · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><div class="b-acct"><span class="s-mark ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span><div class="b-who"><p class="b-v">@adamakes</p><p class="s-quiet">Instagram · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div></section>
+</div>
+
+<div class="b-danger"><div class="b-line"><div><p class="b-v">Delete account</p><p class="s-quiet">Removes your profile and your connected accounts.</p></div><button class="s-link" style="color:var(--fail)">Delete account</button></div></div></div></div></div>
+<p class="s-state">Changing the PayPal email (ST-FR-04), then saved with a payout that keeps the old one (ST-FR-05)</p><div class="s-pair">
+<div class="s-phone"><div class="s-top"><span class="s-logo"><i></i>Cleared</span><span>Deals</span></div><div class="s-page"><p class="s-title">Settings</p>
+<div class="b-me"><b>AO</b><div><p class="b-n">Ada Okafor</p><p class="s-quiet">Signed in with Google as ada.okafor@gmail.com</p></div></div>
+<div class="b-grid">
+<section class="s-panel b-sec" aria-label="Getting paid"><p class="b-h">Getting paid</p><p class="b-hs">Where Cleared sends your payouts.</p><div class="b-pp">
+<label class="s-label" for="pp">Your PayPal email</label><input id="pp" class="s-field" value="ada.payments@gmail.com">
+<p class="s-quiet" style="margin-top:6px">We send your payment here. Check it: a payment to the wrong email can’t be pulled back.</p>
+<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="s-btn dark">Save</button><button class="s-btn line">Keep it</button></div></div></section>
+<section class="s-panel b-sec" aria-label="Connected accounts"><p class="b-h">Connected accounts</p><p class="b-hs">Cleared only reads them, to check your posts.</p><div class="b-acct"><span class="s-mark yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3Z"/></svg></span><div class="b-who"><p class="b-v">Ada Makes</p><p class="s-quiet">YouTube · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><div class="b-acct"><span class="s-mark ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span><div class="b-who"><p class="b-v">Instagram</p><p class="s-quiet">Not connected. Professional accounts only.</p></div><button class="s-btn line">Connect Instagram</button></div></section>
+</div>
+<p style="margin-top:14px"><button class="s-link">Sign out</button></p>
+<div class="b-danger"><div class="b-line"><div><p class="b-v">Delete account</p><p class="s-quiet">Removes your profile and your connected accounts.</p></div><button class="s-link" style="color:var(--fail)">Delete account</button></div></div></div></div>
+<div class="s-desk"><aside class="s-rail"><span class="s-logo"><i></i>Cleared</span><span class="s-nav">Deals</span>
+<div class="s-row"><b>GT</b><span>Glow Theory<small>Live check</small></span></div>
+<div class="s-row"><b style="background:#dcebff;color:#1f4e9c">JS</b><span>Juniper &amp; Salt<small>Paid</small></span></div>
+<div class="s-row s-me"><b>AO</b><span>Ada Okafor<small>Creator</small></span></div></aside><div class="s-main"><p class="s-title">Settings</p>
+<div class="b-me"><b>AO</b><div><p class="b-n">Ada Okafor</p><p class="s-quiet">Signed in with Google as ada.okafor@gmail.com</p></div><button class="s-link">Sign out</button></div>
+<div class="b-grid">
+<section class="s-panel b-sec" aria-label="Getting paid"><p class="b-h">Getting paid</p><p class="b-hs">Where Cleared sends your payouts.</p><div class="b-line"><div><p class="b-v">ada.payments@gmail.com</p><p class="s-ok">Saved.</p></div><button class="s-link">Change</button></div>
+<p class="s-note" style="margin-top:10px">Glow Theory’s payout is already with PayPal, so it still goes to ada@example.com. Every payout after it goes to ada.payments@gmail.com.</p></section>
+<section class="s-panel b-sec" aria-label="Connected accounts"><p class="b-h">Connected accounts</p><p class="b-hs">Cleared only reads them, to check your posts.</p><div class="b-acct"><span class="s-mark yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3Z"/></svg></span><div class="b-who"><p class="b-v">Ada Makes</p><p class="s-quiet">YouTube · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><div class="b-acct"><span class="s-mark ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span><div class="b-who"><p class="b-v">Instagram</p><p class="s-quiet">Not connected. Professional accounts only.</p></div><button class="s-btn line">Connect Instagram</button></div></section>
+</div>
+
+<div class="b-danger"><div class="b-line"><div><p class="b-v">Delete account</p><p class="s-quiet">Removes your profile and your connected accounts.</p></div><button class="s-link" style="color:var(--fail)">Delete account</button></div></div></div></div></div>
+<p class="s-state">Disconnect refused while a post is under way (ST-FR-08); confirming one that isn't (ST-FR-07)</p><div class="s-pair">
+<div class="s-phone"><div class="s-top"><span class="s-logo"><i></i>Cleared</span><span>Deals</span></div><div class="s-page"><p class="s-title">Settings</p>
+<div class="b-me"><b>AO</b><div><p class="b-n">Ada Okafor</p><p class="s-quiet">Signed in with Google as ada.okafor@gmail.com</p></div></div>
+<div class="b-grid">
+<section class="s-panel b-sec" aria-label="Getting paid"><p class="b-h">Getting paid</p><p class="b-hs">Where Cleared sends your payouts.</p><div class="b-line"><div><p class="b-v">ada@example.com</p><p class="s-quiet">Every payout goes here, after Cleared’s 5% fee.</p></div><button class="s-link" aria-label="Change your PayPal email">Change</button></div></section>
+<section class="s-panel b-sec" aria-label="Connected accounts"><p class="b-h">Connected accounts</p><p class="b-hs">Cleared only reads them, to check your posts.</p><div class="b-acct"><span class="s-mark yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3Z"/></svg></span><div class="b-who"><p class="b-v">Ada Makes</p><p class="s-quiet">YouTube · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><p class="s-alert" role="alert" style="margin:6px 0 0 48px">You can’t disconnect YouTube while a post is under way: Glow Theory · YouTube video.</p><div class="b-acct"><span class="s-mark ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span><div class="b-who"><p class="b-v">@adamakes</p><p class="s-quiet">Instagram · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><div class="s-note" style="margin:8px 0 0 48px"><p><b style="color:var(--ink)">Disconnect @adamakes?</b> Cleared stops reading it. You can connect it again later.</p>
+<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="s-btn dark">Disconnect</button><button class="s-btn line">Keep it</button></div></div></section>
+</div>
+<p style="margin-top:14px"><button class="s-link">Sign out</button></p>
+<div class="b-danger"><div class="b-line"><div><p class="b-v">Delete account</p><p class="s-quiet">Removes your profile and your connected accounts.</p></div><button class="s-link" style="color:var(--fail)">Delete account</button></div></div></div></div>
+<div class="s-desk"><aside class="s-rail"><span class="s-logo"><i></i>Cleared</span><span class="s-nav">Deals</span>
+<div class="s-row"><b>GT</b><span>Glow Theory<small>Live check</small></span></div>
+<div class="s-row"><b style="background:#dcebff;color:#1f4e9c">JS</b><span>Juniper &amp; Salt<small>Paid</small></span></div>
+<div class="s-row s-me"><b>AO</b><span>Ada Okafor<small>Creator</small></span></div></aside><div class="s-main"><p class="s-title">Settings</p>
+<div class="b-me"><b>AO</b><div><p class="b-n">Ada Okafor</p><p class="s-quiet">Signed in with Google as ada.okafor@gmail.com</p></div><button class="s-link">Sign out</button></div>
+<div class="b-grid">
+<section class="s-panel b-sec" aria-label="Getting paid"><p class="b-h">Getting paid</p><p class="b-hs">Where Cleared sends your payouts.</p><div class="b-line"><div><p class="b-v">ada@example.com</p><p class="s-quiet">Every payout goes here, after Cleared’s 5% fee.</p></div><button class="s-link" aria-label="Change your PayPal email">Change</button></div></section>
+<section class="s-panel b-sec" aria-label="Connected accounts"><p class="b-h">Connected accounts</p><p class="b-hs">Cleared only reads them, to check your posts.</p><div class="b-acct"><span class="s-mark yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3Z"/></svg></span><div class="b-who"><p class="b-v">Ada Makes</p><p class="s-quiet">YouTube · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><p class="s-alert" role="alert" style="margin:6px 0 0 48px">You can’t disconnect YouTube while a post is under way: Glow Theory · YouTube video.</p><div class="b-acct"><span class="s-mark ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span><div class="b-who"><p class="b-v">@adamakes</p><p class="s-quiet">Instagram · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><div class="s-note" style="margin:8px 0 0 48px"><p><b style="color:var(--ink)">Disconnect @adamakes?</b> Cleared stops reading it. You can connect it again later.</p>
+<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="s-btn dark">Disconnect</button><button class="s-btn line">Keep it</button></div></div></section>
+</div>
+
+<div class="b-danger"><div class="b-line"><div><p class="b-v">Delete account</p><p class="s-quiet">Removes your profile and your connected accounts.</p></div><button class="s-link" style="color:var(--fail)">Delete account</button></div></div></div></div></div>
+<p class="s-state">Delete: refused while deals are open (ST-FR-11); the typed confirmation (ST-FR-10)</p><div class="s-pair">
+<div class="s-phone"><div class="s-top"><span class="s-logo"><i></i>Cleared</span><span>Deals</span></div><div class="s-page"><p class="s-title">Settings</p>
+<div class="b-me"><b>AO</b><div><p class="b-n">Ada Okafor</p><p class="s-quiet">Signed in with Google as ada.okafor@gmail.com</p></div></div>
+<div class="b-grid">
+<section class="s-panel b-sec" aria-label="Getting paid"><p class="b-h">Getting paid</p><p class="b-hs">Where Cleared sends your payouts.</p><div class="b-line"><div><p class="b-v">ada@example.com</p><p class="s-quiet">Every payout goes here, after Cleared’s 5% fee.</p></div><button class="s-link" aria-label="Change your PayPal email">Change</button></div></section>
+<section class="s-panel b-sec" aria-label="Connected accounts"><p class="b-h">Connected accounts</p><p class="b-hs">Cleared only reads them, to check your posts.</p><div class="b-acct"><span class="s-mark yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3Z"/></svg></span><div class="b-who"><p class="b-v">Ada Makes</p><p class="s-quiet">YouTube · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><div class="b-acct"><span class="s-mark ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span><div class="b-who"><p class="b-v">@adamakes</p><p class="s-quiet">Instagram · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div></section>
+</div>
+<p style="margin-top:14px"><button class="s-link">Sign out</button></p>
+<div class="b-danger"><p class="b-v">Delete account</p><p class="s-alert" role="alert" style="margin-top:4px">You can’t delete your account while a deal is open:</p>
+<ul class="b-open"><li>Glow Theory: a post is held</li><li>Juniper &amp; Salt: a payout is on its way</li></ul><p class="s-quiet">Finish or cancel these first.</p></div></div></div>
+<div class="s-desk"><aside class="s-rail"><span class="s-logo"><i></i>Cleared</span><span class="s-nav">Deals</span>
+<div class="s-row"><b>GT</b><span>Glow Theory<small>Live check</small></span></div>
+<div class="s-row"><b style="background:#dcebff;color:#1f4e9c">JS</b><span>Juniper &amp; Salt<small>Paid</small></span></div>
+<div class="s-row s-me"><b>AO</b><span>Ada Okafor<small>Creator</small></span></div></aside><div class="s-main"><p class="s-title">Settings</p>
+<div class="b-me"><b>AO</b><div><p class="b-n">Ada Okafor</p><p class="s-quiet">Signed in with Google as ada.okafor@gmail.com</p></div><button class="s-link">Sign out</button></div>
+<div class="b-grid">
+<section class="s-panel b-sec" aria-label="Getting paid"><p class="b-h">Getting paid</p><p class="b-hs">Where Cleared sends your payouts.</p><div class="b-line"><div><p class="b-v">ada@example.com</p><p class="s-quiet">Every payout goes here, after Cleared’s 5% fee.</p></div><button class="s-link" aria-label="Change your PayPal email">Change</button></div></section>
+<section class="s-panel b-sec" aria-label="Connected accounts"><p class="b-h">Connected accounts</p><p class="b-hs">Cleared only reads them, to check your posts.</p><div class="b-acct"><span class="s-mark yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3Z"/></svg></span><div class="b-who"><p class="b-v">Ada Makes</p><p class="s-quiet">YouTube · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div><div class="b-acct"><span class="s-mark ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span><div class="b-who"><p class="b-v">@adamakes</p><p class="s-quiet">Instagram · connected</p></div>
+<span class="b-acts"><button class="s-link">Reconnect</button><button class="s-link" style="color:var(--ink-3)">Disconnect</button></span></div></section>
+</div>
+
+<div class="b-danger"><p class="b-v">Delete account</p>
+<p class="s-quiet" style="margin-top:4px;max-width:60ch">Your profile, your connected accounts and your drafts are deleted. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and email removed. <b style="color:var(--ink)">This can’t be undone.</b></p>
+<label class="s-label" for="del" style="margin-top:12px">Type delete to confirm</label><input id="del" class="s-field" value="delete" style="max-width:320px">
+<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="s-btn red">Delete my account</button><button class="s-btn line">Keep it</button></div></div></div></div></div>
+</main></body></html>

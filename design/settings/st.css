@@ -1,0 +1,52 @@
+/* Settings mockups (ST 1.0). The app's tokens (web/src/app/globals.css @theme); classes prefixed s- so nothing clashes. */
+:root{
+  --espresso:#3f3322;--espresso-deep:#2c2314;--espresso-ink:#1c150a;--espresso-hover:#554631;--latte-line:#e4dcce;--latte:#f3eee5;--latte-wash:#faf8f4;
+  --marigold:#f5c14b;--marigold-ink:#231a00;
+  --ink:#1e1a14;--ink-2:#4a4339;--ink-3:#675f55;--ink-4:#6e665b;--ground:#f6f5f2;--surface:#fff;--line:#e8e4dc;--line-soft:#f1eee8;
+  --pass:#0b6b3a;--pass-wash:#ddf4e6;--fail:#b8302a;--fail-wash:#ffe7e4;--fail-tint:#fff7f6;--fail-line:#f5c9c4;--unsure:#855000;--unsure-wash:#ffefc7;
+  --head:"Bricolage Grotesque","Figtree",system-ui,sans-serif;--sans:"Figtree",system-ui,sans-serif;
+  --shadow-panel:0 1px 2px rgb(28 21 10/.05);
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--sans);background:var(--ground);color:var(--ink);font-size:15px;line-height:1.5}
+.s-doc{max-width:1320px;margin:0 auto;padding:24px 16px 120px;overflow-x:clip}
+.s-doc>h1{font-family:var(--head);font-size:26px;line-height:1.15}
+.s-why{color:var(--ink-2);max-width:72ch;margin:8px 0 22px}
+.s-state{font-size:12.5px;font-weight:800;color:var(--ink-3);letter-spacing:.02em;margin:38px 0 10px}
+.s-pair{display:grid;gap:22px}
+/* phone first, then the desktop frame at full width under it */
+.s-phone{width:100%;max-width:390px;border:1px solid var(--line);border-radius:28px;background:var(--ground);overflow:hidden}
+.s-desk{border:1px solid var(--line);border-radius:18px;background:var(--ground);overflow:hidden;display:grid;grid-template-columns:220px minmax(0,1fr);min-height:640px}
+.s-top{background:var(--espresso-deep);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-weight:800}
+.s-logo{display:inline-flex;align-items:center;gap:8px}
+.s-logo i{width:22px;height:22px;border-radius:50%;background:var(--marigold)}
+.s-rail{background:var(--espresso-deep);color:#fff;padding:18px 14px;display:flex;flex-direction:column;gap:18px}
+.s-rail .s-nav{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgb(255 255 255/.55)}
+.s-rail .s-row{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;font-size:14px;font-weight:700}
+.s-rail .s-row b{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;background:#fce3ec;color:#9c2a55}
+.s-rail .s-row small{display:block;font-weight:500;color:rgb(255 255 255/.6);font-size:12px}
+.s-rail .s-me{margin-top:auto;background:rgb(255 255 255/.1)}
+.s-rail .s-me b{background:var(--marigold);color:var(--marigold-ink)}
+.s-main{padding:26px 34px}
+.s-page{padding:16px}
+.s-title{font-family:var(--head);font-size:24px;font-weight:700;line-height:1.15}
+.s-desk .s-title{font-size:30px}
+.s-sub{color:var(--ink-3);font-size:13.5px;margin-top:4px}
+.s-panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-panel)}
+.s-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;font-weight:700;font-size:14.5px;border:0;font-family:inherit;cursor:pointer;white-space:nowrap}
+.s-btn.dark{background:var(--espresso);color:#fff;box-shadow:0 2px 6px rgb(28 21 10/.2)}
+.s-btn.line{background:var(--surface);color:var(--espresso);border:1px solid var(--latte-line)}
+.s-btn.red{background:var(--fail);color:#fff}
+.s-btn[disabled]{opacity:.5;cursor:not-allowed}
+.s-link{font-weight:700;color:var(--espresso);text-decoration:underline;text-underline-offset:3px;background:none;border:0;font-size:14px;cursor:pointer;min-height:44px;font-family:inherit;padding:0}
+.s-quiet{color:var(--ink-3);font-size:13.5px}
+.s-field{display:block;width:100%;border:1px solid var(--latte-line);border-radius:6px;background:var(--surface);padding:10px 12px;font-size:16px;font-family:inherit;color:var(--ink)}
+.s-field:focus{outline:2px solid var(--espresso);outline-offset:2px}
+.s-label{font-size:13.5px;font-weight:700;display:block;margin-bottom:6px}
+.s-mark{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex:none}
+.s-mark.yt{background:#fde8e6;color:#c4302b}
+.s-mark.ig{background:#f6e7f2;color:#a2347a}
+.s-mark svg{width:18px;height:18px}
+.s-alert{font-size:13.5px;font-weight:700;color:var(--fail)}
+.s-note{background:var(--latte-wash);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--ink-2)}
+.s-ok{color:var(--pass);font-weight:700;font-size:13.5px}
