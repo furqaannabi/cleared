@@ -1,6 +1,6 @@
 # Creator invite: FRD
 
-**Status:** Signed by William (revision 1.3).
+**Status:** Signed by William (revision 1.4).
 
 **Surface:** Creator app. Step 2 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): once the checklist is ready, the creator sets the amount and deadline for each post, connects the YouTube or Instagram account the posts go on, gives the PayPal email to be paid at, and sends the brand a link. The brand's side of the link (confirm the checklist, approve the hold) is the next surface.
 
@@ -87,6 +87,7 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 | IN-FR-17 | **Link created.** Creating the link saves the terms through the API and moves the deal to `waiting_for_brand`. The page then shows the terms read-only and the link with: Copy link ("Copied" for 2 seconds, announced), Share (the phone's share sheet, where the browser has one), "Anyone with this link can open this deal. Send it only to {brand}.", and when it expires ("Expires on {date}"). 1.3: no "We've also emailed it" line. Creating the link sends the creator's timezone as the browser reports it. |
 | IN-FR-18 | **Make a new link.** Turns the current link off and shows a new one, after a confirm: "The old link will stop working." |
 | IN-FR-19 | **Change terms.** Turns the link off, after a confirm ("{brand}'s link will stop working. You'll make a new one when you're done."), moves the deal back to `invite`, and makes the terms editable again. "Edit checklist" is available again too. |
+| IN-FR-23 | **A refused link (1.4).** When the API refuses Create link or Send updated terms for something not in place, the bar says why in place of "We couldn't save that.", with no Try again, and the page reads the invite and the profile again, so Before you send and the button show what is really left. YouTube not connected: "Connect YouTube before you create the link." Instagram not connected: "Connect Instagram before you create the link." PayPal email missing: "Add your PayPal email before you create the link." Terms not finished: "Some terms aren't finished. Check each post's amount and deadline." For Send updated terms, each first sentence ends "before you send the updated terms." instead. Any other refusal keeps IN-FR-15's "We couldn't save that." with Try again. |
 | IN-FR-20 | **Expired.** If the API reports the link expired, the page says "This link has expired" with "Make a new link". |
 
 ### Responsive and accessibility
@@ -162,6 +163,7 @@ interface CreatorProfile {
 - **Amount parser:** whole and two-place amounts become decimal strings; zero, negative, three places, letters and over the bound are refused with the right message; never goes through a float.
 - **Invite view model:** needed accounts per platform mix; the deadline bound and example date; the total only when every amount is valid; "what's left" in order with the count.
 - **Components (1.3: new behaviour on per-test stubs typed from the contract):** the amount limits, typed and refused; each connect result on its card, then gone from the address; the PayPal email note listing posts that keep the old email; the brand email's line; amount and deadline entry and errors; − / + at 1 and 21; connect (mocked) and the professional-account message; PayPal email prefill and warning; brand email optional; a failed save beside its field; Create link gated, then the link view with Copy, Share and expiry, sending the timezone; Make a new link and Change terms confirms; Edit checklist going back.
+- **1.4:** each of the four refusal codes on Create link and on Send updated terms gives its line, no Try again, and a second read of the invite and profile; an unknown code keeps "We couldn't save that." with Try again.
 - **End to end (Playwright, on MSW):** checklist ready → invite → amounts, deadlines, connect Instagram, PayPal email → Create link → copy; the rail shows "Waiting for brand"; Change terms back to editing. At 375 px and 1280 px.
 
 ## Out of Scope
@@ -190,3 +192,5 @@ interface CreatorProfile {
 | 1.2 | Signed by William, with Confirm and hold 1.0 | none |
 | 1.3 | The move onto the live API, from the grill-me with William: connecting is the backend's redirect, with a message per result on the card (IN-FR-11); the brand's email stays, says what it's for, and the link is never emailed (IN-FR-13, IN-FR-17); one post is $20.00 to $10,000.00, checked before saving and on the API's refusal (IN-FR-05, IN-FR-06); a new PayPal email lists the payouts that keep the old one (IN-FR-12); the timezone is sent with the link; a local link may be `http` on localhost (IN-BR-04) | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md), [Fee and amount limits](../decisions/2026-10-08-cleared-fee-and-amount-limits.md), [PayPal email change](../decisions/2026-10-10-a-paypal-email-change-reaches-where-no-payout-has-started.md), [The brand's notices](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md) |
 | 1.3 | Signed by William | none |
+| 1.4 | From a grill-me with William: a refused Create link or Send updated terms says why and re-reads the page (new IN-FR-23), for `youtube_not_connected`, `instagram_not_connected` (IG spec), `paypal_email_missing` and `terms_incomplete` | none |
+| 1.4 | Signed by William | none |
