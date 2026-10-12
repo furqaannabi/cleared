@@ -1,6 +1,6 @@
 # Creator home: FRD
 
-**Status:** Signed by William (revision 1.4).
+**Status:** Signed by William (revision 1.5).
 
 **Surface:** The creator's home, in two pages (1.2). The overview at `/deals`: the money overview, the performance figures and the deals with what needs the creator first; signing in and the landing page's button land here. Payments at `/payments`: what was paid each month and the payment history with its CSV. The brand has no home.
 
@@ -78,7 +78,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-15 | **Needs you first.** Deals with a post waiting on the creator come first under "Needs you", the rest under "Under way" and then "Finished" (every post paid, released or closed). Waiting on the creator: the deal at the checklist, invite or changes-requested step, or a post with no draft, a failed check, results to act on, an objection, or an approved draft without a go-ahead; or a payout that failed or wasn't claimed. Newest first within each. Each row: brand, each post's platform and state in the rail's words, linking where the rail's row links (DC-FR-37). 1.3: whether a post waits on the creator is the API's `needsCreator` (AH-FR-04), in place of the rule above; a payout that failed or wasn't claimed still counts, from the payments. A closed post is Finished and reads "Closed · never held" or "Cancelled", as its `closedBecause` says (AH-FR-03). |
+| HM-FR-15 | **Needs you first.** Deals with a post waiting on the creator come first under "Needs you", the rest under "Under way" and then "Finished" (every post paid, released or closed). Waiting on the creator: the deal at the checklist, invite or changes-requested step, or a post with no draft, a failed check, results to act on, an objection, or an approved draft without a go-ahead; or a payout that failed or wasn't claimed. Newest first within each. Each row: brand, each post's platform and state in the rail's words, linking where the rail's row links (DC-FR-37). 1.3: whether a post waits on the creator is the API's `needsCreator` (AH-FR-04), in place of the rule above; a payout that failed or wasn't claimed still counts, from the payments. A closed post is Finished and reads "Closed · never held" or "Cancelled", as its `closedBecause` says (AH-FR-03). (1.5) A post whose payout is on its way (`captured`) reads "Payout on its way", never "Paid" (DC-FR-33). |
 
 ### Payments (1.2)
 
@@ -173,3 +173,5 @@ One home page that answers "where's my money?" first: three totals in what the c
 | 1.3 signed | Revision 1.3 signed by William | none |
 | 1.4 | From the payments-on grill-me with William, now that `GET /me/payments` is live (AH 1.0): Held for you shows deal amounts before the fee, as the API gives what is received only once a hold is taken (HM-FR-05); `approved_not_paid` counts in no total; the flag is retired (HM-FR-20) and the money sections, See payments and Payments always exist; a request for the expected amount received on held posts | none |
 | 1.4 signed | Revision 1.4 signed by William | none |
+| 1.5 | From William: a post whose payout is on its way reads "Payout on its way" on the overview (HM-FR-15) | none |
+| 1.5 signed | Revision 1.5 signed by William | none |
