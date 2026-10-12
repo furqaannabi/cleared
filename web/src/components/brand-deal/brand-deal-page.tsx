@@ -18,6 +18,7 @@ import { HoldsPanel } from "./holds-panel";
 import { NotesPanel } from "./notes-panel";
 import { NotesProvider, useNotes } from "./notes";
 import { useBrandDeal } from "./use-brand-deal";
+import { MoneyHeldProvider } from "./money-held";
 
 /** What the brand does next, under the title (CH-FR-12, CH-FR-16). */
 const LEDE: Record<BrandDeal["step"], (creator: string) => string> = {
@@ -69,7 +70,9 @@ export function BrandDealPage({ dealId }: { dealId: string }) {
         {deal.posts.some((p) => p.review) ? "Each post’s draft comes here for your review. Each has its own hold and its own 48 hours." : LEDE[deal.step](deal.creatorName)}
       </p>
       <NotesProvider editable={deal.step === "waiting_for_brand"}>
-        <DealBody deal={deal} onDeal={setDeal} />
+        <MoneyHeldProvider>
+          <DealBody deal={deal} onDeal={setDeal} />
+        </MoneyHeldProvider>
       </NotesProvider>
     </BrandFrame>
   );

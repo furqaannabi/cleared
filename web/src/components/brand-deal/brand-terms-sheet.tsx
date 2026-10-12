@@ -1,4 +1,5 @@
 import { PaymentRules } from "@/components/invite/payment-rules";
+import { MoneyHeldPanel } from "./money-held";
 import { formatAmount } from "@/lib/invite/amount";
 import type { BrandTermsView } from "@/lib/brand-deal/terms-view";
 import type { BrandDeal } from "@/lib/brand-deal/types";
@@ -9,7 +10,8 @@ import { NotOnChecklist } from "./not-on-checklist";
  * The sponsorship terms as the brand reads them (design A,
  * design/brand-deal/option-a.html): the creator and brand, each post with its
  * checklist under it, the total, where the money goes (never the creator's
- * PayPal email), the lines not on the checklist and the four payment rules.
+ * PayPal email), the lines not on the checklist, the four payment rules and
+ * how the money is held (CH-FR-31).
  *
  * @param deal - the deal as the brand sees it
  * @param view - the brand terms view
@@ -54,6 +56,7 @@ export function BrandTermsSheet({ deal, view, renderCancel }: { deal: BrandDeal;
       <p className="text-meta text-ink-3">Paid to {creator}’s PayPal.</p>
       <NotOnChecklist lines={view.notOnChecklist} creator={creator} />
       <PaymentRules side="brand" brand={deal.brandName} creator={creator} />
+      <MoneyHeldPanel creator={creator} />
     </section>
   );
 }

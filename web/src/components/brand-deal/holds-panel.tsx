@@ -7,6 +7,7 @@ import { holdLine, holdsSummary } from "@/lib/brand-deal/hold-view";
 import { PLATFORM_LABEL } from "@/lib/checklist-builder/checklist-view";
 import type { BrandDeal, BrandPost } from "@/lib/brand-deal/types";
 import { formatAmount } from "@/lib/invite/amount";
+import { MoneyHeldLink } from "./money-held";
 import { PlatformMark } from "./platform-mark";
 import { usePayPalApproval, type ApprovalProps } from "./paypal-approval";
 import { PayPalSandboxApproval } from "./paypal-sandbox-approval";
@@ -30,6 +31,8 @@ export function HoldsPanel({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: B
       <h2 id="holds-heading" className="font-head text-[17px] font-extrabold">
         Holds · {summary.heading}
       </h2>
+      {/* CH-FR-32: before approving, the panel in the terms is one tap away. */}
+      <MoneyHeldLink />
       {summary.allHeld && (
         <p role="status" className="text-[14.5px] text-ink-2">
           {summary.allHeld}
