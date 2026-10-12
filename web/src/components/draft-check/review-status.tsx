@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Seal } from "@/components/ui/seal";
 import { api } from "@/lib/api";
-import { formatDay, formatTime } from "@/lib/deliverable/format";
+import { formatDay, formatDayTime, formatTime } from "@/lib/deliverable/format";
 import type { Deliverable } from "@/lib/deliverable/types";
 
 /**
@@ -44,9 +44,10 @@ export function ApprovedBanner({ deliverable }: { deliverable: Deliverable }) {
  *
  * @param deliverable - the deliverable, with its review link from the API
  * @param onUpdated - takes the post with its new link
- * @see docs/specs/creator-draft-check-frd.md DC-FR-52; docs/decisions/2026-10-08-fresh-brand-link-per-review.md
+ * @param timeZone - the viewer's timezone for the live post's time (tests)
+ * @see docs/specs/creator-draft-check-frd.md DC-FR-52; docs/specs/publish-and-pay-frd.md PP-FR-40; docs/decisions/2026-10-08-fresh-brand-link-per-review.md
  */
-export function CopyReviewLink({ deliverable, onUpdated }: { deliverable: Deliverable; onUpdated: (d: Deliverable) => void }) {
+export function CopyReviewLink({ deliverable, onUpdated, timeZone }: { deliverable: Deliverable; onUpdated: (d: Deliverable) => void; timeZone?: string }) {
   const [said, setSaid] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const link = deliverable.reviewLink;
@@ -69,8 +70,16 @@ export function CopyReviewLink({ deliverable, onUpdated }: { deliverable: Delive
     await copy(r.data.reviewLink.url, "New link copied");
   }
   const opened = deliverable.reviewOpenedAt ? `${b} opened it on ${formatDay(deliverable.reviewOpenedAt)}, ${formatTime(deliverable.reviewOpenedAt)}.` : `${b} hasn’t opened it yet.`;
+  // PP-FR-40: a link back for a live post means Cleared has no email for the brand; say why it matters.
+  const lc = deliverable.liveCheck;
+  const due = lc?.state === "undecided" ? { verb: "confirm", by: lc.brandBy } : lc?.state === "not_fixable" ? { verb: "accept", by: lc.brandBy } : null;
   return (
     <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[14px] text-ink-2">
+      {due && (
+        <p className="w-full font-bold text-ink">
+          {`${b} has to ${due.verb} your live post by ${formatDayTime(due.by, timeZone)}. We don’t have their email, so send them this link.`}
+        </p>
+      )}
       {link.expired ? (
         <button
           type="button"

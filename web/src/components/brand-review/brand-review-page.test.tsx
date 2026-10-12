@@ -141,7 +141,7 @@ describe("PP-FR-26 to PP-FR-30 after posting", () => {
 
   test("couldn't decide: the live post, why, the silence line; confirming takes the money", async () => {
     const user = userEvent.setup();
-    posted({ state: "undecided", what: "the paid promotion label", brandBy: later() });
+    posted({ state: "undecided", what: ["paid_promotion"], brandBy: later() });
     await openPost("del_juniper_short", "YouTube Short");
     expect(screen.getByRole("link", { name: "View the live post" })).toHaveAttribute("href", "https://www.youtube.com/watch?v=tideshort01");
     expect(within(review()).getByText(/If you say nothing by .+, Ada Okafor is paid\./)).toBeVisible();
@@ -153,7 +153,7 @@ describe("PP-FR-26 to PP-FR-30 after posting", () => {
 
   test("objecting needs a reason, then a person at Cleared decides", async () => {
     const user = userEvent.setup();
-    posted({ state: "undecided", what: "the paid promotion label", brandBy: later() });
+    posted({ state: "undecided", what: ["paid_promotion"], brandBy: later() });
     await openPost("del_juniper_short", "YouTube Short");
     await user.click(within(review()).getByRole("button", { name: "Object" }));
     await user.click(within(review()).getByRole("button", { name: "Send objection" }));
@@ -165,7 +165,7 @@ describe("PP-FR-26 to PP-FR-30 after posting", () => {
 
   test("failed for good: accept the post anyway, after a confirmation; silence returns the money", async () => {
     const user = userEvent.setup();
-    posted({ state: "not_fixable", reason: "The live post isn’t the approved draft.", brandBy: later() });
+    posted({ state: "not_fixable", reason: "not_the_approved_file", brandBy: later() });
     await openPost("del_juniper_short", "YouTube Short");
     expect(within(review()).getByText(/If you don’t accept it by .+, the hold comes back to you\./)).toBeVisible();
     await user.click(within(review()).getByRole("button", { name: "Accept the post anyway" }));

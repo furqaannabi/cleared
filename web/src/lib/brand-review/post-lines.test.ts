@@ -53,11 +53,13 @@ describe("PP-FR-25 each post's line after Approved", () => {
       deal([
         post("a", { state: "posting", postBy: "2026-10-10T14:00:00Z" }),
         post("b", { state: "live_check" }),
-        post("c", { state: "accept", endsAt: "2026-10-10T08:00:00Z" }),
-        post("d", { state: "confirm", endsAt: "2026-10-09T08:00:00Z" }),
-        post("e", { state: "with_cleared" }),
-        post("f", { state: "taken", amount: "350.00" }),
+        post("c", { state: "accept", endsAt: "2026-10-10T08:00:00Z", reason: "not_the_approved_file" }),
+        post("d", { state: "confirm", endsAt: "2026-10-09T08:00:00Z", what: ["paid_promotion"] }),
+        post("e", { state: "with_cleared", reason: "No label.", ruleBy: "2026-10-30T10:00:00Z" }),
+        post("f", { state: "taken", amount: "350.00", reference: "CAP-1", at: "2026-10-09T10:00:00Z", creatorPaid: true }),
         post("g", { state: "approved_not_paid" }),
+        post("h", { state: "taking" }),
+        post("i", { state: "capture_refused", retryUntil: "2026-10-30T10:00:00Z" }),
       ]),
       NOW,
     );
@@ -69,6 +71,8 @@ describe("PP-FR-25 each post's line after Approved", () => {
       ["e", "A person at Cleared is deciding", "View post"],
       ["f", "Paid · $350.00 taken", "View post"],
       ["g", "Approved, not paid", null],
+      ["h", "Approved · taking your $100.00", "View post"],
+      ["i", "Payment failed at PayPal · we try again until 30 Oct", "View post"],
     ]);
   });
 

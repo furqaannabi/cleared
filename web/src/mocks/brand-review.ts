@@ -46,6 +46,18 @@ const BRAND_STATUS: Partial<Record<Item["status"], BrandItem["status"]>> = {
 const brandStatus = (i: Item): BrandItem["status"] =>
   i.status === "unsure" ? (i.declined ? "fix_requested" : "unsure") : (BRAND_STATUS[i.status] ?? "unsure");
 
+/** An item's live result for the brand, once the live check judged it. */
+const liveStatus = (i: Item) => (i.status === "passed" || i.status === "fix_needed" || i.status === "unsure" ? i.status : undefined);
+const liveItem = (i: Item) => ({
+  id: i.id,
+  name: i.name,
+  kind: i.kind,
+  checkedBy: i.checkedBy,
+  status: liveStatus(i)!,
+  ...(i.briefLine ? { briefLine: i.briefLine } : {}),
+  ...(i.evidence ? { evidence: { label: i.evidence.label, text: i.evidence.text } } : {}),
+});
+
 /** Whether the creator asked the brand about anything on this run (RW-FR-06). */
 const askedThisRun = (d: Deliverable) => d.items.some((i) => i.status === "waiting_for_brand" || i.status === "accepted_by_brand" || i.declined);
 
@@ -66,15 +78,17 @@ function reviewOf(d: Deliverable): BrandDeliverable["review"] {
       return { state: "posting", postBy: d.goAhead?.state === "go" ? d.goAhead.endsAt : d.deadline };
     case "published": {
       const lc = d.liveCheck;
-      if (d.captureRefused) return { state: "capture_refused", retryUntil: d.captureRefused.retryUntil };
+      if (d.capture && "refused" in d.capture) return { state: "capture_refused", retryUntil: d.capture.retryUntil };
       if (lc?.state === "undecided") return { state: "confirm", endsAt: lc.brandBy, what: lc.what };
       if (lc?.state === "not_fixable") return { state: "accept", endsAt: lc.brandBy, reason: lc.reason };
       if (lc?.state === "objected") return { state: "with_cleared", reason: lc.reason, ruleBy: lc.ruleBy };
       return { state: "live_check" };
     }
     case "captured":
-    case "paid":
-      return { state: "taken", amount: d.capture!.amount, reference: d.capture!.reference, at: d.capture!.at, creatorPaid: d.state === "paid" };
+    case "paid": {
+      const c = d.capture && "reference" in d.capture ? d.capture : undefined;
+      return c ? { state: "taken", amount: c.amount, reference: c.reference, at: c.at, creatorPaid: d.state === "paid" } : { state: "taking" };
+    }
     case "approved_not_paid":
       return { state: "approved_not_paid" };
     default:
@@ -101,7 +115,8 @@ export function brandDeliverableFor(dealId: string, d: Deliverable): BrandDelive
     creatorTimeZone: d.creatorTimeZone,
     hold: { amount: terms.amount, reference: d.hold.reference, deadline: d.deadline },
     review,
-    ...(d.post?.url ? { post: { url: d.post.url } } : {}),
+    // PP-FR-26 (1.3): the live post with the live results of the items checked on it.
+    ...(d.post ? { post: { url: d.post.url, items: d.items.filter((i) => i.checkedBy === "published_post" && liveStatus(i)).map((i) => liveItem(i)) } } : {}),
     cancel: cancelOf(d),
     ...(d.cancelled ? { cancelled: d.cancelled } : {}),
     ...(showDraft
@@ -117,7 +132,8 @@ export function brandDeliverableFor(dealId: string, d: Deliverable): BrandDelive
               checkedBy: i.checkedBy,
               status: brandStatus(i),
               ...(i.briefLine ? { briefLine: i.briefLine } : {}),
-              ...(i.evidence ? { evidence: i.evidence } : {}),
+              // The contract always sends the draft evidence's times.
+              ...(i.evidence ? { evidence: { label: i.evidence.label, text: i.evidence.text, startSec: i.evidence.startSec ?? 0, endSec: i.evidence.endSec ?? 0 } } : {}),
               ...(i.brandNote ? { note: i.brandNote } : {}),
             })),
           },
@@ -165,15 +181,14 @@ export function postReview(deliverableId: string) {
       return { state: "objected" as const, count: d.items.filter((i) => i.status === "objected_by_brand").length };
     case "window":
       return { state: "window" as const, endsAt: review.endsAt };
+    // PP 1.3: the later states are the same on the deal page as on the post.
     case "posting":
-      return { state: "posting" as const, postBy: review.postBy };
     case "confirm":
     case "accept":
-      return { state: review.state, endsAt: review.endsAt };
+    case "with_cleared":
     case "taken":
-      return { state: "taken" as const, amount: review.amount };
     case "capture_refused":
-      return { state: "live_check" as const };
+      return review;
     default:
       return { state: review.state };
   }

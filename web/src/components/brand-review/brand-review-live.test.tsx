@@ -94,3 +94,21 @@ describe("RW-FR-20 (1.2) the window ended while objections were being written", 
     expect(within(review).queryByRole("button", { name: /^Send/ })).toBeNull();
   });
 });
+
+describe("PP-FR-41 (1.3) taking", () => {
+  test("says the money is being taken, offers nothing, and asks the API again until it's taken", async () => {
+    let reads = 0;
+    server.use(
+      http.get(postPath, () => {
+        reads += 1;
+        const taken = { state: "taken" as const, amount: "1500.00", reference: "CAP-1", at: new Date().toISOString(), creatorPaid: false };
+        return HttpResponse.json({ ...post, review: reads === 1 ? { state: "taking" } : taken });
+      }),
+    );
+    render(<BrandReviewPage dealId={post.dealId} deliverableId={post.deliverableId} />);
+    const review = await screen.findByRole("region", { name: "Your review" });
+    expect(within(review).getByText("Approved. Taking your $1,500.00 with PayPal…")).toBeVisible();
+    expect(within(review).queryByRole("button")).toBeNull();
+    expect(await within(review).findByText("Paid", {}, { timeout: 4000 })).toBeVisible();
+  });
+});

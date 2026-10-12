@@ -108,7 +108,7 @@ describe("PP-FR-06 to PP-FR-15 posting and the live check", () => {
   test("undecided: the brand has 48 hours to confirm; silence pays", async () => {
     await postAndCheck("undecided");
     await api.openBrandLink("demo_juniper");
-    expect((await brand()).review).toMatchObject({ state: "confirm", what: "the paid promotion label" });
+    expect((await brand()).review).toMatchObject({ state: "confirm", what: ["paid_promotion"] });
     vi.useRealTimers();
     expect(await endBrandWait(SHORT)).toBe(true);
     const d = await creator();
@@ -241,7 +241,7 @@ describe("PP-FR-24, PP-FR-32 the deals list and the seeded paid post", () => {
   test("a paid post is seeded with every reference", async () => {
     const d = await creator("del_wren_video");
     expect(d).toMatchObject({ state: "paid", capture: { amount: "800.00", fee: "40.00", payout: "760.00" }, payout: { state: "paid" } });
-    expect(d.capture?.reference && d.payout?.reference && d.hold.reference).toBeTruthy();
+    expect(d.capture && "reference" in d.capture && d.capture.reference && d.payout?.reference && d.hold.reference).toBeTruthy();
     const deals = await api.getDeals();
     expect(deals.ok && deals.data.find((x) => x.id === "deal_wren")).toMatchObject({ status: "Paid" });
   });

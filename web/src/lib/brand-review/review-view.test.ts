@@ -132,20 +132,20 @@ describe("PP-FR-25 to PP-FR-31 after the draft is approved", () => {
   });
 
   test("confirm: why, until when, and that silence pays; confirm and object are on", () => {
-    const v = view(deliverable({ state: "confirm", endsAt: "2026-10-10T14:00:00Z", what: "the paid promotion label" }));
+    const v = view(deliverable({ state: "confirm", endsAt: "2026-10-10T14:00:00Z", what: ["paid_promotion"] }));
     expect(v.next).toEqual({
       lead: "Confirm the post",
-      detail: "We couldn’t check the paid promotion label automatically. Look at the live post. If you say nothing by Sat 10 Oct, 14:00, Ada Okafor is paid.",
+      detail: "We couldn’t check YouTube’s paid promotion label automatically. Look at the live post. If you say nothing by Sat 10 Oct, 14:00, Ada Okafor is paid.",
     });
     expect(v.timeLeft).toEqual({ text: "50h 0m", lastHour: false });
     expect(v.actions).toMatchObject({ confirmPost: true, acceptPost: false });
   });
 
   test("accept: what failed, and that silence returns the money", () => {
-    const v = view(deliverable({ state: "accept", endsAt: "2026-10-10T08:00:00Z", reason: "It’s a different cut." }));
+    const v = view(deliverable({ state: "accept", endsAt: "2026-10-10T08:00:00Z", reason: "not_the_approved_file" }));
     expect(v.next).toEqual({
       lead: "Accept the post anyway?",
-      detail: "It’s a different cut. If you don’t accept it by Sat 10 Oct, 08:00, the hold comes back to you.",
+      detail: "The live post isn’t the draft you approved. If you don’t accept it by Sat 10 Oct, 08:00, the hold comes back to you.",
     });
     expect(v.actions).toMatchObject({ confirmPost: false, acceptPost: true });
   });
@@ -166,6 +166,31 @@ describe("PP-FR-25 to PP-FR-31 after the draft is approved", () => {
       "Your payment for this post failed at PayPal. Check your PayPal funding; we try again until 30 Oct.",
     );
     expect(view(deliverable({ state: "approved_not_paid" })).next.lead).toBe("Approved, not paid");
+  });
+
+  test("PP-FR-28 (1.3): the other accept reason, in words", () => {
+    expect(view(deliverable({ state: "accept", endsAt: "2026-10-10T08:00:00Z", reason: "not_your_channel" })).next.detail).toBe(
+      "The live post isn’t on Ada Okafor’s connected channel. If you don’t accept it by Sat 10 Oct, 08:00, the hold comes back to you.",
+    );
+  });
+
+  test("PP-FR-41: taking, with no actions", () => {
+    const v = view(deliverable({ state: "taking" }));
+    expect(v.next.lead).toBe("Approved. Taking your $1,500.00 with PayPal…");
+    expect(Object.values(v.actions).some(Boolean)).toBe(false);
+  });
+
+  test("PP-FR-26 (1.3): the live post's results go into the checklist by item id; the rest keep their draft result", () => {
+    const d = {
+      ...deliverable({ state: "live_check" }, [item("a", "passed"), item("link", "at_live_check", { kind: "written", checkedBy: "published_post" })]),
+      post: {
+        url: "https://www.youtube.com/watch?v=abc",
+        items: [{ id: "link", name: "Item link", kind: "written" as const, checkedBy: "published_post" as const, status: "fix_needed" as const, evidence: { label: "Description", text: "No link found." } }],
+      },
+    };
+    const items = view(d).items;
+    expect(items.find((i) => i.id === "a")?.status.value).toBe("passed");
+    expect(items.find((i) => i.id === "link")).toMatchObject({ status: { value: "fix_needed" }, evidence: { label: "Description", text: "No link found." } });
   });
 
   test("PP-FR-31: the brand's release reasons", () => {

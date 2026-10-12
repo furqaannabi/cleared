@@ -77,9 +77,9 @@ function landLiveCheck(d: Mocked, now: number) {
   } else if (live === "fixable") {
     d.liveCheck = { state: "fixable", fixBy: iso(Math.max(Date.parse(d.deadline), now + 24 * HOUR)) };
   } else if (live === "undecided") {
-    d.liveCheck = { state: "undecided", what: "the paid promotion label", brandBy };
+    d.liveCheck = { state: "undecided", what: ["paid_promotion"], brandBy };
   } else {
-    d.liveCheck = { state: "not_fixable", reason: "The live post isn’t the approved draft: it’s a different cut.", brandBy };
+    d.liveCheck = { state: "not_fixable", reason: "not_the_approved_file", brandBy };
   }
 }
 
@@ -122,7 +122,7 @@ export function settle(d: Mocked, now: number) {
         ...d.payout,
         state: outcome,
         canSendAgain: true,
-        ...(outcome === "failed" ? { reason: "PayPal says there’s no account at that email." } : {}),
+        ...(outcome === "failed" ? { reason: "returned" as const } : {}),
       };
     }
   }

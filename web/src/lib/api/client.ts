@@ -107,8 +107,9 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** DC-FR-09: retry a check that failed on our side. Returns the updated deliverable. */
     retryCheck: (deliverableId: string) =>
       request("POST", `${deliverablePath(deliverableId)}/check/retry`, deliverableSchema),
-    /** PP-FR-01 to PP-FR-05: ask for the go-ahead to post; the API re-confirms the hold and answers. */
-    getGoAhead: (deliverableId: string) => request("POST", `${deliverablePath(deliverableId)}/go-ahead`, deliverableSchema),
+    /** PP-FR-01 to PP-FR-05: ask for the go-ahead to post; the API re-confirms the hold and answers. 1.3: with the unlisted YouTube video's link. */
+    getGoAhead: (deliverableId: string, videoUrl?: string) =>
+      request("POST", `${deliverablePath(deliverableId)}/go-ahead`, deliverableSchema, videoUrl !== undefined ? { videoUrl } : {}),
     /** PP-FR-06, PP-FR-07: "I've posted it"; a Reel gives its link. Starts the live check. */
     markPosted: (deliverableId: string, url?: string) =>
       request("POST", `${deliverablePath(deliverableId)}/posted`, deliverableSchema, url ? { url } : {}),

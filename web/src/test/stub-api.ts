@@ -94,6 +94,30 @@ export const aBrandPost = (p: Partial<BrandPost> = {}): BrandPost => ({
 export const stubBrandPost = (post: BrandPost) =>
   server.use(http.get(`${apiBaseUrl}/brand/deals/${post.dealId}/deliverables/${post.deliverableId}`, () => HttpResponse.json(post)));
 
+/** One post as its creator sees it, as the contract's `GET /deliverables/{id}` answers it. */
+export type CreatorPost = components["schemas"]["CreatorPost"];
+
+/** Glow Theory's YouTube video, its draft approved by the brand; override any field. */
+export const aCreatorPost = (p: Partial<CreatorPost> = {}): CreatorPost => ({
+  id: "del_glow_video",
+  brandName: "Glow Theory",
+  platform: "youtube_video",
+  state: "approved",
+  deadline: "2026-11-01T23:59:00.000Z",
+  creatorTimeZone: "Europe/London",
+  run: 1,
+  items: [{ id: "it_glow_link", name: "glowtheory.com/ada in the description", kind: "written", status: "at_live_check", checkedBy: "published_post" }],
+  brief: [{ number: 1, text: "Put glowtheory.com/ada in the description." }],
+  hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00.000Z", stage: "held" },
+  payoutEmail: "ada@example.com",
+  approvedAt: "2026-10-10T10:00:00.000Z",
+  approvedBy: "brand",
+  ...p,
+});
+
+/** This test's answer to `GET /deliverables/{id}`. */
+export const stubCreatorPost = (post: CreatorPost) => server.use(http.get(`${apiBaseUrl}/deliverables/${post.id}`, () => HttpResponse.json(post)));
+
 /** The contract's error body: `{ error: { code, … } }`. */
 export const apiError = (error: components["schemas"]["Error"]["error"], status: number) => HttpResponse.json({ error }, { status });
 

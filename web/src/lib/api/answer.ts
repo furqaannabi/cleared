@@ -59,6 +59,8 @@ export function readAnswer<S extends z.ZodType>(status: number, json: unknown, s
     if (!e || !fields || !e.field || !fields.includes(e.field)) return { ok: false, error: "unavailable" };
     return { ok: false, error: e.code as "read_limit" | "draft_limit", limit: { field: e.field as ApiLimit["field"], ...(e.resetsAt ? { resetsAt: e.resetsAt } : {}) } };
   }
+  // PP-FR-37: a 503 with a code (YouTube not answering) keeps it, so it can be told apart from a network failure.
+  if (status === 503 && e) return { ok: false, error: "unavailable", code: e.code };
   if (status < 200 || status >= 300) return { ok: false, error: "unavailable" };
   const parsed = schema.safeParse(json);
   return parsed.success ? { ok: true, data: parsed.data } : { ok: false, error: "invalid_response" };

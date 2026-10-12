@@ -71,7 +71,7 @@ describe("PP-FR-18 to PP-FR-20 money", () => {
     const user = userEvent.setup();
     Object.assign(findDeliverable("del_wren_video")!, {
       state: "captured",
-      payout: { state: "failed", email: "ada@exmaple.com", reason: "PayPal says there’s no account at that email.", canSendAgain: true },
+      payout: { state: "failed", email: "ada@exmaple.com", reason: "returned", canSendAgain: true },
     });
     const panel = await open("del_wren_video", "deal_wren");
     expect(panel).toHaveTextContent("$760.00 couldn’t be paid to ada@exmaple.com");

@@ -14,6 +14,8 @@ const VALID = {
   state: "results",
   deadline: "2026-10-24T23:59:00Z",
   creatorTimeZone: "UTC",
+  run: 1,
+  brief: [],
   hold: { amountMinor: 120000, currency: "USD", reference: "7HK21934LM", heldAt: "2026-10-03T10:00:00Z", stage: "held" },
   payoutEmail: "ada.okafor@example.com",
   items: [

@@ -89,6 +89,13 @@ function Review({ post, setPost, reload }: { post: BrandDeliverable; setPost: (p
     const t = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(t);
   }, []);
+  // PP-FR-41 (1.3): while PayPal is asked for the money, ask the API again until it answers.
+  const taking = post.review.state === "taking";
+  useEffect(() => {
+    if (!taking) return;
+    const t = setInterval(() => void reload(), 2500);
+    return () => clearInterval(t);
+  }, [taking, reload]);
   const view = useMemo(() => brandReviewView(post, now), [post, now]);
   const actions = useReviewActions(post, setPost, reload);
   const items = useMemo(() => toItemViews(view.items), [view.items]);

@@ -1,6 +1,7 @@
 import type { StatusPresentation } from "@/lib/checklist/item-status";
 import { formatDay, formatDayTime, itemCount } from "@/lib/deliverable/format";
 import { formatAmount } from "@/lib/invite/amount";
+import { undecidedWords } from "@/lib/publish/live-words";
 import { describeBrandStatus } from "./brand-status";
 import type { BrandDeliverable, BrandItem } from "./types";
 
@@ -14,7 +15,11 @@ export interface BrandReviewView {
   warning: string | null;
   actions: { approve: boolean; object: boolean; answer: boolean; approveAnyway: boolean; confirmPost: boolean; acceptPost: boolean };
   /** RW-FR-07, RW-FR-08: the latest draft's items, each with its status in the brand's words. */
-  items: (Omit<BrandItem, "status"> & { status: StatusPresentation & { value: BrandItem["status"] } })[];
+  // PP-FR-26 (1.3): a live result's evidence has no video times.
+  items: (Omit<BrandItem, "status" | "evidence"> & {
+    status: StatusPresentation & { value: BrandItem["status"] };
+    evidence?: { label: string; text: string; startSec?: number; endSec?: number };
+  })[];
   /** RW-FR-12: the item selected on load; null when there is no draft to show. */
   selectedId: string | null;
 }
@@ -29,6 +34,11 @@ function left(ms: number): string {
   return h ? `${h}h ${mins % 60}m` : `${mins}m`;
 }
 
+/** PP-FR-28 (1.3): why a live post can't be fixed, for the brand. */
+function notFixable(reason: "not_your_channel" | "not_the_approved_file", creator: string): string {
+  return reason === "not_your_channel" ? `The live post isn’t on ${creator}’s connected channel.` : "The live post isn’t the draft you approved.";
+}
+
 /**
  * The brand's review of one post, from the state the API reports. It never
  * decides when the window starts or ends (RW-BR-01).
@@ -40,7 +50,12 @@ function left(ms: number): string {
  */
 export function brandReviewView(d: BrandDeliverable, now: Date, { timeZone }: { timeZone?: string } = {}): BrandReviewView {
   const c = d.creatorName;
-  const raw = d.draft?.items ?? [];
+  // PP-FR-26 (1.3): an item the live post was checked for takes its live result; the rest keep the draft's.
+  const live = new Map((d.post?.items ?? []).map((i) => [i.id, i]));
+  const raw = (d.draft?.items ?? []).map((i): Omit<BrandItem, "evidence"> & { evidence?: BrandReviewView["items"][number]["evidence"] } => {
+    const l = live.get(i.id);
+    return l ? { ...i, status: l.status, evidence: l.evidence } : i;
+  });
   const items = raw.map((i) => {
     const status = { ...describeBrandStatus(i.status, c), value: i.status };
     // PP-FR-27: after posting, the item the live check couldn't judge is the brand's to decide.
@@ -129,7 +144,7 @@ export function brandReviewView(d: BrandDeliverable, now: Date, { timeZone }: { 
         actions: { ...NONE, confirmPost: true },
         next: {
           lead: "Confirm the post",
-          detail: `We couldn’t check ${r.what} automatically. Look at the live post. If you say nothing by ${formatDayTime(r.endsAt, timeZone)}, ${c} is paid.`,
+          detail: `We couldn’t check ${undecidedWords(r.what)} automatically. Look at the live post. If you say nothing by ${formatDayTime(r.endsAt, timeZone)}, ${c} is paid.`,
         },
       };
     }
@@ -140,7 +155,7 @@ export function brandReviewView(d: BrandDeliverable, now: Date, { timeZone }: { 
         state: r.state,
         timeLeft: { text: left(ms), lastHour: ms < HOUR },
         actions: { ...NONE, acceptPost: true },
-        next: { lead: "Accept the post anyway?", detail: `${r.reason} If you don’t accept it by ${formatDayTime(r.endsAt, timeZone)}, the hold comes back to you.` },
+        next: { lead: "Accept the post anyway?", detail: `${notFixable(r.reason, c)} If you don’t accept it by ${formatDayTime(r.endsAt, timeZone)}, the hold comes back to you.` },
       };
     }
     case "with_cleared":
@@ -164,6 +179,9 @@ export function brandReviewView(d: BrandDeliverable, now: Date, { timeZone }: { 
         state: r.state,
         next: { lead: "Your payment failed at PayPal", detail: `Your payment for this post failed at PayPal. Check your PayPal funding; we try again until ${formatDay(r.retryUntil, timeZone)}.` },
       };
+    // PP-FR-41 (1.3): paying is approved and PayPal is being asked for the money.
+    case "taking":
+      return { ...base, state: r.state, next: { lead: `Approved. Taking your ${amount} with PayPal…`, detail: "" } };
     case "approved_not_paid":
       return { ...base, state: r.state, next: { lead: "Approved, not paid", detail: "PayPal never let Cleared take your payment for this post, so nothing was taken." } };
   }

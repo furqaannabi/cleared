@@ -20,6 +20,9 @@ const deliverableState = z.enum([
 const money = z.string().regex(/^\d{1,7}\.\d{2}$/);
 /** PP-BR-05: a post link is only ever https on the platform's own domain. */
 const postUrl = z.url({ protocol: /^https$/, hostname: /^(www\.)?(youtube\.com|youtu\.be|instagram\.com)$/ });
+// PP-FR-14, PP-FR-28 (1.3): what the live check couldn't decide, and why a live post can't be fixed, as codes.
+const undecided = z.enum(["file_record", "paid_promotion", "written_item"]);
+const notFixableReason = z.enum(["not_your_channel", "not_the_approved_file"]);
 const releaseReason = z.enum(["deadline", "cancelled", "day_28", "fix_window_ended", "not_accepted", "ruled_not_to_pay", "hold_not_confirmed"]);
 
 function isTimeZone(tz: string): boolean {
@@ -103,15 +106,15 @@ export const deliverableSchema = z.object({
   creatorTimeZone: z.string().refine(isTimeZone, "Unknown timezone"),
   items: z.array(checklistItemSchema),
   // DC-FR-32: the latest draft check run (0 before any draft).
-  run: z.number().int().nonnegative().optional(),
+  run: z.number().int().nonnegative(),
   // DC-FR-30: the deal's brief as numbered lines, for View brief. Written by the brand: plain text only.
-  brief: z.array(z.object({ number: z.number().int().positive(), text: z.string().max(2000) })).optional(),
+  brief: z.array(z.object({ number: z.number().int().positive(), text: z.string().max(2000) })),
   // DC-FR-23: the latest draft, once one has been uploaded.
   draft: draftSchema.optional(),
   // Money is integer minor units, never a float (CLAUDE.md "Money").
   hold: z.object({
     amountMinor: z.number().int().nonnegative(),
-    currency: z.string().length(3),
+    currency: z.literal("USD"),
     // DC-FR-27: the PayPal reference, when it was held, and the money stage (from the API, never derived).
     reference: z.string().min(1),
     heldAt: isoTime,
@@ -128,33 +131,46 @@ export const deliverableSchema = z.object({
     .discriminatedUnion("state", [
       z.object({ state: z.literal("go"), endsAt: isoTime }),
       z.object({ state: z.literal("wait"), until: isoTime }),
+      // PP-FR-01 (1.3): PayPal is being asked; the page asks again until it answers.
+      z.object({ state: z.literal("confirming") }),
       z.object({ state: z.literal("not_confirmed") }),
       z.object({ state: z.literal("ended") }),
     ])
     .optional(),
   // PP-FR-06 to PP-FR-09: the published post.
-  post: z.object({ url: postUrl.optional(), publishedAt: isoTime }).optional(),
+  post: z.object({ url: postUrl, publishedAt: isoTime }).optional(),
   // PP-FR-09 to PP-FR-15: the live check's overall result; plain text throughout (PP-BR-03).
   liveCheck: z
     .discriminatedUnion("state", [
       z.object({ state: z.literal("checking") }),
       z.object({ state: z.literal("passed") }),
-      z.object({ state: z.literal("fixable"), fixBy: isoTime }),
-      z.object({ state: z.literal("not_fixable"), reason: z.string().max(300), brandBy: isoTime }),
-      z.object({ state: z.literal("undecided"), what: z.string().max(120), brandBy: isoTime }),
+      // PP-FR-38 (1.3): the check can't run yet.
+      z.object({ state: z.literal("reconnect_youtube") }),
+      z.object({ state: z.literal("video_not_found") }),
+      // PP-FR-39 (1.3): approved by someone other than the live check.
+      z.object({ state: z.literal("approved"), by: z.enum(["brand_confirmed", "brand_silence", "brand_accepted", "cleared"]) }),
+      // PP-FR-12 (1.3): `checking` while a check again runs.
+      z.object({ state: z.literal("fixable"), fixBy: isoTime, checking: z.literal(true).optional() }),
+      z.object({ state: z.literal("not_fixable"), reason: notFixableReason, brandBy: isoTime }),
+      z.object({ state: z.literal("undecided"), what: z.array(undecided), brandBy: isoTime }),
       z.object({ state: z.literal("objected"), reason: z.string().max(500), ruleBy: isoTime }),
     ])
     .optional(),
-  // PP-FR-17, PP-FR-21: the capture, with the fee and payout as the API works them out (PP-BR-07).
-  capture: z.object({ reference: z.string().min(1).max(64), at: isoTime, amount: money, fee: money, payout: money }).optional(),
-  captureRefused: z.object({ retryUntil: isoTime }).optional(),
+  // PP-FR-17, PP-FR-21: the capture, with the fee and payout as the API works them out (PP-BR-07); or refused, retried until a date.
+  capture: z
+    .union([
+      z.object({ reference: z.string().min(1).max(64), at: isoTime, amount: money, fee: money, payout: money }),
+      z.object({ refused: z.literal(true), retryUntil: isoTime }),
+    ])
+    .optional(),
   // PP-FR-17 to PP-FR-20, PP-FR-35, PP-FR-36: the payout to the creator; only ever shown to the creator (PP-BR-04).
   // "delayed" is a payout PayPal won't send (MP-FR-45); "cancelling" an unclaimed one being cancelled before it's sent again (MP-FR-30).
   payout: z
     .object({
       state: z.enum(["sending", "cancelling", "delayed", "unclaimed", "failed", "paid"]),
       email: z.email(),
-      reason: z.string().max(200).optional(),
+      // PP-FR-20 (1.3): why PayPal couldn't pay, as a code.
+      reason: z.enum(["failed", "returned", "blocked", "denied"]).optional(),
       reference: z.string().min(1).max(64).optional(),
       at: isoTime.optional(),
       canSendAgain: z.boolean(),
@@ -174,8 +190,12 @@ export const deliverableSchema = z.object({
   cancel: cancelSchema.optional(),
   // CN-FR-10, CN-FR-11: who cancelled, when, and their note (plain text, CN-BR-04).
   cancelled: cancelledSchema.optional(),
+  // PP-FR-22 (1.3): shown only when sent; not in the contract yet (asked of Furqaan).
   releaseReference: z.string().min(1).optional(),
 });
+// PP 1.3: the creator's post is the contract's `CreatorPost`, checked both ways at compile time, but for the release reference it doesn't send yet.
+const creatorPostIsTheContracts: SameShape<Omit<z.infer<typeof deliverableSchema>, "releaseReference">, components["schemas"]["CreatorPost"]> = true;
+void creatorPostIsTheContracts;
 
 /** DC-FR-31, DC-FR-37: one deal in the creator's list, and which deliverable to open for it. */
 export const dealSummarySchema = z.object({
@@ -335,6 +355,19 @@ void profileAfterEmailIsTheContracts;
 const profileIsTheContracts: SameShape<z.infer<typeof creatorProfileSchema>, components["schemas"]["Profile"]> = true;
 void profileIsTheContracts;
 
+/** PP-FR-25 to PP-FR-31, PP-FR-41: the brand's later states, the same on the deal page and the post (PP 1.3, the contract's). */
+const brandLaterReview = [
+  z.object({ state: z.literal("posting"), postBy: isoTime }),
+  z.object({ state: z.literal("live_check") }),
+  z.object({ state: z.literal("taking") }),
+  z.object({ state: z.literal("approved_not_paid") }),
+  z.object({ state: z.literal("confirm"), endsAt: isoTime, what: z.array(undecided) }),
+  z.object({ state: z.literal("accept"), endsAt: isoTime, reason: notFixableReason }),
+  z.object({ state: z.literal("with_cleared"), reason: z.string().max(500), ruleBy: isoTime }),
+  z.object({ state: z.literal("capture_refused"), retryUntil: isoTime }),
+  z.object({ state: z.literal("taken"), amount: money, reference: z.string().min(1).max(64), at: isoTime, creatorPaid: z.boolean() }),
+] as const;
+
 /**
  * CH-FR-04 to CH-FR-20: the deal as the brand sees it (provisional; confirm
  * and hold FRD). Never carries the creator's PayPal email (CH-BR-08).
@@ -366,17 +399,11 @@ export const brandDealSchema = z.object({
             z.object({ state: z.literal("nothing_yet") }),
             z.object({ state: z.literal("asked"), count: z.number().int().nonnegative() }),
             z.object({ state: z.literal("window"), endsAt: isoTime }),
-            z.object({ state: z.literal("objected"), count: z.number().int().positive() }),
+            z.object({ state: z.literal("objected"), count: z.number().int().nonnegative() }),
             z.object({ state: z.literal("approved") }),
             z.object({ state: z.literal("released") }),
-            // PP-FR-25: past Approved.
-            z.object({ state: z.literal("posting"), postBy: isoTime }),
-            z.object({ state: z.literal("live_check") }),
-            z.object({ state: z.literal("confirm"), endsAt: isoTime }),
-            z.object({ state: z.literal("accept"), endsAt: isoTime }),
-            z.object({ state: z.literal("with_cleared") }),
-            z.object({ state: z.literal("taken"), amount: money }),
-            z.object({ state: z.literal("approved_not_paid") }),
+            // PP-FR-25: past Approved; 1.3: the contract's shapes, with taking and a refused capture.
+            ...brandLaterReview,
           ])
           .optional(),
       }),
@@ -429,18 +456,27 @@ export const brandDeliverableSchema = z.object({
     z.object({ state: z.literal("objected"), objectedAt: isoTime }),
     z.object({ state: z.literal("approved"), approvedAt: isoTime, by: z.enum(["brand", "window"]) }),
     z.object({ state: z.literal("released"), releasedAt: isoTime, reason: releaseReason }),
-    // PP-FR-25 to PP-FR-31: past Approved.
-    z.object({ state: z.literal("posting"), postBy: isoTime }),
-    z.object({ state: z.literal("live_check") }),
-    z.object({ state: z.literal("confirm"), endsAt: isoTime, what: z.string().max(120) }),
-    z.object({ state: z.literal("accept"), endsAt: isoTime, reason: z.string().max(300) }),
-    z.object({ state: z.literal("with_cleared"), reason: z.string().max(500), ruleBy: isoTime }),
-    z.object({ state: z.literal("taken"), amount: money, reference: z.string().min(1).max(64), at: isoTime, creatorPaid: z.boolean() }),
-    z.object({ state: z.literal("capture_refused"), retryUntil: isoTime }),
-    z.object({ state: z.literal("approved_not_paid") }),
+    // PP-FR-25 to PP-FR-31, PP-FR-41: past Approved.
+    ...brandLaterReview,
   ]),
-  // PP-FR-26: the live post, once there is one.
-  post: z.object({ url: postUrl }).optional(),
+  // PP-FR-26: the live post, once there is one, with the live results of its items (1.3).
+  post: z
+    .object({
+      url: postUrl,
+      items: z.array(
+        z.object({
+          id: z.string().min(1),
+          name: z.string(),
+          kind: itemKind,
+          checkedBy: checklistItemSchema.shape.checkedBy,
+          status: z.enum(["passed", "fix_needed", "unsure"]),
+          briefLine: z.object({ number: z.number().int().positive(), text: z.string() }).optional(),
+          // Evidence from the live post; plain text (PP-BR-03).
+          evidence: z.object({ label: z.string(), text: z.string() }).optional(),
+        }),
+      ),
+    })
+    .optional(),
   // CN-FR-03, CN-FR-10: as on the creator's side.
   cancel: cancelSchema.optional(),
   cancelled: cancelledSchema.optional(),
@@ -458,7 +494,8 @@ export const brandDeliverableSchema = z.object({
           status: z.enum(BRAND_ITEM_STATUSES),
           // Absent when the creator added the item (DC 1.13).
           briefLine: z.object({ number: z.number().int().positive(), text: z.string() }).optional(),
-          evidence: checklistItemSchema.shape.evidence,
+          // PP 1.3: the contract always sends the evidence's times.
+          evidence: z.object({ label: z.string(), text: z.string(), startSec: z.number().nonnegative(), endSec: z.number().nonnegative() }).optional(),
           // The brand's own note, on an item it asked to be fixed or objected to; plain text (RW-BR-09).
           note: z.string().max(500).optional(),
         }),
@@ -474,3 +511,9 @@ export const holdStartSchema = z.object({ orderId: z.string().min(1).max(64) });
 export const draftAcceptedSchema = z.object({ deliverableId: z.string().min(1), state: z.literal("checking"), run: z.number().int().positive() });
 const draftAcceptedIsTheContracts: SameShape<z.infer<typeof draftAcceptedSchema>, components["schemas"]["DraftAccepted"]> = true;
 void draftAcceptedIsTheContracts;
+
+// PP 1.3: the brand's deal and post are the contract's `BrandDeal` and `BrandPost`, checked both ways at compile time.
+const brandDealIsTheContracts: SameShape<z.infer<typeof brandDealSchema>, components["schemas"]["BrandDeal"]> = true;
+const brandPostIsTheContracts: SameShape<z.infer<typeof brandDeliverableSchema>, components["schemas"]["BrandPost"]> = true;
+void brandDealIsTheContracts;
+void brandPostIsTheContracts;

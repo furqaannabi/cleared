@@ -80,6 +80,11 @@ export function postLines(deal: Pick<BrandDeal, "dealId" | "creatorName" | "post
           return { ...base, text: `Paid · ${formatAmount(r.amount)} taken`, action: { text: "View post", href, style: "link" as const } };
         case "approved_not_paid":
           return { ...base, text: "Approved, not paid", action: null };
+        // PP-FR-25 (1.3): paying is approved and PayPal is asked for the money; or PayPal refused it.
+        case "taking":
+          return { ...base, text: `Approved · taking your ${formatAmount(p.amount)}`, action: { text: "View post", href, style: "link" as const } };
+        case "capture_refused":
+          return { ...base, text: `Payment failed at PayPal · we try again until ${day(r.retryUntil.slice(0, 10))}`, action: { text: "View post", href, style: "link" as const } };
         default:
           return { ...base, text: `${c} is working on the draft${postBy}` };
       }

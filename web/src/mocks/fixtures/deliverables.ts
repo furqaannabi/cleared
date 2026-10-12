@@ -122,6 +122,7 @@ export const koraReel: Deliverable = {
   platform: "instagram_reel",
   state: "no_draft",
   run: 0,
+  brief: [],
   deadline: "2026-10-27T22:59:00Z",
   creatorTimeZone: "Africa/Lagos",
   hold: { amountMinor: 80000, currency: "USD", reference: "8KA20044TR", heldAt: "2026-10-06T16:00:00Z", stage: "held" },

@@ -12,7 +12,9 @@ const base = (o: Partial<Deliverable>): Deliverable => ({
   approvedBy: "brand",
   deadline: "2026-10-20T22:59:00Z",
   creatorTimeZone: "UTC",
+  run: 1,
   items: [],
+  brief: [],
   hold: { amountMinor: 35000, currency: "USD", reference: "DEMO-H", heldAt: "2026-10-05T10:00:00Z", stage: "held" },
   payoutEmail: "ada@example.com",
   ...o,
@@ -32,7 +34,7 @@ describe("PP-FR-01 to PP-FR-05 the go-ahead", () => {
       ["Captured", "todo"],
       ["Paid", "todo"],
     ]);
-    expect(v.action).toEqual({ kind: "get_go_ahead", label: "Get the go-ahead", disabled: false });
+    expect(v.action).toEqual({ kind: "get_go_ahead", label: "Get the go-ahead", disabled: false, videoLink: true });
   });
 
   test("posting: you can post now, before when, a countdown, and I've posted it", () => {
@@ -52,6 +54,26 @@ describe("PP-FR-01 to PP-FR-05 the go-ahead", () => {
   });
 });
 
+describe("PP 1.3 the go-ahead on the live API", () => {
+  test("PP-FR-01: while PayPal is asked, it says so and the action is off", () => {
+    expect(now({ goAhead: { state: "confirming" } })).toMatchObject({ state: "now", title: "Checking Juniper & Salt’s hold with PayPal…" });
+    expect(j({ goAhead: { state: "confirming" } }).action).toMatchObject({ kind: "get_go_ahead", disabled: true });
+  });
+});
+
+describe("PP 1.3 the video's link and the Reel", () => {
+  test("PP-FR-01: a YouTube go-ahead asks for the unlisted video's link; a Reel's doesn't", () => {
+    expect(j({}).action).toMatchObject({ kind: "get_go_ahead", videoLink: true });
+    expect(j({ platform: "instagram_reel" }).action).toMatchObject({ kind: "get_go_ahead" });
+    expect(j({ platform: "instagram_reel" }).action?.videoLink).toBeUndefined();
+  });
+
+  test("PP-FR-08: a Reel's go-ahead says to give the link before the deadline, not that we check", () => {
+    const step = now({ platform: "instagram_reel", state: "posting", goAhead: { state: "go", endsAt: "2026-10-10T11:12:00Z" } });
+    expect(step.body).toBe("Post before Sat 10 Oct, 11:12. Give us your Reel’s link before Tue 20 Oct, 22:59. We don’t look for it.");
+  });
+});
+
 describe("PP-FR-09 to PP-FR-15 the live check", () => {
   const posted = { state: "published" as const, post: { url: "https://www.youtube.com/watch?v=abc", publishedAt: "2026-10-08T11:00:00Z" } };
   test("checking, then each result", () => {
@@ -59,13 +81,45 @@ describe("PP-FR-09 to PP-FR-15 the live check", () => {
     const fix = now({ ...posted, liveCheck: { state: "fixable", fixBy: "2026-10-10T14:00:00Z" }, items: [{ id: "a", name: "Marked as a paid promotion", kind: "disclosure", status: "fix_needed", checkedBy: "published_post" }] });
     expect(fix).toMatchObject({ title: "1 item to fix on your live post", state: "problem" });
     expect(fix.body).toBe("Fix Marked as a paid promotion and check again before Sat 10 Oct, 14:00.");
-    expect(now({ ...posted, liveCheck: { state: "undecided", what: "the paid promotion label", brandBy: "2026-10-10T14:00:00Z" } }).body).toBe(
-      "We couldn’t check the paid promotion label automatically. Juniper & Salt has until Sat 10 Oct, 14:00 to confirm. If they say nothing, you’re paid. If they object, a person at Cleared decides.",
+    expect(now({ ...posted, liveCheck: { state: "undecided", what: ["file_record", "paid_promotion"], brandBy: "2026-10-10T14:00:00Z" } }).body).toBe(
+      "We couldn’t check whether it’s the same file and YouTube’s paid promotion label automatically. Juniper & Salt has until Sat 10 Oct, 14:00 to confirm. If they say nothing, you’re paid. If they object, a person at Cleared decides.",
     );
-    expect(now({ ...posted, liveCheck: { state: "not_fixable", reason: "It’s a different cut.", brandBy: "2026-10-10T14:00:00Z" } }).body).toBe(
-      "It’s a different cut. Juniper & Salt has until Sat 10 Oct, 14:00 to accept it anyway. If they don’t, the hold goes back to them.",
+    expect(now({ ...posted, liveCheck: { state: "not_fixable", reason: "not_the_approved_file", brandBy: "2026-10-10T14:00:00Z" } }).body).toBe(
+      "Your live post doesn’t match the approved draft. Juniper & Salt has until Sat 10 Oct, 14:00 to accept it anyway. If they don’t, the hold goes back to them.",
     );
     expect(now({ ...posted, liveCheck: { state: "objected", reason: "No label.", ruleBy: "2026-10-13T12:00:00Z" } })).toMatchObject({ title: "A person at Cleared is deciding" });
+  });
+
+  test("PP-FR-38: a channel to reconnect, and a video not found, each with its action and the deadline still running", () => {
+    const re = j({ ...posted, liveCheck: { state: "reconnect_youtube" } });
+    expect(re.steps.find((s) => s.key === "live_check")).toMatchObject({
+      state: "problem",
+      title: "We can’t read your YouTube channel, so your live post isn’t checked yet.",
+      body: "Reconnect YouTube and we check it straight away. Your deadline still runs.",
+    });
+    expect(re.action).toEqual({ kind: "reconnect", label: "Reconnect YouTube", disabled: false });
+    const gone = j({ ...posted, liveCheck: { state: "video_not_found" } });
+    expect(gone.steps.find((s) => s.key === "live_check")).toMatchObject({
+      state: "problem",
+      title: "We can’t find your video on YouTube.",
+      body: "Make sure it’s still on your channel and public, then tap I’ve posted it again. Your deadline still runs.",
+    });
+    expect(gone.action).toEqual({ kind: "posted", label: "I’ve posted it", disabled: false });
+  });
+
+  test("PP-FR-12 (1.3): while a check again runs, the action says so and is off", () => {
+    const v = j({ ...posted, liveCheck: { state: "fixable", fixBy: "2026-10-10T14:00:00Z", checking: true } });
+    expect(v.action).toEqual({ kind: "check_again", label: "Checking again…", disabled: true });
+  });
+
+  test("PP-FR-39: who approved the live post, then collecting the payment until the capture arrives", () => {
+    const by = (who: "brand_confirmed" | "brand_silence" | "brand_accepted" | "cleared") => j({ ...posted, liveCheck: { state: "approved", by: who } });
+    expect(by("brand_confirmed").steps.find((s) => s.key === "live_check")).toMatchObject({ state: "done", title: "Juniper & Salt confirmed your live post." });
+    expect(by("brand_silence").steps.find((s) => s.key === "live_check")?.title).toBe("Juniper & Salt didn’t answer in 48 hours, so your live post is approved.");
+    expect(by("brand_accepted").steps.find((s) => s.key === "live_check")?.title).toBe("Juniper & Salt accepted your live post.");
+    expect(by("cleared").steps.find((s) => s.key === "live_check")?.title).toBe("A person at Cleared approved your live post.");
+    expect(by("cleared").steps.find((s) => s.key === "captured")).toMatchObject({ state: "now", body: "Collecting Juniper & Salt’s payment with PayPal…" });
+    expect(j({ ...posted, liveCheck: { state: "passed" } }).steps.find((s) => s.key === "captured")?.body).toBe("Collecting Juniper & Salt’s payment with PayPal…");
   });
 
   test("the posted step links to the post", () => {
@@ -86,8 +140,12 @@ describe("PP-FR-16 to PP-FR-23 money", () => {
     const un = j({ state: "captured", capture: cap, payout: { state: "unclaimed", email: "ada@example.com", canSendAgain: true } });
     expect(un.action).toMatchObject({ kind: "send_again", label: "Send it again" });
     expect(un.steps.find((s) => s.state === "problem")?.title).toBe("PayPal is holding $332.50 for ada@example.com");
-    const failed = j({ state: "captured", capture: cap, payout: { state: "failed", email: "ada@exmaple.com", reason: "No account at that email.", canSendAgain: true } });
+    const failed = j({ state: "captured", capture: cap, payout: { state: "failed", email: "ada@exmaple.com", reason: "returned", canSendAgain: true } });
     expect(failed.action).toMatchObject({ kind: "send_again", fixEmail: true });
+    // PP-FR-20 (1.3): the reason in words.
+    expect(failed.steps.find((s) => s.state === "problem")?.body).toBe(
+      "PayPal sent it back: there’s no PayPal account for that email, or it can’t receive money. Correct your PayPal email and send it again.",
+    );
     expect(j({ state: "captured", capture: cap, payout: { state: "failed", email: "a@b.co", canSendAgain: false } }).action).toBeNull();
   });
 
@@ -119,7 +177,7 @@ describe("PP-FR-16 to PP-FR-23 money", () => {
   });
 
   test("capture refused and approved, not paid", () => {
-    expect(now({ state: "published", liveCheck: { state: "passed" }, captureRefused: { retryUntil: "2026-10-30T10:00:00Z" } }).body).toBe(
+    expect(now({ state: "published", liveCheck: { state: "passed" }, capture: { refused: true, retryUntil: "2026-10-30T10:00:00Z" } }).body).toBe(
       "Approved. PayPal couldn’t take Juniper & Salt’s payment yet. We try again until 30 Oct and have told Juniper & Salt.",
     );
     const anp = j({ state: "approved_not_paid" });

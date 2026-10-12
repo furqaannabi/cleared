@@ -100,7 +100,7 @@ export function juniperDeliverables(now: number): Deliverable[] {
     deadline: deadline(now, days),
     creatorTimeZone: "Africa/Lagos",
     brief: BRIEF,
-    hold: { amountMinor, currency: "USD", reference: holds[id].reference, heldAt: iso(now - 3 * DAY), stage: "held" as const },
+    hold: { amountMinor, currency: "USD" as const, reference: holds[id].reference, heldAt: iso(now - 3 * DAY), stage: "held" as const },
     payoutEmail: "ada@example.com",
   });
   return [

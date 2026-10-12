@@ -14,7 +14,7 @@ const NOTE_MAX = 500;
  *
  * @see docs/specs/brand-review-frd.md RW-FR-17, RW-BR-03
  */
-export const canObject = (item: BrandItem) => item.status === "passed";
+export const canObject = (item: Pick<BrandItem, "status">) => item.status === "passed";
 
 /**
  * Saves an objection, or edits the one already on that item. The note is
