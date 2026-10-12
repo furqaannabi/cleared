@@ -470,14 +470,23 @@ model DraftUsage {
   @@index([at])
 }
 
-// The video on the creator's channel that a post's go-ahead was asked for (publish to paid spec
-// PT-FR-05). Cleared read it from YouTube and found it to be the approved draft's file, or could not
-// tell. It is the video the live check looks at.
+// The post on its platform that a deliverable was published as. For YouTube it is the video the
+// go-ahead was asked for (publish to paid spec PT-FR-05): Cleared read it and found it to be the
+// approved draft's file, or could not tell. For a Reel it is the one the creator gave the link of,
+// found among their own media (Instagram Reels spec IG-FR-16). It is what the live check looks at.
 model PostVideo {
   deliverableId String    @id
-  /// YouTube's id for the video, taken from the link the creator gave.
+  /// The platform's own id for it: YouTube's id for the video, or Instagram's id for the Reel.
   videoId       String
-  /// same, or unknown when YouTube did not return the file's record (PT-FR-04). Never different: that is refused.
+  /// A Reel's short code, as in its link. Null for YouTube.
+  shortCode     String?
+  /// Instagram's own link to a Reel, when it gave one on its own address. Null for YouTube, whose link is made from the id.
+  link          String?
+  /// The platform's own date for the post. Kept as evidence; it decides nothing.
+  postedAt      DateTime?
+  /// Whether it is the approved draft's file. YouTube: same, or unknown when YouTube did not return
+  /// the file's record (PT-FR-04); never different, which is refused. A Reel: pending until its live
+  /// check has decided it once (IG-FR-22), then same, different, unknown, or not_fetched.
   fileMatch     String
   recordedAt    DateTime
   /// When Cleared first saw the video public: the moment the post counts as published (PT-FR-10).
@@ -491,13 +500,15 @@ model LiveCheck {
   deliverableId String    @id
   /// A check is waiting to run or running.
   running       Boolean   @default(false)
-  /// Why the last try gave no answer: reconnect_youtube or video_not_found. Null when it gave one or is still trying.
+  /// Why the last try gave no answer: reconnect_youtube, video_not_found, reconnect_instagram or
+  /// reel_not_found. Null when it gave one or is still trying.
   blockedBy     String?
   /// What the last finished check answered: passed, cannot_decide, failed_fixable or failed_not_fixable.
   answer        String?
   /// not_your_channel or not_the_approved_file, when the post cannot be fixed.
   notFixable    String?
-  /// What could not be decided, of: file_record, paid_promotion, written_item.
+  /// What could not be decided, of: file_record, paid_promotion, written_item, and for a Reel
+  /// reel_not_fetched, reel_match, paid_partnership_label.
   undecided     Json?
   /// When the last finished check ran (PT-FR-14).
   ranAt         DateTime?
@@ -505,6 +516,12 @@ model LiveCheck {
   videoDate     DateTime?
   /// How many checks have finished.
   runs          Int       @default(0)
+  /// While a Reel's video is being matched to the draft (IG-FR-20): where the fetched video is kept,
+  /// its length, the reading of its speech that was started, and since when. All null otherwise.
+  fetchedKey    String?
+  fetchedSec    Float?
+  speechJobId   String?
+  readingSince  DateTime?
 }
 
 // A post that was cancelled (publish to paid spec PT-FR-28 to PT-FR-32): who cancelled, when, and the

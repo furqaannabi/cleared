@@ -21,6 +21,8 @@ export function createPublishedPosts(deps: ReaderDeps & { now: () => Date }): Pu
       if (recorded.seenPublicAt) return recorded.seenPublicAt;
 
       const post = await prisma.deliverable.findUnique({ where: { id: deliverableId }, include: { deal: true } });
+      // A Reel counts as published only once its link was given and it was recorded, which is the moment above (IG-FR-18). It is not looked for on YouTube.
+      if (post?.platform === "instagram_reel") return null;
       const channel = post && (await reader.channelOf(post.deal.creatorId));
       // A channel Cleared cannot read shows it nothing published. The deadline runs as for any post not seen in time (PT-FR-17).
       if (!channel) return null;

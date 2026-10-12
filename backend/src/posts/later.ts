@@ -6,12 +6,16 @@
  */
 import type { CreatorMoneyView, MoneyView } from "../money/view";
 
-const UNDECIDED = ["file_record", "paid_promotion", "written_item"] as const;
+/** What a live check could not decide, in the order it is shown. The last three are a Reel's (IG-FR-28). */
+const UNDECIDED = ["file_record", "paid_promotion", "written_item", "reel_not_fetched", "reel_match", "paid_partnership_label"] as const;
 type Undecided = (typeof UNDECIDED)[number];
 
-/** Where the live check stands. A check that could not look says why in place of a result (PT-FR-17). */
+const BLOCKED = ["reconnect_youtube", "video_not_found", "reconnect_instagram", "reel_not_found"] as const;
+type Blocked = (typeof BLOCKED)[number];
+
+/** Where the live check stands. A check that could not look says why in place of a result (PT-FR-17, IG-FR-27). */
 export type PostLiveCheck =
-  | { state: "checking" | "passed" | "reconnect_youtube" | "video_not_found" }
+  | { state: "checking" | "passed" | Blocked }
   /** Paying was approved by someone, not by the check alone. */
   | { state: "approved"; by: "brand_confirmed" | "brand_silence" | "brand_accepted" | "cleared" }
   | { state: "fixable"; fixBy: string; checking?: true }
@@ -57,11 +61,26 @@ const undecidedOf = (check: LiveRecord | undefined): Undecided[] => {
 };
 const notFixableOf = (check: LiveRecord | undefined) => (check?.notFixable === "not_your_channel" ? ("not_your_channel" as const) : ("not_the_approved_file" as const));
 const ruleBy = (money: MoneyView) => (money.hold.state === "held" ? money.hold.day28At : new Date(0)).toISOString();
-const linkTo = (videoId: string) => `https://www.youtube.com/watch?v=${videoId}`;
+
+/** The recorded post, as much of it as the view needs. */
+export interface RecordedPost {
+  videoId: string;
+  seenPublicAt: Date | null;
+  /** A Reel's short code, and Instagram's own link to it if it gave one. Absent for YouTube. */
+  shortCode?: string | null;
+  link?: string | null;
+}
+
+/**
+ * The live post's link. It is made here from the id code took from the creator's link, or is the one
+ * Instagram itself gave for the Reel (IG-FR-28). Nothing the creator typed is echoed.
+ */
+export const linkTo = (post: RecordedPost) => (post.shortCode ? (post.link ?? `https://www.instagram.com/reel/${post.shortCode}/`) : `https://www.youtube.com/watch?v=${post.videoId}`);
 
 function liveCheckOf(money: CreatorMoneyView, check: LiveRecord | undefined): PostLiveCheck {
   if (money.approval) return money.approval.by === "live_check" ? { state: "passed" } : { state: "approved", by: money.approval.by };
-  if (check && !check.running && (check.blockedBy === "reconnect_youtube" || check.blockedBy === "video_not_found")) return { state: check.blockedBy };
+  const blockedBy = check && !check.running ? BLOCKED.find((why) => why === check.blockedBy) : undefined;
+  if (blockedBy) return { state: blockedBy };
   const waiting = money.waitingOn;
   switch (waiting?.for) {
     case "creator_to_fix":
@@ -97,7 +116,7 @@ function payoutOf(money: CreatorMoneyView): PostPayout | undefined {
   };
 }
 
-export function laterView(money: CreatorMoneyView, live: { video?: { videoId: string; seenPublicAt: Date | null }; check?: LiveRecord }): Later {
+export function laterView(money: CreatorMoneyView, live: { video?: RecordedPost; check?: LiveRecord }): Later {
   const publishedAt = money.publishedAt ?? live.video?.seenPublicAt ?? null;
   if (!publishedAt) return {};
   const ended = money.stage === "released" || money.stage === "closed_not_held";
@@ -106,8 +125,7 @@ export function laterView(money: CreatorMoneyView, live: { video?: { videoId: st
   const payout = payoutOf(money);
   return {
     ...(state ? { state } : {}),
-    // The link is made here from the id code took from the creator's link. Nothing the creator typed is echoed.
-    ...(live.video ? { post: { url: linkTo(live.video.videoId), publishedAt: publishedAt.toISOString() } } : {}),
+    ...(live.video ? { post: { url: linkTo(live.video), publishedAt: publishedAt.toISOString() } } : {}),
     ...(ended ? {} : { liveCheck: liveCheckOf(money, live.check) }),
     ...(capture ? { capture } : {}),
     ...(payout ? { payout } : {}),
@@ -135,7 +153,7 @@ export type BrandLaterReview =
 
 export interface BrandLater {
   review?: BrandLaterReview;
-  /** The live post's link, made by code from the video's id. */
+  /** The live post's link, made by code from the video's id, or Instagram's own for a Reel. */
   post?: { url: string };
 }
 
@@ -156,8 +174,8 @@ function brandReviewOf(money: MoneyView, check: LiveRecord | undefined, publishe
   return money.goAhead.state === "running" ? { state: "posting", postBy: money.goAhead.until.toISOString() } : undefined;
 }
 
-export function brandLater(money: MoneyView, live: { video?: { videoId: string; seenPublicAt: Date | null }; check?: LiveRecord }): BrandLater {
+export function brandLater(money: MoneyView, live: { video?: RecordedPost; check?: LiveRecord }): BrandLater {
   const published = !!(money.publishedAt ?? live.video?.seenPublicAt);
   const review = brandReviewOf(money, live.check, published);
-  return { ...(review ? { review } : {}), ...(published && live.video ? { post: { url: linkTo(live.video.videoId) } } : {}) };
+  return { ...(review ? { review } : {}), ...(published && live.video ? { post: { url: linkTo(live.video) } } : {}) };
 }

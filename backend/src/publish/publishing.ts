@@ -8,12 +8,13 @@
  */
 import { ServiceFailed } from "../checks/check";
 import type { Judge } from "../checks/ports";
-import type { Prisma } from "../generated/prisma/client";
-import type { TermsSnapshot } from "../invites/terms";
-import { enqueue, type JobHandlers } from "../jobs/jobs";
+import type { JobHandlers } from "../jobs/jobs";
 import type { Money, MoneyRefusal } from "../money/money";
 import type { GoAheadView } from "../money/view";
-import { liveCheck, type LiveItem } from "./live-check";
+import { liveCheck } from "./live-check";
+import { giveAnswer, liveItemsOf, startLiveCheckIn } from "./live-check-record";
+
+export { startLiveCheckIn };
 import type { Notices } from "./notices";
 import type { ReelPublishing } from "./reels";
 import { createReader, type ReaderDeps } from "./reader";
@@ -44,33 +45,18 @@ export type GoAheadRefused =
 
 export type PostedRefused =
   | { refused: "not_found" }
-  /** The post is a Reel. It has its own way of saying it is posted (IG-FR-14), which this service does not have yet; it is never taken down YouTube's path. */
+  /** The post is a Reel, and this service is not set up to read Instagram. */
   | { refused: "not_set_up" }
+  /** A Reel is said to be posted with its link, and a YouTube post with none (IG-FR-14, PT-FR-08). */
+  | { refused: "link_needed" | "link_not_taken" }
+  /** A Reel's own refusals (IG-FR-14 to IG-FR-16). */
+  | { refused: "not_an_instagram_link" | "not_approved" | "already_published" | "reconnect_instagram" | "instagram_unavailable" | "reel_not_found" | "not_a_reel" }
   /** No video is recorded for the post: the creator has not been through the go-ahead. */
   | { refused: "no_video" }
   /** The recorded video is not public yet. Nothing has changed (PT-FR-08). */
   | { refused: "not_public_yet" }
   | { refused: "reconnect_youtube" | "youtube_unavailable" | "video_not_found" }
   | { refused: "money"; reason: MoneyRefusal };
-
-/**
- * Starts a live check of a post, in the transaction of the change that calls for one (PT-FR-11). The
- * first time, `at` is recorded as the moment the video was first seen public (PT-FR-10). With a check
- * already waiting to run, there is still only that one.
- */
-export async function startLiveCheckIn(tx: Prisma.TransactionClient, deliverableId: string, at: Date): Promise<{ seenPublicAt: Date }> {
-  // One at a time for a post, so two requests at once cannot start two checks.
-  const [video] = await tx.$queryRaw<{ seenPublicAt: Date | null }[]>`SELECT "seenPublicAt" FROM "PostVideo" WHERE "deliverableId" = ${deliverableId} FOR UPDATE`;
-  if (!video) throw new Error("A live check was asked for a post with no video recorded");
-  const seenPublicAt = video.seenPublicAt ?? at;
-  if (!video.seenPublicAt) await tx.postVideo.update({ where: { deliverableId }, data: { seenPublicAt } });
-
-  const check = await tx.liveCheck.findUnique({ where: { deliverableId } });
-  if (check?.running) return { seenPublicAt };
-  await tx.liveCheck.upsert({ where: { deliverableId }, create: { deliverableId, running: true }, update: { running: true, blockedBy: null } });
-  await enqueue(tx, { name: "live_check", payload: { deliverableId }, runAt: at });
-  return { seenPublicAt };
-}
 
 export interface PublishingSettings {
   /** The wait before a live check that could not read YouTube, or reach the judge, tries again. It doubles each time, up to the longest wait (PT-FR-16). */
@@ -80,7 +66,6 @@ export interface PublishingSettings {
 
 export const defaultPublishingSettings: PublishingSettings = { retryFirstSeconds: 60, retryLongestSeconds: 3600 };
 
-const LIVE_KINDS = ["written", "disclosure", "publication"];
 /** Everything else in this module reads YouTube. A Reel is sent to its own path, or turned away, before any of it. */
 const REEL = "instagram_reel";
 
@@ -93,8 +78,8 @@ export function createPublishing(
     /** Judges written items that need judgment. Its pass counts only if its quote is in the description (PT-BR-02). */
     judge?: Pick<Judge, "judgeWritten">;
     settings?: PublishingSettings;
-    /** A Reel's own go-ahead (IG-FR-11). Without it a Reel gets none. */
-    reels?: Pick<ReelPublishing, "askGoAhead">;
+    /** A Reel's own go-ahead, posting and live check (IG-FR-11 to IG-FR-27). Without it a Reel gets none of them. */
+    reels?: Pick<ReelPublishing, "askGoAhead" | "posted" | "liveCheck">;
     /** Told when one of the brand's 48 hours starts, so it is given a link and an email (PT-FR-20, PT-FR-21). */
     notices?: Pick<Notices, "windowStarted">;
     /** Told what a live check did, with ids and codes only. Never a description (PT-BR-12). */
@@ -104,15 +89,6 @@ export function createPublishing(
   const { prisma, now, money, judge, log } = deps;
   const { channelOf, read } = createReader(deps);
   const settings = deps.settings ?? defaultPublishingSettings;
-
-  /** The items of the agreed checklist that are checked on the published post, in the checklist's order. */
-  async function liveItems(deliverableId: string, deal: { id: string; agreedVersion: number | null }): Promise<LiveItem[]> {
-    const version = await prisma.termsVersion.findFirst({ where: { dealId: deal.id, number: deal.agreedVersion ?? -1 } });
-    if (!version) throw new Error("A post at its live check has no agreed checklist");
-    return (version.terms as unknown as TermsSnapshot).items
-      .filter((item) => item.deliverableId === deliverableId && LIVE_KINDS.includes(item.kind))
-      .map((item) => ({ id: item.id, name: item.name, kind: item.kind as LiveItem["kind"], ...(item.exact ? { exact: item.exact } : {}) }));
-  }
 
   /** Ends a check that gave the money path no answer, with the reason if the creator can do something about it (PT-FR-17). */
   async function stop(deliverableId: string, blockedBy: "reconnect_youtube" | "video_not_found" | null): Promise<void> {
@@ -133,6 +109,8 @@ export function createPublishing(
       if (!recorded?.seenPublicAt || !check?.running) return;
 
       const post = await prisma.deliverable.findUnique({ where: { id: deliverableId }, include: { deal: true } });
+      // A Reel's check reads Instagram, and is its own (IG-FR-19). It is never taken down YouTube's path.
+      if (post?.platform === REEL) return deps.reels ? deps.reels.liveCheck(deliverableId, attempts) : stop(deliverableId, null);
       const view = await money?.view(deliverableId);
       // Once the hold is taken or given back there is nothing left for a check to decide.
       if (!post || !money || !judge || view?.stage !== "held") return stop(deliverableId, null);
@@ -151,7 +129,7 @@ export function createPublishing(
       const approved = await prisma.draftCheck.findUnique({ where: { deliverableId } });
       const draft = approved?.draftId ? await prisma.draft.findUnique({ where: { id: approved.draftId } }) : null;
       if (!draft) throw new Error("A post at its live check has no approved draft");
-      const items = await liveItems(deliverableId, post.deal);
+      const items = await liveItemsOf(prisma, deliverableId, post.deal);
 
       let found;
       try {
@@ -162,24 +140,7 @@ export function createPublishing(
         throw error;
       }
 
-      // The answer first, then the record of it. If this stops in between, the job runs again and the money path is told the same.
-      const answered = await money.liveCheckResult(deliverableId, found.answer);
-      const at = now();
-      await prisma.$transaction([
-        prisma.liveCheckItem.deleteMany({ where: { deliverableId } }),
-        prisma.liveCheckItem.createMany({
-          data: found.items.map((item, position) => ({ deliverableId, itemId: item.id, position, result: item.result, checkedBy: item.checkedBy, evidence: item.evidence, hint: item.hint })),
-        }),
-        prisma.liveCheck.update({
-          where: { deliverableId },
-          data: { running: false, blockedBy: null, answer: found.answer, notFixable: found.notFixable ?? null, undecided: found.undecided, ranAt: at, videoDate: video.publishedAt ?? null, runs: { increment: 1 } },
-        }),
-      ]);
-      // If the money path now waits on the brand, the brand is told. Asked again for the same window, nothing new is made.
-      const waiting = answered.ok ? answered.money.waitingOn : null;
-      if (waiting?.for === "brand_to_confirm") await deps.notices?.windowStarted(deliverableId, "confirm", waiting.until);
-      if (waiting?.for === "brand_to_accept") await deps.notices?.windowStarted(deliverableId, "accept", waiting.until);
-      log?.("A live check finished", { deliverableId, videoId: recorded.videoId, answer: found.answer, taken: answered.ok, ...(answered.ok ? {} : { refused: answered.reason }) });
+      await giveAnswer({ prisma, now, money, notices: deps.notices, log }, deliverableId, found, { id: recorded.videoId, date: video.publishedAt });
     },
   };
 
@@ -240,11 +201,17 @@ export function createPublishing(
      * "I've posted it" (PT-FR-08). The recorded video is read at once. If it is public, the moment is
      * recorded as when the post was published (PT-FR-10), the live check is started, and the money path
      * is told. If it is not, nothing changes. A check already started, or finished, is left as it is.
+     * A Reel is said to be posted with its link, and goes its own way (IG-FR-14).
      */
-    async posted(creatorId: string, deliverableId: string): Promise<{ publishedAt: Date } | PostedRefused> {
+    async posted(creatorId: string, deliverableId: string, url?: string): Promise<{ publishedAt: Date } | PostedRefused> {
       const post = await prisma.deliverable.findFirst({ where: { id: deliverableId, deal: { creatorId } } });
       if (!post) return { refused: "not_found" };
-      if (post.platform === REEL) return { refused: "not_set_up" };
+      if (post.platform === REEL) {
+        if (url === undefined) return { refused: "link_needed" };
+        return deps.reels ? deps.reels.posted(creatorId, deliverableId, url) : { refused: "not_set_up" };
+      }
+      // A YouTube post's video was given for the go-ahead. A link here could only be for something else.
+      if (url !== undefined) return { refused: "link_not_taken" };
       const recorded = await prisma.postVideo.findUnique({ where: { deliverableId } });
       if (!recorded) return { refused: "no_video" };
       const stage = (await money?.view(deliverableId))?.stage;
@@ -273,6 +240,16 @@ export function createPublishing(
      */
     async youtubeConnected(creatorId: string): Promise<void> {
       const stopped = await prisma.liveCheck.findMany({ where: { blockedBy: "reconnect_youtube", running: false }, select: { deliverableId: true } });
+      const theirs = await prisma.deliverable.findMany({ where: { id: { in: stopped.map((check) => check.deliverableId) }, deal: { creatorId } }, select: { id: true } });
+      for (const post of theirs) await prisma.$transaction((tx) => startLiveCheckIn(tx, post.id, now()));
+    },
+
+    /**
+     * The creator has connected Instagram again (IG-FR-27). Every live check of theirs that stopped
+     * because their account could not be read is started again.
+     */
+    async instagramConnected(creatorId: string): Promise<void> {
+      const stopped = await prisma.liveCheck.findMany({ where: { blockedBy: "reconnect_instagram", running: false }, select: { deliverableId: true } });
       const theirs = await prisma.deliverable.findMany({ where: { id: { in: stopped.map((check) => check.deliverableId) }, deal: { creatorId } }, select: { id: true } });
       for (const post of theirs) await prisma.$transaction((tx) => startLiveCheckIn(tx, post.id, now()));
     },

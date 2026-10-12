@@ -3088,7 +3088,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** "I've posted it": the recorded video is read, and if it is public the live check starts (PT-FR-08) */
+        /** "I've posted it". A YouTube post sends nothing: the recorded video is read, and if it is public the live check starts. A Reel sends its link: it is found among the creator's own media, recorded, and its live check starts (PT-FR-08, IG-FR-14 to IG-FR-17) */
         post: {
             parameters: {
                 query?: never;
@@ -3098,7 +3098,13 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        url?: string;
+                    };
+                };
+            };
             responses: {
                 /** @description The post: it was seen public, and its live check has started */
                 200: {
@@ -3107,6 +3113,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["CreatorPost"];
+                    };
+                };
+                /** @description The link is not a link to an Instagram Reel; or a Reel gave no link, or a YouTube post gave one */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
                     };
                 };
                 /** @description Nobody is signed in */
@@ -3127,7 +3142,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description Nothing changed: the video is not public yet, no video was given for a go-ahead, the video is gone, YouTube must be reconnected, or the money path refused, each with its own code */
+                /** @description Nothing changed: the video is not public yet, no video was given for a go-ahead, the video is gone, the draft is not approved, the Reel is not on the creator's account or is not a Reel, another Reel is already recorded, YouTube or Instagram must be reconnected, or the money path refused, each with its own code */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -3136,7 +3151,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description YouTube could not be read, or this service is not set up to read it. Try again */
+                /** @description YouTube or Instagram could not be read, or this service is not set up to read it. Try again */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -4297,7 +4312,7 @@ export interface components {
                 /** @enum {string} */
                 state: "confirm";
                 endsAt: string;
-                what: ("file_record" | "paid_promotion" | "written_item")[];
+                what: ("file_record" | "paid_promotion" | "written_item" | "reel_not_fetched" | "reel_match" | "paid_partnership_label")[];
             } | {
                 /** @enum {string} */
                 state: "accept";
@@ -4445,7 +4460,7 @@ export interface components {
             };
             liveCheck?: {
                 /** @enum {string} */
-                state: "checking" | "passed" | "reconnect_youtube" | "video_not_found";
+                state: "checking" | "passed" | "reconnect_youtube" | "video_not_found" | "reconnect_instagram" | "reel_not_found";
             } | {
                 /** @enum {string} */
                 state: "approved";
@@ -4466,7 +4481,7 @@ export interface components {
             } | {
                 /** @enum {string} */
                 state: "undecided";
-                what: ("file_record" | "paid_promotion" | "written_item")[];
+                what: ("file_record" | "paid_promotion" | "written_item" | "reel_not_fetched" | "reel_match" | "paid_partnership_label")[];
                 brandBy: string;
             } | {
                 /** @enum {string} */
@@ -4581,7 +4596,7 @@ export interface components {
                     /** @enum {string} */
                     state: "confirm";
                     endsAt: string;
-                    what: ("file_record" | "paid_promotion" | "written_item")[];
+                    what: ("file_record" | "paid_promotion" | "written_item" | "reel_not_fetched" | "reel_match" | "paid_partnership_label")[];
                 } | {
                     /** @enum {string} */
                     state: "accept";

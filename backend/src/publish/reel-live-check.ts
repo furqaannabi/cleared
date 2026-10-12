@@ -22,7 +22,7 @@ export interface ReelLiveInput {
    * Whether the live Reel is the approved draft. "not_fetched" when Instagram gave no address for its
    * video, as it does for a Reel with licensed music: nothing could be compared.
    */
-  match: ReelMatch | { match: "not_fetched" };
+  match: { match: ReelMatch["match"] | "not_fetched"; because?: string };
   items: LiveItem[];
   /** The judge, for written items that need judgment. It is given the caption as material to examine. */
   judgeWritten: LiveCheckInput["judgeWritten"];

@@ -10,6 +10,7 @@ import { createDrafts, defaultDraftSettings } from "./drafts/drafts";
 import { env } from "./env";
 import { createGoogle } from "./google/google";
 import { createInstagramConnections } from "./instagram/connections";
+import { createDownload } from "./instagram/download";
 import { createInstagramApi } from "./instagram/instagram-api";
 import { localLinkKeys } from "./invites/link-keys";
 import { runDueJobs, type JobHandlers } from "./jobs/jobs";
@@ -82,18 +83,22 @@ const judge = createClaudeJudge({ model: env.judgeModel, region: env.awsRegion, 
 // Drafts: a private bucket, ffmpeg to read a file, and the three services that check a video. Without
 // a bucket the API still starts in development, and takes no draft.
 const storage = env.drafts && createS3Storage({ bucket: env.drafts.bucket, region: env.awsRegion });
+const media = createFfmpegMedia();
+// What was said in a video, and the text on screen. A draft is read with it, and so is a live Reel, to match it to its draft.
+const speech = env.drafts && storage && createDataAutomation({ region: env.awsRegion, bucket: env.drafts.bucket, projectArn: env.drafts.projectArn, profileArn: env.drafts.profileArn, read: storage.read });
 const drafts =
   env.drafts &&
   storage &&
+  speech &&
   createDrafts({
     prisma,
     now,
     storage,
-    media: createFfmpegMedia(),
+    media,
     money,
     links: reviewLinks,
     checks: {
-      speech: createDataAutomation({ region: env.awsRegion, bucket: env.drafts.bucket, projectArn: env.drafts.projectArn, profileArn: env.drafts.profileArn, read: storage.read }),
+      speech,
       judge,
       videoModel: createNovaVideoModel({ model: env.drafts.videoModel, region: env.awsRegion, bucket: env.drafts.bucket, log }),
     },
@@ -109,16 +114,21 @@ if (!env.email) {
   console.warn("Email is not configured, so the brand is emailed nothing and the creator sends its link. See backend/.env.example.");
 }
 
-// Instagram, for connecting an account and for a Reel's go-ahead. Its tokens last 60 days, so a daily job keeps them renewed.
+// Instagram, for connecting an account and for a Reel's go-ahead, posting and live check. Its tokens last 60
+// days, so a daily job keeps them renewed. A creator who reconnects restarts what was waiting on it.
 const instagram = env.instagram && createInstagramApi({ ...env.instagram, log });
-const instagramConnections = instagram && createInstagramConnections({ prisma, now, instagram, secrets, log });
+const instagramConnections = instagram && createInstagramConnections({ prisma, now, instagram, secrets, onConnected: async (creatorId) => publishing?.instagramConnected(creatorId), log });
 if (!instagram) {
   console.warn("Instagram is not configured, so no Instagram account can be connected and no Reel gets a go-ahead. See backend/.env.example.");
 }
 // Not waited for: this file must load without waiting, because a process manager loads it with
 // require(). If scheduling fails the service still runs, and the next start schedules it.
 instagramConnections?.scheduleRenewals().catch((error: unknown) => log("The daily renewal of Instagram tokens could not be scheduled", { error: error instanceof Error ? error.name : "unknown" }));
-const reels = instagram && createReelPublishing({ prisma, instagram, secrets, money });
+// A live Reel's video is fetched into the drafts bucket and read there, to match it to its approved draft.
+// Without a bucket a Reel can be posted, and its live check gives no answer.
+const reels =
+  instagram &&
+  createReelPublishing({ prisma, now, instagram, secrets, money, reading: storage && speech ? { storage, media, speech, download: createDownload({ log }) } : undefined, judge, notices, settings: { maxBytes: defaultDraftSettings.maxBytes }, log });
 
 // Publishing: the go-ahead, posting and the live check, each read from the platform and each decided by the money path.
 publishing = reader && money ? createPublishing({ ...reader, now, money, judge, notices, reels, log }) : undefined;

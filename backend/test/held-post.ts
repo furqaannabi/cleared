@@ -16,7 +16,9 @@ import { createMoney } from "../src/money/money";
 import { createPublishedPosts } from "../src/publish/published-posts";
 import { createNotices } from "../src/publish/notices";
 import { createPublishing } from "../src/publish/publishing";
-import { createReelPublishing } from "../src/publish/reels";
+import { createReelPublishing, type ReelSettings } from "../src/publish/reels";
+import { createInstagramConnections } from "../src/instagram/connections";
+import { VideoUnavailable } from "../src/instagram/download";
 import { createReviewLinks } from "../src/review/links";
 import { createReview } from "../src/review/review";
 import { localSecrets } from "../src/secrets/secrets";
@@ -88,6 +90,7 @@ export function heldWorld(
     ownItem?: string;
     /** What kind that item is. Left alone, something shown in the video. */
     ownItemKind?: "shown" | "written" | "disclosure" | "publication";
+    reels?: Partial<ReelSettings>;
     /** Makes telling the money path that a draft is cleared fail, as a database error would. */
     clearingFails?: boolean;
   } = {},
@@ -135,9 +138,19 @@ export function heldWorld(
       : money,
   });
   const notices = createNotices({ prisma, now: clock, links: reviewLinks, email, log: (...parts) => void logged.push(parts) });
-  const reels = createReelPublishing({ prisma, instagram, secrets, money });
+  /** Every address a Reel's video was fetched from. It answers with a small file, or fails if a test says so. */
+  const downloads: string[] = [];
+  const downloading = { fails: false };
+  const download = async (address: string) => {
+    downloads.push(address);
+    if (downloading.fails) throw new VideoUnavailable("it could not be reached");
+    return new Blob([new Uint8Array(1_500).fill(9)]).stream() as ReadableStream<Uint8Array>;
+  };
+  const log = (...parts: unknown[]) => void logged.push(parts);
+  const reels = createReelPublishing({ prisma, now: clock, instagram, secrets, money, reading: { storage, media, speech, download }, judge, notices, settings: options.reels, log });
   const publishing = createPublishing({ prisma, now: clock, youtube, secrets, money, judge, notices, reels, log: (...parts) => void logged.push(parts) });
   const accounts = createAccounts({ prisma, now: clock, onYouTubeConnected: publishing.youtubeConnected });
+  const instagramConnections = createInstagramConnections({ prisma, now: clock, instagram, secrets, onConnected: publishing.instagramConnected });
   const app = createApp({
     prisma,
     appOrigin: APP,
@@ -172,6 +185,16 @@ export function heldWorld(
     await accounts.setPaypalEmail(creatorId, `${first}.pay@example.com`);
     browser.cookies.set("cleared_session", await createSessions({ prisma, now: clock }).start(creatorId));
     return browser;
+  }
+
+  /** The creator connects Instagram again, as the route does once Instagram has sent them back: an account, with access that works. */
+  async function reconnectInstagram(name: string, account?: { id: string; username: string }) {
+    const first = name.split(" ")[0]!.toLowerCase();
+    const { creatorId } = await accounts.signInWithGoogle({ googleId: `google-${name}`, name, email: `${first}@example.com` });
+    const person = account ?? { id: `ig-${first}`, username: first };
+    const token = `ig-token-${first}-again`;
+    instagram.has(token, person);
+    await instagramConnections.store(creatorId, { ...person, professional: true }, { token, expiresAt: new Date(now.getTime() + 60 * 24 * 3600 * 1000) });
   }
 
   /** The creator connects YouTube again, as the route does once Google has sent them back: the same channel, with access that works. */
@@ -244,11 +267,15 @@ export function heldWorld(
     videoModel,
     youtube,
     instagram,
+    /** Every address a Reel's video was fetched from, and a way to make fetching fail. */
+    downloads,
+    downloading,
     email,
     logged,
     money,
     creator,
     reconnectYouTube,
+    reconnectInstagram,
     agreedDeal,
     /** A browser nobody has signed in to. */
     visitor: () => browserFor(app, APP),

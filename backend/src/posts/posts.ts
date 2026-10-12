@@ -212,11 +212,11 @@ export function createPosts(deps: {
 
   /**
    * Whether a post's next step is its creator's: nothing sent yet, something to fix or decide, a draft
-   * to post, a live post to fix, YouTube to reconnect, or a payout that needs them.
+   * to post, a live post to fix, YouTube or Instagram to reconnect, or a payout that needs them.
    */
   function needsCreator(state: PostState, items: ReviewItem[], later: Later = {}): boolean {
     if (state === "no_draft" || state === "objected" || state === "check_failed" || state === "approved" || state === "posting") return true;
-    if (later.liveCheck?.state === "fixable" || later.liveCheck?.state === "reconnect_youtube" || later.liveCheck?.state === "video_not_found") return true;
+    if (later.liveCheck?.state === "fixable" || later.liveCheck?.state === "reconnect_youtube" || later.liveCheck?.state === "video_not_found" || later.liveCheck?.state === "reconnect_instagram" || later.liveCheck?.state === "reel_not_found") return true;
     if (later.payout?.state === "unclaimed" || later.payout?.state === "failed") return true;
     return state === "results" && items.some((item) => ["fix_needed", "unsure"].includes(creatorStatus(item)));
   }

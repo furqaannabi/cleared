@@ -931,7 +931,10 @@
                       "enum": [
                         "file_record",
                         "paid_promotion",
-                        "written_item"
+                        "written_item",
+                        "reel_not_fetched",
+                        "reel_match",
+                        "paid_partnership_label"
                       ]
                     }
                   }
@@ -1592,7 +1595,9 @@
                       "checking",
                       "passed",
                       "reconnect_youtube",
-                      "video_not_found"
+                      "video_not_found",
+                      "reconnect_instagram",
+                      "reel_not_found"
                     ]
                   }
                 },
@@ -1690,7 +1695,10 @@
                       "enum": [
                         "file_record",
                         "paid_promotion",
-                        "written_item"
+                        "written_item",
+                        "reel_not_fetched",
+                        "reel_match",
+                        "paid_partnership_label"
                       ]
                     }
                   },
@@ -2187,7 +2195,10 @@
                             "enum": [
                               "file_record",
                               "paid_promotion",
-                              "written_item"
+                              "written_item",
+                              "reel_not_fetched",
+                              "reel_match",
+                              "paid_partnership_label"
                             ]
                           }
                         }
@@ -5840,7 +5851,7 @@
     },
     "/deliverables/{deliverableId}/posted": {
       "post": {
-        "summary": "\"I've posted it\": the recorded video is read, and if it is public the live check starts (PT-FR-08)",
+        "summary": "\"I've posted it\". A YouTube post sends nothing: the recorded video is read, and if it is public the live check starts. A Reel sends its link: it is found among the creator's own media, recorded, and its live check starts (PT-FR-08, IG-FR-14 to IG-FR-17)",
         "parameters": [
           {
             "schema": {
@@ -5853,6 +5864,22 @@
             "in": "path"
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "maxLength": 4000
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "The post: it was seen public, and its live check has started",
@@ -5860,6 +5887,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreatorPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The link is not a link to an Instagram Reel; or a Reel gave no link, or a YouTube post gave one",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -5885,7 +5922,7 @@
             }
           },
           "409": {
-            "description": "Nothing changed: the video is not public yet, no video was given for a go-ahead, the video is gone, YouTube must be reconnected, or the money path refused, each with its own code",
+            "description": "Nothing changed: the video is not public yet, no video was given for a go-ahead, the video is gone, the draft is not approved, the Reel is not on the creator's account or is not a Reel, another Reel is already recorded, YouTube or Instagram must be reconnected, or the money path refused, each with its own code",
             "content": {
               "application/json": {
                 "schema": {
@@ -5895,7 +5932,7 @@
             }
           },
           "503": {
-            "description": "YouTube could not be read, or this service is not set up to read it. Try again",
+            "description": "YouTube or Instagram could not be read, or this service is not set up to read it. Try again",
             "content": {
               "application/json": {
                 "schema": {
