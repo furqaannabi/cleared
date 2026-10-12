@@ -1,6 +1,6 @@
 # Creator home: FRD
 
-**Status:** Signed by William (revision 1.3). The payments route is a request for Furqaan; the money sections stay behind a flag until it is in `contract/`.
+**Status:** Signed by William (revision 1.4).
 
 **Surface:** The creator's home, in two pages (1.2). The overview at `/deals`: the money overview, the performance figures and the deals with what needs the creator first; signing in and the landing page's button land here. Payments at `/payments`: what was paid each month and the payment history with its CSV. The brand has no home.
 
@@ -44,7 +44,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 | ID | Requirement |
 | --- | --- |
 | HM-FR-01 | **Where it lives.** `/deals`, in the creator frame, signed-in only (SI-FR-06). It no longer opens the first deal (LP-FR-15, 1.4). (1.2) Page title "Overview". "Overview" is the first link in the rail and the phone's Deals sheet (DC-FR-31, 1.21), marked current here. |
-| HM-FR-02 | **Order.** (1.2) The money overview; the performance figures ("How you're doing"); the deals. "Paid each month" and the payment history are on Payments (HM-FR-23). With the flag off (HM-FR-20) only the deals show. |
+| HM-FR-02 | **Order.** (1.2) The money overview; the performance figures ("How you're doing"); the deals. "Paid each month" and the payment history are on Payments (HM-FR-23). With the flag off (HM-FR-20) only the deals show. (1.4) No flag: the money sections always show once the creator has a deal. |
 | HM-FR-03 | **No deals yet.** With no deals, the page says "You have no deals yet." with a "Start a deal" link to `/deals/new`, and nothing else: no totals, figures, charts or history. |
 | HM-FR-04 | **Loading and failing.** While a section loads it shows the app's loading state for that section. If the deals fail, the page says "We couldn't load your deals." with Try again (as LP-FR-15 did). If the payments fail, the money sections are replaced by one line "We couldn't load your payments." with Try again; the deals still show. |
 
@@ -52,9 +52,9 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-05 | **Three totals, in what the creator receives.** "Held for you" (posts whose hold is in place and not yet captured), "On its way" (captured, payout not yet paid: sending, delayed, unclaimed or failed) and "Paid" (payout paid). Each is the sum of the posts' `received` amounts from the API, after Cleared's fee; the page never works out a fee itself. Each total says how many posts it counts ("3 posts"). A total of zero shows "$0.00", never hidden, once the creator has any deal. (1.1) Under the totals: "What you receive, after Cleared's 5% fee." |
+| HM-FR-05 | **Three totals, in what the creator receives.** "Held for you" (posts whose hold is in place and not yet captured), "On its way" (captured, payout not yet paid: sending, delayed, unclaimed or failed) and "Paid" (payout paid). Each is the sum of the posts' `received` amounts from the API, after Cleared's fee; the page never works out a fee itself. Each total says how many posts it counts ("3 posts"). A total of zero shows "$0.00", never hidden, once the creator has any deal. (1.1) Under the totals: "What you receive, after Cleared's 5% fee." (1.4) The API gives what the creator receives only once a hold is taken (AH-FR-06), so "Held for you" is the held posts' deal amounts, with "{n} posts · before Cleared's fee" under it; "On its way" and "Paid" stay what the creator receives. The footer says "On its way and Paid are what you receive, after Cleared's 5% fee." A post approved but never paid (`approved_not_paid`) counts in no total. |
 | HM-FR-06 | **What's stuck.** When any post on its way has a payout that failed or wasn't claimed, a line under "On its way" names each: "{brand} · {post}: the payout didn't go through." or "{brand} · {post}: PayPal is waiting for you to accept it.", each linking to the post, where its fix lives (PP). Past three, "and {n} more". |
-| HM-FR-25 | **See payments.** (1.2) Under the "Paid" total, a link "See payments" to `/payments`. "Held for you" and "On its way" have no link; the stuck lines keep linking to their posts (HM-FR-06). |
+| HM-FR-25 | **See payments.** (1.2) Under the "Paid" total, a link "See payments" to `/payments`. "Held for you" and "On its way" have no link; the stuck lines keep linking to their posts (HM-FR-06). (1.4) Always shown. |
 | HM-FR-07 | **Amounts.** Dollars with cents ("$1,140.00"), from integer minor units; totals added in minor units, never floats. |
 
 ### Performance
@@ -84,7 +84,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-23 | **Where it lives.** `/payments`, in the creator frame, signed-in only (SI-FR-06). Page title "Payments". "Payments" is the second link in the rail and the phone's Deals sheet, under Overview (DC-FR-31, 1.21), marked current here. In order: the line for the year (HM-FR-24), "Paid each month" (HM-FR-12), the payment history with Download CSV (HM-FR-16 to HM-FR-19). Loading and failing as HM-FR-04: if the payments fail, the page says "We couldn't load your payments." with Try again. |
+| HM-FR-23 | **Where it lives.** `/payments`, in the creator frame, signed-in only (SI-FR-06). Page title "Payments". "Payments" is the second link in the rail and the phone's Deals sheet, under Overview (DC-FR-31, 1.21), marked current here. In order: the line for the year (HM-FR-24), "Paid each month" (HM-FR-12), the payment history with Download CSV (HM-FR-16 to HM-FR-19). Loading and failing as HM-FR-04: if the payments fail, the page says "We couldn't load your payments." with Try again. (1.4) Always routed; there is no flag. |
 | HM-FR-24 | **The year.** Under the title, one line: "{total} received in {year} · {n} posts" (for one, "1 post"): what the creator received from posts paid this calendar year, in their time zone, from the same rows as the history. Left out while nothing has been paid this year. |
 | HM-FR-26 | **Nothing paid yet.** With no paid post, in place of the chart and the history: "Nothing paid yet." and "Each post you're paid for shows here with its PayPal references, ready to download." When anything is held or on its way, a third line says how much: "{held} is held for you and {on its way} is on its way.", leaving out a part that is zero, with a link "See your overview" to `/deals`. No chart, grid or Download CSV. |
 
@@ -101,7 +101,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-20 | **The flag.** The money sections show only when `NEXT_PUBLIC_PAYMENTS` is "enabled". It stays off until Furqaan's route and its types are in `contract/`; then turning it on is the only change. With it off, home is the deals alone, and nothing says more is coming. (1.2) With it off, `/payments` is the not-found page (EP-FR-01), and there is no Payments link in the rail or sheet and no "See payments". |
+| HM-FR-20 | **The flag.** The money sections show only when `NEXT_PUBLIC_PAYMENTS` is "enabled". It stays off until Furqaan's route and its types are in `contract/`; then turning it on is the only change. With it off, home is the deals alone, and nothing says more is coming. (1.2) With it off, `/payments` is the not-found page (EP-FR-01), and there is no Payments link in the rail or sheet and no "See payments". (1.4) **Retired.** `GET /me/payments` is in the contract and live (AH 1.0), so there is no flag: the money sections, "See payments", the Payments link and `/payments` always exist. |
 | HM-FR-21 | Mobile-first at 375 px: one column, the three totals stacked, the chart full width, history as cards, every target at least 44 px, no sideways scroll. From `lg:` the totals sit in a row. (1.2) From `lg:` the three performance figures sit side by side. |
 | HM-FR-22 | Each section a labelled region with its heading; the totals and figures as text, not images; Try again and Download CSV named; loading announced politely; reduced motion respected (no chart animation). |
 
@@ -134,9 +134,10 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | For | Needs |
 | --- | --- |
-| HM-FR-05 to HM-FR-19 | `GET /me/payments`: one row per post that has ever had a hold, for the signed-in creator only: `dealId`, `deliverableId`, `brandName`, `platform`, `amountMinor`, `feeMinor`, `receivedMinor`, `currency`, `stage` (`held`, `captured`, `paid`, `released`, `closed`), `payout` (`state` as on `CreatorPost`, `reference`, `at`) when captured, `holdReference`, `heldAt`, `deadline`, `publishedAt`, `paidAt`, and `firstCheckPassed` (true, false, or null while no check has finished) |
+| HM-FR-05 to HM-FR-19 | `GET /me/payments`: one row per post that has ever had a hold, for the signed-in creator only: `dealId`, `deliverableId`, `brandName`, `platform`, `amountMinor`, `feeMinor`, `receivedMinor`, `currency`, `stage` (`held`, `captured`, `paid`, `released`, `closed`), `payout` (`state` as on `CreatorPost`, `reference`, `at`) when captured, `holdReference`, `heldAt`, `deadline`, `publishedAt`, `paidAt`, and `firstCheckPassed` (true, false, or null while no check has finished) (1.4) Answered by AH 1.0 (AH-FR-05 to AH-FR-09), with three differences: `stage` has `approved_not_paid` and no `closed`; `feeMinor` and `receivedMinor` are absent until the hold is taken; `firstCheckPassed` is absent until a check finishes. |
 | HM-FR-15 | Whether a post is waiting on the creator is worked out here from `GET /deals` states; if the API would rather say it (`deliverables[].needsCreator`), the page uses that. 1.3: the API says it (AH-FR-04) |
-| All | The route and its types in `contract/` |
+| All | The route and its types in `contract/` (1.4) Done for payments. |
+| HM-FR-05 (1.4) | What the creator will receive for a held post (`receivedMinor`, with `feeMinor`), worked out by the backend's fee rule, so "Held for you" can read after the fee like the other two totals |
 
 ## Testing Decisions
 
@@ -144,6 +145,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 - **Pure modules:** totals across stages, the stuck list past three, received never recomputed; each figure with none, one and several posts; on time at the deadline's edge; months across a time-zone boundary and a year boundary; deal groups for every state; CSV escaping (`=`, `+`, `-`, `@`, quotes, commas, newlines) and the date in the file name.
 - **Components:** home with no deals; with deals and the flag off; with the flag on: totals, stuck line linking to the post, figures absent and present, chart text equivalents; history as cards at 375 px and as a grid from `md:`, the same rows in both; Download CSV gives the whole history while filtered; payments failing leaves the deals.
 - **1.2:** the overview without the chart and history, with "See payments" under Paid; Payments with the line for the year (shown, left out with nothing paid this year, "1 post"), the chart, the history and CSV; nothing paid yet with and without held or on-its-way money; with the flag off, no Payments link, no "See payments", and `/payments` not found; the rail's Overview and Payments links, each marked current on its page.
+- **1.4:** Held for you as deal amounts with "before Cleared's fee"; the footer; `approved_not_paid` in no total and not in the history; rows without a fee or received amount accepted; the payment row checked against the contract's `Payment` at compile time; no flag anywhere.
 - **Live end to end:** by hand until Furqaan's test-session route exists.
 
 ## Out of Scope
@@ -169,3 +171,5 @@ One home page that answers "where's my money?" first: three totals in what the c
 | 1.2 signed | Revision 1.2 signed by William | none |
 | 1.3 | From the contract-alignment grill-me with William: Needs you reads the API's `needsCreator` (AH-FR-04), with stuck payouts still counted from the payments; a closed post reads "Closed · never held" or "Cancelled" (AH-FR-03) (HM-FR-15) | none |
 | 1.3 signed | Revision 1.3 signed by William | none |
+| 1.4 | From the payments-on grill-me with William, now that `GET /me/payments` is live (AH 1.0): Held for you shows deal amounts before the fee, as the API gives what is received only once a hold is taken (HM-FR-05); `approved_not_paid` counts in no total; the flag is retired (HM-FR-20) and the money sections, See payments and Payments always exist; a request for the expected amount received on held posts | none |
+| 1.4 signed | Revision 1.4 signed by William | none |
