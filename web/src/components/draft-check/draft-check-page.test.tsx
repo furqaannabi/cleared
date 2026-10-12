@@ -22,7 +22,7 @@ beforeEach(() => {
   posts = stubPosts(...seededPosts(), ...juniper);
   stubDeals([
     ...deals,
-    { id: "deal_juniper", brandName: "Juniper & Salt", status: "Draft check", deliverables: juniper.map((d) => ({ id: d.id, platform: d.platform, state: d.state })) },
+    { id: "deal_juniper", brandName: "Juniper & Salt", status: "Draft check", deliverables: juniper.map((d) => ({ id: d.id, platform: d.platform, state: d.state, needsCreator: false })) },
   ]);
   // DC-FR-14, DC-FR-15: asking the brand makes an item wait for them; withdrawing makes it unsure again.
   posts.on("del_glow_video", "post", "/items/:itemId/ask", (d, { params }) =>

@@ -79,7 +79,7 @@ describe("PP-FR-01, PP-FR-12 (1.3) asking the API again while it works", () => {
 
 describe("PP-FR-38 (1.3) names the creator's channel when the profile has it", () => {
   test("a video not found names the connected channel", async () => {
-    stubSession(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes" }] }));
+    stubSession(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes", inUse: false }] }));
     render(
       <SessionProvider>
         <JourneySlot d={aCreatorPost({ state: "published", liveCheck: { state: "video_not_found" } }) as Deliverable} onUpdated={vi.fn()} timeZone="UTC" />

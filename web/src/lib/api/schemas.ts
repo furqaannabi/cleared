@@ -21,7 +21,8 @@ const money = z.string().regex(/^\d{1,7}\.\d{2}$/);
 /** PP-BR-05: a post link is only ever https on the platform's own domain. */
 const postUrl = z.url({ protocol: /^https$/, hostname: /^(www\.)?(youtube\.com|youtu\.be|instagram\.com)$/ });
 // PP-FR-14, PP-FR-28 (1.3): what the live check couldn't decide, and why a live post can't be fixed, as codes.
-const undecided = z.enum(["file_record", "paid_promotion", "written_item"]);
+// PP 1.5: a Reel's, from IG 1.2.
+const undecided = z.enum(["file_record", "paid_promotion", "written_item", "paid_partnership_label", "reel_not_fetched", "reel_match"]);
 const notFixableReason = z.enum(["not_your_channel", "not_the_approved_file"]);
 const releaseReason = z.enum(["deadline", "cancelled", "day_28", "fix_window_ended", "not_accepted", "ruled_not_to_pay", "hold_not_confirmed"]);
 
@@ -147,6 +148,9 @@ export const deliverableSchema = z.object({
       // PP-FR-38 (1.3): the check can't run yet.
       z.object({ state: z.literal("reconnect_youtube") }),
       z.object({ state: z.literal("video_not_found") }),
+      // PP-FR-38 (1.5): a Reel's (IG-FR-27).
+      z.object({ state: z.literal("reconnect_instagram") }),
+      z.object({ state: z.literal("reel_not_found") }),
       // PP-FR-39 (1.3): approved by someone other than the live check.
       z.object({ state: z.literal("approved"), by: z.enum(["brand_confirmed", "brand_silence", "brand_accepted", "cleared"]) }),
       // PP-FR-12 (1.3): `checking` while a check again runs.
@@ -211,10 +215,17 @@ export const dealSummarySchema = z.object({
     z.object({
       id: z.string().min(1),
       platform: z.enum(["youtube_video", "youtube_short", "instagram_reel"]),
-      state: deliverableState,
+      // AH-FR-03: a post closed without a hold, with why.
+      state: z.enum([...deliverableState.options, "closed"]),
+      closedBecause: z.enum(["never_held", "cancelled"]).optional(),
+      // AH-FR-04, HM-FR-15 (1.3): whether its next step is the creator's.
+      needsCreator: z.boolean(),
     }),
   ),
 });
+// HM 1.3: the deals list is the contract's `DealSummary`, checked both ways at compile time.
+const dealSummaryIsTheContracts: SameShape<z.infer<typeof dealSummarySchema>, components["schemas"]["DealSummary"]> = true;
+void dealSummaryIsTheContracts;
 
 export const dealsSchema = z.array(dealSummarySchema);
 
@@ -236,7 +247,11 @@ export const draftItemSchema = z
 
 /** CH-FR-17, CH-FR-18: one post's hold, as the API reports it. The page never decides a money state (CH-BR-05). */
 const holdSchema = z.object({
-  state: z.enum(["not_started", "closed", "declined", "pending", "unknown", "held"]),
+  state: z.enum(["not_started", "closed", "declined", "pending", "unknown", "held", "not_held"]),
+  // CH-FR-18 (1.7), AH-FR-02: why a try was declined.
+  reason: z.enum(["paypal_declined", "timed_out"]).optional(),
+  // CH-FR-18 (1.7), AH-FR-01: why a post was closed without a hold.
+  because: z.enum(["never_held", "cancelled"]).optional(),
   reference: z.string().min(1).max(64).optional(),
   // CH-BR-03: fixed when the hold is approved.
   deadline: z.iso.date().optional(),
@@ -342,7 +357,8 @@ export const creatorProfileSchema = z.object({
   welcomed: z.boolean(),
   paypalEmail: z.email().max(254).optional(),
   // Connected accounts only.
-  accounts: z.array(z.object({ platform: z.enum(["youtube", "instagram"]), name: z.string().min(1).max(120) })),
+  // ST 1.3 (AH-FR-10): `inUse` is whether a held post on that platform keeps it from being disconnected; read, not shown yet.
+  accounts: z.array(z.object({ platform: z.enum(["youtube", "instagram"]), name: z.string().min(1).max(120), inUse: z.boolean() })),
 });
 /** IN-FR-12 (1.3): the profile after a new PayPal email, with the payouts already with PayPal that keep the old one. */
 export const profileAfterEmailSchema = creatorProfileSchema.extend({

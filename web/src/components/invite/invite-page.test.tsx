@@ -5,7 +5,7 @@ import { describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
 import { aReadDraft, stubDealDraft } from "@/test/deal-draft";
 import { server } from "@/test/server";
-import { aProfile, anInvite, recordRequests, stubDeals, stubSession, type Invite } from "@/test/stub-api";
+import { aProfile, anInvite, recordRequests, stubDeals, stubSession, type Invite, type Profile } from "@/test/stub-api";
 import { stubState } from "@/test/stub-state";
 import { InvitePage } from "./invite-page";
 
@@ -15,15 +15,15 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 type Post = Invite["posts"][number];
 const VIDEO: Post = { deliverableId: "del_glow_video", platform: "youtube_video", itemCount: 4, cancel: { allowed: true } };
 const REEL: Post = { deliverableId: "del_glow_reel", platform: "instagram_reel", itemCount: 3, cancel: { allowed: true } };
-const YOUTUBE = { platform: "youtube" as const, name: "Ada Okafor" };
-const INSTAGRAM = { platform: "instagram" as const, name: "ada.makes" };
+const YOUTUBE = { platform: "youtube" as const, name: "Ada Okafor", inUse: false };
+const INSTAGRAM = { platform: "instagram" as const, name: "ada.makes", inUse: false };
 
 /**
  * Glow Theory's invite on the page, as the API answers it: a video and a Reel,
  * YouTube connected, the PayPal email saved. Saving a post's terms or the
  * brand's email answers with them saved; `invite.on` answers anything else.
  */
-async function openInvite(i: Partial<Invite> = {}, accounts: { platform: "youtube" | "instagram"; name: string }[] = [YOUTUBE]) {
+async function openInvite(i: Partial<Invite> = {}, accounts: Profile["accounts"] = [YOUTUBE]) {
   stubSession(aProfile({ paypalEmail: "ada@example.com", accounts }));
   stubDeals([]);
   const invite = stubState(`/deals/deal_glow/invite`, anInvite({ dealId: "deal_glow", brandName: "Glow Theory", posts: [VIDEO, REEL], ...i }));

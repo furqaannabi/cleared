@@ -56,3 +56,15 @@ export function stepLabel(state: Deliverable["state"]): string {
   if (state === "approved_not_paid") return "Approved, not paid";
   return DEAL_STEPS[CURRENT[state]];
 }
+
+/**
+ * A post's step on the creator's list of deals, where a post can also be
+ * closed without a hold: "Closed · never held" or "Cancelled" (AH-FR-03).
+ *
+ * @param post - the post's state, and why it closed
+ * @see docs/specs/creator-home-frd.md HM-FR-15 (1.3)
+ */
+export function postStepLabel(post: { state: Deliverable["state"] | "closed"; closedBecause?: "never_held" | "cancelled" }): string {
+  if (post.state === "closed") return post.closedBecause === "cancelled" ? "Cancelled" : "Closed · never held";
+  return stepLabel(post.state);
+}

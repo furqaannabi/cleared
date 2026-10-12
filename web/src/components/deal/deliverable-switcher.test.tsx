@@ -22,3 +22,21 @@ describe("DC-FR-33 deliverable switcher", () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+describe("HM-FR-15 (1.3) a post closed without a hold", () => {
+  test("says why in its tab", () => {
+    render(
+      <DeliverableSwitcher
+        dealId="deal_glow"
+        currentId="del_a"
+        deliverables={[
+          { id: "del_a", platform: "youtube_video", state: "results" },
+          { id: "del_b", platform: "instagram_reel", state: "closed", closedBecause: "never_held" },
+          { id: "del_c", platform: "youtube_short", state: "closed", closedBecause: "cancelled" },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("link", { name: /Instagram Reel/ })).toHaveTextContent("Closed · never held");
+    expect(screen.getByRole("link", { name: /YouTube Short/ })).toHaveTextContent("Cancelled");
+  });
+});

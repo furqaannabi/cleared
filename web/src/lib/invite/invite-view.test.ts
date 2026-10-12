@@ -21,7 +21,7 @@ const profile: CreatorProfile = {
   name: "Ada Okafor",
   welcomed: true,
   paypalEmail: "ada@example.com",
-  accounts: [{ platform: "youtube", name: "Ada Okafor" }],
+  accounts: [{ platform: "youtube", name: "Ada Okafor", inUse: false }],
 };
 
 describe("inviteView: what's left before Create link (IN-FR-16, IN-BR-07)", () => {
@@ -42,7 +42,7 @@ describe("inviteView: what's left before Create link (IN-FR-16, IN-BR-07)", () =
   });
 
   it("allows Create link once every post is set, every needed account connected, and the PayPal email given", () => {
-    const view = inviteView(invite(), { ...profile, accounts: [...profile.accounts, { platform: "instagram", name: "ada.makes" }] }, today);
+    const view = inviteView(invite(), { ...profile, accounts: [...profile.accounts, { platform: "instagram", name: "ada.makes", inUse: false }] }, today);
     expect(view.left).toBeNull();
     expect(view.canCreate).toBe(true);
   });

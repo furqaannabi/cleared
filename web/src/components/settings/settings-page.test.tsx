@@ -12,7 +12,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 /** The settings page in the creator frame, signed in as this profile. */
 async function openSettings(profile: Partial<Profile> = {}, removal = false) {
-  stubSession(aProfile({ name: "Ada Okafor", email: "ada.okafor@gmail.com", paypalEmail: "ada@example.com", accounts: [{ platform: "youtube", name: "Ada Makes" }], ...profile }));
+  stubSession(aProfile({ name: "Ada Okafor", email: "ada.okafor@gmail.com", paypalEmail: "ada@example.com", accounts: [{ platform: "youtube", name: "Ada Makes", inUse: false }], ...profile }));
   render(
     <AppShell currentDealId={null}>
       <SettingsPage removal={removal} />

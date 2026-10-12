@@ -125,8 +125,8 @@ describe("IN-FR-23 (1.4) a refused link says why and re-reads the page", () => {
       ...i,
     });
   const both = [
-    { platform: "youtube" as const, name: "Ada Okafor" },
-    { platform: "instagram" as const, name: "ada.makes" },
+    { platform: "youtube" as const, name: "Ada Okafor", inUse: false },
+    { platform: "instagram" as const, name: "ada.makes", inUse: false },
   ];
 
   test("Instagram not connected: the words, no Try again, and Connect Instagram back from a second read", async () => {

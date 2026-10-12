@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLayoutEffect, useRef } from "react";
-import { stepLabel } from "@/lib/deliverable/deal-steps";
+import { postStepLabel } from "@/lib/deliverable/deal-steps";
 import type { Deliverable } from "@/lib/deliverable/types";
 
 const NAME: Record<Deliverable["platform"], string> = {
@@ -29,7 +29,7 @@ export function DeliverableSwitcher({
   currentId,
 }: {
   dealId: string;
-  deliverables: { id: string; platform: Deliverable["platform"]; state: Deliverable["state"] }[];
+  deliverables: { id: string; platform: Deliverable["platform"]; state: Deliverable["state"] | "closed"; closedBecause?: "never_held" | "cancelled" }[];
   currentId: string;
 }) {
   const { list, pill } = useGlide(dealId, currentId);
@@ -54,7 +54,7 @@ export function DeliverableSwitcher({
                 <span>
                   <b className="block text-tab leading-tight font-bold whitespace-nowrap">{NAME[d.platform]}</b>
                   <span className={`block text-label leading-tight font-semibold whitespace-nowrap ${current ? "text-white/80" : "text-ink-3"}`}>
-                    {stepLabel(d.state)}
+                    {postStepLabel(d)}
                   </span>
                 </span>
               </Link>

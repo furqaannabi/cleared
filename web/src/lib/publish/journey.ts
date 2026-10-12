@@ -177,6 +177,21 @@ export function journey(d: Deliverable, now: Date, { timeZone, channel }: { time
         body: `Make sure it’s still on ${channel ?? "your channel"} and public, then tap I’ve posted it again. Your deadline still runs.`,
       });
       action = { kind: "posted", label: "I’ve posted it", disabled: false };
+    } else if (lc?.state === "reconnect_instagram") {
+      // PP-FR-38 (1.5): a Reel's (IG-FR-27).
+      Object.assign(live, {
+        state: "problem",
+        title: "We can’t read your Instagram account, so your live Reel isn’t checked yet.",
+        body: "Reconnect Instagram and we check it straight away. Your deadline still runs.",
+      });
+      action = { kind: "reconnect", label: "Reconnect Instagram", disabled: false };
+    } else if (lc?.state === "reel_not_found") {
+      Object.assign(live, {
+        state: "problem",
+        title: "We can’t find your Reel on Instagram.",
+        body: `Make sure it’s still on ${channel ?? "your Instagram account"} and public, then give its link again. Your deadline still runs.`,
+      });
+      action = { kind: "posted", label: "I’ve posted it", disabled: false };
     } else if (lc?.state === "objected")
       Object.assign(live, { state: "now", title: "A person at Cleared is deciding", body: `${b} objected: “${lc.reason}”. We decide by ${day(lc.ruleBy)}.` });
   }

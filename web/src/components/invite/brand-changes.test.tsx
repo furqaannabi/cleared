@@ -17,8 +17,8 @@ const POSTS: Post[] = [
 ];
 const LINK = { url: "https://cleared.example/b/tok_maple", expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(), expired: false };
 const ACCOUNTS = [
-  { platform: "youtube" as const, name: "Ada Okafor" },
-  { platform: "instagram" as const, name: "ada.makes" },
+  { platform: "youtube" as const, name: "Ada Okafor", inUse: false },
+  { platform: "instagram" as const, name: "ada.makes", inUse: false },
 ];
 
 /** Maple & Moss's deal on the creator's invite page, as the API answers it; override any field. */

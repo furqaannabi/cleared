@@ -13,7 +13,7 @@ describe("ST-FR-02 to ST-FR-12 the settings view", () => {
   });
 
   test("ST-FR-06: each platform connected by name, or not connected", () => {
-    const v = settingsView(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes" }] }), { removal: false });
+    const v = settingsView(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes", inUse: false }] }), { removal: false });
     expect(v.accounts).toEqual([
       { platform: "youtube", label: "YouTube", name: "Ada Makes", disconnect: false },
       { platform: "instagram", label: "Instagram", name: null, disconnect: false },
@@ -21,7 +21,7 @@ describe("ST-FR-02 to ST-FR-12 the settings view", () => {
   });
 
   test("ST-FR-07, ST-FR-12: Disconnect and Delete only with the flag on, and Disconnect only on a connected account", () => {
-    const v = settingsView(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes" }] }), { removal: true });
+    const v = settingsView(aProfile({ accounts: [{ platform: "youtube", name: "Ada Makes", inUse: false }] }), { removal: true });
     expect(v.accounts.map((a) => a.disconnect)).toEqual([true, false]);
     expect(v.deleteAccount).toBe(true);
     expect(settingsView(aProfile(), { removal: false }).deleteAccount).toBe(false);

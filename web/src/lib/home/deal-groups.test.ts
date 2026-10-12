@@ -2,12 +2,18 @@ import { describe, expect, test } from "vitest";
 import { dealGroups, type DealSummary } from "./deal-groups";
 import { aPayment } from "./test-rows";
 
-const deal = (id: string, states: DealSummary["deliverables"][number]["state"][], d: Partial<DealSummary> = {}): DealSummary => ({
+type Post = DealSummary["deliverables"][number];
+// The API's own answer to "is this post waiting on the creator" (AH-FR-04); posts are given it explicitly where it matters.
+const WAITING = new Set<Post["state"]>(["no_draft", "check_failed", "results", "objected", "approved"]);
+const deal = (id: string, states: (Post["state"] | Partial<Post>)[], d: Partial<DealSummary> = {}): DealSummary => ({
   id,
   brandName: id,
   status: "Status line",
   step: "agreed",
-  deliverables: states.map((state, i) => ({ id: `${id}_${i}`, platform: "youtube_video", state })),
+  deliverables: states.map((s, i) => {
+    const p = typeof s === "string" ? { state: s } : s;
+    return { id: `${id}_${i}`, platform: "youtube_video", state: p.state ?? "checking", needsCreator: WAITING.has(p.state ?? "checking"), ...p };
+  }),
   ...d,
 });
 
@@ -24,8 +30,15 @@ describe("HM-FR-15 deals, with what needs the creator first", () => {
     ]);
   });
 
-  test.each(["no_draft", "check_failed", "results", "objected", "approved"] as const)("a post at %s needs the creator", (state) => {
-    expect(dealGroups([deal("d", [state])], [])[0].name).toBe("Needs you");
+  test("1.3: whether a post waits on the creator is the API's needsCreator, not worked out here", () => {
+    expect(dealGroups([deal("d", [{ state: "checking", needsCreator: true }])], [])[0].name).toBe("Needs you");
+    expect(dealGroups([deal("d", [{ state: "results", needsCreator: false }])], [])[0].name).toBe("Under way");
+  });
+
+  test("1.3: a closed post is finished, and says why", () => {
+    const g = dealGroups([deal("c", [{ state: "closed", closedBecause: "never_held" }, { state: "closed", closedBecause: "cancelled" }])], []);
+    expect(g[0].name).toBe("Finished");
+    expect(g[0].deals[0].posts.map((p) => p.words)).toEqual(["Closed · never held", "Cancelled"]);
   });
 
   test("a deal at the checklist, invite or changes step needs the creator; waiting for the brand doesn't", () => {

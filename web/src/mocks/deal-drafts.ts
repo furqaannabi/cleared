@@ -177,7 +177,7 @@ function heldSummary(d: Draft) {
         : states.every((s) => s === "approved")
           ? "Approved"
           : "Brand review";
-  return { id: d.id, brandName: d.brandName, status, openDeliverableId: (posts.find((p) => needsCreator(p.id)) ?? posts[0]).id, deliverables: posts };
+  return { id: d.id, brandName: d.brandName, status, openDeliverableId: (posts.find((p) => needsCreator(p.id)) ?? posts[0]).id, deliverables: posts.map((p) => ({ ...p, needsCreator: needsCreator(p.id) })) };
 }
 
 /** One stored deal draft, for the invite mocks (IN FRD); undefined if there is none. */

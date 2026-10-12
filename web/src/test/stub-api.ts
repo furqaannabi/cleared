@@ -127,7 +127,7 @@ export const aProfile = (p: Partial<Profile> = {}): Profile => ({
   name: "Ada Okafor",
   email: "ada.okafor@example.com",
   welcomed: true,
-  accounts: [{ platform: "youtube", name: "Ada Okafor" }],
+  accounts: [{ platform: "youtube", name: "Ada Okafor", inUse: false }],
   ...p,
 });
 

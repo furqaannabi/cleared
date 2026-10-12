@@ -35,7 +35,7 @@ describe("SI-FR-08 to SI-FR-10 the welcome page (design C)", () => {
 
   test("IN-FR-11 (1.3): back from Google, YouTube counts as done; with no channel, the row says so", async () => {
     window.history.replaceState(null, "", "/welcome?connecting=youtube&connected=youtube");
-    stubSession(aProfile({ name: "Sam Rivera", welcomed: false, accounts: [{ platform: "youtube", name: "Sam Rivera" }] }));
+    stubSession(aProfile({ name: "Sam Rivera", welcomed: false, accounts: [{ platform: "youtube", name: "Sam Rivera", inUse: false }] }));
     const { unmount } = render(<WelcomePage />);
     const setup = await screen.findByRole("region", { name: "Set up in a minute" });
     expect(within(setup).getByText("Connected as Sam Rivera")).toBeVisible();

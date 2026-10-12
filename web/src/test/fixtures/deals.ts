@@ -9,8 +9,8 @@ export const deals: z.infer<typeof dealsSchema> = [
     status: "Draft check",
     openDeliverableId: "del_glow_video",
     deliverables: [
-      { id: "del_glow_video", platform: "youtube_video", state: "results" },
-      { id: "del_glow_reel", platform: "instagram_reel", state: "results" },
+      { id: "del_glow_video", platform: "youtube_video", state: "results", needsCreator: true },
+      { id: "del_glow_reel", platform: "instagram_reel", state: "results", needsCreator: true },
     ],
   },
   {
@@ -18,20 +18,20 @@ export const deals: z.infer<typeof dealsSchema> = [
     brandName: "Northbound Coffee",
     status: "Brand review",
     openDeliverableId: "del_nb_short",
-    deliverables: [{ id: "del_nb_short", platform: "youtube_short", state: "fully_passing" }],
+    deliverables: [{ id: "del_nb_short", platform: "youtube_short", state: "fully_passing", needsCreator: false }],
   },
   {
     id: "deal_kora",
     brandName: "Kora Audio",
     status: "Waiting for your draft",
     openDeliverableId: "del_kora_reel",
-    deliverables: [{ id: "del_kora_reel", platform: "instagram_reel", state: "no_draft" }],
+    deliverables: [{ id: "del_kora_reel", platform: "instagram_reel", state: "no_draft", needsCreator: true }],
   },
   {
     id: "deal_wren",
     brandName: "Wren Coffee",
     status: "Paid",
     openDeliverableId: "del_wren_video",
-    deliverables: [{ id: "del_wren_video", platform: "youtube_video", state: "paid" }],
+    deliverables: [{ id: "del_wren_video", platform: "youtube_video", state: "paid", needsCreator: false }],
   },
 ];

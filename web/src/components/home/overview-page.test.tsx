@@ -16,7 +16,7 @@ const aDeal = (d: Partial<DealSummary> = {}): DealSummary => ({
   brandName: "Kora Audio",
   status: "Paid",
   step: "agreed",
-  deliverables: [{ id: "del_kora_video", platform: "youtube_video", state: "paid" }],
+  deliverables: [{ id: "del_kora_video", platform: "youtube_video", state: "paid", needsCreator: false }],
   ...d,
 });
 
@@ -104,7 +104,7 @@ describe("HM-FR-04 payments failing", () => {
 describe("HM-FR-15 the deals, Needs you first", () => {
   test("grouped, each row the brand and each post's step, linking to the deal", async () => {
     await openHome({
-      deals: [aDeal(), aDeal({ id: "deal_glow", brandName: "Glow Theory", status: "Draft check", deliverables: [{ id: "del_glow", platform: "youtube_video", state: "check_failed" }] })],
+      deals: [aDeal(), aDeal({ id: "deal_glow", brandName: "Glow Theory", status: "Draft check", deliverables: [{ id: "del_glow", platform: "youtube_video", state: "check_failed", needsCreator: true }] })],
     });
     const deals = await screen.findByRole("region", { name: "Deals" });
     const groups = within(deals).getAllByRole("region");

@@ -105,7 +105,7 @@ function HoldRow({ deal, post, onDeal }: { deal: BrandDeal; post: BrandPost; onD
           {problem}
         </p>
       )}
-      {!line.held && (
+      {!line.held && !line.ended && (
         <div className="col-start-2 mt-1.5">
           {orderId && renderApproval ? (
             renderApproval({

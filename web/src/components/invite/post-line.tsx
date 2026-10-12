@@ -96,6 +96,7 @@ export function PostLine({
 /** CH-FR-25: the post's hold once the brand has agreed, and its draft check when held. */
 function HoldLine({ dealId, brand, post }: { dealId: string; brand: string; post: InviteView["posts"][number] }) {
   const line = creatorHoldLine(post.hold!, { brand, amount: post.amount ?? "0.00" });
+  if (!line.text) return null;
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 md:col-span-3">
       <p className={`text-[14px] ${line.held ? "font-bold text-ink" : "text-ink-2"}`}>{line.text}</p>

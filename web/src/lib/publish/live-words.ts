@@ -9,13 +9,17 @@ const UNDECIDED: Record<Undecided, string> = {
   file_record: "whether it’s the same file",
   paid_promotion: "YouTube’s paid promotion label",
   written_item: "a written item",
+  // PP-FR-14 (1.5): a Reel's.
+  paid_partnership_label: "Instagram’s paid partnership label",
+  reel_not_fetched: "the Reel’s video, which Instagram wouldn’t let us fetch",
+  reel_match: "whether it’s the approved draft",
 };
 
 /**
  * What the live check couldn't decide, in words joined with "and".
  *
  * @param what - the API's codes
- * @see docs/specs/publish-and-pay-frd.md PP-FR-14, PP-FR-27
+ * @see docs/specs/publish-and-pay-frd.md PP-FR-14, PP-FR-27 (1.5)
  */
 export function undecidedWords(what: readonly Undecided[]): string {
   const words = what.map((w) => UNDECIDED[w]);

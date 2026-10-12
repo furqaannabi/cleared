@@ -19,7 +19,7 @@ type Terms = Pick<Invite["posts"][number], "amount" | "deadlineDays">;
  * (IN-FR-03). Connecting an account succeeds at once with a synthetic one: no
  * real sign-in (IN-FR-11). Links are synthetic and open nothing yet.
  */
-const DEMO_PROFILE: Omit<Profile, "welcomed"> = { name: "Ada Okafor", email: "ada.okafor@example.com", paypalEmail: "ada@example.com", accounts: [{ platform: "youtube", name: "Ada Okafor" }] };
+const DEMO_PROFILE: Omit<Profile, "welcomed"> = { name: "Ada Okafor", email: "ada.okafor@example.com", paypalEmail: "ada@example.com", accounts: [{ platform: "youtube", name: "Ada Okafor", inUse: false }] };
 const DEMO_ACCOUNT = { youtube: "Ada Okafor", instagram: "ada.makes" } as const;
 const ORDER = ["youtube", "instagram"];
 // The frontend's assumption until Furqaan sets the real length (IN-FR-17).
@@ -117,7 +117,7 @@ export function inviteFor(dealId: string): Invite | undefined {
 /** Mock only: connects one of the mock creator's accounts, as coming back from the backend's connect route would (tests use it too). */
 export function connectMockAccount(platform: "youtube" | "instagram") {
   const p = me();
-  if (!p.accounts.some((a) => a.platform === platform)) p.accounts.push({ platform, name: DEMO_ACCOUNT[platform] });
+  if (!p.accounts.some((a) => a.platform === platform)) p.accounts.push({ platform, name: DEMO_ACCOUNT[platform], inUse: false });
   p.accounts.sort((a, b) => ORDER.indexOf(a.platform) - ORDER.indexOf(b.platform));
 }
 

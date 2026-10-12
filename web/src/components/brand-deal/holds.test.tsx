@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
-import { stubMapleDeal } from "@/test/brand-deal";
+import { aMapleDeal, stubMapleDeal } from "@/test/brand-deal";
 import { server } from "@/test/server";
 import type { BrandDeal } from "@/test/stub-api";
 import { BrandDealPage } from "./brand-deal-page";
@@ -97,5 +97,20 @@ describe("CH-FR-19, CH-FR-20 all held, and coming back", () => {
     for (const post of Object.keys(POST_IDS)) await approve(post);
     expect(await within(holds()).findByText("All held. Ada Okafor is making the posts.")).toBeVisible();
     expect(within(holds()).queryByRole("button", { name: "Approve with PayPal" })).toBeNull();
+  });
+});
+
+describe("CH-FR-18 (1.7) a post never held", () => {
+  test("says it is closed and why, with no Approve with PayPal", async () => {
+    stubMapleDeal({
+      step: "agreed",
+      agreedAt: new Date().toISOString(),
+      paypalClientId: "sandbox-client-id",
+      posts: aMapleDeal().posts.map((p, i) => (i === 1 ? { ...p, hold: { state: "not_held", because: "never_held" } } : p)),
+    });
+    render(<BrandDealPage dealId="deal_maple" />);
+    const reel = within(await screen.findByRole("region", { name: /^Holds/ })).getByRole("group", { name: "Instagram Reel" });
+    expect(within(reel).getByText("Not held. No hold was approved within 7 days of agreeing, so this post is closed. Nothing was taken.")).toBeVisible();
+    expect(within(reel).queryByRole("button", { name: "Approve with PayPal" })).toBeNull();
   });
 });

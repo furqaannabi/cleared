@@ -107,6 +107,31 @@ describe("PP-FR-09 to PP-FR-15 the live check", () => {
     expect(gone.action).toEqual({ kind: "posted", label: "I’ve posted it", disabled: false });
   });
 
+  test("PP-FR-38 (1.5): a Reel's account to reconnect, and a Reel not found, each with its action", () => {
+    const reel = { ...posted, platform: "instagram_reel" as const };
+    const re = j({ ...reel, liveCheck: { state: "reconnect_instagram" } });
+    expect(re.steps.find((s) => s.key === "live_check")).toMatchObject({
+      state: "problem",
+      title: "We can’t read your Instagram account, so your live Reel isn’t checked yet.",
+      body: "Reconnect Instagram and we check it straight away. Your deadline still runs.",
+    });
+    expect(re.action).toEqual({ kind: "reconnect", label: "Reconnect Instagram", disabled: false });
+    const gone = journey(base({ ...reel, liveCheck: { state: "reel_not_found" } }), NOW, { timeZone: "UTC", channel: "@adamakes" });
+    expect(gone.steps.find((s) => s.key === "live_check")).toMatchObject({
+      state: "problem",
+      title: "We can’t find your Reel on Instagram.",
+      body: "Make sure it’s still on @adamakes and public, then give its link again. Your deadline still runs.",
+    });
+    expect(gone.action).toEqual({ kind: "posted", label: "I’ve posted it", disabled: false });
+  });
+
+  test("PP-FR-14 (1.5): what a Reel's check couldn't decide, in words", () => {
+    const step = now({ ...posted, platform: "instagram_reel", liveCheck: { state: "undecided", what: ["paid_partnership_label", "reel_not_fetched", "reel_match"], brandBy: "2026-10-10T14:00:00Z" } });
+    expect(step.body).toMatch(
+      /^We couldn’t check Instagram’s paid partnership label, the Reel’s video, which Instagram wouldn’t let us fetch and whether it’s the approved draft automatically\./,
+    );
+  });
+
   test("PP-FR-12 (1.3): while a check again runs, the action says so and is off", () => {
     const v = j({ ...posted, liveCheck: { state: "fixable", fixBy: "2026-10-10T14:00:00Z", checking: true } });
     expect(v.action).toEqual({ kind: "check_again", label: "Checking again…", disabled: true });
