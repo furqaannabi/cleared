@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { ApiResult } from "@/lib/api";
+import { cancelFailure } from "@/lib/cancel/cancel-failure";
 import { dealCancelView, type DealCancelPost } from "@/lib/cancel/deal-cancel-view";
 
 const NOTE_MAX = 300;
@@ -46,7 +47,8 @@ export function CancelDeal<T>({
   const view = dealCancelView(posts, { side, brandName, creatorName });
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
-  const [failed, setFailed] = useState(false);
+  // CN-FR-08, CN-FR-19: why the request didn't go through; the card and the note stay.
+  const [failed, setFailed] = useState<string | null>(null);
   const [said, setSaid] = useState("");
   const [note, setNote] = useState("");
   const button = useRef<HTMLButtonElement>(null);
@@ -64,7 +66,7 @@ export function CancelDeal<T>({
 
   const run = async () => {
     setSending(true);
-    setFailed(false);
+    setFailed(null);
     let last: T | null = null;
     let refused = 0;
     for (const deliverableId of view.going) {
@@ -74,7 +76,7 @@ export function CancelDeal<T>({
       else {
         // CN-FR-08: a request that didn't get through keeps the card open; nothing is retried on its own.
         if (last) onUpdated(last);
-        setFailed(true);
+        setFailed(cancelFailure(r.error, side, creatorName));
         setSending(false);
         return;
       }
@@ -137,7 +139,7 @@ export function CancelDeal<T>({
               {note.length} / {NOTE_MAX}
             </p>
           </div>
-          {failed && <p className="text-[14px] font-bold text-fail">That didn’t go through. Try again.</p>}
+          {failed && <p className="text-[14px] font-bold text-fail">{failed}</p>}
           <div className="flex flex-col-reverse gap-2 md:flex-row md:items-center">
             <button type="button" disabled={sending} onClick={() => void run()} className={DANGER}>
               {sending ? "Cancelling…" : single ? "Cancel the post" : view.confirm}

@@ -47,7 +47,7 @@ export function CancelPost<T extends { cancelled?: unknown }>({
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const kept = useRef(false);
-  const cancel = useCancelPost({ send, reload, onUpdated, onDone: () => setOpen(false) });
+  const cancel = useCancelPost({ send, reload, onUpdated, onDone: () => setOpen(false), side, creatorName });
   const close = () => {
     kept.current = true;
     setOpen(false);
@@ -126,7 +126,7 @@ function TurnedCard({ view, cancel, onKeep }: { view: ReturnType<typeof cancelVi
           {note.length} / {NOTE_MAX}
         </p>
       </div>
-      {cancel.failed && <p className="relative text-[14px] font-bold text-fail">That didn’t go through. Try again.</p>}
+      {cancel.failed && <p className="relative text-[14px] font-bold text-fail">{cancel.failed}</p>}
       <div className="relative flex flex-col-reverse gap-2 self-end md:flex-row md:items-center md:self-auto">
         <button type="button" disabled={cancel.sending} onClick={() => void cancel.run(note)} className={DANGER}>
           {cancel.sending ? "Cancelling…" : c.confirm}
