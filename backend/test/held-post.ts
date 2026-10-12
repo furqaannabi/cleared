@@ -289,6 +289,8 @@ export function heldWorld(
     visitor: () => browserFor(app, APP),
     /** One creator, one brand and one held post: the usual start of a draft check. */
     heldPost: async (deal: Parameters<typeof agreedDeal>[1] = {}) => agreedDeal(await creator(), deal),
+    /** Makes sure the daily clear-out of old drafts is waiting, as the service does when it starts. */
+    scheduleDraftExpiry: () => drafts.scheduleExpiry(),
     /** Runs every job that is due, as the service's worker would. */
     runJobs,
     /**

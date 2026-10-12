@@ -16,6 +16,9 @@ export interface Profile {
   accounts: { platform: "youtube" | "instagram"; name: string; inUse: boolean }[];
 }
 
+/** The order connected accounts are listed in. */
+const ORDER = ["youtube", "instagram"];
+
 export type Accounts = ReturnType<typeof createAccounts>;
 
 export function createAccounts(deps: {
@@ -77,8 +80,10 @@ export function createAccounts(deps: {
         email: creator.email ?? undefined,
         welcomed: creator.welcomedAt !== null,
         paypalEmail: creator.paypalEmail ?? undefined,
+        // Always YouTube and then Instagram, whichever was connected first: the database keeps no order of its own.
         accounts: creator.accounts
           .filter((account) => account.platform === "youtube" || account.platform === "instagram")
+          .sort((first, second) => ORDER.indexOf(first.platform) - ORDER.indexOf(second.platform))
           .map((account) => ({ platform: account.platform as "youtube" | "instagram", name: account.name, inUse: inUse.has(account.platform as "youtube" | "instagram") })),
       };
     },

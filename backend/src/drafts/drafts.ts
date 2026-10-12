@@ -5,6 +5,7 @@
  * result is, by the check. This module joins them to storage, the database and the jobs table.
  */
 import { keepHeard } from "./heard";
+import { endedAt } from "./retention";
 import { checkDraft, ServiceFailed, type CheckItem as ChecklistItem, type ItemResult, type Stage } from "../checks/check";
 import type { Judge, SpeechAndText, VideoModel } from "../checks/ports";
 import { Prisma, type PrismaClient } from "../generated/prisma/client";
@@ -16,6 +17,8 @@ import type { ReviewLinks } from "../review/links";
 import { defaultReviewSettings, review, type ReviewSettings } from "../review/rules";
 import { applyEffects, loadReview, lockReview, saveItems, saveState } from "../review/store";
 import type { Storage } from "../storage/port";
+
+const EXPIRE_JOB = "drafts_expire";
 
 export interface DraftSettings {
   /** The largest file taken, in bytes, and the longest video, in seconds (DR-FR-02, DR-FR-03). */
@@ -33,6 +36,8 @@ export interface DraftSettings {
   /** How often the reading of a video is asked after, and how long it may take before it counts as failed. */
   pollSeconds: number;
   readingLimitSeconds: number;
+  /** How many days after a post ends its drafts, and everything read from them, are kept (AH-FR-23). */
+  keepDaysAfterEnd: number;
   review: ReviewSettings;
 }
 
@@ -46,6 +51,7 @@ export const defaultDraftSettings: DraftSettings = {
   retryWaitSeconds: 30,
   pollSeconds: 10,
   readingLimitSeconds: 30 * 60,
+  keepDaysAfterEnd: 30,
   review: defaultReviewSettings,
 };
 
@@ -203,6 +209,36 @@ export function createDrafts(deps: {
 
   /** The jobs this module schedules. */
   const handlers = {
+    /**
+     * The daily clear-out (AH-FR-23). A post's drafts, with what was said in them and anything else
+     * read from them, are deleted once the post has been over for the set number of days. The check's
+     * results are not touched: they stay with the deal. Each post is cleared on its own, so one that
+     * fails does not hold up the rest. The job always comes back the next day.
+     */
+    async [EXPIRE_JOB](_payload: unknown, { now: at }: { now: Date }) {
+      const kept = await prisma.draft.findMany({ orderBy: { createdAt: "asc" } });
+      const byPost = new Map<string, typeof kept>();
+      for (const draft of kept) byPost.set(draft.deliverableId, [...(byPost.get(draft.deliverableId) ?? []), draft]);
+      let cleared = 0;
+      let failed = 0;
+      for (const [deliverableId, drafts] of byPost) {
+        try {
+          const view = await money?.view(deliverableId);
+          const ended = view && endedAt(view);
+          if (!ended || at.getTime() - ended.getTime() < settings.keepDaysAfterEnd * DAY_MS) continue;
+          // The file, and anything read from it that was stored beside it. Then the rows, so a file that could not be deleted is tried again tomorrow.
+          for (const draft of drafts) await storage.deleteUnder(draft.storageKey);
+          await prisma.draft.deleteMany({ where: { id: { in: drafts.map((draft) => draft.id) } } });
+          cleared++;
+        } catch (error) {
+          failed++;
+          log("A post's drafts could not be deleted at the end of their time", { deliverableId, error: error instanceof Error ? error.name : "unknown" });
+        }
+      }
+      if (cleared > 0 || failed > 0) log("Drafts past their time were deleted", { posts: cleared, failed });
+      return { retryAt: new Date(at.getTime() + DAY_MS) };
+    },
+
     /**
      * Checks a draft (DR-FR-10 to DR-FR-24). Reading the video takes minutes, so the job starts it and
      * comes back to ask. When the reading is done it checks every item and records the run. A failure
@@ -399,5 +435,15 @@ export function createDrafts(deps: {
     },
 
     handlers,
+
+    /** Makes sure the daily clear-out is waiting to run. Called when the service starts; calling it again changes nothing. */
+    async scheduleExpiry(): Promise<void> {
+      await prisma.$transaction(async (tx) => {
+        // One at a time, so two services starting together make one job.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${EXPIRE_JOB}))`;
+        if ((await tx.job.count({ where: { name: EXPIRE_JOB, status: { in: ["pending", "running"] } } })) > 0) return;
+        await enqueue(tx, { name: EXPIRE_JOB, payload: {}, runAt: now() });
+      });
+    },
   };
 }

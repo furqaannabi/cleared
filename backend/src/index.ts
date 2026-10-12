@@ -105,6 +105,8 @@ const drafts =
     },
     log,
   });
+// Drafts are deleted 30 days after their post ends, by a daily job. Not waited for, as below: this file must load without waiting.
+drafts?.scheduleExpiry().catch((error: unknown) => log("The daily clear-out of old drafts could not be scheduled", { error: error instanceof Error ? error.name : "unknown" }));
 if (!drafts) {
   console.warn("No bucket for drafts is configured, so no draft can be sent or checked. See backend/.env.example.");
 }
