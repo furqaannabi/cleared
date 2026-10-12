@@ -8,7 +8,7 @@ A spec is signed only when William or Furqaan says so after reading it. No code 
 
 | Spec | Prefix | Surface | Owner | Status |
 | --- | --- | --- | --- | --- |
-| [Creator draft check](creator-draft-check-frd.md) | DC | Creator app: one deliverable at the draft check | William | Signed by William (1.20) |
+| [Creator draft check](creator-draft-check-frd.md) | DC | Creator app: one deliverable at the draft check | William | Signed by William (1.21) |
 | [Landing page](landing-frd.md) | LP | Landing at `/`, and the `/deals` entry into the creator app | William | Signed by William (1.7) |
 | [Creator brief → checklist](creator-brief-checklist-frd.md) | BC | Creator app: a new deal, its brief, and a checklist per post | William | Signed by William (1.4) |
 | [Creator invite](creator-invite-frd.md) | IN | Creator app: amounts, deadlines, accounts, PayPal email and the brand link | William | Signed by William (1.4) |
@@ -18,7 +18,7 @@ A spec is signed only when William or Furqaan says so after reading it. No code 
 | [Publish and pay](publish-and-pay-frd.md) | PP | Both sides of steps 6 to 8: the go-ahead, posting, the live check, capture and payout, the brand's decisions after publishing | William | Signed by William (1.4) |
 | [Cancel](cancel-frd.md) | CN | Both sides, from the invite until the go-ahead: cancelling a post or the deal, the note to the other side, and the cancelled and closed states | William | Signed by William (1.2) |
 | [Sign-in and welcome](sign-in-frd.md) | SI | Creator app: Sign in with Google, the welcome page, the sign-in page, the account menu | William | Signed by William (1.3) |
-| [Creator home](creator-home-frd.md) | HM | Creator app: home at `/deals`: the money overview, performance figures, charts, deals with Needs you first, and the payment history with its CSV (money sections behind a flag) | William | Signed by William (1.1) |
+| [Creator home](creator-home-frd.md) | HM | Creator app: the overview at `/deals` (the money overview, performance figures, deals with Needs you first) and Payments at `/payments` (paid each month and the payment history with its CSV); money sections behind a flag | William | Signed by William (1.2) |
 | [Error pages](error-pages-frd.md) | EP | Not found, something went wrong and the whole-app fallback, for anyone | William | Signed by William (1.0) |
 | [Legal pages](legal-pages-frd.md) | LG | `/privacy`, `/terms` and `/data-deletion`, for creators and brands, and where they are linked (behind a flag until Furqaan gives the retention periods) | William | Signed by William (1.0) |
 | [Settings](settings-frd.md) | ST | Creator app: `/settings`: the signed-in email, the PayPal email, connected accounts, sign out, and (behind a flag) disconnecting and deleting the account | William | Signed by William (1.2) |

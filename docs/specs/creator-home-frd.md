@@ -1,8 +1,8 @@
 # Creator home: FRD
 
-**Status:** Signed by William (revision 1.1). The payments route is a request for Furqaan; the money sections stay behind a flag until it is in `contract/`.
+**Status:** Signed by William (revision 1.2). The payments route is a request for Furqaan; the money sections stay behind a flag until it is in `contract/`.
 
-**Surface:** The creator's home at `/deals`: a money overview, the performance figures, the charts, the deals with what needs the creator first, and the payment history with its CSV. Signing in and the landing page's button land here. The brand has no home.
+**Surface:** The creator's home, in two pages (1.2). The overview at `/deals`: the money overview, the performance figures and the deals with what needs the creator first; signing in and the landing page's button land here. Payments at `/payments`: what was paid each month and the payment history with its CSV. The brand has no home.
 
 **Scope of this build:** frontend only, on the live API ([frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)). The deals list uses `GET /deals`, which the contract has. Everything about money (overview, figures, charts, history, CSV) reads one requested route, `GET /me/payments`; it is built and tested on per-test stubs against the shape asked of Furqaan below, and stays hidden behind a build flag until that route is in `contract/` (HM-FR-20). Nothing here moves money or decides a money state.
 
@@ -43,8 +43,8 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-01 | **Where it lives.** `/deals`, in the creator frame, signed-in only (SI-FR-06). It no longer opens the first deal (LP-FR-15, 1.4). Page title "Home". "Home" is the first link in the rail and the phone's Deals sheet (DC-FR-31, 1.19), marked current here. |
-| HM-FR-02 | **Order.** The money overview; the performance figures; "Paid each month"; the deals; the payment history. With the flag off (HM-FR-20) only the deals show. |
+| HM-FR-01 | **Where it lives.** `/deals`, in the creator frame, signed-in only (SI-FR-06). It no longer opens the first deal (LP-FR-15, 1.4). (1.2) Page title "Overview". "Overview" is the first link in the rail and the phone's Deals sheet (DC-FR-31, 1.21), marked current here. |
+| HM-FR-02 | **Order.** (1.2) The money overview; the performance figures ("How you're doing"); the deals. "Paid each month" and the payment history are on Payments (HM-FR-23). With the flag off (HM-FR-20) only the deals show. |
 | HM-FR-03 | **No deals yet.** With no deals, the page says "You have no deals yet." with a "Start a deal" link to `/deals/new`, and nothing else: no totals, figures, charts or history. |
 | HM-FR-04 | **Loading and failing.** While a section loads it shows the app's loading state for that section. If the deals fail, the page says "We couldn't load your deals." with Try again (as LP-FR-15 did). If the payments fail, the money sections are replaced by one line "We couldn't load your payments." with Try again; the deals still show. |
 
@@ -54,6 +54,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 | --- | --- |
 | HM-FR-05 | **Three totals, in what the creator receives.** "Held for you" (posts whose hold is in place and not yet captured), "On its way" (captured, payout not yet paid: sending, delayed, unclaimed or failed) and "Paid" (payout paid). Each is the sum of the posts' `received` amounts from the API, after Cleared's fee; the page never works out a fee itself. Each total says how many posts it counts ("3 posts"). A total of zero shows "$0.00", never hidden, once the creator has any deal. (1.1) Under the totals: "What you receive, after Cleared's 5% fee." |
 | HM-FR-06 | **What's stuck.** When any post on its way has a payout that failed or wasn't claimed, a line under "On its way" names each: "{brand} · {post}: the payout didn't go through." or "{brand} · {post}: PayPal is waiting for you to accept it.", each linking to the post, where its fix lives (PP). Past three, "and {n} more". |
+| HM-FR-25 | **See payments.** (1.2) Under the "Paid" total, a link "See payments" to `/payments`. "Held for you" and "On its way" have no link; the stuck lines keep linking to their posts (HM-FR-06). |
 | HM-FR-07 | **Amounts.** Dollars with cents ("$1,140.00"), from integer minor units; totals added in minor units, never floats. |
 
 ### Performance
@@ -69,7 +70,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-12 | **Paid each month.** A bar chart of the last six months, each bar what the creator received that month (by the payout's paid date in the creator's time zone), the current month labelled "so far". Months with nothing show an empty bar. Shown once any post has been paid. (1.1) Titled "Paid each month", with "What you received" beside the title. |
+| HM-FR-12 | **Paid each month.** (1.2) On Payments, full width, above the history. A bar chart of the last six months, each bar what the creator received that month (by the payout's paid date in the creator's time zone), the current month labelled "so far". Months with nothing show an empty bar. Shown once any post has been paid. (1.1) Titled "Paid each month", with "What you received" beside the title. |
 | HM-FR-13 | **Trend lines.** Each performance figure gets a small line of its value by month, shown only once there are three or more months with posts to count for it. |
 | HM-FR-14 | **Readable as text.** Every chart has a text equivalent screen readers get ("October so far: $2,280.00", "On time by month: August 2 of 2, …"), and nothing in a chart is only in colour or only on hover. Charts are drawn with AG Charts Community, loaded only when they scroll into view ([AG Grid and AG Charts on creator home](../decisions/2026-10-12-ag-grid-and-ag-charts-on-creator-home.md)). |
 
@@ -79,11 +80,19 @@ One home page that answers "where's my money?" first: three totals in what the c
 | --- | --- |
 | HM-FR-15 | **Needs you first.** Deals with a post waiting on the creator come first under "Needs you", the rest under "Under way" and then "Finished" (every post paid, released or closed). Waiting on the creator: the deal at the checklist, invite or changes-requested step, or a post with no draft, a failed check, results to act on, an objection, or an approved draft without a go-ahead; or a payout that failed or wasn't claimed. Newest first within each. Each row: brand, each post's platform and state in the rail's words, linking where the rail's row links (DC-FR-37). |
 
+### Payments (1.2)
+
+| ID | Requirement |
+| --- | --- |
+| HM-FR-23 | **Where it lives.** `/payments`, in the creator frame, signed-in only (SI-FR-06). Page title "Payments". "Payments" is the second link in the rail and the phone's Deals sheet, under Overview (DC-FR-31, 1.21), marked current here. In order: the line for the year (HM-FR-24), "Paid each month" (HM-FR-12), the payment history with Download CSV (HM-FR-16 to HM-FR-19). Loading and failing as HM-FR-04: if the payments fail, the page says "We couldn't load your payments." with Try again. |
+| HM-FR-24 | **The year.** Under the title, one line: "{total} received in {year} · {n} posts" (for one, "1 post"): what the creator received from posts paid this calendar year, in their time zone, from the same rows as the history. Left out while nothing has been paid this year. |
+| HM-FR-26 | **Nothing paid yet.** With no paid post, in place of the chart and the history: "Nothing paid yet." and "Each post you're paid for shows here with its PayPal references, ready to download." When anything is held or on its way, a third line says how much: "{held} is held for you and {on its way} is on its way.", leaving out a part that is zero, with a link "See your overview" to `/deals`. No chart, grid or Download CSV. |
+
 ### The payment history
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-16 | **One row per paid post.** Date paid, brand, post ("YouTube video", "Short", "Reel"), deal amount, Cleared's fee, received, payout reference and hold reference, newest first, each linking to its post. Only paid posts; money on its way is in the overview. Shown once any post has been paid. |
+| HM-FR-16 | **One row per paid post.** Date paid, brand, post ("YouTube video", "Short", "Reel"), deal amount, Cleared's fee, received, payout reference and hold reference, newest first, each linking to its post. Only paid posts; money on its way is in the overview. Shown once any post has been paid. (1.2) On Payments. |
 | HM-FR-17 | **Desktop grid.** From `md:`, AG Grid: sort by date, brand or amount; filter by brand; references in the tabular face, selectable to copy. No sideways scroll at `md:`; lower-priority columns (hold reference, fee) collapse first. |
 | HM-FR-18 | **Phone cards.** Below `md:`, one card per row with the same fields in the same order. Both renderings come from one list of rows and show the same thing for every row. |
 | HM-FR-19 | **CSV.** "Download CSV" exports the whole history whatever the grid is filtered to, built in the browser, named `cleared-payments-{YYYY-MM-DD}.csv`. Columns: Date paid, Brand, Post, Deal amount, Fee, Received, Payout reference, Hold reference. Amounts as plain decimals ("1140.00"), dates as `YYYY-MM-DD`. Any field starting with `=`, `+`, `-`, `@`, tab or carriage return is prefixed with `'`; fields are quoted per RFC 4180. |
@@ -92,8 +101,8 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-20 | **The flag.** The money sections show only when `NEXT_PUBLIC_PAYMENTS` is "enabled". It stays off until Furqaan's route and its types are in `contract/`; then turning it on is the only change. With it off, home is the deals alone, and nothing says more is coming. |
-| HM-FR-21 | Mobile-first at 375 px: one column, the three totals stacked, the chart full width, history as cards, every target at least 44 px, no sideways scroll. From `lg:` the totals sit in a row. |
+| HM-FR-20 | **The flag.** The money sections show only when `NEXT_PUBLIC_PAYMENTS` is "enabled". It stays off until Furqaan's route and its types are in `contract/`; then turning it on is the only change. With it off, home is the deals alone, and nothing says more is coming. (1.2) With it off, `/payments` is the not-found page (EP-FR-01), and there is no Payments link in the rail or sheet and no "See payments". |
+| HM-FR-21 | Mobile-first at 375 px: one column, the three totals stacked, the chart full width, history as cards, every target at least 44 px, no sideways scroll. From `lg:` the totals sit in a row. (1.2) From `lg:` the three performance figures sit side by side. |
 | HM-FR-22 | Each section a labelled region with its heading; the totals and figures as text, not images; Try again and Download CSV named; loading announced politely; reduced motion respected (no chart animation). |
 
 ## Business rules
@@ -108,7 +117,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 ## Implementation Decisions
 
-- **Route:** `/deals` becomes home, replacing the first-deal redirect.
+- **Route:** `/deals` becomes home, replacing the first-deal redirect. (1.2) `/deals` is the overview; `/payments` is a new route, rendered only with the flag on.
 - **Modules (pure, tested on their own):**
   - **money overview:** payment rows → the three totals with counts, and the stuck list.
   - **performance:** rows → the three figures, each absent with nothing to count, and their values by month.
@@ -119,7 +128,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 - **Components:** the overview, figures and charts each their own; the history as one data source with an AG Grid rendering from `md:` and a card rendering below.
 - **Data:** `GET /deals` as now; `GET /me/payments` Zod-checked, behind the flag. The client gains `payments()`.
 - **Dependencies:** AG Grid Community and AG Charts Community, lazy-loaded; cost and sponsor question in the [ADR](../decisions/2026-10-12-ag-grid-and-ag-charts-on-creator-home.md).
-- **Visual:** inherits DESIGN.md. William picked design A, the money card leads (`design/home/option-a.html`; DESIGN.md "Creator home"). The performance figures and the chart share one panel, "How you're doing".
+- **Visual:** inherits DESIGN.md. William picked design A, the money card leads (`design/home/option-a.html`; DESIGN.md "Creator home"). The performance figures and the chart share one panel, "How you're doing". (1.2) William picked option 2 of `design/home/payments.html` for the split: "How you're doing" holds the figures alone, the chart is on Payments full width, and Payments opens with the line for the year.
 
 ### Requests for Furqaan
 
@@ -134,6 +143,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 - Tests check what the creator sees, named after the HM-FR they prove, on per-test stubs typed from the contract (and from the requested shape for payments).
 - **Pure modules:** totals across stages, the stuck list past three, received never recomputed; each figure with none, one and several posts; on time at the deadline's edge; months across a time-zone boundary and a year boundary; deal groups for every state; CSV escaping (`=`, `+`, `-`, `@`, quotes, commas, newlines) and the date in the file name.
 - **Components:** home with no deals; with deals and the flag off; with the flag on: totals, stuck line linking to the post, figures absent and present, chart text equivalents; history as cards at 375 px and as a grid from `md:`, the same rows in both; Download CSV gives the whole history while filtered; payments failing leaves the deals.
+- **1.2:** the overview without the chart and history, with "See payments" under Paid; Payments with the line for the year (shown, left out with nothing paid this year, "1 post"), the chart, the history and CSV; nothing paid yet with and without held or on-its-way money; with the flag off, no Payments link, no "See payments", and `/payments` not found; the rail's Overview and Payments links, each marked current on its page.
 - **Live end to end:** by hand until Furqaan's test-session route exists.
 
 ## Out of Scope
@@ -155,3 +165,5 @@ One home page that answers "where's my money?" first: three totals in what the c
 | 1.0 | Signed by William | none |
 | 1.1 | From the mockups: William picked design A (the money card leads). The lines that explain the totals, the figures and the chart are kept: "What you receive, after Cleared's 5% fee." (HM-FR-05), each figure as a label, a count and a line saying what it counts (HM-FR-08 to HM-FR-10), "What you received" beside the chart (HM-FR-12) | none |
 | 1.1 signed | Revision 1.1 signed by William | none |
+| 1.2 | From a grill-me with William: home splits into an overview at `/deals` (title and rail link "Overview"; the money overview, How you're doing without the chart, the deals) and Payments at `/payments` (new HM-FR-23: Paid each month, then the history and CSV; second in the rail). New HM-FR-24, the line for the year (William picked option 2 of `design/home/payments.html`); HM-FR-25, "See payments" under Paid; HM-FR-26, nothing paid yet. With the flag off, no Payments page or link | none |
+| 1.2 signed | Revision 1.2 signed by William | none |

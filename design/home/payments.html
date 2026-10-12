@@ -1,0 +1,131 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Overview and Payments</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hm.css"><style>
+/* Overview and Payments, split from home (design A). Shared pieces from hm.css / hm.js; new classes prefixed hp-. */
+/* the money card, as in option A, with "See payments" under Paid */
+.hp-money{background:var(--marigold);border-radius:20px;box-shadow:var(--shadow-money);overflow:hidden;position:relative;margin-top:16px}
+.hp-money::after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:rgb(255 255 255/.22);top:-90px;right:-70px;pointer-events:none}
+.hp-track{display:grid;position:relative;z-index:1}
+.hp-stage{padding:16px 18px;color:var(--marigold-ink)}
+.hp-stage+.hp-stage{border-top:1px solid rgb(35 26 0/.14)}
+.hp-lab{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--marigold-ink-2)}
+.hp-lab svg{width:16px;height:16px}
+.hp-amt{font-family:var(--head);font-size:30px;font-weight:800;line-height:1.1;margin-top:4px;letter-spacing:-.01em}
+.hp-cnt{font-size:13px;color:var(--marigold-ink-2);margin-top:2px}
+.hp-stage.paid .hp-amt{font-size:34px}
+.hp-see{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:14px;font-weight:700;color:var(--marigold-ink);text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgb(35 26 0/.35)}
+.hp-see svg{width:15px;height:15px}
+.hp-foot{background:var(--surface);padding:12px 18px;position:relative;z-index:1;display:grid;gap:6px}
+.h-stuck{display:flex;gap:8px;font-size:14px;color:var(--fail);text-decoration:none;min-height:44px;align-items:center}
+.h-stuck svg{width:18px;height:18px;flex:none}
+.h-stuck span{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--fail-line)}
+.h-desk .hp-track{grid-template-columns:1fr 1fr 1.15fr}
+.h-desk .hp-stage{padding:22px 26px}
+.h-desk .hp-stage+.hp-stage{border-top:0;border-left:1px solid rgb(35 26 0/.14)}
+.h-desk .hp-amt{font-size:34px}.h-desk .hp-stage.paid .hp-amt{font-size:38px}
+.h-desk .hp-foot{padding:12px 26px}
+/* how you're doing, without the chart */
+.hp-doing{margin-top:20px;padding:18px}
+.hp-figs{display:grid;margin-top:12px}
+.hp-fig{display:grid;grid-template-columns:1fr 96px;gap:4px 14px;align-items:center;padding:12px 0;border-top:1px solid var(--line-soft)}
+.hp-fig:first-child{border-top:0;padding-top:4px}
+.hp-fn{font-size:13.5px;font-weight:700;color:var(--ink-2)}
+.hp-fv{font-size:19px;font-weight:800;line-height:1.2}
+.hp-fl{font-size:13px;color:var(--ink-3)}
+.h-desk .hp-doing{padding:22px 26px}
+.h-desk .hp-figs{grid-template-columns:repeat(3,minmax(0,1fr));gap:0 30px}
+.h-desk .hp-fig{grid-template-columns:1fr;border-top:0;padding:4px 0 0}
+.h-desk .hp-fig+.hp-fig{border-left:1px solid var(--line-soft);padding-left:30px}
+/* deals */
+.hp-deals{margin-top:28px}
+.hp-dp{margin-top:12px;padding:6px 18px}
+.hp-grp{padding:12px 0}
+.hp-grp+.hp-grp{border-top:1px solid var(--line)}
+.hp-gh{font-size:13.5px;font-weight:700;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.hp-gh span{font-size:12px;color:var(--ink-3);font-weight:600}
+.hp-deal{display:grid;grid-template-columns:1fr 18px;gap:6px 12px;align-items:center;padding:12px 0;text-decoration:none;border-top:1px solid var(--line-soft);min-height:44px}
+.hp-gh+.hp-deal{border-top:0}
+.hp-deal>svg{width:18px;height:18px;color:var(--ink-3);grid-column:2;grid-row:1/span 2}
+.hp-brand{font-weight:800;font-size:15.5px}
+.hp-posts{display:grid;gap:8px}
+.hp-post{display:flex;gap:10px;align-items:center}
+.hp-post>span:last-child{display:flex;flex-direction:column}
+.hp-pn{font-size:13.5px;color:var(--ink-2)}
+.h-desk .hp-dp{padding:8px 26px}
+.h-desk .hp-deal{grid-template-columns:220px 1fr 18px}
+.h-desk .hp-deal>svg{grid-column:3;grid-row:1}
+.h-desk .hp-posts{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* payments page */
+.hp-year{margin-top:6px;font-size:15px;color:var(--ink-2)}
+.hp-year b{color:var(--ink);font-weight:800}
+.h-desk .hp-year{font-size:16px}
+.hp-chart{margin-top:16px;padding:18px}
+.hp-ch{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+.hp-ch b{font-family:var(--head);font-size:21px}
+.h-desk .hp-chart{padding:22px 26px}
+.h-desk .hp-chart .h-bars{height:200px;gap:22px}
+.h-desk .hp-chart .h-months{gap:22px}
+.h-desk .hp-chart .h-bar i{max-width:72px}
+.hp-hist{margin-top:28px}
+.hp-hh{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.hp-none{margin-top:16px;padding:28px 20px}
+.hp-none p+p{margin-top:8px}
+.hp-none .h-sec{font-size:19px}
+/* the rail's two pages */
+.h-row.hp-sub{font-weight:600}
+</style></head><body><main class="h-doc">
+<h1>Overview and Payments</h1>
+<p class="h-why">Home splits in two. <b>Overview</b> (still at <code>/deals</code>) keeps the money card, How you’re doing and the deals; a quiet “See payments” sits under the Paid total. <b>Payments</b> (<code>/payments</code>, second in the rail) holds Paid each month and the payment history with Download CSV: the grid from <code>md:</code>, cards on phones. Two options for the top of Payments. Example data.</p>
+
+<p class="h-state">Overview: 390 px, then desktop at 1280 px</p>
+<div class="h-pair" id="overview"></div>
+
+<p class="h-state">Payments, option 1: the heading, then the chart, then the history</p>
+<div class="h-pair" id="p1"></div>
+
+<p class="h-state">Payments, option 2: a line for the year under the heading</p>
+<div class="h-pair" id="p2"></div>
+
+<p class="h-state">Payments before anything is paid (either option)</p>
+<div class="h-pair" id="none"></div>
+</main>
+<script src="hm.js"></script><script>
+const I2 = {
+  coins: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>',
+};
+function railFor(on){
+  const row = (b, av, name, st) => `<div class="h-row"><b class="${av}">${b}</b><span>${name}<small>${st}</small></span></div>`;
+  return `<aside class="h-rail"><span class="h-logo"><i></i>Cleared</span>
+  <span class="h-new">+ New deal</span>
+  <div class="h-row hp-sub${on==="overview"?" on":""}">${I.home}<span>Overview</span></div>
+  <div class="h-row hp-sub${on==="payments"?" on":""}">${I2.coins}<span>Payments</span></div>
+  <span class="h-nav">Deals</span>
+  ${row("GT","","Glow Theory","Draft check · 2 to fix")}${row("JS","sky","Juniper &amp; Salt","Payout didn’t go through")}${row("PC","sun","Pine &amp; Co","Brand review · 31h left")}${row("MM","","Maple &amp; Moss","Waiting for brand")}${row("KA","sky","Kora Audio","Paid")}
+  <div class="h-row h-me"><b>AO</b><span>Ada Okafor<small>Creator</small></span></div></aside>`;
+}
+const stage=(cls,ic,lab,t,extra="")=>`<div class="hp-stage ${cls}"><p class="hp-lab">${ic}${lab}</p><p class="hp-amt">${t.amount}</p><p class="hp-cnt">${t.posts}</p>${extra}</div>`;
+function overview(){
+  return `<p class="h-title">Overview</p>
+  <section aria-label="Your money" class="hp-money"><div class="hp-track">${stage("",I.lock,"Held for you",TOTALS.held)}${stage("",I.clock,"On its way",TOTALS.way)}${stage("paid",I.check,"Paid",TOTALS.paid,`<a class="hp-see" href="#">See payments${I.arrow}</a>`)}</div>
+  <div class="hp-foot"><p class="h-quiet">What you receive, after Cleared’s 5% fee.</p>${stuckLine()}</div></section>
+  <section aria-labelledby="doing" class="h-panel hp-doing"><h2 class="h-sec" id="doing">How you’re doing</h2><div class="hp-figs">${FIGURES.map(f=>`<div class="hp-fig"><div><p class="hp-fn">${f.name}</p><p class="hp-fv">${f.value}</p><p class="hp-fl">${f.line}</p></div>${spark(f.pts)}</div>`).join("")}</div></section>
+  <section aria-labelledby="dl" class="hp-deals"><h2 class="h-sec" id="dl">Deals</h2><div class="h-panel hp-dp">${deals("hp")}</div></section>`;
+}
+function payments(desk, year){
+  return `<p class="h-title">Payments</p>
+  ${year?`<p class="hp-year"><b>$6,412.50</b> received in 2026 · 6 posts</p>`:""}
+  <section aria-labelledby="pm" class="h-panel hp-chart"><div class="hp-ch"><b id="pm">Paid each month</b><span class="h-quiet">What you received</span></div>${bars()}</section>
+  <section aria-labelledby="ph" class="hp-hist"><div class="hp-hh"><h2 class="h-sec" id="ph">Payment history</h2><a class="h-btn" href="#">${I.down}Download CSV</a></div>${desk?grid():cards()}</section>`;
+}
+function nothing(){
+  return `<p class="h-title">Payments</p>
+  <div class="h-panel hp-none"><p class="h-sec">Nothing paid yet.</p><p class="h-quiet">Each post you’re paid for shows here with its PayPal references, ready to download.</p><p><b>$1,200.00</b> is held for you and <b>$450.00</b> is on its way. <a class="h-link" href="#">See your overview</a></p></div>`;
+}
+const pair = (id, on, phone, desk) => document.getElementById(id).innerHTML =
+  `<div class="h-phone">${topBar()}<div class="h-page">${phone}</div></div><div class="h-desk">${railFor(on)}<div class="h-main">${desk}</div></div>`;
+pair("overview","overview",overview(),overview());
+pair("p1","payments",payments(false,false),payments(true,false));
+pair("p2","payments",payments(false,true),payments(true,true));
+pair("none","payments",nothing(),nothing());
+</script></body></html>
