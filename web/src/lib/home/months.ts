@@ -51,7 +51,7 @@ export function paidEachMonth(rows: PaymentRow[], now: Date, timeZone: string): 
   return months.map((key, i) => {
     const amountMinor = rows
       .filter((r) => r.stage === "paid" && r.paidAt && monthKey(r.paidAt, timeZone) === key)
-      .reduce((sum, r) => sum + r.receivedMinor, 0);
+      .reduce((sum, r) => sum + (r.receivedMinor ?? 0), 0);
     const current = i === months.length - 1;
     const text = formatMoney(amountMinor, "USD");
     return { label: monthName(key, "short"), amountMinor, text, current, spoken: `${monthName(key, "long")}${current ? " so far" : ""}: ${text}` };
@@ -72,7 +72,7 @@ export function yearReceived(rows: PaymentRow[], now: Date, timeZone: string): {
   const year = monthKey(now, timeZone).slice(0, 4);
   const paid = rows.filter((r) => r.stage === "paid" && r.paidAt && monthKey(r.paidAt, timeZone).startsWith(`${year}-`));
   if (paid.length === 0) return null;
-  const total = formatMoney(paid.reduce((sum, r) => sum + r.receivedMinor, 0), "USD");
+  const total = formatMoney(paid.reduce((sum, r) => sum + (r.receivedMinor ?? 0), 0), "USD");
   return { total, rest: ` received in ${year} · ${paid.length} ${paid.length === 1 ? "post" : "posts"}` };
 }
 
@@ -113,7 +113,7 @@ export function figureTrends(rows: PaymentRow[], timeZone: string): { onTime?: T
   return {
     onTime: trend(byMonth(rows, (r) => r.publishedAt, timeZone), (rs) => ratio(rs, (r) => Date.parse(r.publishedAt!) <= Date.parse(r.deadline))),
     passedFirstTime: trend(
-      byMonth(rows.filter((r) => r.firstCheckPassed !== null), (r) => r.heldAt, timeZone),
+      byMonth(rows.filter((r) => r.firstCheckPassed !== undefined), (r) => r.heldAt, timeZone),
       (rs) => ratio(rs, (r) => r.firstCheckPassed === true),
     ),
     timeToPaid: trend(

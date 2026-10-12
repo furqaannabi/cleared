@@ -4,7 +4,6 @@ import Link from "next/link";
 import { PageSkeleton } from "@/components/draft-check/page-skeleton";
 import { useDeals } from "@/components/shell/use-deals";
 import { dealGroups } from "@/lib/home/deal-groups";
-import { PAYMENTS } from "@/lib/home/flag";
 import { moneyOverview } from "@/lib/home/money-overview";
 import { figureTrends } from "@/lib/home/months";
 import { performanceFigures } from "@/lib/home/performance";
@@ -25,12 +24,11 @@ const BUTTON = "inline-flex min-h-11 items-center rounded-pill bg-espresso px-[1
  * what needs them first. What was paid each month and the history are on
  * Payments. With no deals, it says so and offers Start a deal.
  *
- * @param payments - whether the money sections show (the build flag; tests)
  * @see docs/specs/creator-home-frd.md HM-FR-01 to HM-FR-04, HM-FR-20, HM-FR-25; design/home/payments.html
  */
-export function OverviewPage({ payments = PAYMENTS }: { payments?: boolean }) {
+export function OverviewPage() {
   const deals = useDeals();
-  const { load: money, retry } = usePayments(payments);
+  const { load: money, retry } = usePayments();
   const rows = money.status === "ready" ? money.rows : [];
   return (
     <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1240px] px-4 pt-4 pb-16 focus:outline-none md:px-6 md:pt-7 lg:px-9">

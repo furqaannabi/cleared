@@ -21,14 +21,14 @@ const aDeal = (d: Partial<DealSummary> = {}): DealSummary => ({
 });
 
 /** The overview in the creator frame, signed in, with these deals and payments. */
-async function openHome({ deals = [aDeal()], payments = [aPayment()], flag = true }: { deals?: DealSummary[]; payments?: PaymentRow[] | null; flag?: boolean } = {}) {
+async function openHome({ deals = [aDeal()], payments = [aPayment()] }: { deals?: DealSummary[]; payments?: PaymentRow[] | null } = {}) {
   stubSession(aProfile());
   stubDeals(deals);
   if (payments) stubPayments(payments);
   else server.use(http.get(`${apiBaseUrl}/me/payments`, () => HttpResponse.json({}, { status: 500 })));
   render(
     <AppShell currentDealId={null}>
-      <OverviewPage payments={flag} />
+      <OverviewPage />
     </AppShell>,
   );
   await screen.findByRole("heading", { level: 1, name: "Overview" });
@@ -48,16 +48,16 @@ describe("HM-FR-05, HM-FR-06 the money overview", () => {
   test("three totals in what the creator receives, with what's stuck linking to its post", async () => {
     await openHome({
       payments: [
-        aPayment({ deliverableId: "h", stage: "held", payout: undefined, paidAt: undefined, receivedMinor: 266000 }),
+        aPayment({ deliverableId: "h", stage: "held", payout: undefined, paidAt: undefined, amountMinor: 266000, feeMinor: undefined, receivedMinor: undefined }),
         aPayment({ dealId: "deal_j", deliverableId: "del_j", brandName: "Juniper & Salt", platform: "instagram_reel", stage: "captured", payout: { state: "failed" }, paidAt: undefined, receivedMinor: 114000 }),
         aPayment({ receivedMinor: 641250 }),
       ],
     });
     const money = await screen.findByRole("region", { name: "Your money" });
-    expect(within(money).getByText("Held for you").closest("div")).toHaveTextContent("Held for you$2,660.001 post");
+    expect(within(money).getByText("Held for you").closest("div")).toHaveTextContent("Held for you$2,660.001 post · before Cleared’s fee");
     expect(within(money).getByText("On its way").closest("div")).toHaveTextContent("On its way$1,140.001 post");
     expect(within(money).getByText("Paid").closest("div")).toHaveTextContent("Paid$6,412.501 post");
-    expect(within(money).getByText("What you receive, after Cleared’s 5% fee.")).toBeVisible();
+    expect(within(money).getByText("On its way and Paid are what you receive, after Cleared’s 5% fee.")).toBeVisible();
     expect(within(money).getByRole("link", { name: "Juniper & Salt · Reel: the payout didn’t go through." })).toHaveAttribute("href", "/deals/deal_j/deliverables/del_j");
   });
 
@@ -77,17 +77,6 @@ describe("HM-FR-25 See payments", () => {
     expect(within(money).getByText("Paid").closest("div")).toContainElement(within(money).getByRole("link", { name: "See payments" }));
     expect(within(money).getByRole("link", { name: "See payments" })).toHaveAttribute("href", "/payments");
     expect(within(money).getAllByRole("link")).toHaveLength(1);
-  });
-});
-
-describe("HM-FR-20 the flag", () => {
-  test("with it off, home is the deals alone and asks for no payments", async () => {
-    await openHome({ flag: false, deals: [aDeal()] });
-    expect(screen.queryByRole("link", { name: "See payments" })).toBeNull();
-    expect(await screen.findByRole("region", { name: "Deals" })).toBeVisible();
-    expect(screen.queryByRole("region", { name: "Your money" })).toBeNull();
-    expect(screen.queryByRole("region", { name: "Payment history" })).toBeNull();
-    expect(screen.queryByText(/coming/i)).toBeNull();
   });
 });
 
@@ -150,7 +139,7 @@ describe("HM-FR-04 the deals failing", () => {
     stubPayments([]);
     render(
       <AppShell currentDealId={null}>
-        <OverviewPage payments />
+        <OverviewPage />
       </AppShell>,
     );
     const main = await screen.findByRole("main");

@@ -87,11 +87,11 @@ describe("DC-FR-31 app shell", () => {
 });
 
 
-describe("DC-FR-31 (1.21) Overview and Payments", () => {
+describe("DC-FR-31 (1.21, 1.22) Overview and Payments, always", () => {
   test("Overview links to /deals and Payments to /payments, in the rail and the Deals sheet, each marked current on its page", async () => {
     screenWidth(1280);
     const { unmount } = render(
-      <AppShell currentDealId={null} page="payments" payments>
+      <AppShell currentDealId={null} page="payments">
         <p>Payments</p>
       </AppShell>,
     );
@@ -105,7 +105,7 @@ describe("DC-FR-31 (1.21) Overview and Payments", () => {
     unmount();
     screenWidth(375);
     render(
-      <AppShell currentDealId={null} page="overview" payments>
+      <AppShell currentDealId={null} page="overview">
         <p>Overview</p>
       </AppShell>,
     );
@@ -114,18 +114,6 @@ describe("DC-FR-31 (1.21) Overview and Payments", () => {
     expect(within(sheet).getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
     expect(within(sheet).getByRole("link", { name: "Payments" })).toHaveAttribute("href", "/payments");
     expect(within(sheet).queryByRole("link", { name: "Home" })).toBeNull();
-  });
-
-  test("with the payments flag off there is no Payments link", () => {
-    screenWidth(1280);
-    render(
-      <AppShell currentDealId={null} page="overview" payments={false}>
-        <p>Overview</p>
-      </AppShell>,
-    );
-    const rail = screen.getByRole("complementary", { name: "Main" });
-    expect(within(rail).getByRole("link", { name: "Overview" })).toBeVisible();
-    expect(within(rail).queryByRole("link", { name: "Payments" })).toBeNull();
   });
 });
 

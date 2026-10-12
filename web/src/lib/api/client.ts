@@ -122,7 +122,7 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
   return {
     /** DC-FR-31: the creator's deals, each with the deliverable to open (DC-FR-37). */
     getDeals: () => request("GET", "/deals", dealsSchema),
-    /** HM-FR-05 to HM-FR-19: every post that has had a hold (requested route, creator home FRD); used only behind the payments flag. */
+    /** HM-FR-05 to HM-FR-19: every post that has had a hold, newest hold first (AH-FR-05). */
     getPayments: () => request("GET", "/me/payments", paymentsSchema),
     /** DC-FR-01: one deliverable for the draft check page. */
     /** DC-FR-45 (1.18): send a draft, with its progress; Cancel through the signal. */

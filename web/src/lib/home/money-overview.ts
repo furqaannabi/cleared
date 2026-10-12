@@ -21,11 +21,14 @@ const STUCK_WHY: Partial<Record<NonNullable<PaymentRow["payout"]>["state"], stri
   unclaimed: "PayPal is waiting for you to accept it.",
 };
 
-const total = (rows: PaymentRow[]): MoneyTotal => ({
-  // Added in cents, never floats (HM-FR-07).
-  text: formatMoney(rows.reduce((sum, r) => sum + r.receivedMinor, 0), "USD"),
-  posts: `${rows.length} ${rows.length === 1 ? "post" : "posts"}`,
-});
+const posts = (n: number) => `${n} ${n === 1 ? "post" : "posts"}`;
+// Added in cents, never floats (HM-FR-07).
+const sum = (rows: PaymentRow[], amount: (r: PaymentRow) => number) => formatMoney(rows.reduce((t, r) => t + amount(r), 0), "USD");
+
+const total = (rows: PaymentRow[]): MoneyTotal => ({ text: sum(rows, (r) => r.receivedMinor ?? 0), posts: posts(rows.length) });
+
+// HM-FR-05 (1.4): what is received comes only once a hold is taken, so held money is the deal amount, before the fee.
+const heldTotal = (rows: PaymentRow[]): MoneyTotal => ({ text: sum(rows, (r) => r.amountMinor), posts: `${posts(rows.length)} · before Cleared’s fee` });
 
 /**
  * The money overview from the payment rows: held for you, on its way and
@@ -44,7 +47,7 @@ export function moneyOverview(rows: PaymentRow[]): MoneyOverview {
   });
   return {
     stuck: { lines: stuck.slice(0, 3), more: Math.max(0, stuck.length - 3) },
-    held: total(rows.filter((r) => r.stage === "held")),
+    held: heldTotal(rows.filter((r) => r.stage === "held")),
     onItsWay: total(rows.filter((r) => r.stage === "captured")),
     paid: total(rows.filter((r) => r.stage === "paid")),
   };

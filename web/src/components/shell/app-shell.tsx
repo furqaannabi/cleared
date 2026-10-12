@@ -6,7 +6,6 @@ import { AccountMenu } from "@/components/session/account-menu";
 import { SignedIn } from "@/components/session/signed-in";
 import { SessionProvider } from "@/components/session/use-session";
 import { Sheet } from "@/components/ui/sheet";
-import { PAYMENTS } from "@/lib/home/flag";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { DealsNav } from "./deals-nav";
 import { Logo } from "./logo";
@@ -15,20 +14,19 @@ import { DealsProvider, useDeals, type DealsLoad } from "./use-deals";
 /**
  * The creator app's frame: an espresso rail with the logo and the deals on
  * desktop (1024px and up); below that, an espresso top bar whose "Deals"
- * button opens the deals as a full-screen sheet. "Overview" and, with the
- * payments flag on, "Payments" are the first links after New deal in both.
+ * button opens the deals as a full-screen sheet. "Overview" and "Payments"
+ * are the first links after New deal in both.
  *
  * @param currentDealId - the deal being viewed, marked in the list
  * @param page - "overview" or "payments" on those pages, to mark its link current
- * @param payments - whether the Payments page exists (the build flag; tests)
  * @param children - the page
  * @see docs/specs/creator-draft-check-frd.md DC-FR-31; docs/specs/creator-home-frd.md HM-FR-01, HM-FR-23; DESIGN.md "Navigation", "Layout"
  */
-export function AppShell(props: { currentDealId: string | null; page?: Page; payments?: boolean; children: ReactNode }) {
+export function AppShell(props: { currentDealId: string | null; page?: Page; children: ReactNode }) {
   return (
     <SessionProvider>
       <DealsProvider>
-        <Frame currentDealId={props.currentDealId} page={props.page ?? null} payments={props.payments ?? PAYMENTS}>
+        <Frame currentDealId={props.currentDealId} page={props.page ?? null}>
           <SignedIn>{props.children}</SignedIn>
         </Frame>
       </DealsProvider>
@@ -39,7 +37,7 @@ export function AppShell(props: { currentDealId: string | null; page?: Page; pay
 
 type Page = "overview" | "payments";
 
-function Frame({ currentDealId, page, payments, children }: { currentDealId: string | null; page: Page | null; payments: boolean; children: ReactNode }) {
+function Frame({ currentDealId, page, children }: { currentDealId: string | null; page: Page | null; children: ReactNode }) {
   const desktop = useMediaQuery("(min-width: 1024px)");
   const deals = useDeals();
 
@@ -56,7 +54,7 @@ function Frame({ currentDealId, page, payments, children }: { currentDealId: str
             <NewDealLink tone="rail" />
           </span>
           <span className="mt-2.5 grid gap-1 px-0.5">
-            <PageLinks tone="rail" page={page} payments={payments} />
+            <PageLinks tone="rail" page={page} />
           </span>
           {/* A label, not a heading: the nav below is named "Deals", and the page's h1 comes first. */}
           <p aria-hidden="true" className="mx-2.5 mt-[26px] mb-2 text-nav-section font-bold tracking-[0.08em] text-white/70 uppercase">
@@ -95,7 +93,7 @@ function Frame({ currentDealId, page, payments, children }: { currentDealId: str
             <NewDealLink tone="sheet" />
           </div>
           <div className="mb-2 grid gap-1">
-            <PageLinks tone="sheet" page={page} payments={payments} />
+            <PageLinks tone="sheet" page={page} />
           </div>
           <DealsBody load={deals} currentDealId={currentDealId} tone="sheet" />
           <div className="mt-6">
@@ -127,28 +125,26 @@ function SkipLink() {
   );
 }
 
-/** HM-FR-01, HM-FR-23, DC-FR-31 (1.21): Overview, then Payments with the flag on, each marked current on its page. */
-function PageLinks({ tone, page, payments }: { tone: "rail" | "sheet"; page: Page | null; payments: boolean }) {
+/** HM-FR-01, HM-FR-23, DC-FR-31 (1.22): Overview, then Payments, each marked current on its page. */
+function PageLinks({ tone, page }: { tone: "rail" | "sheet"; page: Page | null }) {
   return (
     <>
       <PageLink tone={tone} href="/deals" current={page === "overview"} icon={<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />}>
         Overview
       </PageLink>
-      {payments && (
-        <PageLink
-          tone={tone}
-          href="/payments"
-          current={page === "payments"}
-          icon={
-            <>
-              <rect x="3" y="6" width="18" height="13" rx="2" />
-              <path d="M3 10h18M7 15h4" />
-            </>
-          }
-        >
-          Payments
-        </PageLink>
-      )}
+      <PageLink
+        tone={tone}
+        href="/payments"
+        current={page === "payments"}
+        icon={
+          <>
+            <rect x="3" y="6" width="18" height="13" rx="2" />
+            <path d="M3 10h18M7 15h4" />
+          </>
+        }
+      >
+        Payments
+      </PageLink>
     </>
   );
 }

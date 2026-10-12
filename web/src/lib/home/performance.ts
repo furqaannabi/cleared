@@ -34,7 +34,7 @@ export function performanceFigures(rows: PaymentRow[]): PerformanceFigures {
     const onTime = live.filter((r) => Date.parse(r.publishedAt!) <= Date.parse(r.deadline)).length;
     figures.onTime = count(onTime, live.length, "post", "posts");
   }
-  const checked = rows.filter((r) => r.firstCheckPassed !== null);
+  const checked = rows.filter((r) => r.firstCheckPassed !== undefined);
   if (checked.length) figures.passedFirstTime = count(checked.filter((r) => r.firstCheckPassed).length, checked.length, "draft", "drafts");
   const paid = rows.filter((r) => r.stage === "paid" && r.publishedAt && r.paidAt);
   if (paid.length) {

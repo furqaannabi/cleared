@@ -36,15 +36,19 @@ function isoDay(at: string | Date, timeZone: string): string {
  * @param timeZone - the creator's time zone, for the date paid
  * @see docs/specs/creator-home-frd.md HM-FR-16
  */
+/** A paid row: taken, so the API sends its fee and what was received (HM-FR-05, 1.4). */
+type PaidRow = PaymentRow & { paidAt: string; feeMinor: number; receivedMinor: number };
+const isPaid = (r: PaymentRow): r is PaidRow => r.stage === "paid" && !!r.paidAt && r.feeMinor !== undefined && r.receivedMinor !== undefined;
+
 export function historyRows(rows: PaymentRow[], timeZone: string): HistoryRow[] {
   return rows
-    .filter((r) => r.stage === "paid" && r.paidAt)
+    .filter(isPaid)
     .map((r) => ({
       id: r.deliverableId,
       href: postHref(r),
-      date: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone }).format(new Date(r.paidAt!)),
-      isoDate: isoDay(r.paidAt!, timeZone),
-      paidAtMs: Date.parse(r.paidAt!),
+      date: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone }).format(new Date(r.paidAt)),
+      isoDate: isoDay(r.paidAt, timeZone),
+      paidAtMs: Date.parse(r.paidAt),
       brand: r.brandName,
       post: postWord(r.platform),
       amount: formatMoney(r.amountMinor, r.currency),

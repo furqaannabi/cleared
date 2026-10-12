@@ -35,3 +35,11 @@ export const DownloadIcon = ({ className = "size-4" }) => (
     <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
   </svg>
 );
+
+/** A post that ended without money moving to the creator: closed, released, or approved and not paid. */
+export const EndedIcon = ({ className = "size-4" }) => (
+  <svg {...base} strokeWidth={2.2} className={className}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M8 12h8" />
+  </svg>
+);

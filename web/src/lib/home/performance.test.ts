@@ -21,7 +21,7 @@ describe("HM-FR-08 on time", () => {
 
 describe("HM-FR-09 passed first time", () => {
   test("counts posts whose first draft check finished", () => {
-    const f = performanceFigures([aPayment({ firstCheckPassed: true }), aPayment({ firstCheckPassed: false }), aPayment({ firstCheckPassed: null })]);
+    const f = performanceFigures([aPayment({ firstCheckPassed: true }), aPayment({ firstCheckPassed: false }), aPayment({ firstCheckPassed: undefined })]);
     expect(f.passedFirstTime).toBe("1 of 2 drafts");
   });
 });
@@ -42,7 +42,7 @@ describe("HM-FR-10 time to paid", () => {
 
 describe("HM-FR-11 a figure with nothing to count is left out", () => {
   test("no published, checked or paid posts gives no figures", () => {
-    const f = performanceFigures([aPayment({ stage: "held", publishedAt: undefined, paidAt: undefined, payout: undefined, firstCheckPassed: null })]);
+    const f = performanceFigures([aPayment({ stage: "held", publishedAt: undefined, paidAt: undefined, payout: undefined, firstCheckPassed: undefined })]);
     expect(f).toEqual({});
   });
 });

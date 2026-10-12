@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { DealGroup, HomeDeal } from "@/lib/home/deal-groups";
-import { ArrowIcon, CheckIcon, ClockIcon, CrossIcon } from "./icons";
+import { ArrowIcon, CheckIcon, ClockIcon, CrossIcon, EndedIcon } from "./icons";
 
 type Post = HomeDeal["posts"][number];
 
@@ -27,7 +27,7 @@ function Mark({ platform }: { platform: Post["platform"] }) {
   );
 }
 
-/** A post's step as an icon and a word: a fix or a stuck payout in the fail colour, paid in the pass colour, the rest plain. */
+/** A post's step as an icon and a word: a fix or a stuck payout in the fail colour, paid in the pass colour, ended without money quiet, the rest plain. */
 function Step({ post }: { post: Post }) {
   if (post.stuck || post.state === "check_failed" || post.state === "results" || post.state === "objected") {
     return (
@@ -41,6 +41,15 @@ function Step({ post }: { post: Post }) {
     return (
       <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-pass">
         <CheckIcon className="size-3.5" />
+        {post.words}
+      </span>
+    );
+  }
+  // HM-FR-15 (1.3): ended without money reaching the creator; nothing is moving, so no clock.
+  if (post.state === "closed" || post.state === "released" || post.state === "approved_not_paid") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-ink-3">
+        <EndedIcon className="size-3.5" />
         {post.words}
       </span>
     );

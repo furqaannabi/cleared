@@ -25,7 +25,7 @@ async function openPayments(payments: PaymentRow[] | null = [aPayment()]) {
   if (payments) stubPayments(payments);
   else server.use(http.get(`${apiBaseUrl}/me/payments`, () => HttpResponse.json({}, { status: 500 })));
   render(
-    <AppShell currentDealId={null} page="payments" payments>
+    <AppShell currentDealId={null} page="payments">
       <PaymentsPage />
     </AppShell>,
   );
@@ -33,7 +33,7 @@ async function openPayments(payments: PaymentRow[] | null = [aPayment()]) {
 }
 
 const tide = aPayment({ dealId: "deal_tide", deliverableId: "del_tide", brandName: "=Tide Studio", platform: "youtube_short", amountMinor: 105000, feeMinor: 5250, receivedMinor: 99750, paidAt: "2026-09-24T12:00:00.000Z", payout: { state: "paid", reference: "8RT4410ZPA" }, holdReference: "3MV88201QD" });
-const held = (receivedMinor: number) => aPayment({ deliverableId: `held_${receivedMinor}`, stage: "held", payout: undefined, paidAt: undefined, receivedMinor });
+const held = (amountMinor: number) => aPayment({ deliverableId: `held_${amountMinor}`, stage: "held", payout: undefined, paidAt: undefined, amountMinor, feeMinor: undefined, receivedMinor: undefined });
 const onItsWay = (receivedMinor: number) => aPayment({ deliverableId: `way_${receivedMinor}`, stage: "captured", payout: { state: "sending" }, paidAt: undefined, receivedMinor });
 
 describe("HM-FR-23, HM-FR-24 the page and the year", () => {

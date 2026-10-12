@@ -41,12 +41,12 @@ function NothingPaid({ rows }: { rows: PaymentRow[] }) {
 /**
  * Payments at `/payments`: the line for the year, "Paid each month", and the
  * payment history with Download CSV; before anything is paid, a line saying
- * so. Only routed with the payments flag on (HM-FR-20).
+ * so.
  *
  * @see docs/specs/creator-home-frd.md HM-FR-12, HM-FR-16 to HM-FR-19, HM-FR-23, HM-FR-24, HM-FR-26; design/home/payments.html (option 2)
  */
 export function PaymentsPage() {
-  const { load, retry } = usePayments(true);
+  const { load, retry } = usePayments();
   const rows = load.status === "ready" ? load.rows : [];
   const history = historyRows(rows, timeZone);
   const year = yearReceived(rows, new Date(), timeZone);
