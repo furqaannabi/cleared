@@ -57,9 +57,9 @@ function Card({ row }: { row: HistoryRow }) {
 export function PaymentHistory({ rows, timeZone }: { rows: HistoryRow[]; timeZone: string }) {
   const wide = useMediaQuery("(min-width: 768px)");
   return (
-    <section aria-labelledby="home-history" className="mt-7">
+    <section aria-labelledby="pay-history" className="mt-7">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="home-history" className="font-head text-section-title font-bold">
+        <h2 id="pay-history" className="font-head text-section-title font-bold">
           Payment history
         </h2>
         <button

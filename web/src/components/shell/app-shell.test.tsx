@@ -87,25 +87,45 @@ describe("DC-FR-31 app shell", () => {
 });
 
 
-describe("DC-FR-31 (1.19) Home", () => {
-  test("Home links to /deals in the rail and the Deals sheet, marked current on home", async () => {
+describe("DC-FR-31 (1.21) Overview and Payments", () => {
+  test("Overview links to /deals and Payments to /payments, in the rail and the Deals sheet, each marked current on its page", async () => {
     screenWidth(1280);
     const { unmount } = render(
-      <AppShell currentDealId={null} home>
-        <p>Home</p>
+      <AppShell currentDealId={null} page="payments" payments>
+        <p>Payments</p>
       </AppShell>,
     );
     const rail = screen.getByRole("complementary", { name: "Main" });
-    const home = within(rail).getByRole("link", { name: "Home" });
-    expect(home).toHaveAttribute("href", "/deals");
-    expect(home).toHaveAttribute("aria-current", "page");
+    const links = within(rail).getAllByRole("link").map((l) => l.textContent);
+    expect(links.indexOf("Payments")).toBe(links.indexOf("Overview") + 1);
+    expect(within(rail).getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/deals");
+    expect(within(rail).getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current");
+    expect(within(rail).getByRole("link", { name: "Payments" })).toHaveAttribute("href", "/payments");
+    expect(within(rail).getByRole("link", { name: "Payments" })).toHaveAttribute("aria-current", "page");
     unmount();
     screenWidth(375);
-    shell();
+    render(
+      <AppShell currentDealId={null} page="overview" payments>
+        <p>Overview</p>
+      </AppShell>,
+    );
     await userEvent.click(screen.getByRole("button", { name: "Deals" }));
-    const sheetHome = within(await screen.findByRole("dialog", { name: "Deals" })).getByRole("link", { name: "Home" });
-    expect(sheetHome).toHaveAttribute("href", "/deals");
-    expect(sheetHome).not.toHaveAttribute("aria-current");
+    const sheet = await screen.findByRole("dialog", { name: "Deals" });
+    expect(within(sheet).getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(within(sheet).getByRole("link", { name: "Payments" })).toHaveAttribute("href", "/payments");
+    expect(within(sheet).queryByRole("link", { name: "Home" })).toBeNull();
+  });
+
+  test("with the payments flag off there is no Payments link", () => {
+    screenWidth(1280);
+    render(
+      <AppShell currentDealId={null} page="overview" payments={false}>
+        <p>Overview</p>
+      </AppShell>,
+    );
+    const rail = screen.getByRole("complementary", { name: "Main" });
+    expect(within(rail).getByRole("link", { name: "Overview" })).toBeVisible();
+    expect(within(rail).queryByRole("link", { name: "Payments" })).toBeNull();
   });
 });
 

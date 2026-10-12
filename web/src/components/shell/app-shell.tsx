@@ -6,6 +6,7 @@ import { AccountMenu } from "@/components/session/account-menu";
 import { SignedIn } from "@/components/session/signed-in";
 import { SessionProvider } from "@/components/session/use-session";
 import { Sheet } from "@/components/ui/sheet";
+import { PAYMENTS } from "@/lib/home/flag";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { DealsNav } from "./deals-nav";
 import { Logo } from "./logo";
@@ -14,19 +15,20 @@ import { DealsProvider, useDeals, type DealsLoad } from "./use-deals";
 /**
  * The creator app's frame: an espresso rail with the logo and the deals on
  * desktop (1024px and up); below that, an espresso top bar whose "Deals"
- * button opens the deals as a full-screen sheet. "Home" (the creator's home,
- * where payouts live) is the first link after New deal in both.
+ * button opens the deals as a full-screen sheet. "Overview" and, with the
+ * payments flag on, "Payments" are the first links after New deal in both.
  *
  * @param currentDealId - the deal being viewed, marked in the list
- * @param home - true on home, to mark Home current
+ * @param page - "overview" or "payments" on those pages, to mark its link current
+ * @param payments - whether the Payments page exists (the build flag; tests)
  * @param children - the page
- * @see docs/specs/creator-draft-check-frd.md DC-FR-31; docs/specs/creator-home-frd.md HM-FR-01; DESIGN.md "Navigation", "Layout"
+ * @see docs/specs/creator-draft-check-frd.md DC-FR-31; docs/specs/creator-home-frd.md HM-FR-01, HM-FR-23; DESIGN.md "Navigation", "Layout"
  */
-export function AppShell(props: { currentDealId: string | null; home?: boolean; children: ReactNode }) {
+export function AppShell(props: { currentDealId: string | null; page?: Page; payments?: boolean; children: ReactNode }) {
   return (
     <SessionProvider>
       <DealsProvider>
-        <Frame currentDealId={props.currentDealId} home={props.home ?? false}>
+        <Frame currentDealId={props.currentDealId} page={props.page ?? null} payments={props.payments ?? PAYMENTS}>
           <SignedIn>{props.children}</SignedIn>
         </Frame>
       </DealsProvider>
@@ -35,7 +37,9 @@ export function AppShell(props: { currentDealId: string | null; home?: boolean; 
 }
 
 
-function Frame({ currentDealId, home, children }: { currentDealId: string | null; home: boolean; children: ReactNode }) {
+type Page = "overview" | "payments";
+
+function Frame({ currentDealId, page, payments, children }: { currentDealId: string | null; page: Page | null; payments: boolean; children: ReactNode }) {
   const desktop = useMediaQuery("(min-width: 1024px)");
   const deals = useDeals();
 
@@ -51,8 +55,8 @@ function Frame({ currentDealId, home, children }: { currentDealId: string | null
           <span className="mt-[22px] px-0.5">
             <NewDealLink tone="rail" />
           </span>
-          <span className="mt-2.5 px-0.5">
-            <HomeLink tone="rail" current={home} />
+          <span className="mt-2.5 grid gap-1 px-0.5">
+            <PageLinks tone="rail" page={page} payments={payments} />
           </span>
           {/* A label, not a heading: the nav below is named "Deals", and the page's h1 comes first. */}
           <p aria-hidden="true" className="mx-2.5 mt-[26px] mb-2 text-nav-section font-bold tracking-[0.08em] text-white/70 uppercase">
@@ -90,8 +94,8 @@ function Frame({ currentDealId, home, children }: { currentDealId: string | null
           <div className="mb-4">
             <NewDealLink tone="sheet" />
           </div>
-          <div className="mb-2">
-            <HomeLink tone="sheet" current={home} />
+          <div className="mb-2 grid gap-1">
+            <PageLinks tone="sheet" page={page} payments={payments} />
           </div>
           <DealsBody load={deals} currentDealId={currentDealId} tone="sheet" />
           <div className="mt-6">
@@ -123,21 +127,46 @@ function SkipLink() {
   );
 }
 
-/** HM-FR-01, DC-FR-31 (1.19): the creator's home, marked current there. */
-function HomeLink({ tone, current }: { tone: "rail" | "sheet"; current: boolean }) {
+/** HM-FR-01, HM-FR-23, DC-FR-31 (1.21): Overview, then Payments with the flag on, each marked current on its page. */
+function PageLinks({ tone, page, payments }: { tone: "rail" | "sheet"; page: Page | null; payments: boolean }) {
+  return (
+    <>
+      <PageLink tone={tone} href="/deals" current={page === "overview"} icon={<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />}>
+        Overview
+      </PageLink>
+      {payments && (
+        <PageLink
+          tone={tone}
+          href="/payments"
+          current={page === "payments"}
+          icon={
+            <>
+              <rect x="3" y="6" width="18" height="13" rx="2" />
+              <path d="M3 10h18M7 15h4" />
+            </>
+          }
+        >
+          Payments
+        </PageLink>
+      )}
+    </>
+  );
+}
+
+function PageLink({ tone, href, current, icon, children }: { tone: "rail" | "sheet"; href: string; current: boolean; icon: ReactNode; children: ReactNode }) {
   const rail = tone === "rail";
   return (
     <Link
-      href="/deals"
+      href={href}
       aria-current={current ? "page" : undefined}
       className={`flex min-h-11 items-center gap-2.5 rounded-nav px-2.5 text-body-strong font-bold ${
         rail ? `text-white/95 hover:bg-white/8 ${current ? "bg-white/14 text-white" : ""}` : `text-ink hover:bg-latte-wash ${current ? "bg-latte" : ""}`
       }`}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-[18px]">
-        <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+        {icon}
       </svg>
-      Home
+      {children}
     </Link>
   );
 }

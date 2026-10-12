@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { figureTrends, paidEachMonth } from "./months";
+import { figureTrends, paidEachMonth, yearReceived as yearLine } from "./months";
 import { aPayment } from "./test-rows";
 
 const NOW = new Date("2026-10-12T09:00:00.000Z");
@@ -43,5 +43,37 @@ describe("HM-FR-13 trend lines", () => {
 
   test("fewer than three months gives no line", () => {
     expect(figureTrends([post("09", true), post("10", true)], "UTC").onTime).toBeUndefined();
+  });
+});
+
+describe("HM-FR-24 the year", () => {
+  const yearReceived = (...a: Parameters<typeof yearLine>) => {
+    const y = yearLine(...a);
+    return y && `${y.total}${y.rest}`;
+  };
+  const now = new Date("2026-10-12T10:00:00Z");
+
+  test("adds what was received from posts paid this calendar year, with the count", () => {
+    const rows = [
+      aPayment({ deliverableId: "a", receivedMinor: 76000, paidAt: "2026-10-09T12:00:00Z" }),
+      aPayment({ deliverableId: "b", receivedMinor: 99750, paidAt: "2026-03-01T12:00:00Z" }),
+      aPayment({ deliverableId: "c", receivedMinor: 50000, paidAt: "2025-12-20T12:00:00Z" }),
+      aPayment({ deliverableId: "d", stage: "captured", payout: { state: "sending" }, paidAt: undefined }),
+    ];
+    expect(yearReceived(rows, now, "UTC")).toBe("$1,757.50 received in 2026 · 2 posts");
+  });
+
+  test("one post is “1 post”", () => {
+    expect(yearReceived([aPayment()], now, "UTC")).toBe("$760.00 received in 2026 · 1 post");
+  });
+
+  test("left out while nothing has been paid this year", () => {
+    expect(yearReceived([aPayment({ paidAt: "2025-12-20T12:00:00Z" })], new Date("2026-01-03T10:00:00Z"), "UTC")).toBeNull();
+  });
+
+  test("the year is the creator's: a payout late on 31 December in Lagos is the old year there", () => {
+    const rows = [aPayment({ paidAt: "2025-12-31T23:30:00Z" })];
+    expect(yearReceived(rows, new Date("2026-01-01T10:00:00Z"), "Africa/Lagos")).toBe("$760.00 received in 2026 · 1 post");
+    expect(yearReceived(rows, new Date("2026-01-01T10:00:00Z"), "America/New_York")).toBeNull();
   });
 });
