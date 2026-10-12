@@ -19,6 +19,7 @@ A spec is signed only when William or Furqaan says so after reading it. No code 
 | [Cancel](cancel-frd.md) | CN | Both sides, from the invite until the go-ahead: cancelling a post or the deal, the note to the other side, and the cancelled and closed states | William | Signed by William (1.2) |
 | [Sign-in and welcome](sign-in-frd.md) | SI | Creator app: Sign in with Google, the welcome page, the sign-in page, the account menu | William | Signed by William (1.3) |
 | [Creator home](creator-home-frd.md) | HM | Creator app: home at `/deals`: the money overview, performance figures, charts, deals with Needs you first, and the payment history with its CSV (money sections behind a flag) | William | Signed by William (1.1) |
+| [Error pages](error-pages-frd.md) | EP | Not found, something went wrong and the whole-app fallback, for anyone | William | Signed by William (1.0) |
 | [Legal pages](legal-pages-frd.md) | LG | `/privacy`, `/terms` and `/data-deletion`, for creators and brands, and where they are linked (behind a flag until Furqaan gives the retention periods) | William | Signed by William (1.0) |
 | [Settings](settings-frd.md) | ST | Creator app: `/settings`: the signed-in email, the PayPal email, connected accounts, sign out, and (behind a flag) disconnecting and deleting the account | William | Signed by William (1.2) |
 | [Deal set-up](deal-setup-frd.md) | DS | Backend: steps 1 to 3 as an API (sign-in, deals, brief to checklist, the invite and the brand's link, change requests, agreeing, and the hold routes) | Furqaan | Signed by Furqaan (1.2) |
