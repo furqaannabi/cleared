@@ -4,9 +4,10 @@ import { Seal } from "@/components/ui/seal";
  * The Cleared wordmark: a marigold seal with a check, and the name in Bricolage (DESIGN.md "Navigation").
  *
  * @param compact - the smaller size, for the phone top bar
+ * @param mark - the seal alone, for the folded rail (DC-FR-55)
  * @param tone - "dark" (white name, for espresso) or "light" (ink name, for the landing page's light ground)
  */
-export function Logo({ compact = false, tone = "dark" }: { compact?: boolean; tone?: "dark" | "light" }) {
+export function Logo({ compact = false, tone = "dark", mark = false }: { compact?: boolean; tone?: "dark" | "light"; mark?: boolean }) {
   return (
     <span
       className={`flex items-center gap-2.5 font-head font-extrabold ${tone === "light" ? "text-ink" : "text-white"} ${compact ? "text-logo-compact" : "text-logo"}`}
@@ -16,7 +17,7 @@ export function Logo({ compact = false, tone = "dark" }: { compact?: boolean; to
           <path d="M20 6 9 17l-5-5" />
         </svg>
       </Seal>
-      Cleared
+      {!mark && "Cleared"}
     </span>
   );
 }

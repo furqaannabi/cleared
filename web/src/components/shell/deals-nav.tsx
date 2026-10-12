@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { z } from "zod";
 import type { dealsSchema } from "@/lib/api/schemas";
+import { RailTip } from "./rail-tip";
 
 type DealSummary = z.infer<typeof dealsSchema>[number];
 
@@ -25,16 +26,19 @@ const initials = (name: string) =>
  * @param deals - the creator's deals
  * @param currentDealId - the deal being viewed
  * @param tone - "rail" for the espresso rail, "sheet" for the light sheet
- * @see docs/specs/creator-draft-check-frd.md DC-FR-31; DESIGN.md "Navigation"
+ * @param slim - the folded rail: the avatar alone, the brand as its name and tooltip, no status (DC-FR-55)
+ * @see docs/specs/creator-draft-check-frd.md DC-FR-31, DC-FR-55; DESIGN.md "Navigation"
  */
 export function DealsNav({
   deals,
   currentDealId,
   tone = "rail",
+  slim = false,
 }: {
   deals: DealSummary[];
   currentDealId: string | null;
   tone?: "rail" | "sheet";
+  slim?: boolean;
 }) {
   const rail = tone === "rail";
   return (
@@ -47,7 +51,7 @@ export function DealsNav({
               <Link
                 href={`/deals/${encodeURIComponent(deal.id)}`}
                 aria-current={current ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-2.5 rounded-nav px-2.5 py-2 transition-colors ${
+                className={`group relative flex min-h-11 items-center gap-2.5 rounded-nav py-2 transition-colors ${slim ? "justify-center px-0" : "px-2.5"} ${
                   rail
                     ? `text-white/95 hover:bg-white/8 ${current ? "bg-white/14 text-white" : ""}`
                     : `text-ink hover:bg-latte-wash ${current ? "bg-latte" : ""}`
@@ -56,12 +60,19 @@ export function DealsNav({
                 <span aria-hidden="true" className={`grid size-7 flex-none place-items-center rounded-full text-label font-extrabold ${TINTS[i % TINTS.length]}`}>
                   {initials(deal.brandName)}
                 </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-body-strong font-semibold">{deal.brandName}</span>
-                  <span className={`block truncate text-label font-medium ${rail ? (current ? "text-white/95" : "text-white/70") : "text-ink-3"}`}>
-                    {deal.status}
+                {slim ? (
+                  <>
+                    <span className="sr-only">{deal.brandName}</span>
+                    <RailTip>{deal.brandName}</RailTip>
+                  </>
+                ) : (
+                  <span className="min-w-0">
+                    <span className="block truncate text-body-strong font-semibold">{deal.brandName}</span>
+                    <span className={`block truncate text-label font-medium ${rail ? (current ? "text-white/95" : "text-white/70") : "text-ink-3"}`}>
+                      {deal.status}
+                    </span>
                   </span>
-                </span>
+                )}
               </Link>
             </li>
           );

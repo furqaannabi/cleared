@@ -12,9 +12,10 @@ import { useOptionalSession } from "./use-session";
  * and returns focus to the name.
  *
  * @param tone - "rail" on espresso, "sheet" on the light deals sheet
+ * @param slim - the folded rail: the avatar alone, named for the creator, with the menu opening wider beside it (DC-FR-55)
  * @see docs/specs/sign-in-frd.md SI-FR-11, SI-FR-12; design/sign-in/shared.html
  */
-export function AccountMenu({ tone }: { tone: "rail" | "sheet" }) {
+export function AccountMenu({ tone, slim = false }: { tone: "rail" | "sheet"; slim?: boolean }) {
   const session = useOptionalSession();
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
@@ -46,7 +47,10 @@ export function AccountMenu({ tone }: { tone: "rail" | "sheet" }) {
       }}
     >
       {open && (
-        <div id={id} className="absolute right-0 bottom-full left-0 mb-2 grid rounded-[14px] bg-surface p-1.5 text-ink shadow-[0_12px_32px_rgb(0_0_0/0.35)]">
+        <div
+          id={id}
+          className={`absolute bottom-full left-0 z-30 mb-2 grid rounded-[14px] bg-surface p-1.5 text-ink shadow-[0_12px_32px_rgb(0_0_0/0.35)] ${slim ? "w-[220px]" : "right-0"}`}
+        >
           <span className="border-b border-line-soft px-3 pt-2.5 pb-2 text-[13px] text-ink-3">{me.email}</span>
           {/* SI-FR-11 (1.2): Settings between the email and Sign out. */}
           <Link href="/settings" className="flex min-h-11 items-center rounded-[10px] px-3 font-bold text-espresso hover:bg-latte-wash">
@@ -63,16 +67,22 @@ export function AccountMenu({ tone }: { tone: "rail" | "sheet" }) {
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => setOpen((o) => !o)}
-        className={`grid min-h-11 w-full grid-cols-[30px_minmax(0,1fr)_16px] items-center gap-x-2.5 rounded-[12px] p-2 text-left ${rail ? "bg-white/[0.08] text-white hover:bg-white/[0.14]" : "border border-line bg-surface text-ink"}`}
+        className={`grid min-h-11 w-full items-center gap-x-2.5 rounded-[12px] p-2 text-left ${slim ? "grid-cols-[30px] justify-center" : "grid-cols-[30px_minmax(0,1fr)_16px]"} ${rail ? "bg-white/[0.08] text-white hover:bg-white/[0.14]" : "border border-line bg-surface text-ink"}`}
       >
         <span aria-hidden="true" className="row-span-2 grid size-[30px] place-items-center rounded-full bg-marigold text-[12px] font-extrabold text-espresso-ink">
           {initials}
         </span>
-        <b className="col-start-2 truncate text-[14.5px]">{me.name}</b>
-        <span className={`col-start-2 truncate text-[12.5px] ${rail ? "text-white/70" : "text-ink-3"}`}>Creator</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden="true" className={`col-start-3 row-span-2 row-start-1 size-4 transition-transform ${open ? "" : "rotate-180"}`}>
-          <path d="m6 15 6-6 6 6" />
-        </svg>
+        {slim ? (
+          <span className="sr-only">{me.name}</span>
+        ) : (
+          <>
+            <b className="col-start-2 truncate text-[14.5px]">{me.name}</b>
+            <span className={`col-start-2 truncate text-[12.5px] ${rail ? "text-white/70" : "text-ink-3"}`}>Creator</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden="true" className={`col-start-3 row-span-2 row-start-1 size-4 transition-transform ${open ? "" : "rotate-180"}`}>
+              <path d="m6 15 6-6 6 6" />
+            </svg>
+          </>
+        )}
       </button>
     </div>
   );

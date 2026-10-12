@@ -124,3 +124,60 @@ describe("DC-FR-31 (1.20) the logo", () => {
     expect(screen.getByRole("link", { name: "Cleared, home page" })).toHaveAttribute("href", "/");
   });
 });
+
+describe("DC-FR-55 (1.23) folding the rail", () => {
+  const rail = () => screen.getByRole("complementary", { name: "Main" });
+  const open = () =>
+    render(
+      <AppShell currentDealId="deal_glow" page="overview">
+        <p>Page content</p>
+        <input aria-label="A field" />
+      </AppShell>,
+    );
+  afterEach(() => window.localStorage.clear());
+
+  test("the button folds it to icons that keep their names, drops the deals' status, and is remembered", async () => {
+    screenWidth(1280);
+    const { unmount } = open();
+    const fold = within(rail()).getByRole("button", { name: "Collapse sidebar" });
+    expect(fold).toHaveAttribute("aria-expanded", "true");
+    expect(await within(rail()).findByText("Draft check")).toBeVisible();
+    await userEvent.click(fold);
+    const unfold = within(rail()).getByRole("button", { name: "Expand sidebar" });
+    expect(unfold).toHaveAttribute("aria-expanded", "false");
+    for (const name of ["New deal", "Overview", "Payments", "Glow Theory"]) expect(within(rail()).getByRole("link", { name: new RegExp(name) })).toBeInTheDocument();
+    expect(within(rail()).queryByText("Draft check")).toBeNull();
+    unmount();
+    open();
+    expect(within(rail()).getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+  });
+
+  test("[ folds and unfolds it, but not while typing in a field", async () => {
+    screenWidth(1280);
+    open();
+    await userEvent.keyboard("[[");
+    expect(within(rail()).getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+    await userEvent.click(screen.getByRole("textbox", { name: "A field" }));
+    await userEvent.keyboard("[[");
+    expect(within(rail()).getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+    await userEvent.click(screen.getByText("Page content"));
+    await userEvent.keyboard("[[");
+    expect(within(rail()).getByRole("button", { name: "Collapse sidebar" })).toBeVisible();
+  });
+
+  test("with storage blocked it opens unfolded", () => {
+    screenWidth(1280);
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    open();
+    expect(within(rail()).getByRole("button", { name: "Collapse sidebar" })).toBeVisible();
+    vi.restoreAllMocks();
+  });
+
+  test("below lg: there is nothing to fold", () => {
+    screenWidth(375);
+    open();
+    expect(screen.queryByRole("button", { name: /Collapse sidebar|Expand sidebar/ })).toBeNull();
+  });
+});

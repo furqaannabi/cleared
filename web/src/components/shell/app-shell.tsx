@@ -7,8 +7,10 @@ import { SignedIn } from "@/components/session/signed-in";
 import { SessionProvider } from "@/components/session/use-session";
 import { Sheet } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { useRailFolded } from "@/lib/hooks/use-rail-folded";
 import { DealsNav } from "./deals-nav";
 import { Logo } from "./logo";
+import { RailTip } from "./rail-tip";
 import { DealsProvider, useDeals, type DealsLoad } from "./use-deals";
 
 /**
@@ -40,30 +42,37 @@ type Page = "overview" | "payments";
 function Frame({ currentDealId, page, children }: { currentDealId: string | null; page: Page | null; children: ReactNode }) {
   const desktop = useMediaQuery("(min-width: 1024px)");
   const deals = useDeals();
+  // DC-FR-55 (1.23): the rail can fold to its icons, for a wider page.
+  const [folded, toggleFolded] = useRailFolded();
 
   if (desktop) {
     return (
-      <div className="grid min-h-dvh grid-cols-[248px_minmax(0,1fr)]">
+      <div
+        className={`grid min-h-dvh transition-[grid-template-columns] duration-200 ease-out motion-reduce:transition-none ${folded ? "grid-cols-[64px_minmax(0,1fr)]" : "grid-cols-[248px_minmax(0,1fr)]"}`}
+      >
         <SkipLink />
-        <aside aria-label="Main" className="sticky top-0 flex h-dvh flex-col bg-espresso-deep px-3.5 py-[22px]">
+        <aside aria-label="Main" className={`sticky top-0 z-20 flex h-dvh flex-col bg-espresso-deep py-[22px] ${folded ? "px-2" : "px-3.5"}`}>
           {/* DC-FR-31 (1.20): the logo goes to the landing page. */}
-          <Link href="/" aria-label="Cleared, home page" className="self-start rounded-nav px-2.5">
-            <Logo />
+          <Link href="/" aria-label="Cleared, home page" className={`rounded-nav ${folded ? "self-center px-1.5" : "self-start px-2.5"}`}>
+            <Logo mark={folded} />
           </Link>
-          <span className="mt-[22px] px-0.5">
-            <NewDealLink tone="rail" />
+          <span className="mt-[22px] grid gap-1 px-0.5">
+            <NewDealLink tone="rail" slim={folded} />
+            <PageLinks tone="rail" page={page} slim={folded} />
           </span>
-          <span className="mt-2.5 grid gap-1 px-0.5">
-            <PageLinks tone="rail" page={page} />
-          </span>
-          {/* A label, not a heading: the nav below is named "Deals", and the page's h1 comes first. */}
-          <p aria-hidden="true" className="mx-2.5 mt-[26px] mb-2 text-nav-section font-bold tracking-[0.08em] text-white/70 uppercase">
-            Deals
-          </p>
-          <DealsBody load={deals} currentDealId={currentDealId} tone="rail" />
-          {/* SI-FR-11: the creator's name, with Sign out, at the foot of the rail. */}
-          <div className="mt-auto pt-4">
-            <AccountMenu tone="rail" />
+          {/* A label, not a heading: the nav below is named "Deals", and the page's h1 comes first. Set well apart from the links above. */}
+          {folded ? (
+            <span aria-hidden="true" className="mx-2 mt-10 mb-2 border-t border-white/12" />
+          ) : (
+            <p aria-hidden="true" className="mx-2.5 mt-10 mb-2 text-nav-section font-bold tracking-[0.08em] text-white/70 uppercase">
+              Deals
+            </p>
+          )}
+          <DealsBody load={deals} currentDealId={currentDealId} tone="rail" slim={folded} />
+          {/* SI-FR-11: the creator's name, with Sign out, at the foot of the rail; DC-FR-55: the fold above it. */}
+          <div className="mt-auto grid gap-2 pt-4">
+            <FoldButton folded={folded} onToggle={toggleFolded} />
+            <AccountMenu tone="rail" slim={folded} />
           </div>
         </aside>
         <div className="min-w-0">{children}</div>
@@ -89,10 +98,8 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
             </button>
           }
         >
-          <div className="mb-4">
+          <div className="mb-8 grid gap-1">
             <NewDealLink tone="sheet" />
-          </div>
-          <div className="mb-2 grid gap-1">
             <PageLinks tone="sheet" page={page} />
           </div>
           <DealsBody load={deals} currentDealId={currentDealId} tone="sheet" />
@@ -106,8 +113,10 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
   );
 }
 
-function DealsBody({ load, currentDealId, tone }: { load: DealsLoad; currentDealId: string | null; tone: "rail" | "sheet" }) {
-  if (load.status === "ready") return <DealsNav deals={load.deals} currentDealId={currentDealId} tone={tone} />;
+function DealsBody({ load, currentDealId, tone, slim = false }: { load: DealsLoad; currentDealId: string | null; tone: "rail" | "sheet"; slim?: boolean }) {
+  if (load.status === "ready") return <DealsNav deals={load.deals} currentDealId={currentDealId} tone={tone} slim={slim} />;
+  // Folded, the rail has no room for these words; the page says what's wrong.
+  if (slim) return null;
   const text = tone === "rail" ? "text-white/70" : "text-ink-3";
   if (load.status === "error") return <p className={`px-2.5 text-meta ${text}`}>We couldn’t load your deals.</p>;
   return <p className={`px-2.5 text-meta ${text}`}>Loading your deals…</p>;
@@ -126,14 +135,15 @@ function SkipLink() {
 }
 
 /** HM-FR-01, HM-FR-23, DC-FR-31 (1.22): Overview, then Payments, each marked current on its page. */
-function PageLinks({ tone, page }: { tone: "rail" | "sheet"; page: Page | null }) {
+function PageLinks({ tone, page, slim = false }: { tone: "rail" | "sheet"; page: Page | null; slim?: boolean }) {
   return (
     <>
-      <PageLink tone={tone} href="/deals" current={page === "overview"} icon={<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />}>
+      <PageLink tone={tone} slim={slim} href="/deals" current={page === "overview"} icon={<path d="M5 20V12M12 20V5M19 20v-9" />}>
         Overview
       </PageLink>
       <PageLink
         tone={tone}
+        slim={slim}
         href="/payments"
         current={page === "payments"}
         icon={
@@ -149,38 +159,70 @@ function PageLinks({ tone, page }: { tone: "rail" | "sheet"; page: Page | null }
   );
 }
 
-function PageLink({ tone, href, current, icon, children }: { tone: "rail" | "sheet"; href: string; current: boolean; icon: ReactNode; children: ReactNode }) {
+function PageLink({
+  tone,
+  href,
+  current,
+  icon,
+  slim = false,
+  children,
+}: {
+  tone: "rail" | "sheet";
+  href: string;
+  current: boolean;
+  icon: ReactNode;
+  slim?: boolean;
+  children: string;
+}) {
   const rail = tone === "rail";
   return (
     <Link
       href={href}
       aria-current={current ? "page" : undefined}
-      className={`flex min-h-11 items-center gap-2.5 rounded-nav px-2.5 text-body-strong font-bold ${
+      className={`group relative flex min-h-11 items-center gap-2.5 rounded-nav text-body-strong font-bold ${slim ? "justify-center px-0" : "px-2.5"} ${
         rail ? `text-white/95 hover:bg-white/8 ${current ? "bg-white/14 text-white" : ""}` : `text-ink hover:bg-latte-wash ${current ? "bg-latte" : ""}`
       }`}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-[18px]">
         {icon}
       </svg>
-      {children}
+      {/* DC-FR-55: folded, the name is for screen readers and the tooltip. */}
+      <span className={slim ? "sr-only" : undefined}>{children}</span>
+      {slim && <RailTip>{children}</RailTip>}
     </Link>
   );
 }
 
-/** BC-FR-01: start a new deal, from the rail (marigold on espresso) or the phone Deals sheet. */
-function NewDealLink({ tone }: { tone: "rail" | "sheet" }) {
+/** BC-FR-01: start a new deal, a row like Overview and Payments in the rail and the phone Deals sheet. */
+function NewDealLink({ tone, slim = false }: { tone: "rail" | "sheet"; slim?: boolean }) {
   return (
-    <Link
-      href="/deals/new"
-      className={`flex min-h-11 items-center justify-center gap-1.5 rounded-nav font-extrabold ${
-        tone === "rail" ? "bg-marigold text-marigold-ink hover:bg-marigold-chip" : "bg-espresso text-surface hover:bg-espresso-hover"
-      }`}
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" aria-hidden="true" className="size-4">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
+    <PageLink tone={tone} slim={slim} href="/deals/new" current={false} icon={<path d="M12 5v14M5 12h14" />}>
       New deal
-    </Link>
+    </PageLink>
   );
 }
 
+/**
+ * Folds the desktop rail to its icons and back (DC-FR-55), named for what it
+ * does next, with `aria-expanded` saying whether the rail is open.
+ */
+function FoldButton({ folded, onToggle }: { folded: boolean; onToggle: () => void }) {
+  const label = folded ? "Expand sidebar" : "Collapse sidebar";
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={!folded}
+      aria-label={label}
+      className={`group relative flex min-h-11 items-center gap-2.5 rounded-nav text-[13.5px] font-semibold text-white/70 hover:bg-white/8 hover:text-white ${folded ? "justify-center" : "px-2.5"}`}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-[18px]">
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M9 4v16" />
+        <path d={folded ? "M13 10l2 2-2 2" : "M15 10l-2 2 2 2"} />
+      </svg>
+      {!folded && <span aria-hidden="true">Collapse</span>}
+      {folded && <RailTip>Expand sidebar</RailTip>}
+    </button>
+  );
+}
