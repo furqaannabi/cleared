@@ -1,6 +1,6 @@
 # Sign-in and welcome: FRD
 
-**Status:** Signed by William (revision 1.3). The sign-in itself is the backend's (Furqaan's [deal set-up](deal-setup-frd.md)).
+**Status:** Signed by William (revision 1.4). The sign-in itself is the backend's (Furqaan's [deal set-up](deal-setup-frd.md)).
 
 **Surface:** How a creator gets into the creator app, and their first minute in it. The landing's "Sign in with Google", `/sign-in` for a signed-out visitor, `/welcome` the first time, and the account menu on the creator's name in the rail. The brand's side is unchanged: it gets in by its link ([brand access](../decisions/2026-10-08-brand-access-by-link-session.md)).
 
@@ -46,7 +46,7 @@ The landing offers one way in. "Sign in with Google" signs a creator in through 
 
 | ID | Requirement |
 | --- | --- |
-| SI-FR-01 | **Sign in with Google.** A primary button "Sign in with Google" (the Google mark, 48 px) that is a plain link to the backend's `GET /auth/google?next=`; the page holds no Google code. Under it: "Instagram-only? Sign in with any Google account, then connect your Instagram." Nothing else sits beside it or under it. (1.1) (1.3) With `NEXT_PUBLIC_LEGAL_PAGES` on, under that: "By signing in you agree to the terms and privacy policy.", with "terms" linking to `/terms` and "privacy policy" to `/privacy` ([legal pages](legal-pages-frd.md) LG-FR-15). |
+| SI-FR-01 | **Sign in with Google.** A primary button "Sign in with Google" (the Google mark, 48 px) that is a plain link to the backend's `GET /auth/google?next=`; the page holds no Google code. Under it: "Instagram-only? Sign in with any Google account, then connect your Instagram." Nothing else sits beside it or under it. (1.1) (1.3) With `NEXT_PUBLIC_LEGAL_PAGES` on, under that: "By signing in you agree to the terms and privacy policy.", with "terms" linking to `/terms` and "privacy policy" to `/privacy` ([legal pages](legal-pages-frd.md) LG-FR-15). (1.4) The legal pages' flag is retired (LG 1.1), so these links always show. |
 | SI-FR-02 | *Removed in 1.1: there is no demo account ([no demo accounts](../decisions/2026-10-11-no-demo-accounts.md)).* |
 | SI-FR-03 | **Where it lands.** A first Google sign-in lands on `/welcome`; later ones on `/deals`, or on the page they were going to (SI-FR-06). (1.1) |
 | SI-FR-04 | **Who is signed in.** Every creator page reads `GET /me`: the creator's name, email, and whether the welcome has been seen. While it loads, the app's loading state; if it fails for any reason other than "not signed in", Try again. (1.1: no demo flag.) |
@@ -158,3 +158,5 @@ POST /me/welcomed                 // marks the welcome seen
 | 1.2 signed | Revision 1.2 signed by William | none |
 | 1.3 | From the legal pages grill-me: the terms line under Sign in with Google, behind the legal flag ([legal pages](legal-pages-frd.md)) | none |
 | 1.3 signed | Revision 1.3 signed by William | none |
+| 1.4 | The legal pages' flag is retired (LG 1.1): the terms line under Sign in with Google always shows | none |
+| 1.4 signed | Revision 1.4 signed by William | none |

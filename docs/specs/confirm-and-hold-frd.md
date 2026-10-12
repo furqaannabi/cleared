@@ -1,6 +1,6 @@
 # Confirm and hold: FRD
 
-**Status:** Signed by William (revision 1.7).
+**Status:** Signed by William (revision 1.8).
 
 **Surface:** Both sides of step 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's deal page:** the brand opens the creator's link, reads the terms and every checklist with where each item came from, asks for changes or agrees, then approves one PayPal hold per post. **The creator's side:** the brand's notes beside what they're about, "Send updated terms", and each post's hold as it comes in.
 
@@ -80,7 +80,7 @@ The brand can "Ask for a change" on any item, line left out, amount or deadline,
 | CH-FR-02 | **A link that doesn't work.** Expired, turned off or unknown, the page says one thing: "This link doesn't work any more. Ask the creator who sent it for a new one." It names no creator or brand and gives no reason. |
 | CH-FR-03 | **No session.** `/brand/deals/{dealId}` without a session for that deal says "Open the link {creator} sent you again." (or, when the API can't name the creator, "Open the link you were sent again."). It never offers sign-in. 1.4: the API answers 401 with no session; the page shows this message for it, never "Check your connection". |
 | CH-FR-29 | **The session ends during an action (1.4).** When the API answers 401 to sending notes, agreeing or starting or finishing a hold, the action's own place says "Your access to this deal has ended. Open the link {creator} sent you, then try again here." ("the link you were sent" when the creator's name isn't known). Nothing on the page is cleared: unsent notes, the brand's email and the open confirmation stay, so after opening the link in another tab the same action can be tried again here. Cancelling gets the same in the cancel FRD's slice. |
-| CH-FR-30 | **Legal links (1.5).** With `NEXT_PUBLIC_LEGAL_PAGES` on, the brand's deal page and its review pages ([brand review](brand-review-frd.md)) end with a quiet footer: "Privacy", "Terms" and "Data deletion", linking to `/privacy`, `/terms` and `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-15). |
+| CH-FR-30 | **Legal links (1.5).** With `NEXT_PUBLIC_LEGAL_PAGES` on, the brand's deal page and its review pages ([brand review](brand-review-frd.md)) end with a quiet footer: "Privacy", "Terms" and "Data deletion", linking to `/privacy`, `/terms` and `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-15). (1.8) The legal pages' flag is retired (LG 1.1), so these links always show. |
 | CH-FR-31 | **How your money is held (1.6).** Directly under "How payment works" in the brand's terms, a panel "How your money is held": folded on phones ("How your money is held · Read", a 44 px toggle) and open from `md:`. It says, each from PRODUCT.md's rules: "PayPal reserves the amount for each post. Nothing is taken from your account yet." · "It's taken only after {creator}'s post is live and passes its check, and never more than you approved." · "It comes back to you if {creator} misses the deadline, if either of you cancels before {creator} is told to publish, or on day 28 at the latest." · "You pay the amounts above and nothing more. Cleared's 5% fee comes out of {creator}'s payout." · "This is PayPal's sandbox. No real money moves." It never claims how PayPal's own screens show a hold (still to be verified in the sandbox, money path FRD). |
 | CH-FR-32 | **Before approving (1.6).** After agreeing, above the "Approve with PayPal" buttons (CH-FR-17), one line "How your money is held" as a link that opens the CH-FR-31 panel if folded and moves focus to its heading. |
 
@@ -262,3 +262,5 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | 1.6 signed | Revision 1.6 signed by William | none |
 | 1.7 | From the contract-alignment grill-me with William: the hold states the contract gained (AH 1.0): `declined` with `timed_out`, and `not_held` with `never_held` or `cancelled`, in words on both sides (CH-FR-18, CH-FR-25) | none |
 | 1.7 signed | Revision 1.7 signed by William | none |
+| 1.8 | The legal pages' flag is retired (LG 1.1): the brand pages' legal footer always shows | none |
+| 1.8 signed | Revision 1.8 signed by William | none |
