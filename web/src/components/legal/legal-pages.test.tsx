@@ -26,7 +26,7 @@ describe("LG-FR-01, LG-FR-02, LG-FR-04, LG-FR-16 the reading layout", () => {
 });
 
 describe("LG-FR-05 to LG-FR-10 the privacy policy", () => {
-  test("says what is collected, who handles it, and that periods are not yet confirmed while Furqaan's answers are outstanding", () => {
+  test("says what is collected, who handles it, and how long each thing is kept (1.1)", () => {
     render(<PrivacyPage />);
     const who = screen.getByRole("region", { name: "Who else handles it" });
     for (const name of ["PayPal", "Amazon Web Services", "Amazon Bedrock", "Google", "Meta", "Resend", "Vercel"]) expect(who).toHaveTextContent(name);
@@ -35,7 +35,20 @@ describe("LG-FR-05 to LG-FR-10 the privacy policy", () => {
       expect(collect).toHaveTextContent(thing);
     }
     expect(screen.getByRole("region", { name: "What we never do" })).toHaveTextContent("Let an AI move money.");
-    expect(screen.getByRole("region", { name: "How long we keep it" })).toHaveTextContent("Server logs: not yet confirmed.");
+    const kept = within(screen.getByRole("region", { name: "How long we keep it" }))
+      .getAllByRole("listitem")
+      .map((li) => li.textContent);
+    expect(kept).toEqual([
+      "Drafts, and the speech, on-screen text and frames read from them: 30 days after the post ends (paid, its hold returned, or closed).",
+      "A live Reel’s video, fetched to check it: only until it’s matched to your draft, a few minutes.",
+      "The brief, checklist, notes, check results and their evidence, and the brand’s email: while your account exists.",
+      "Access to YouTube and Instagram: until you disconnect, access ends, or you delete your account.",
+      "Payment records (amounts, dates and PayPal references): for as long as Cleared runs, with no name or email once your account is deleted.",
+      "Your account, after you delete it: deleted at once; its files within 24 hours.",
+      "Sessions: 14 days after last use.",
+      "Server logs: 30 days; they hold ids only.",
+    ]);
+    expect(screen.queryByText(/not yet confirmed/)).toBeNull();
     expect(screen.getByRole("region", { name: "Cookies" })).toHaveTextContent("no tracking or advertising cookies");
   });
 });
@@ -53,19 +66,15 @@ describe("LG-FR-11, LG-FR-12 the terms", () => {
   });
 });
 
-describe("LG-FR-13 deleting your data", () => {
-  test("with Delete account off, deleting is by email only", () => {
-    render(<DataDeletionPage removal={false} />);
-    const how = screen.getByRole("region", { name: "How to delete your account" });
-    expect(how).toHaveTextContent("Email williamikeji@gmail.com from the Google email you signed in with");
-    expect(how).not.toHaveTextContent("Settings");
-    expect(screen.getByRole("region", { name: "What is deleted, and what is kept" })).toHaveTextContent("with your name and email removed");
-  });
-
-  test("with it on, Settings comes first, then email", () => {
-    render(<DataDeletionPage removal />);
+describe("LG-FR-13 (1.1) deleting your data", () => {
+  test("Settings comes first, then email within 30 days; what is deleted and kept in Settings' words", () => {
+    render(<DataDeletionPage />);
     const how = screen.getByRole("region", { name: "How to delete your account" });
     expect(how).toHaveTextContent("open Settings and choose Delete account");
-    expect(how).toHaveTextContent("Or by email");
+    expect(how).toHaveTextContent("Or by email: Email williamikeji@gmail.com from the Google email you signed in with");
+    expect(how).toHaveTextContent("It is done within 30 days.");
+    const what = screen.getByRole("region", { name: "What is deleted, and what is kept" });
+    expect(what).toHaveTextContent("Your profile, your connected accounts, your drafts, and each deal’s brief, checklist and check results are deleted, and brands’ links to your deals stop working.");
+    expect(what).toHaveTextContent("Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed.");
   });
 });

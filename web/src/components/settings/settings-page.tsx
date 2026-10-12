@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { legalPagesOn } from "@/lib/legal/flag";
 import { useSession } from "@/components/session/use-session";
 import { api } from "@/lib/api";
 import { settingsView } from "@/lib/settings/settings-view";
@@ -54,17 +53,13 @@ export function SettingsPage() {
         >
           Sign out
         </button>
-        {/* ST-FR-09 (1.2): once the legal pages are linked (LG-FR-14). */}
-        {legalPagesOn() && (
-          <>
-            <Link href="/privacy" className={TEXT_LINK}>
-              Privacy policy
-            </Link>
-            <Link href="/terms" className={TEXT_LINK}>
-              Terms
-            </Link>
-          </>
-        )}
+        {/* ST-FR-09 (1.2, 1.4). */}
+        <Link href="/privacy" className={TEXT_LINK}>
+          Privacy policy
+        </Link>
+        <Link href="/terms" className={TEXT_LINK}>
+          Terms
+        </Link>
       </p>
       <DeleteAccount />
     </main>

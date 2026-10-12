@@ -1,4 +1,4 @@
-import { period } from "@/lib/legal/periods";
+import { KEPT } from "@/lib/legal/periods";
 import { LegalPage, type LegalSection } from "./legal-page";
 
 const SECTIONS: LegalSection[] = [
@@ -62,13 +62,7 @@ const SECTIONS: LegalSection[] = [
     heading: "How long we keep it",
     blocks: [
       {
-        list: [
-          `Drafts, after their deal ends: ${period("drafts")}.`,
-          `Transcripts, frames and check results: ${period("checks")}.`,
-          `Payment records (amounts, dates and PayPal references): ${period("payments")}.`,
-          `Your account data, after you delete your account: ${period("account")}.`,
-          `Server logs: ${period("logs")}.`,
-        ],
+        list: [...KEPT],
       },
     ],
   },

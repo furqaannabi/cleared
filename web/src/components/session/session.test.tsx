@@ -35,7 +35,8 @@ describe("SI-FR-01, SI-FR-05 the sign-in page", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Sign in to see your deals" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Sign in with Google" })).toHaveAttribute("href", `${apiBaseUrl}/auth/google?next=%2Fdeals%2Fnew`);
     expect(screen.queryAllByRole("button")).toEqual([]);
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    // The only way in; the terms line's links are the legal pages' (SI-FR-01, 1.4).
+    expect(screen.getAllByRole("link").filter((l) => !["terms", "privacy policy"].includes(l.textContent ?? ""))).toHaveLength(1);
     expect(screen.getByText("Instagram-only? Sign in with any Google account, then connect your Instagram.")).toBeVisible();
   });
 

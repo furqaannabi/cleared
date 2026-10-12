@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { LegalLinks } from "@/components/legal/legal-links";
 import { Logo } from "@/components/shell/logo";
-import { legalPagesOn } from "@/lib/legal/flag";
 
 /**
  * The brand's slim frame: the Cleared logo and, once the deal is known,
@@ -12,7 +11,6 @@ import { legalPagesOn } from "@/lib/legal/flag";
  * @see docs/specs/confirm-and-hold-frd.md CH-FR-04
  */
 export function BrandFrame({ invited, children }: { invited?: { creator: string; brand: string }; children: ReactNode }) {
-  const legal = legalPagesOn();
   return (
     <div className="min-h-dvh">
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 bg-espresso-deep px-4 py-3 md:px-8">
@@ -23,14 +21,12 @@ export function BrandFrame({ invited, children }: { invited?: { creator: string;
           </p>
         )}
       </header>
-      {/* The bottom padding keeps the last thing clear of the phones' fixed action bar; with the legal footer, it moves under the footer. */}
-      <main className={`mx-auto max-w-[1120px] px-4 pt-[22px] md:px-8 md:pt-8 ${legal ? "pb-8" : "pb-36 lg:pb-16"}`}>{children}</main>
-      {/* CH-FR-30 (1.5): once the legal pages are linked (LG-FR-14). */}
-      {legal && (
-        <footer className="mx-auto max-w-[1120px] border-t border-line px-4 pt-2 pb-36 text-[13.5px] md:px-8 lg:pb-16">
-          <LegalLinks />
-        </footer>
-      )}
+      {/* The footer's bottom padding keeps the last thing clear of the phones' fixed action bar. */}
+      <main className="mx-auto max-w-[1120px] px-4 pt-[22px] pb-8 md:px-8 md:pt-8">{children}</main>
+      {/* CH-FR-30 (1.5, 1.8). */}
+      <footer className="mx-auto max-w-[1120px] border-t border-line px-4 pt-2 pb-36 text-[13.5px] md:px-8 lg:pb-16">
+        <LegalLinks />
+      </footer>
     </div>
   );
 }

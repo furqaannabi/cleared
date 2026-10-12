@@ -1,22 +1,21 @@
 /**
- * How long Cleared keeps each kind of data, and how fast a deletion request
- * is done: Furqaan's answers (legal pages FRD, "Requests for Furqaan"). Null
- * until he answers; the pages stay unlinked behind the legal flag until every
- * one is filled (LG-FR-14).
+ * How long Cleared keeps each thing, in the privacy policy's words, and how
+ * fast a deletion requested by email is done: Furqaan's answers (AH-FR-22,
+ * AH-FR-24). A change to what the backend keeps changes these in the same
+ * change (LG-BR-01).
  *
- * @see docs/specs/legal-pages-frd.md LG-FR-08, LG-FR-13
+ * @see docs/specs/legal-pages-frd.md LG-FR-08, LG-FR-13 (1.1)
  */
-export const PERIODS: Record<"drafts" | "checks" | "payments" | "account" | "logs" | "deletion", string | null> = {
-  drafts: null,
-  checks: null,
-  payments: null,
-  account: null,
-  logs: null,
-  deletion: null,
-};
+export const KEPT: readonly string[] = [
+  "Drafts, and the speech, on-screen text and frames read from them: 30 days after the post ends (paid, its hold returned, or closed).",
+  "A live Reel’s video, fetched to check it: only until it’s matched to your draft, a few minutes.",
+  "The brief, checklist, notes, check results and their evidence, and the brand’s email: while your account exists.",
+  "Access to YouTube and Instagram: until you disconnect, access ends, or you delete your account.",
+  "Payment records (amounts, dates and PayPal references): for as long as Cleared runs, with no name or email once your account is deleted.",
+  "Your account, after you delete it: deleted at once; its files within 24 hours.",
+  "Sessions: 14 days after last use.",
+  "Server logs: 30 days; they hold ids only.",
+];
 
-/** A period's words, or a plain "not yet confirmed" while Furqaan's answer is outstanding. */
-export const period = (key: keyof typeof PERIODS): string => PERIODS[key] ?? "not yet confirmed";
-
-/** Whether every period is answered, so the pages can be linked. */
-export const periodsComplete = (): boolean => Object.values(PERIODS).every((p) => p !== null);
+/** How fast a deletion requested by email is done (AH-FR-22). */
+export const DELETION_BY_EMAIL = "within 30 days";

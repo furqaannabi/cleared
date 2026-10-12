@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { LandingFooter } from "@/components/landing/closing-and-footer";
 import { LandingHeader } from "@/components/landing/landing-header";
-import { CONTACT_EMAIL, LEGAL_UPDATED } from "@/lib/legal/flag";
+import { CONTACT_EMAIL, LEGAL_UPDATED } from "@/lib/legal/contact";
 
 /** One block of a section: a paragraph, or a list. */
 export type LegalBlock = string | { list: string[] };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { CONTACT_EMAIL } from "@/lib/legal/flag";
+import { CONTACT_EMAIL } from "@/lib/legal/contact";
 
 const BUTTON = "inline-flex min-h-11 items-center rounded-pill bg-espresso px-[18px] font-bold text-surface hover:bg-espresso-hover";
 
