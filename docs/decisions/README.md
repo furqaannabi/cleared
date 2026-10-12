@@ -108,3 +108,4 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-12 | [End-to-end tests get a session behind a secret, as one fixed test creator](2026-10-12-a-test-session-behind-a-secret.md) | Accepted |
 | 2026-10-12 | [Playwright runs live against a local backend, up to the brand agreeing](2026-10-12-playwright-live-suite-local-backend-up-to-agreeing.md) | Accepted; superseded in part by [2026-10-12-playwright-live-suite-stops-at-the-invite.md](2026-10-12-playwright-live-suite-stops-at-the-invite.md): how far the deal goes |
 | 2026-10-12 | [The live Playwright suite stops at the invite until the test creator can have an account](2026-10-12-playwright-live-suite-stops-at-the-invite.md) | Accepted |
+| 2026-10-12 | [Judges test Cleared as users do](2026-10-12-judges-test-cleared-as-users.md) | Accepted (William); Furqaan to agree |

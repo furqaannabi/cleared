@@ -231,7 +231,7 @@ The repo is [github.com/furqaannabi/cleared](https://github.com/furqaannabi/clea
 
 ## Still open
 
-- **How a judge runs the demo.** There are no demo accounts ([decision](decisions/2026-10-11-no-demo-accounts.md)). How a judge signs in, gets a channel to read and finishes a deal is for both leads to decide before submission.
+- **How a judge runs the demo.** Decided by William, Furqaan to agree: judges test Cleared as users do, with their own Google account and YouTube channel, the PayPal sandbox details given in the submission, and a judge guide ([decision](decisions/2026-10-12-judges-test-cleared-as-users.md)).
 - **Team.** The build is planned for two people. Who the second person is, and what they take, is not settled.
 - **First spec.** Not yet written. It should turn [How a deal runs](#how-a-deal-runs) into numbered requirements before any code.
 

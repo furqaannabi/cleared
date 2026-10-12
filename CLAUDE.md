@@ -83,7 +83,7 @@ Chosen in `docs/PRODUCT.md`:
 | Package manager and repo layout | pnpm workspace with `web/`, `backend/`, `contract/` (see `docs/decisions/2026-10-06-repo-layout-and-package-manager.md`; accepted by Furqaan, 9 Oct) |
 | Brand access | The invite link is swapped for an HttpOnly session scoped to one deal; no brand account in v1; PayPal login guards the holds (see `docs/decisions/2026-10-08-brand-access-by-link-session.md`; accepted by Furqaan, 9 Oct) |
 | Schema validation | Zod, for every API response and request body (see `docs/decisions/2026-10-06-schema-validation-zod.md`) |
-| Frontend mocks | None in dev or the hosted app: the frontend runs on the live API (`hack.furqaannabi.com`; a local backend on `localhost:4000` for local work). Vitest stubs each test's own requests with MSW, typed from `contract/`; Playwright runs against the live backend (see `docs/decisions/2026-10-11-frontend-on-the-live-api.md`, which supersedes part of `2026-10-06-frontend-mocks-msw.md`) |
+| Frontend mocks | None in dev or the hosted app: the frontend runs on the live API (`hack.furqaannabi.com`; a local backend on `localhost:4000` for local work). Vitest stubs each test's own requests with MSW, typed from `contract/`, on a server that fails any request without a stub; Playwright runs against the local backend with the test session, up to the invite, and skips without `TEST_SESSION_SECRET` (see `docs/decisions/2026-10-11-frontend-on-the-live-api.md`, which supersedes part of `2026-10-06-frontend-mocks-msw.md`, and `docs/decisions/2026-10-12-playwright-live-suite-stops-at-the-invite.md`). The shared mocks are deleted |
 
 Everything behind the frontend uses AWS or the hackathon's sponsor tools, with one exception: Resend, for email. PRODUCT.md lists the sponsor tools not used; do not add them.
 
@@ -145,7 +145,7 @@ From `docs/PRODUCT.md`. Do not re-open without explicit human instruction.
 | Instagram paid-partnership label | Always a manual check in v1 |
 | Instagram accounts | Professional accounts only. A Reel with licensed music cannot be fetched, so it goes to manual approval |
 
-**Still open (do not assume):** the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`; the "To verify while building" items in `docs/specs/draft-check-and-review-frd.md`, which Nova model among them; the "To verify while building" items in `docs/specs/publish-to-paid-frd.md`, first among them whether YouTube returns a video's file size and length; and how a judge signs in, finishes a deal and approves a PayPal hold in the demo, now that there are no demo accounts (both leads).
+**Still open (do not assume):** the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`; the "To verify while building" items in `docs/specs/draft-check-and-review-frd.md`, which Nova model among them; the "To verify while building" items in `docs/specs/publish-to-paid-frd.md`, first among them whether YouTube returns a video's file size and length; and Furqaan's agreement that judges test Cleared as users do (`docs/decisions/2026-10-12-judges-test-cleared-as-users.md`, William's).
 
 ---
 
