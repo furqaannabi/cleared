@@ -9,7 +9,7 @@ import { HeaderWayIn } from "./way-in";
  */
 export function LandingHeader() {
   return (
-    <header className="mx-auto flex h-[68px] max-w-[1180px] items-center justify-between px-4 md:px-8">
+    <header className="mx-auto flex h-[68px] w-full max-w-[1180px] items-center justify-between px-4 md:px-8">
       <Link href="/" aria-label="Cleared home" className="rounded-pill">
         <Logo tone="light" />
       </Link>

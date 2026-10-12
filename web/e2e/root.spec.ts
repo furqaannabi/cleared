@@ -28,3 +28,9 @@ for (const width of [375, 1100]) {
     }
   });
 }
+
+test("EP-FR-01: an unknown address is a 404 with Cleared's not-found page", async ({ page }) => {
+  const res = await page.goto("/no-such-page");
+  expect(res?.status()).toBe(404);
+  await expect(page.getByRole("heading", { level: 1, name: "We can’t find that page" })).toBeVisible();
+});

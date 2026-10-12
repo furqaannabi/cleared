@@ -29,6 +29,9 @@ export function SignedInProvider({ children }: { children: ReactNode }) {
   return <SignedInContext.Provider value={signedIn}>{children}</SignedInContext.Provider>;
 }
 
+/** Whether the visitor is known to be signed in (false while asking, signed out, or if the call failed). */
+export const useSignedIn = (): boolean => useContext(SignedInContext);
+
 /**
  * The landing page's way in: "Sign in with Google" (with the Instagram-only
  * line in the hero), or "Open your deals" to home once the visitor is known
