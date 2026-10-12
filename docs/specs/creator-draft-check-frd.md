@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.18). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.20). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus its side of step 5 (the brand's review: objections and approval, with the brand's side in the [brand review FRD](brand-review-frd.md)) and the released state.
 
@@ -177,7 +177,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 
 | ID | Requirement |
 | --- | --- |
-| DC-FR-31 | **Rail (desktop) and top bar (tablet and phone).** Logo, a deals list (each row: initials avatar, brand name, one-line status such as "Brand review · 31h left", linking to that deal) and the creator's name. On tablet and phone the deals list opens from a "Deals" button (44 px target) as a full-screen sheet. Payouts and Connected accounts are not shown until their specs add them. |
+| DC-FR-31 | **Rail (desktop) and top bar (tablet and phone).** Logo, a deals list (each row: initials avatar, brand name, one-line status such as "Brand review · 31h left", linking to that deal) and the creator's name. On tablet and phone the deals list opens from a "Deals" button (44 px target) as a full-screen sheet. (1.19) "Home" (`/deals`, [creator home](creator-home-frd.md) HM-FR-01) is the first link in the rail and the sheet, marked current on home. (1.20) The Cleared logo in the rail and the top bar links to the landing page (`/`), named "Cleared, home page". Payouts are on home; Connected accounts are in Settings (ST). |
 | DC-FR-32 | **Header.** Breadcrumb (Deals › brand › deliverable), title (brand and deliverable), and meta: run number, video length, deadline. |
 | DC-FR-33 | **Deliverable switcher.** When a deal has more than one deliverable, pill tabs under the title, one per deliverable, each showing platform and current step, each a link to that deliverable. On phones the pill row scrolls horizontally. |
 | DC-FR-34 | **Deal steps.** The seven steps (Checklist agreed, Held, Draft check, Brand review, Publish, Live check, Paid) with done, current and upcoming marked. On phones they become a dot track with "Step N of 7 · {step}". |
@@ -375,3 +375,7 @@ Fields:
 | 1.17 signed | Revision 1.17 signed by William | none |
 | 1.18 | The move onto the live API, from the grill-me with William: the draft upload (DC-FR-45) with progress and Cancel, checked in the browser first (type, 1 GB, 15 minutes); draft limits (new DC-FR-53); the review link's opened line, expiry and new link, no emailing (DC-FR-52); a post with no hold (new DC-FR-54); no "not the same video" failure (DC-FR-08); DC-BR-02 kept, answering Furqaan | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md), [Limits on drafts](../decisions/2026-10-09-limits-on-drafts.md), [No email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md), [The unlisted video is asked for at publish](../decisions/2026-10-09-the-unlisted-video-is-asked-for-at-publish.md) |
 | 1.18 signed | Revision 1.18 signed by William | none |
+| 1.19 | From the creator-home grill-me with William: DC-FR-31's rail and sheet gain "Home" as their first link; payouts live on home rather than in the rail | none |
+| 1.19 signed | Revision 1.19 signed by William | none |
+| 1.20 | From William: the logo in DC-FR-31's rail and top bar links to the landing page (`/`) | none |
+| 1.20 signed | Revision 1.20 signed by William | none |

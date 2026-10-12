@@ -73,7 +73,8 @@ Chosen in `docs/PRODUCT.md`:
 | Sign-in | Creators sign in with Google, run by the backend directly, which sets an HttpOnly session; no Cognito; Instagram is a connection, not a sign-in; no demo account (see `docs/decisions/2026-10-09-creators-sign-in-with-google-directly.md`, which supersedes the Cognito part of `2026-10-08-creator-sign-in-through-the-backend.md`, and `docs/decisions/2026-10-11-no-demo-accounts.md`, which removes the demo account; agreed by William, 11 Oct) |
 | Files and secrets | S3, KMS |
 | Email | Resend, called over plain HTTPS, for the brand's two notices after a post is live and nothing else; everything else is a link the creator sends (see `docs/decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md` for which notices, and `docs/decisions/2026-10-10-resend-sends-the-brands-two-notices.md`, which supersedes its choice of Amazon SES; William to agree) |
-| Evidence table and brand dashboard | AG Grid and AG Studio, on `md:` and up; cards on phones (see `docs/decisions/2026-10-06-evidence-view-ag-grid.md`) |
+| Evidence table, brand dashboard and the creator's payment history | AG Grid and AG Studio, on `md:` and up; cards on phones (see `docs/decisions/2026-10-06-evidence-view-ag-grid.md` and `docs/decisions/2026-10-12-ag-grid-and-ag-charts-on-creator-home.md`) |
+| Charts on the creator's home | AG Charts Community, loaded when the charts scroll into view (see `docs/decisions/2026-10-12-ag-grid-and-ag-charts-on-creator-home.md`) |
 | PayPal coding help | APIMatic's Context Plugin for PayPal |
 | Creator accounts | Google sign-in (read-only) for YouTube; Instagram Login with one read-only permission, professional accounts only, run by the backend (see `docs/decisions/2026-10-11-instagram-login-read-only.md`; William to agree). Until Meta reviews the app only the team's tester accounts can connect, and no review is asked for during the hackathon (see `docs/decisions/2026-10-11-no-meta-review-for-the-hackathon.md`) |
 | Styling, UI primitives, motion | Tailwind v4 (DESIGN.md tokens in `@theme`), Radix UI primitives wrapped in `src/components/ui/`, Motion (`motion/react`, via `LazyMotion`) (see `docs/decisions/2026-10-06-frontend-stack.md`) |
@@ -187,7 +188,7 @@ Route names are set in the specs.
 - Base styles target mobile; `sm:`/`md:`/`lg:` only enhance upward. Desktop-first classes are banned.
 - Touch targets ≥ 44×44px. No hover-only interactions.
 - The brand's deal page and the creator's draft results are designed at 390px first. Creators live on their phones.
-- Tables become card stacks on mobile; never horizontal-scroll a data table. AG Grid (evidence table, brand dashboard) is used on `md:` and up; below that, the same data renders as cards.
+- Tables become card stacks on mobile; never horizontal-scroll a data table. AG Grid (evidence table, brand dashboard, the creator's payment history) is used on `md:` and up; below that, the same data renders as cards.
 - Modals are full-screen on mobile, centered on `md:` and up.
 - Test every new component at 375px before committing.
 - Default breakpoints; do not customise.

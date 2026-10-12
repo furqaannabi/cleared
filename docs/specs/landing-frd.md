@@ -1,10 +1,10 @@
 # Landing page: FRD
 
-**Status:** Signed by William (revision 1.3).
+**Status:** Signed by William (revision 1.6).
 
 **Surface:** Landing, at `/`. Anyone can open it. A static Server Component (CLAUDE.md "Surfaces"). It is the first thing a judge sees at the hosted demo URL, and the front door of the product's story.
 
-**Scope of this build:** frontend only. The page makes no API calls. Its one action, Sign in with Google, goes to the backend's sign-in (1.3: the app runs on the live API, [frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)).
+**Scope of this build:** frontend only. The page makes one API call, in the browser after it loads: `GET /me`, to know whether the visitor is signed in (LP-FR-18, 1.5). Its one action, Sign in with Google, goes to the backend's sign-in (1.3: the app runs on the live API, [frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)).
 
 ## Problem Statement
 
@@ -45,9 +45,10 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 | LP-FR-01 | **Header.** The Cleared logo, linking to `/`. From `md:` up, "See a deal in action" is repeated on the right. No navigation menu (there are no other pages). |
 | LP-FR-02 | **Headline and one sentence.** The tagline "Brand deals where the content and the payment clear together." as the page's only `h1`, and one plain sentence on what Cleared does: the brand's money is held in PayPal, AI checks the video against the brief, and the creator is paid when the approved post is live. |
 | LP-FR-03 | **One way in (1.3).** The sign-in FRD's "Sign in with Google" (primary, SI-FR-01), alone, with SI-FR-01's Instagram-only line under it. It is the page's only action. No waitlist or "coming soon". |
-| LP-FR-15 | **`/deals` opens the first deal.** A new creator-app route: it loads the creator's deals list (the one the rail uses, DC-FR-31) and opens the first deal, which opens its deliverable (DC-FR-37). With no deals it says plainly "You have no deals yet." inside the app shell. While the list loads it shows the app's loading state; if the list fails it offers Try again. No deal id is written into the landing page. (1.2) A signed-out visitor is sent to `/sign-in?next=/deals` first (SI-FR-06). |
+| LP-FR-15 | **`/deals` opens home.** (1.4) The landing page's button and signing in land on the creator's home at `/deals` ([creator home](creator-home-frd.md) HM-FR-01), which no longer opens the first deal. With no deals home says "You have no deals yet." (HM-FR-03); while it loads it shows the app's loading state; if the deals fail it offers Try again (HM-FR-04). No deal id is written into the landing page. A signed-out visitor is sent to `/sign-in?next=/deals` first (SI-FR-06). |
 | LP-FR-16 | **One photo.** The draft video's frame is a photo of a hand holding a serum dropper bottle: no face and no real brand, free licence (Unsplash). Served optimised (AVIF/WebP, sized per screen), with empty alt text since it is decorative beside the labelled example. |
 | LP-FR-17 | **Closing.** Before the footer, an espresso band "See a whole deal clear." with "Sign in with Google" again, and no note (1.3). |
+| LP-FR-18 | **Signed in (1.5).** The page stays static and is served the same to everyone. Once it has loaded, it asks `GET /me` in the browser; when the visitor is signed in, both "Sign in with Google" buttons (LP-FR-03, LP-FR-17) read "Open your deals" and link to `/deals` (home, HM-FR-01), and SI-FR-01's Instagram-only line under the first is left out. (1.6) The header's quiet "Sign in" link reads "Your deals" and links to `/deals` too. Signed out, still loading, or if the call fails, the page is exactly as before; nothing flashes or shifts while it asks (the button keeps its size). |
 | LP-FR-04 | *Removed in 1.3: there is no demo account ([no demo accounts](../decisions/2026-10-11-no-demo-accounts.md)); the footer keeps "PayPal sandbox only, no real money moves" (LP-FR-12).* |
 | LP-FR-05 | **Product visual.** A phone showing the creator app on the example deal: the draft video (a photo frame, LP-FR-16), its timeline with seal markers, and three checklist items; beside it, tilted slightly, the marigold "$1,200.00 held in PayPal" card. Built from the app's own components and tokens; its example data is written in the landing page, never imported from the mocks, and labelled as an example. |
 | LP-FR-06 | **Motion.** All CSS, and still under reduced motion: on load the phone's timeline seals pop in and a pass seal stamps once onto the phone; the money card floats gently. As the visitor scrolls (where the browser supports scroll-driven animation; elsewhere everything simply shows): the chat messages appear one by one, the marigold thread joining the five steps draws down the page, each step's number seal stamps in while its words and panel slide in from opposite sides, the checklist items settle from "Checking" to their results, the review countdown ticks, and the CLEARED seal stamps onto the payout. |
@@ -115,3 +116,9 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 | 1.2 signed | Revision 1.2 signed by William | none |
 | 1.3 | From the grill-me with William after Furqaan removed demo accounts: LP-FR-03 is Sign in with Google alone, LP-FR-04 (the demo note) removed, LP-FR-17's band has the one button and no note; the page's tests follow | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md), [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md) |
 | 1.3 signed | Revision 1.3 signed by William | none |
+| 1.4 | From the creator-home grill-me with William: LP-FR-15's `/deals` is the creator's home instead of opening the first deal; its no-deals, loading and failing states move to the [creator home FRD](creator-home-frd.md) | [AG Grid and AG Charts on creator home](../decisions/2026-10-12-ag-grid-and-ag-charts-on-creator-home.md) |
+| 1.4 signed | Revision 1.4 signed by William | none |
+| 1.5 | From William after signing in: a signed-in creator sees "Open your deals" (to `/deals`) in place of both "Sign in with Google" buttons, from one `GET /me` in the browser (new LP-FR-18) | none |
+| 1.5 signed | Revision 1.5 signed by William | none |
+| 1.6 | From William: LP-FR-18 also turns the header's "Sign in" link into "Your deals" (to `/deals`) for a signed-in creator | none |
+| 1.6 signed | Revision 1.6 signed by William | none |

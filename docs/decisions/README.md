@@ -99,3 +99,4 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-11 | [No demo accounts: every creator signs in with Google](2026-10-11-no-demo-accounts.md) | Accepted; agreed by William, 11 Oct |
 | 2026-10-11 | [The frontend runs on the live API; tests stub their own requests](2026-10-11-frontend-on-the-live-api.md) | Accepted; superseded in part by [2026-10-11-mocks-go-in-one-last-slice.md](2026-10-11-mocks-go-in-one-last-slice.md): when the mocks go |
 | 2026-10-11 | [The shared mocks are removed in one last slice](2026-10-11-mocks-go-in-one-last-slice.md) | Accepted |
+| 2026-10-12 | [The creator's payment history uses AG Grid, and its charts AG Charts](2026-10-12-ag-grid-and-ag-charts-on-creator-home.md) | Accepted |
