@@ -1,6 +1,7 @@
 import type { components } from "contract";
 import { z } from "zod";
 import { readAnswer, type ApiResult } from "./answer";
+import { paymentsSchema } from "@/lib/home/payment-row";
 import { brandDealSchema, brandDeliverableSchema, brandSessionSchema, holdStartSchema, creatorProfileSchema, dealDraftSchema, profileAfterEmailSchema, dealInviteSchema, dealsSchema, deliverableSchema, draftAcceptedSchema, draftSchema } from "./schemas";
 
 type BrandNoteAbout = z.infer<typeof brandDealSchema>["notes"][number]["about"];
@@ -121,6 +122,8 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
   return {
     /** DC-FR-31: the creator's deals, each with the deliverable to open (DC-FR-37). */
     getDeals: () => request("GET", "/deals", dealsSchema),
+    /** HM-FR-05 to HM-FR-19: every post that has had a hold (requested route, creator home FRD); used only behind the payments flag. */
+    getPayments: () => request("GET", "/me/payments", paymentsSchema),
     /** DC-FR-01: one deliverable for the draft check page. */
     /** DC-FR-45 (1.18): send a draft, with its progress; Cancel through the signal. */
     uploadDraft: (deliverableId: string, file: File, options?: { onProgress?: (percent: number) => void; signal?: AbortSignal }) =>

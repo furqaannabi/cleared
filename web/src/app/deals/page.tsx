@@ -1,11 +1,11 @@
+import { HomePage } from "@/components/home/home-page";
 import { AppShell } from "@/components/shell/app-shell";
-import { FirstDealRedirect } from "@/components/shell/first-deal-redirect";
 
-/** LP-FR-15: `/deals` opens the creator's first deal (the landing page's button lands here). */
+/** HM-FR-01, LP-FR-15 (1.4): `/deals` is the creator's home (signing in and the landing page's button land here). */
 export default function DealsPage() {
   return (
-    <AppShell currentDealId={null}>
-      <FirstDealRedirect />
+    <AppShell currentDealId={null} home>
+      <HomePage />
     </AppShell>
   );
 }

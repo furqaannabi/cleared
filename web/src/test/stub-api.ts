@@ -1,6 +1,7 @@
 import type { components } from "contract";
 import { http, HttpResponse } from "msw";
 import { apiBaseUrl } from "@/lib/api";
+import type { PaymentRow } from "@/lib/home/payment-row";
 import { server } from "@/mocks/node";
 
 /** The creator's profile as the contract's `GET /me` answers it. */
@@ -153,3 +154,12 @@ export function stubSession(profile: Profile | null) {
     }),
   );
 }
+
+/** One deal in the creator's list, as the contract's `GET /deals` answers it. */
+export type DealSummary = components["schemas"]["DealSummary"];
+
+/** This test's answer to `GET /deals`. */
+export const stubDeals = (deals: DealSummary[]) => server.use(http.get(`${apiBaseUrl}/deals`, () => HttpResponse.json(deals)));
+
+/** This test's answer to the requested `GET /me/payments` (creator home FRD; not in the contract yet). */
+export const stubPayments = (rows: PaymentRow[]) => server.use(http.get(`${apiBaseUrl}/me/payments`, () => HttpResponse.json(rows)));

@@ -1,4 +1,4 @@
-import { SignInButton } from "@/components/session/sign-in-buttons";
+import { WayIn } from "./way-in";
 
 /**
  * The closing band: Sign in with Google again before the footer, with no
@@ -14,7 +14,7 @@ export function Closing() {
           See a whole deal clear.
         </h2>
         <div className="mt-[18px] flex justify-center">
-          <SignInButton next="/deals" onDark />
+          <WayIn onDark />
         </div>
       </section>
     </div>

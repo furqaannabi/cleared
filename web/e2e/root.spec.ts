@@ -10,10 +10,10 @@ test("LP-FR-07: the landing page has no sideways scroll, and the button is on th
   expect(box && box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
 });
 
-test("LP-FR-15: /deals opens the signed-in creator's first deal", async ({ page }) => {
+test("LP-FR-15 (1.4), HM-FR-01: /deals is the creator's home, listing their deals", async ({ page }) => {
   await page.goto("/deals");
-  await expect(page).toHaveURL(/\/deals\/deal_glow\/deliverables\/del_glow_video/);
-  await expect(page.getByRole("heading", { level: 1, name: "Glow Theory · YouTube video" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Home" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Deals" }).getByRole("link", { name: /Glow Theory/ })).toBeVisible();
 });
 
 for (const width of [375, 1100]) {

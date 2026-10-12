@@ -14,18 +14,19 @@ import { DealsProvider, useDeals, type DealsLoad } from "./use-deals";
 /**
  * The creator app's frame: an espresso rail with the logo and the deals on
  * desktop (1024px and up); below that, an espresso top bar whose "Deals"
- * button opens the deals as a full-screen sheet. Payouts and Connected
- * accounts join when their specs exist.
+ * button opens the deals as a full-screen sheet. "Home" (the creator's home,
+ * where payouts live) is the first link after New deal in both.
  *
  * @param currentDealId - the deal being viewed, marked in the list
+ * @param home - true on home, to mark Home current
  * @param children - the page
- * @see docs/specs/creator-draft-check-frd.md DC-FR-31; DESIGN.md "Navigation", "Layout"
+ * @see docs/specs/creator-draft-check-frd.md DC-FR-31; docs/specs/creator-home-frd.md HM-FR-01; DESIGN.md "Navigation", "Layout"
  */
-export function AppShell(props: { currentDealId: string | null; children: ReactNode }) {
+export function AppShell(props: { currentDealId: string | null; home?: boolean; children: ReactNode }) {
   return (
     <SessionProvider>
       <DealsProvider>
-        <Frame {...props} currentDealId={props.currentDealId}>
+        <Frame currentDealId={props.currentDealId} home={props.home ?? false}>
           <SignedIn>{props.children}</SignedIn>
         </Frame>
       </DealsProvider>
@@ -34,7 +35,7 @@ export function AppShell(props: { currentDealId: string | null; children: ReactN
 }
 
 
-function Frame({ currentDealId, children }: { currentDealId: string | null; children: ReactNode }) {
+function Frame({ currentDealId, home, children }: { currentDealId: string | null; home: boolean; children: ReactNode }) {
   const desktop = useMediaQuery("(min-width: 1024px)");
   const deals = useDeals();
 
@@ -43,11 +44,15 @@ function Frame({ currentDealId, children }: { currentDealId: string | null; chil
       <div className="grid min-h-dvh grid-cols-[248px_minmax(0,1fr)]">
         <SkipLink />
         <aside aria-label="Main" className="sticky top-0 flex h-dvh flex-col bg-espresso-deep px-3.5 py-[22px]">
-          <span className="px-2.5">
+          {/* DC-FR-31 (1.20): the logo goes to the landing page. */}
+          <Link href="/" aria-label="Cleared, home page" className="self-start rounded-nav px-2.5">
             <Logo />
-          </span>
+          </Link>
           <span className="mt-[22px] px-0.5">
             <NewDealLink tone="rail" />
+          </span>
+          <span className="mt-2.5 px-0.5">
+            <HomeLink tone="rail" current={home} />
           </span>
           {/* A label, not a heading: the nav below is named "Deals", and the page's h1 comes first. */}
           <p aria-hidden="true" className="mx-2.5 mt-[26px] mb-2 text-nav-section font-bold tracking-[0.08em] text-white/70 uppercase">
@@ -68,7 +73,9 @@ function Frame({ currentDealId, children }: { currentDealId: string | null; chil
     <div className="min-h-dvh">
       <SkipLink />
       <header className="sticky top-0 z-20 flex items-center justify-between bg-espresso-deep px-4 py-3">
-        <Logo compact />
+        <Link href="/" aria-label="Cleared, home page" className="rounded-nav">
+          <Logo compact />
+        </Link>
         <Sheet
           title="Deals"
           trigger={
@@ -82,6 +89,9 @@ function Frame({ currentDealId, children }: { currentDealId: string | null; chil
         >
           <div className="mb-4">
             <NewDealLink tone="sheet" />
+          </div>
+          <div className="mb-2">
+            <HomeLink tone="sheet" current={home} />
           </div>
           <DealsBody load={deals} currentDealId={currentDealId} tone="sheet" />
           <div className="mt-6">
@@ -110,6 +120,25 @@ function SkipLink() {
     >
       Skip to content
     </a>
+  );
+}
+
+/** HM-FR-01, DC-FR-31 (1.19): the creator's home, marked current there. */
+function HomeLink({ tone, current }: { tone: "rail" | "sheet"; current: boolean }) {
+  const rail = tone === "rail";
+  return (
+    <Link
+      href="/deals"
+      aria-current={current ? "page" : undefined}
+      className={`flex min-h-11 items-center gap-2.5 rounded-nav px-2.5 text-body-strong font-bold ${
+        rail ? `text-white/95 hover:bg-white/8 ${current ? "bg-white/14 text-white" : ""}` : `text-ink hover:bg-latte-wash ${current ? "bg-latte" : ""}`
+      }`}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-[18px]">
+        <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+      </svg>
+      Home
+    </Link>
   );
 }
 

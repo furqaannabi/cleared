@@ -80,3 +80,33 @@ describe("DC-FR-31 app shell", () => {
   });
 });
 
+
+describe("DC-FR-31 (1.19) Home", () => {
+  test("Home links to /deals in the rail and the Deals sheet, marked current on home", async () => {
+    screenWidth(1280);
+    const { unmount } = render(
+      <AppShell currentDealId={null} home>
+        <p>Home</p>
+      </AppShell>,
+    );
+    const rail = screen.getByRole("complementary", { name: "Main" });
+    const home = within(rail).getByRole("link", { name: "Home" });
+    expect(home).toHaveAttribute("href", "/deals");
+    expect(home).toHaveAttribute("aria-current", "page");
+    unmount();
+    screenWidth(375);
+    shell();
+    await userEvent.click(screen.getByRole("button", { name: "Deals" }));
+    const sheetHome = within(await screen.findByRole("dialog", { name: "Deals" })).getByRole("link", { name: "Home" });
+    expect(sheetHome).toHaveAttribute("href", "/deals");
+    expect(sheetHome).not.toHaveAttribute("aria-current");
+  });
+});
+
+describe("DC-FR-31 (1.20) the logo", () => {
+  test.each([1280, 375])("links to the landing page at %ipx", (px) => {
+    screenWidth(px);
+    shell();
+    expect(screen.getByRole("link", { name: "Cleared, home page" })).toHaveAttribute("href", "/");
+  });
+});

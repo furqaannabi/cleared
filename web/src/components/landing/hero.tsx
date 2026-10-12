@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { StatusSeal } from "@/components/checklist/status-seal";
 import { MoneyCard } from "@/components/money/money-card";
-import { InstagramOnlyNote, SignInButton } from "@/components/session/sign-in-buttons";
+import { WayIn } from "./way-in";
 import { exampleDeliverable, exampleItems } from "./example";
 
 /**
@@ -26,10 +26,8 @@ export function Hero() {
           The brand’s money is held in PayPal, AI checks your video against the brief, and you’re paid when the approved post is live.
         </p>
         {/* LP-FR-03 (1.3): the one way in (SI-FR-01). */}
-        <SignInButton next="/deals" />
-        <div className="mt-2.5">
-          <InstagramOnlyNote />
-        </div>
+        {/* LP-FR-18 (1.5): "Open your deals" once signed in. */}
+        <WayIn note />
       </div>
       <HeroPhone />
     </section>

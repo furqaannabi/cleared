@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/shell/logo";
+import { HeaderWayIn } from "./way-in";
 
 /**
  * The landing header: the logo (home) and, from `md:` up, the one action again.
@@ -13,9 +14,8 @@ export function LandingHeader() {
         <Logo tone="light" />
       </Link>
       {/* A quiet way back in for returning creators; the hero holds the two ways in (LP-FR-03, 1.2). */}
-      <Link href="/sign-in" className="inline-flex min-h-11 items-center rounded-pill px-3 text-[15px] font-bold text-espresso underline decoration-latte-line underline-offset-3">
-        Sign in
-      </Link>
+      {/* LP-FR-18 (1.6): "Your deals" once signed in. */}
+      <HeaderWayIn className="inline-flex min-h-11 items-center rounded-pill px-3 text-[15px] font-bold text-espresso underline decoration-latte-line underline-offset-3" />
     </header>
   );
 }

@@ -102,3 +102,34 @@ describe("Landing page", () => {
     for (let i = 1; i < levels.length; i++) expect(levels[i] - levels[i - 1]).toBeLessThanOrEqual(1);
   });
 });
+
+describe("LP-FR-18 (1.5) signed in", () => {
+  test("both buttons read Open your deals and go home; the Instagram line is left out", async () => {
+    const { aProfile, stubSession } = await import("@/test/stub-api");
+    stubSession(aProfile());
+    page();
+    const open = await screen.findAllByRole("link", { name: "Open your deals" });
+    expect(open).toHaveLength(2);
+    for (const o of open) expect(o).toHaveAttribute("href", "/deals");
+    expect(screen.queryByRole("link", { name: "Sign in with Google" })).toBeNull();
+    expect(screen.queryByText(/Instagram-only/)).toBeNull();
+  });
+
+  test("(1.6) the header's Sign in reads Your deals", async () => {
+    const { aProfile, stubSession } = await import("@/test/stub-api");
+    stubSession(aProfile());
+    page();
+    expect(await within(screen.getByRole("banner")).findByRole("link", { name: "Your deals" })).toHaveAttribute("href", "/deals");
+    expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
+  });
+
+  test("signed out, the page is as before", async () => {
+    const { stubSession } = await import("@/test/stub-api");
+    stubSession(null);
+    page();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.getAllByRole("link", { name: "Sign in with Google" })).toHaveLength(2);
+    expect(screen.queryByRole("link", { name: "Open your deals" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/sign-in");
+  });
+});
