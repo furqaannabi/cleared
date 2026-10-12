@@ -1,6 +1,6 @@
 # Confirm and hold: FRD
 
-**Status:** Signed by William (revision 1.4).
+**Status:** Signed by William (revision 1.5).
 
 **Surface:** Both sides of step 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's deal page:** the brand opens the creator's link, reads the terms and every checklist with where each item came from, asks for changes or agrees, then approves one PayPal hold per post. **The creator's side:** the brand's notes beside what they're about, "Send updated terms", and each post's hold as it comes in.
 
@@ -80,6 +80,7 @@ The brand can "Ask for a change" on any item, line left out, amount or deadline,
 | CH-FR-02 | **A link that doesn't work.** Expired, turned off or unknown, the page says one thing: "This link doesn't work any more. Ask the creator who sent it for a new one." It names no creator or brand and gives no reason. |
 | CH-FR-03 | **No session.** `/brand/deals/{dealId}` without a session for that deal says "Open the link {creator} sent you again." (or, when the API can't name the creator, "Open the link you were sent again."). It never offers sign-in. 1.4: the API answers 401 with no session; the page shows this message for it, never "Check your connection". |
 | CH-FR-29 | **The session ends during an action (1.4).** When the API answers 401 to sending notes, agreeing or starting or finishing a hold, the action's own place says "Your access to this deal has ended. Open the link {creator} sent you, then try again here." ("the link you were sent" when the creator's name isn't known). Nothing on the page is cleared: unsent notes, the brand's email and the open confirmation stay, so after opening the link in another tab the same action can be tried again here. Cancelling gets the same in the cancel FRD's slice. |
+| CH-FR-30 | **Legal links (1.5).** With `NEXT_PUBLIC_LEGAL_PAGES` on, the brand's deal page and its review pages ([brand review](brand-review-frd.md)) end with a quiet footer: "Privacy", "Terms" and "Data deletion", linking to `/privacy`, `/terms` and `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-15). |
 
 ### The brand's page
 
@@ -253,3 +254,5 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | 1.3 | After signing: the brand's email was numbered CH-FR-26, which CH-FR-26 (mobile-first) already used; renumbered CH-FR-28. No change to any requirement's words | none |
 | 1.4 | From the brand review grill-me with William: a 401 reads as no session (CH-FR-03), and the session ending during an action keeps everything on the page and says to open the link again (new CH-FR-29), as RW-FR-31 on the review page | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md) |
 | 1.4 signed | Revision 1.4 signed by William | none |
+| 1.5 | From the legal pages grill-me: the brand's deal and review pages end with the legal links, behind the legal flag (new CH-FR-30) | none |
+| 1.5 signed | Revision 1.5 signed by William | none |

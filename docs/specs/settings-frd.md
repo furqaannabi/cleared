@@ -1,6 +1,6 @@
 # Settings: FRD
 
-**Status:** Signed by William (revision 1.1). Disconnecting and deleting the account are product behaviour shared with Furqaan, who builds their routes; they are written here as requests.
+**Status:** Signed by William (revision 1.2). Disconnecting and deleting the account are product behaviour shared with Furqaan, who builds their routes; they are written here as requests.
 
 **Surface:** The creator's account settings at `/settings`: the signed-in email, the PayPal email, the connected YouTube and Instagram accounts, signing out, and (behind a flag until the backend has them) disconnecting an account and deleting the account. Reached from the account menu on the creator's name ([sign-in](sign-in-frd.md) SI-FR-11). The brand has no account and no settings.
 
@@ -59,8 +59,8 @@ One settings page, reached from the name menu, that says who is signed in, where
 
 | ID | Requirement |
 | --- | --- |
-| ST-FR-09 | **Sign out.** "Sign out" at the end of the page, doing what the menu's does (SI-FR-12). |
-| ST-FR-10 | **Delete account (behind the flag).** "Delete account" at the very end, apart from the rest. When nothing is open it opens an inline confirmation saying what happens: "Your profile, your connected accounts and your drafts are deleted. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and email removed. This can't be undone." A field "Type delete to confirm" and "Delete my account", on only once "delete" is typed. Sent as `DELETE /me`; on success the creator is signed out and lands on the home page. |
+| ST-FR-09 | **Sign out.** "Sign out" at the end of the page, doing what the menu's does (SI-FR-12). (1.2) With `NEXT_PUBLIC_LEGAL_PAGES` on, "Privacy policy" and "Terms" sit beside it, linking to `/privacy` and `/terms` ([legal pages](legal-pages-frd.md) LG-FR-15). |
+| ST-FR-10 | **Delete account (behind the flag).** "Delete account" at the very end, apart from the rest. When nothing is open it opens an inline confirmation saying what happens: "Your profile, your connected accounts and your drafts are deleted. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and email removed. This can't be undone." A field "Type delete to confirm" and "Delete my account", on only once "delete" is typed. Sent as `DELETE /me`; on success the creator is signed out and lands on the home page. (1.2) With `NEXT_PUBLIC_LEGAL_PAGES` on, the section also links "How deleting works" to `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-15). |
 | ST-FR-11 | **Refused while anything is open.** While any deal has a post held and not yet paid or released, a payout not settled, or is waiting on its brand, deleting is refused and the section lists what's in the way, one line per deal ("Glow Theory: a post is held"), and says: "Finish or cancel these first." No confirmation opens. The API decides; the page shows its answer. |
 | ST-FR-12 | **The flag.** Disconnecting and deleting show only when the build flag `NEXT_PUBLIC_ACCOUNT_REMOVAL` is "enabled". It stays off until Furqaan's routes and their types are in `contract/`; then turning it on is the only change. With it off, neither shows, and nothing says they're coming. |
 
@@ -127,3 +127,5 @@ One settings page, reached from the name menu, that says who is signed in, where
 | 1.0 | Signed by William | none |
 | 1.1 | Found while building: the requests say where a refusal's details sit (`error.blocking` in the 409 body); the page shows William's pick, design A with design B's profile band (DESIGN.md "Settings"). No requirement changes | none |
 | 1.1 signed | Revision 1.1 signed by William | none |
+| 1.2 | From the legal pages grill-me: Privacy policy and Terms beside Sign out, and How deleting works in Delete account, behind the legal flag ([legal pages](legal-pages-frd.md)) | none |
+| 1.2 signed | Revision 1.2 signed by William | none |

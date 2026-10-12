@@ -1,6 +1,6 @@
 # Landing page: FRD
 
-**Status:** Signed by William (revision 1.6).
+**Status:** Signed by William (revision 1.7).
 
 **Surface:** Landing, at `/`. Anyone can open it. A static Server Component (CLAUDE.md "Surfaces"). It is the first thing a judge sees at the hosted demo URL, and the front door of the product's story.
 
@@ -67,7 +67,7 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 
 | ID | Requirement |
 | --- | --- |
-| LP-FR-12 | **Footer.** Built for the PayPal AI Hackathon; PayPal sandbox only, no real money moves; what is used: PayPal (holds, capture and payouts), Claude on Amazon Bedrock (checking), AG Grid and APIMatic; links to the GitHub repository and its MIT licence. |
+| LP-FR-12 | **Footer.** Built for the PayPal AI Hackathon; PayPal sandbox only, no real money moves; what is used: PayPal (holds, capture and payouts), Claude on Amazon Bedrock (checking), AG Grid and APIMatic; links to the GitHub repository and its MIT licence. (1.7) With `NEXT_PUBLIC_LEGAL_PAGES` on, "Privacy", "Terms" and "Data deletion" linking to `/privacy`, `/terms` and `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-14, LG-FR-15). |
 | LP-FR-13 | **Metadata.** Title "Cleared: brand deals where the content and the payment clear together"; a one-sentence description; a share image with the logo and the held-money card. |
 | LP-FR-14 | **Static.** A Server Component with no client JavaScript of its own; no API calls; fonts already loaded by the app. |
 
@@ -122,3 +122,5 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 | 1.5 signed | Revision 1.5 signed by William | none |
 | 1.6 | From William: LP-FR-18 also turns the header's "Sign in" link into "Your deals" (to `/deals`) for a signed-in creator | none |
 | 1.6 signed | Revision 1.6 signed by William | none |
+| 1.7 | From the legal pages grill-me: the footer gains Privacy, Terms and Data deletion behind the legal flag ([legal pages](legal-pages-frd.md)) | none |
+| 1.7 signed | Revision 1.7 signed by William | none |
