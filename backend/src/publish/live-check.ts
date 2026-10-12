@@ -72,8 +72,61 @@ const WrittenAnswer = z.object({ id: z.string(), verdict: z.enum(["passed", "fix
 
 const withHint = (hint: string | undefined) => (hint ? { hint } : {});
 
-/** Where some words are in the description, as it wrote them, or nothing. Compared as codes are (DR-FR-13). */
-const inDescription = (words: string, description: string) => findExact(words, [{ text: description, startSec: 0, endSec: 0 }], "screen");
+/** Where some words are in a post's own text, as it wrote them, or nothing. Compared as codes are (DR-FR-13). */
+const inText = (words: string, text: string) => findExact(words, [{ text, startSec: 0, endSec: 0 }], "screen");
+
+/** The text a platform lets a creator write beside a post, and what the creator is told to call it. */
+export type Written = { text: string; called: "description" | "caption" };
+
+/**
+ * Written items, checked against the text beside a published post: a YouTube video's description or a
+ * Reel's caption (PT-FR-12, IG-FR-23). A link, code or hashtag is matched by code alone, and because
+ * that text can be edited anything short of a match is fixable. An item that needs judgment goes to the
+ * judge, and its pass counts only if its quote is really in the text (PT-BR-02, IG-BR-04). The text is
+ * untrusted: it is searched and quoted, never obeyed.
+ */
+export async function writtenResults(
+  items: LiveItem[],
+  written: Written,
+  judgeWritten: LiveCheckInput["judgeWritten"],
+): Promise<{ results: Map<string, LiveItemResult>; unsure: boolean }> {
+  const { text, called } = written;
+  const label = called === "caption" ? "Caption" : "Description";
+  const results = new Map<string, LiveItemResult>();
+
+  for (const item of items) {
+    if (item.kind !== "written" || !item.exact) continue;
+    const base = { id: item.id, checkedBy: "published_post" as const };
+    const found = inText(item.exact, text);
+    if (found.found === "match") {
+      results.set(item.id, { ...base, result: "passed", evidence: { label, text: found.text } });
+    } else if (found.found === "near") {
+      const hint = plainHint(`The ${called} has "${found.text}", not "${item.exact}". Change it to "${item.exact}".`);
+      results.set(item.id, { ...base, result: "fix_needed", evidence: { label, text: found.text }, ...withHint(hint) });
+    } else {
+      results.set(item.id, { ...base, result: "fix_needed", ...withHint(plainHint(`Add "${item.exact}" to the ${called}, exactly as written.`)) });
+    }
+  }
+
+  const judged = items.filter((item) => item.kind === "written" && !item.exact);
+  const asked = judged.map(({ id, name }) => ({ id, name }));
+  const answers = await answersFor("the judge", asked, WrittenAnswer, () => judgeWritten({ items: asked, description: text }));
+  let unsure = false;
+  for (const item of judged) {
+    const answer = answers.get(item.id);
+    const base = { id: item.id, checkedBy: "ai_timestamp" as const };
+    const found = answer?.verdict === "passed" && answer.quote ? inText(answer.quote, text) : undefined;
+    if (answer?.verdict === "fix_needed") {
+      results.set(item.id, { ...base, result: "fix_needed", ...withHint(plainHint(answer.reason)) });
+    } else if (found?.found === "match") {
+      results.set(item.id, { ...base, result: "passed", evidence: { label, text: found.text } });
+    } else {
+      unsure = true;
+      results.set(item.id, { ...base, result: "unsure" });
+    }
+  }
+  return { results, unsure };
+}
 
 export async function liveCheck(input: LiveCheckInput): Promise<LiveCheckResult> {
   const { video, items } = input;
@@ -103,39 +156,12 @@ export async function liveCheck(input: LiveCheckInput): Promise<LiveCheckResult>
         results.set(item.id, { ...base, result: "fix_needed", hint: 'Turn on "Includes paid promotion" for the video in YouTube Studio.' });
       }
     }
-
-    // A link, code or hashtag: matched by code alone. A description can be edited, so anything short of a match is fixable.
-    if (item.kind === "written" && item.exact) {
-      const base = { id: item.id, checkedBy: "published_post" as const };
-      const found = inDescription(item.exact, video.description);
-      if (found.found === "match") {
-        results.set(item.id, { ...base, result: "passed", evidence: { label: "Description", text: found.text } });
-      } else if (found.found === "near") {
-        const hint = plainHint(`The description has "${found.text}", not "${item.exact}". Change it to "${item.exact}".`);
-        results.set(item.id, { ...base, result: "fix_needed", evidence: { label: "Description", text: found.text }, ...withHint(hint) });
-      } else {
-        results.set(item.id, { ...base, result: "fix_needed", ...withHint(plainHint(`Add "${item.exact}" to the description, exactly as written.`)) });
-      }
-    }
   }
 
-  // Written items that need judgment: the judge's pass counts only if its quote is really in the description.
-  const judged = items.filter((item) => item.kind === "written" && !item.exact);
-  const asked = judged.map(({ id, name }) => ({ id, name }));
-  const answers = await answersFor("the judge", asked, WrittenAnswer, () => input.judgeWritten({ items: asked, description: video.description }));
-  for (const item of judged) {
-    const answer = answers.get(item.id);
-    const base = { id: item.id, checkedBy: "ai_timestamp" as const };
-    const found = answer?.verdict === "passed" && answer.quote ? inDescription(answer.quote, video.description) : undefined;
-    if (answer?.verdict === "fix_needed") {
-      results.set(item.id, { ...base, result: "fix_needed", ...withHint(plainHint(answer.reason)) });
-    } else if (found?.found === "match") {
-      results.set(item.id, { ...base, result: "passed", evidence: { label: "Description", text: found.text } });
-    } else {
-      undecided.add("written_item");
-      results.set(item.id, { ...base, result: "unsure" });
-    }
-  }
+  // Written items, against the description: by code where there is an exact string, by the judge where there is not.
+  const written = await writtenResults(items, { text: video.description, called: "description" }, input.judgeWritten);
+  for (const [id, result] of written.results) results.set(id, result);
+  if (written.unsure) undecided.add("written_item");
 
   const list = items.map((item) => results.get(item.id) ?? { id: item.id, result: "unsure" as const, checkedBy: "published_post" as const });
   const notFixable = !ownChannel ? ("not_your_channel" as const) : file === "different" ? ("not_the_approved_file" as const) : undefined;
