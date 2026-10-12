@@ -1,6 +1,6 @@
 # Sign-in and welcome: FRD
 
-**Status:** Signed by William (revision 1.1). The sign-in itself is the backend's (Furqaan's [deal set-up](deal-setup-frd.md)).
+**Status:** Signed by William (revision 1.2). The sign-in itself is the backend's (Furqaan's [deal set-up](deal-setup-frd.md)).
 
 **Surface:** How a creator gets into the creator app, and their first minute in it. The landing's "Sign in with Google", `/sign-in` for a signed-out visitor, `/welcome` the first time, and the account menu on the creator's name in the rail. The brand's side is unchanged: it gets in by its link ([brand access](../decisions/2026-10-08-brand-access-by-link-session.md)).
 
@@ -71,7 +71,7 @@ The landing offers one way in. "Sign in with Google" signs a creator in through 
 
 | ID | Requirement |
 | --- | --- |
-| SI-FR-11 | **The creator's name** in the rail (DC-FR-31), and in the phone deals sheet, is a button that opens a small menu: the signed-in email and "Sign out". Under the name, "Creator". Escape and a tap outside close it; focus returns to the name. Settings joins it when its spec adds it. |
+| SI-FR-11 | **The creator's name** in the rail (DC-FR-31), and in the phone deals sheet, is a button that opens a small menu: the signed-in email and "Sign out". Under the name, "Creator". Escape and a tap outside close it; focus returns to the name. 1.2: "Settings" sits between the email and "Sign out", going to `/settings` ([settings](settings-frd.md)). |
 | SI-FR-12 | **Sign out** calls the backend's sign-out, then opens the landing. |
 | SI-FR-13 | *Removed in 1.1: no demo account, so no "Demo account" label and no "Leave the demo". The rail's "Reset demo data" goes with the mocks ([frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md)).* |
 
@@ -136,7 +136,7 @@ POST /me/welcomed                 // marks the welcome seen
 
 ## Out of Scope
 
-- Settings (its own spec next): changing the PayPal email or connected accounts after the welcome, and deleting the account.
+- Settings: changing the PayPal email or connected accounts after the welcome, and deleting the account. 1.2: in the [settings FRD](settings-frd.md).
 - Email and password sign-in, email codes, Instagram as a sign-in.
 - Emails about signing in.
 - The brand's access (unchanged).
@@ -154,3 +154,5 @@ POST /me/welcomed                 // marks the welcome seen
 | 1.0 | Signed by William | none |
 | 1.1 | From the grill-me with William after Furqaan removed demo accounts: Sign in with Google alone, with no note beside it (SI-FR-01, SI-FR-05); SI-FR-02, SI-FR-13, SI-FR-14 and SI-BR-04 and the judge stories removed; no demo flag on `/me`; Google directly, no Cognito; the pages on the live API, with per-test stubs and live end-to-end; the contract's shapes, with `email` asked for; requests for a test session and local credentials; how a judge runs the demo is open | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md), [Creators sign in with Google directly](../decisions/2026-10-09-creators-sign-in-with-google-directly.md), [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md) |
 | 1.1 signed | Revision 1.1 signed by William | none |
+| 1.2 | From the Settings grill-me with William: the name menu gains "Settings" between the email and "Sign out" (SI-FR-11); Out of Scope points to the settings FRD | none |
+| 1.2 signed | Revision 1.2 signed by William | none |
