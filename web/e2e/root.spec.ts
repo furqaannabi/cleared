@@ -10,12 +10,6 @@ test("LP-FR-07: the landing page has no sideways scroll, and the button is on th
   expect(box && box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
 });
 
-test("LP-FR-15 (1.4), HM-FR-01 (1.2): /deals is the creator's overview, listing their deals", async ({ page }) => {
-  await page.goto("/deals");
-  await expect(page.getByRole("heading", { level: 1, name: "Overview" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Deals" }).getByRole("link", { name: /Glow Theory/ })).toBeVisible();
-});
-
 for (const width of [375, 1100]) {
   test(`LP-FR-07: the problem and closing cards keep a gutter from the screen edge at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });

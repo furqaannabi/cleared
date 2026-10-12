@@ -232,9 +232,6 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     },
     /** IN-FR-12: save the PayPal email payments go to. */
     setPaypalEmail: (email: string) => request("PUT", "/me/paypal-email", profileAfterEmailSchema, { email }),
-    /** Mock builds only (IN-FR-11, 1.3): connects an account and answers where the backend would return; the real flow is a link. */
-    mockConnect: (platform: "youtube" | "instagram", next: string) =>
-      request("POST", `/__demo/connect/${platform}?next=${encodeURIComponent(next)}`, z.object({ location: z.string().startsWith("/") })),
 
     // Confirm and hold, the brand's side (CH FRD). The session is an HttpOnly cookie set by the API.
     /** CH-FR-01: swap a link's token for a session scoped to its deal. The token is never stored or logged (CH-BR-06). */

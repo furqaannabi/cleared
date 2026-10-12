@@ -1,12 +1,25 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3100;
+// The live suite runs against the developer's local backend (ADR 2026-10-12, stops at the invite).
+// The test secret and the API's address come from web/.env.local, which git ignores; nothing is printed.
+try {
+  for (const line of readFileSync(join(__dirname, ".env.local"), "utf8").split("\n")) {
+    const m = line.match(/^\s*(TEST_SESSION_SECRET|NEXT_PUBLIC_API_BASE_URL)\s*=\s*"?([^"\n]*)"?\s*$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+  }
+} catch {
+  // No .env.local: the signed-in specs skip themselves.
+}
 
-// End-to-end tests. Every flow runs on a 375px phone and on desktop
-// (CLAUDE.md: test every new component at 375px).
+// The local backend answers only its APP_ORIGIN, the dev server on :3000.
+const PORT = 3000;
+
+// Every flow runs on a 375px phone and on desktop (CLAUDE.md: test every new component at 375px).
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   // In CI: annotations on the run, plus an HTML report that is kept when a test fails.
@@ -26,12 +39,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    // Until the backend exists, e2e runs on the dev server with MSW mocks on, in CI too:
-    // a production build never mocks (docs/decisions/2026-10-06-frontend-mocks-msw.md).
+    // Reuses the developer's running dev server; starts one when there is none.
     command: `pnpm dev -p ${PORT}`,
-    env: { NEXT_PUBLIC_API_MOCKING: "enabled" },
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120_000,
   },
 });

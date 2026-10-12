@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
-import { MockProvider } from "@/components/mocking/mock-provider";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -27,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${bricolage.variable} ${figtree.variable} antialiased`}>
       <body className="min-h-dvh">
-        <MockProvider>{children}</MockProvider>
+        {children}
       </body>
     </html>
   );

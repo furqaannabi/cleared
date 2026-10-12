@@ -21,7 +21,6 @@ import { DraftPlayer } from "@/components/player/draft-player";
 import { SeekProvider } from "@/components/player/seek";
 import { api } from "@/lib/api";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import { MOCKING_ENABLED } from "@/lib/mocking/mocking-enabled";
 import { UploadNotices } from "./upload-notices";
 import { UploadProgress } from "./upload-progress";
 import { useDraftUpload } from "./use-draft-upload";
@@ -33,9 +32,7 @@ import { DraftCheckLayout } from "./draft-check-layout";
 import { PassedBanner } from "./passed-banner";
 import { ApprovedBanner, CopyReviewLink } from "./review-status";
 import { JourneySlot } from "@/components/publish/journey-slot";
-import { DemoPublishControls } from "@/components/mocking/demo-publish-controls";
 import { JOURNEY_STATES } from "@/lib/publish/journey";
-import { DemoDraftOutcome, type DemoChoice } from "@/components/mocking/demo-draft-outcome";
 import { RunChangeBanner } from "./run-change-banner";
 import { runChangeRecap } from "@/lib/deliverable/run-change";
 import { LoadProblem } from "./load-problem";
@@ -129,31 +126,10 @@ function Loaded({
     if (result.ok) onUpdated(result.data);
     else setRetryProblem("We couldn’t restart the check. Try again in a moment.");
   };
-  // DC-FR-45: while the upload flow is unspecced, uploading is simulated, and only on mocks.
-  // The literal NODE_ENV check lets the bundler drop the simulation and mock data from production builds.
-  // RW-FR-28: on mocks, what the next simulated draft finds; a first draft passes unless told otherwise.
-  const [demoOutcome, setDemoOutcome] = useState<DemoChoice>(deliverable.draft ? "usual" : "passes");
-  const simulateUpload =
-    process.env.NODE_ENV !== "production" && MOCKING_ENABLED
-      ? async (file: File) => {
-        void file; // never read or sent anywhere
-        const { simulateUpload: simulate } = await import("@/mocks/simulate-upload");
-        simulate(
-          deliverable.id,
-          (d) => {
-            onUpdated(d);
-            // Once the run lands, read it back through the API: the mocks keep (save) what a response returns.
-            if (d.state !== "checking") void api.getDeliverable(d.id).then((r) => r.ok && onUpdated(r.data));
-          },
-          undefined,
-          demoOutcome === "usual" ? undefined : demoOutcome,
-        );
-      }
-    : undefined;
-  // DC-FR-45 (1.18): the real upload, everywhere but mock builds; the post's limit takes the upload away (DC-FR-53).
+  // DC-FR-45 (1.18): the real upload; the post's limit takes the upload away (DC-FR-53).
   const draftUpload = useDraftUpload(deliverable.id, onUpdated);
   const postLimit = draftUpload.problem?.show === "limit" && draftUpload.problem.post;
-  const onUpload = simulateUpload ?? (postLimit ? undefined : draftUpload.upload);
+  const onUpload = postLimit ? undefined : draftUpload.upload;
   // PP FRD, design B: past Approved the journey takes the money card's and the next step's place.
   const inJourney = JOURNEY_STATES.includes(deliverable.state);
   const barHasAction =
@@ -247,8 +223,6 @@ function Loaded({
       {view.passed && <PassedBanner passed={view.passed} brandName={deliverable.brandName} />}
       {deliverable.state === "approved" && <ApprovedBanner deliverable={deliverable} />}
       <CopyReviewLink deliverable={deliverable} onUpdated={onUpdated} />
-      {simulateUpload && view.nextStep.action?.startsWith("upload") && <DemoDraftOutcome value={demoOutcome} onChange={setDemoOutcome} />}
-      {MOCKING_ENABLED && inJourney && <DemoPublishControls d={deliverable} onUpdated={onUpdated} />}
       {/* DC-FR-47: on phones the work comes first: this panel, the player, the checklist, then the money. */}
       {!wide && !view.checkFailed && !inJourney && (
         <div className="mt-5">
@@ -318,12 +292,6 @@ function Loaded({
         <div className="mt-8">
           {withCancel(<MoneyCard deliverable={deliverable} compact />)}
         </div>
-      )}
-      {/* DC-BR-10: mock data is labelled as synthetic on screen. Never shown with real data. */}
-      {MOCKING_ENABLED && (
-        <p className="mt-7 max-w-[72ch] text-chip text-ink-4">
-          Demo data. Glow Theory, Northbound Coffee, Kora Audio, Juniper & Salt, Maple & Moss and Ada Okafor are made up, and no money moves.
-        </p>
       )}
       </div>
       {/* Says what Ask and Withdraw did, for screen readers (DC-FR-14, DC-FR-15). */}
