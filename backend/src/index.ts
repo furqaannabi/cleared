@@ -1,4 +1,5 @@
 import { createAccounts } from "./accounts/accounts";
+import { createAccountRemoval } from "./accounts/removal";
 import { createApp } from "./app";
 import { createClaudeBriefModel } from "./briefs/claude";
 import { createClaudeJudge } from "./checks/claude-judge";
@@ -136,6 +137,10 @@ if (!publishing) {
   console.warn("Google or PayPal is not configured, so no go-ahead can be given and no live check runs. See backend/.env.example.");
 }
 
+// Disconnecting an account and deleting one. A deleted account's files leave the bucket by a job.
+const google = env.google && createGoogle({ ...env.google, log });
+const removal = createAccountRemoval({ prisma, now, google, secrets, money, storage, log });
+
 const app = createApp({
   prisma,
   accounts,
@@ -148,7 +153,8 @@ const app = createApp({
   storage,
   appOrigin: env.appOrigin,
   apiOrigin: env.apiOrigin,
-  google: env.google && createGoogle({ ...env.google, log }),
+  google,
+  removal,
   instagram,
   instagramConnections,
   secrets,
@@ -159,7 +165,7 @@ const app = createApp({
 
 // Timers and follow-ups: reading briefs, checking drafts and live posts, and the money path's deadlines and
 // unanswered PayPal calls.
-const handlers: JobHandlers = { ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers, ...instagramConnections?.handlers };
+const handlers: JobHandlers = { ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers, ...instagramConnections?.handlers, ...removal.handlers };
 const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now() }) });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.once(signal, async () => {

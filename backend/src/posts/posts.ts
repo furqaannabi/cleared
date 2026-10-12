@@ -387,7 +387,9 @@ export function createPosts(deps: {
         where: { id: deliverableId, dealId },
         include: { deal: { include: { creator: { select: { name: true } } } } },
       });
-      if (!post) return { refused: "not_found" };
+      // A deal whose creator's account was deleted is kept only as a money record, and is shown to nobody (AH-FR-18).
+      const creator = post?.deal.creator;
+      if (!post || !creator) return { refused: "not_found" };
       // The plain money view: it holds no PayPal email at all.
       const view = await money?.view(deliverableId);
       if (!view || view.hold.state !== "held") return { refused: "not_held" };
@@ -412,7 +414,7 @@ export function createPosts(deps: {
       return {
         dealId,
         deliverableId,
-        creatorName: deal.creator.name,
+        creatorName: creator.name,
         brandName: deal.brandName,
         platform: post.platform as Platform,
         creatorTimeZone: deal.timezone ?? "UTC",

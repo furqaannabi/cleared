@@ -508,7 +508,7 @@ export function createDeals(deps: {
 
       return prisma.$transaction(async (tx) => {
         const deal = await tx.deal.findFirst({ where: { id: dealId, creatorId }, include: { creator: true } });
-        if (!deal) return { refused: "not_found" };
+        if (!deal?.creator) return { refused: "not_found" };
         const sendable = deal.step === "checklist" && (deal.reading === "idle" || deal.reading === "failed");
         if (!sendable) return { refused: "reading_started" };
         const limit = await limitReached(tx, deal.creator, at);

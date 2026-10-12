@@ -884,6 +884,18 @@ export function createMoney(deps: MoneyDeps) {
     payoutRetry: (deliverableId: string) =>
       act(deliverableId, { type: "payout_retry_requested", payoutId: newId(), at: now() }),
 
+    /**
+     * Removes the creator's PayPal email from a deliverable that is finished, when their account is
+     * deleted (account and history spec AH-FR-18, AH-BR-03). It is the only thing of the creator's the
+     * money path holds: the state and the record carry ids, amounts, dates and PayPal references, and
+     * none of those is touched. Refused, with nothing changed, unless the deliverable is paid, released,
+     * closed, or approved and not paid: an email that a payout may still need is never removed.
+     */
+    async forgetCreatorIn(tx: Prisma.TransactionClient, deliverableId: string): Promise<boolean> {
+      const forgotten = await tx.deliverableMoney.updateMany({ where: { deliverableId, stage: { in: ["paid", "released", "closed_not_held", "approved_not_paid"] } }, data: { payoutEmail: "" } });
+      return forgotten.count === 1;
+    },
+
     /** The creator corrects their PayPal email. It is used by the next payout sent (MP-FR-28). */
     async changePayoutEmail(deliverableId: string, payoutEmail: string): Promise<void> {
       await prisma.deliverableMoney.update({ where: { deliverableId }, data: { payoutEmail } });

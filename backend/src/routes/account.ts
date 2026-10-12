@@ -34,8 +34,8 @@ export function registerAccountRoutes(
     appOrigin: string;
     /** Carries a new PayPal email to the creator's posts that are not yet paid out (PT-FR-27). */
     payouts?: Pick<Payouts, "emailChanged">;
-    /** Disconnects an account (AH-FR-10). */
-    removal: Pick<AccountRemoval, "disconnect">;
+    /** Disconnects an account, and deletes the creator's own (AH-FR-10, AH-FR-15). */
+    removal: Pick<AccountRemoval, "disconnect" | "deleteAccount">;
   },
 ) {
   const { sessions, accounts, appOrigin, payouts, removal } = deps;
@@ -65,6 +65,30 @@ export function registerAccountRoutes(
     const profile = await accounts.profile(c.get("creatorId"));
     return profile ? c.json(profile, 200) : fail(c, 401, "signed_out");
   };
+
+  app.openapi(
+    createRoute({
+      method: "delete",
+      path: "/me",
+      summary:
+        "Delete the signed-in creator's account. What they made and said is deleted; each held post's money records are kept with no name or email (AH-FR-15 to AH-FR-21)",
+      middleware: [creator] as const,
+      responses: {
+        204: { description: "Deleted. Every session of the creator has ended, and the session cookie is cleared" },
+        401: json(ErrorSchema, "Nobody is signed in"),
+        409: json(
+          ErrorSchema,
+          "Refused with `deal_open`: a post is held, a payout is not settled, or a brand may still agree or hold. Each deal in the way is listed once in `blocking` with why, and nothing was deleted",
+        ),
+      },
+    }),
+    async (c) => {
+      const done = await removal.deleteAccount(c.get("creatorId"));
+      if ("refused" in done) return done.refused === "deal_open" ? c.json({ error: { code: done.refused, blocking: done.blocking } }, 409) : fail(c, 401, "signed_out");
+      signOut(c, appOrigin);
+      return c.body(null, 204);
+    },
+  );
 
   app.openapi(
     createRoute({

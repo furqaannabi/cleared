@@ -293,7 +293,7 @@ export function createReelPublishing(deps: {
       const post = await prisma.deliverable.findUnique({ where: { id: deliverableId }, include: { deal: true } });
       const view = await money?.view(deliverableId);
       // Once the hold is taken or given back there is nothing left for a check to decide.
-      if (!post || !money || !judge || !reading || view?.stage !== "held") return stop(deliverableId, null, check.fetchedKey);
+      if (!post?.deal.creatorId || !money || !judge || !reading || view?.stage !== "held") return stop(deliverableId, null, check.fetchedKey);
 
       const tryLater = { retryAt: new Date(now().getTime() + Math.min(settings.retryFirstSeconds * 2 ** (attempts - 1), settings.retryLongestSeconds) * 1000) };
       const stored = await accountOf(post.deal.creatorId);

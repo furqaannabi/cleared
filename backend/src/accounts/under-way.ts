@@ -28,7 +28,7 @@ export async function postsUnderWay(prisma: PrismaClient, creatorId: string): Pr
   const posts = await prisma.deliverable.findMany({
     where: { deal: { creatorId } },
     include: { deal: { select: { brandName: true, createdAt: true } } },
-    orderBy: [{ deal: { createdAt: "asc" } }, { position: "asc" }],
+    orderBy: [{ deal: { createdAt: "asc" } }, { dealId: "asc" }, { position: "asc" }],
   });
   const stages = await prisma.deliverableMoney.findMany({ where: { deliverableId: { in: posts.map((post) => post.id) }, stage: { in: UNDER_WAY } }, select: { deliverableId: true } });
   const underWay = new Set(stages.map((row) => row.deliverableId));

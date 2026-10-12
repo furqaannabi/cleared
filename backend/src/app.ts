@@ -56,7 +56,7 @@ export interface AppDeps {
   apiOrigin?: string;
   /** Google, for signing in and connecting YouTube. Left out when it is not set up. */
   google?: GooglePort;
-  /** Disconnects an account. Made here from `google` and `secrets` when left out. */
+  /** Disconnects an account and deletes one. Made here when left out; its job then has no worker, so the service passes its own. */
   removal?: AccountRemoval;
   /** Instagram, for connecting an account (IG-FR-02). Left out when it is not set up. */
   instagram?: InstagramPort;
@@ -126,7 +126,7 @@ export function createApp(deps: AppDeps) {
     accounts,
     payouts,
     appOrigin,
-    removal: deps.removal ?? createAccountRemoval({ prisma, google: deps.google, secrets: deps.secrets }),
+    removal: deps.removal ?? createAccountRemoval({ prisma, now, google: deps.google, secrets: deps.secrets, money, storage: deps.storage }),
   });
   registerPaymentRoutes(app, { sessions, payments: createPaymentHistory({ prisma, money }) });
   const reviewLinks = deps.reviewLinks ?? createReviewLinks({ prisma, now, appOrigin, linkKeys: deps.linkKeys, money });

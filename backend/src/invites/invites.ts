@@ -185,6 +185,7 @@ export function createInvites(deps: {
     if (gone.size === deal.deliverables.length) return { refused: "not_at_invite" };
     const unfinished = deal.deliverables.findIndex((post) => !gone.has(post.id) && (post.amountCents === null || post.deadlineDays === null));
     if (unfinished !== -1) return { refused: "terms_incomplete", index: unfinished };
+    if (!deal.creatorId) return { refused: "not_at_invite" };
     const creator = await tx.creator.findUniqueOrThrow({ where: { id: deal.creatorId }, include: { accounts: true } });
     // Each platform the deal still has a post on must be connected, and no other (IG-FR-08).
     const sent = deal.deliverables.filter((post) => !gone.has(post.id));

@@ -7,54 +7,6 @@
   },
   "components": {
     "schemas": {
-      "Profile": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "welcomed": {
-            "type": "boolean"
-          },
-          "paypalEmail": {
-            "type": "string"
-          },
-          "accounts": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "platform": {
-                  "type": "string",
-                  "enum": [
-                    "youtube",
-                    "instagram"
-                  ]
-                },
-                "name": {
-                  "type": "string"
-                },
-                "inUse": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "platform",
-                "name",
-                "inUse"
-              ]
-            }
-          }
-        },
-        "required": [
-          "name",
-          "welcomed",
-          "accounts"
-        ]
-      },
       "Error": {
         "type": "object",
         "properties": {
@@ -128,6 +80,54 @@
         },
         "required": [
           "error"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "welcomed": {
+            "type": "boolean"
+          },
+          "paypalEmail": {
+            "type": "string"
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform": {
+                  "type": "string",
+                  "enum": [
+                    "youtube",
+                    "instagram"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "inUse": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "platform",
+                "name",
+                "inUse"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "welcomed",
+          "accounts"
         ]
       },
       "ProfileAfterEmail": {
@@ -2621,6 +2621,61 @@
         }
       }
     },
+    "/me": {
+      "delete": {
+        "summary": "Delete the signed-in creator's account. What they made and said is deleted; each held post's money records are kept with no name or email (AH-FR-15 to AH-FR-21)",
+        "responses": {
+          "204": {
+            "description": "Deleted. Every session of the creator has ended, and the session cookie is cleared"
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Refused with `deal_open`: a post is held, a payout is not settled, or a brand may still agree or hold. Each deal in the way is listed once in `blocking` with why, and nothing was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "The signed-in creator (DS-FR-08)",
+        "responses": {
+          "200": {
+            "description": "The creator's profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nobody is signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/connect/{platform}": {
       "delete": {
         "summary": "Disconnect YouTube or Instagram: the stored access and the connected account are deleted, and Google is asked to revoke (AH-FR-10 to AH-FR-13)",
@@ -2671,33 +2726,6 @@
           },
           "409": {
             "description": "Refused with `post_under_way`: a post on that platform is held and not yet paid or released. Each is listed in `blocking`, and nothing was deleted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/me": {
-      "get": {
-        "summary": "The signed-in creator (DS-FR-08)",
-        "responses": {
-          "200": {
-            "description": "The creator's profile",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Profile"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Nobody is signed in",
             "content": {
               "application/json": {
                 "schema": {
