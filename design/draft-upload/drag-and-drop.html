@@ -1,0 +1,85 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Draft drag and drop</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Dragging a video onto the creator's draft check page (desktop). Design prototype, never shipped.
+   Self-contained; tokens from web/src/app/globals.css. Classes prefixed dd-. Example data. */
+:root{--espresso:#3f3322;--espresso-deep:#2c2314;--latte-line:#e4dcce;--latte:#f3eee5;--latte-wash:#faf8f4;--ink:#1e1a14;--ink-2:#4a4339;--ink-3:#675f55;--ink-4:#6e665b;
+  --surface:#fff;--line:#e8e4dc;--fail:#b8302a;--fail-tint:#fff7f6;--fail-line:#f5c9c4;--page:#f7f5f0;--head:"Bricolage Grotesque",system-ui,sans-serif;--body:Figtree,system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--body);color:var(--ink);background:#ece8e0;line-height:1.45}
+.dd-doc{max-width:1500px;margin:0 auto;padding:36px 24px 80px}
+.dd-doc>h1{font-family:var(--head);font-size:30px;line-height:1.15}
+.dd-why{color:var(--ink-2);max-width:82ch;margin:8px 0 0}
+.dd-look{margin-top:44px}.dd-look>h2{font-family:var(--head);font-size:22px}.dd-look>p{color:var(--ink-2);max-width:80ch;margin:4px 0 16px}
+.dd-row{display:flex;flex-wrap:wrap;gap:22px}
+.dd-cap{font-size:12.5px;font-weight:800;color:var(--ink-3);margin:0 0 6px}
+.dd-page{width:640px;background:var(--page);border:1px solid var(--line);border-radius:14px;padding:22px}
+.dd-title{font-family:var(--head);font-size:24px;font-weight:800}
+.dd-sub{font-size:14px;color:var(--ink-3);margin-bottom:14px}
+
+/* the player area */
+.dd-panel{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 1px 2px rgb(28 21 10/.05)}
+.dd-frame{position:relative;aspect-ratio:16/9;border-radius:12px;display:grid;place-items:center;text-align:center;overflow:hidden}
+.dd-empty{background:var(--latte-wash)}
+.dd-video{background:radial-gradient(120% 90% at 30% 35%,#7b6447 0,#4a3c2a 45%,#231c12 100%)}
+.dd-msg{display:grid;justify-items:center;gap:6px;padding:16px}
+.dd-msg svg{width:32px;height:32px}
+.dd-msg b{font-size:15.5px}
+.dd-msg span{font-size:13.5px;color:var(--ink-3);max-width:34ch}
+.dd-msg.dd-hint svg{color:var(--ink-4)}.dd-msg.dd-hint b{color:var(--ink-2)}
+
+/* the drop target, look A: dashed espresso outline on latte */
+.dA .dd-drop{position:absolute;inset:0;border-radius:12px;background:rgb(243 238 229/.94);outline:2px dashed var(--espresso);outline-offset:-8px;display:grid;place-items:center}
+.dA .dd-drop .dd-msg svg{color:var(--espresso)}.dA .dd-drop .dd-msg b{color:var(--espresso)}
+.dA .dd-drop.no{outline-color:var(--ink-4);background:rgb(250 248 244/.95)}.dA .dd-drop.no .dd-msg svg,.dA .dd-drop.no .dd-msg b{color:var(--ink-2)}
+/* look B: espresso veil, white words */
+.dB .dd-drop{position:absolute;inset:0;border-radius:12px;background:rgb(44 35 20/.88);display:grid;place-items:center;box-shadow:inset 0 0 0 2px rgb(243 238 229/.5)}
+.dB .dd-drop .dd-msg svg,.dB .dd-drop .dd-msg b{color:#fff}.dB .dd-drop .dd-msg span{color:rgb(255 255 255/.75)}
+.dB .dd-drop.no{background:rgb(44 35 20/.7);box-shadow:none}
+
+/* the next-step bar, as on desktop */
+.dd-bar{margin-top:14px;background:var(--latte-wash);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;justify-content:space-between}
+.dd-bar p{font-size:14.5px;color:var(--ink-2)}.dd-bar p b{color:var(--ink)}
+.dd-btn{display:inline-flex;min-height:44px;align-items:center;border-radius:999px;padding:0 18px;background:var(--espresso);color:#fff;font-weight:700;font-size:14.5px;white-space:nowrap}
+.dd-banner{margin-top:14px;border:1px solid var(--fail-line);background:var(--fail-tint);border-radius:14px;padding:12px 16px;font-size:14px;color:var(--ink-2)}
+.dd-banner b{display:block;color:var(--fail);font-size:15px}
+</style></head><body><div class="dd-doc">
+<h1>Dragging a draft onto the page</h1>
+<p class="dd-why">On desktop, a video dragged anywhere over the draft check page can be dropped to upload it, whenever “Upload draft”, “Upload new draft” or “Upload again” is offered. While a file is over the window, the player area shows where it will go. When an upload isn’t offered, the player area says so and the drop does nothing. Phones are unchanged. Two looks for the drop target. Example data.</p>
+<div id="looks"></div>
+</div>
+<script>
+const UP = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16"/></svg>`;
+const NO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>`;
+const PLAY = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m10 9.5 4.5 2.5-4.5 2.5z" fill="currentColor"/></svg>`;
+
+const page = (title, frame, bar, extra = "") => `<div class="dd-page"><p class="dd-title">${title}</p><p class="dd-sub">Maple &amp; Moss · due Fri 23 Oct</p>
+  <div class="dd-panel">${frame}</div>${extra}${bar}</div>`;
+const drop = (ok, b, s) => `<div class="dd-drop ${ok ? "" : "no"}"><div class="dd-msg">${ok ? UP : NO}<b>${b}</b>${s ? `<span>${s}</span>` : ""}</div></div>`;
+const barUpload = (lead, label) => `<div class="dd-bar"><p><b>${lead}</b></p><span class="dd-btn">${label}</span></div>`;
+const barNone = (lead) => `<div class="dd-bar"><p><b>${lead}</b></p></div>`;
+
+const states = [
+  ["No draft yet, nothing dragged", page("YouTube video",
+    `<div class="dd-frame dd-empty"><div class="dd-msg dd-hint">${PLAY}<b>No draft yet</b><span>Your draft will play here once you upload it. Drag your video here, or use Upload draft.</span></div></div>`,
+    barUpload("Upload your draft to check it against the checklist.", "Upload draft"))],
+  ["Dragging a video, no draft yet", page("YouTube video",
+    `<div class="dd-frame dd-empty">${drop(true, "Drop to upload your draft", "MP4 or MOV, up to 1 GB")}</div>`,
+    barUpload("Upload your draft to check it against the checklist.", "Upload draft"))],
+  ["Dragging a new cut over the last draft", page("YouTube video",
+    `<div class="dd-frame dd-video">${drop(true, "Drop to upload your new draft", "We check it against the checklist again")}</div>`,
+    barUpload("Maple &amp; Moss asked you to fix 1 item. Upload a new draft by Fri 23 Oct.", "Upload new draft"))],
+  ["Dragging while the draft is in review", page("YouTube video",
+    `<div class="dd-frame dd-video">${drop(false, "You can’t upload a draft right now.", "")}</div>`,
+    barNone("Maple &amp; Moss has until Thu 15 Oct, 2:40 pm to review."))],
+  ["After dropping three files", page("YouTube video",
+    `<div class="dd-frame dd-empty"><div class="dd-msg dd-hint">${PLAY}<b>No draft yet</b><span>Your draft will play here once you upload it. Drag your video here, or use Upload draft.</span></div></div>`,
+    barUpload("Upload your draft to check it against the checklist.", "Upload draft"),
+    `<div class="dd-banner" role="alert"><b>Drop one video at a time.</b>You dropped 3 files. Nothing was sent.</div>`)],
+];
+const LOOKS = [["dA", "Look A · Dashed outline", "The player area turns latte with a dashed espresso outline, the way most upload targets look. It reads as “put it here”, and it's quiet."],
+  ["dB", "Look B · Espresso veil", "A dark espresso veil over the player with white words, like the rail. It's the more noticeable of the two, and it's clear over a playing video."]];
+document.getElementById("looks").innerHTML = LOOKS.map(([k, h, p]) => `<section class="dd-look"><h2>${h}</h2><p>${p}</p>
+  <div class="dd-row ${k}">${states.map(([c, html], i) => (i === 0 || i === 4) && k === "dB" ? "" : `<div><p class="dd-cap">${c}</p>${html}</div>`).join("")}</div></section>`).join("");
+</script></body></html>
