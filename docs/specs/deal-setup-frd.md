@@ -1,6 +1,6 @@
 # Deal set-up: FRD
 
-**Status:** Signed by Furqaan (revision 1.3). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no demo accounts) are Furqaan's; William has to agree.
+**Status:** Signed by Furqaan (revision 1.4). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no demo accounts) are Furqaan's; William has to agree.
 
 **Surface:** Backend. Steps 1 to 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: a creator signs in, starts a deal, has its brief turned into a checklist, sets the terms and makes the brand's link; the brand opens the link, asks for changes or agrees, and approves a PayPal hold for each post.
 
@@ -188,6 +188,8 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | DS-FR-49 | **A log of requests.** Every request is logged once, when it is answered: a request id, the method, the route's pattern (`/deliverables/{deliverableId}`, never the path that was asked for and never the query string), the deal's and the post's id when the route has them, the creator's id when one is signed in, the status and how long it took ([decision](../decisions/2026-10-13-requests-and-errors-are-logged-by-our-own-middleware.md)). A path with no route is logged as having none, not as what was typed. The health check is not logged. |
 | DS-FR-50 | **An error no route handled** is answered 500 in the one error shape (DS-FR-48), with the code `server_error` and nothing else. It is logged once, with the request id, the error's name and code, and where in the code it was thrown. Its message is never logged: a message can repeat what the database or another service was sent. |
 | DS-FR-51 | **A request id on every answer.** Each answer carries its request id in an `X-Request-Id` header, made by the service and never taken from the request, so a person shown an error can quote it and its line can be found. |
+| DS-FR-52 | **A job that fails** (1.4) is logged at once, each time it fails: the job's id and name, the deal's and the post's id from its payload when it has them, which try it was, whether it will be tried again or has given up, the error's name and code, and where in the code it was thrown ([decision](../decisions/2026-10-13-a-failed-job-is-logged-and-kept-without-its-message.md)). Its message is never logged. A job that finishes, or that waits to be run again, is not logged. |
+| DS-FR-53 | **What the jobs table keeps of a failure** (1.4) is the same and no more: the error's name, its code and where it was thrown, in place of its message. A message can repeat what the database or PayPal said, and the table is not cleared when an account is deleted. |
 
 ## Business rules
 
@@ -238,6 +240,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 - **The contract** is generated with Hono's OpenAPI add-on from Zod schemas ([decision](../decisions/2026-10-09-api-contract-generated-from-zod.md)).
 - **The token key** is the one setting with no default. The service does not start without it: the brand's links are worked out from it and Google's tokens are encrypted with it.
 - **Requests and errors (1.3).** One small middleware of our own and one error handler, placed ahead of every route. No new library: morgan is for Express, and Hono's own logger prints the real path, which holds the brand's token.
+- **Jobs (1.4).** The runner that works through the jobs table logs each failure and writes the table's record of it, with the same reading of an error as the handler for requests. Messages stored before this are cleared by the migration.
 - **Settings**, each with the value in this spec as its default: session lengths, the link's expiry, the three read limits, the model id, the region, the app's and the API's addresses.
 
 ### Requests for William
@@ -280,6 +283,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **The contract:** the generated document matches the one in the repo.
 - **Against real services, by hand:** one real brief read by Claude on Bedrock, and one deal taken from a brief to a real sandbox hold through the routes.
 - **Requests and errors (1.3):** one line for each request with exactly the parts in DS-FR-49; a brand's token, a one-time code in a query string and a file's name never in any line; a path with no route logged without the path; an error thrown by a route answered 500 in the one shape, with its message in neither the answer nor the log; the request id the same in the header and the line, and never the one a caller sent.
+- **Jobs (1.4):** a job that throws is logged once for each failure with exactly the parts in DS-FR-52, and says when it has given up; its message is in neither the log nor the table; a job that finishes, and one that waits, log nothing; an id in a payload is logged only if it looks like one.
 
 ## Out of Scope
 
@@ -335,6 +339,11 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **DS-FR-49:** the lines each service already writes about its own calls stay as they are.
 - **DS-FR-51:** the request id is a header on every answer, and is not added to the error shape.
 
+**Added in revision 1.4 and accepted by Furqaan at sign-off.** These were not asked in the question session.
+
+- **DS-FR-53:** messages already in the jobs table are cleared by a migration.
+- **DS-FR-52:** the line that said a job gave up is replaced by the failure's own line, which says so.
+
 ## Revision
 
 | Version | Change | Record |
@@ -346,3 +355,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.2 | Signed by Furqaan | none |
 | 1.3 | A log of requests with ids and the route's pattern only (DS-FR-49); an error no route handled answered 500 in the one shape and logged without its message (DS-FR-50); a request id on every answer (DS-FR-51); DS-BR-15 says what a log line never holds | [Our own middleware](../decisions/2026-10-13-requests-and-errors-are-logged-by-our-own-middleware.md) |
 | 1.3 | Signed by Furqaan | none |
+| 1.4 | A job that fails is logged at once, without its message (DS-FR-52), and the jobs table keeps the same in place of the message (DS-FR-53). A job that finishes or waits is not logged | [A failed job](../decisions/2026-10-13-a-failed-job-is-logged-and-kept-without-its-message.md) |
+| 1.4 | Signed by Furqaan | none |

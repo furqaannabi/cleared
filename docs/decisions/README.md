@@ -110,3 +110,4 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-12 | [The live Playwright suite stops at the invite until the test creator can have an account](2026-10-12-playwright-live-suite-stops-at-the-invite.md) | Accepted |
 | 2026-10-12 | [Judges test Cleared as users do](2026-10-12-judges-test-cleared-as-users.md) | Accepted (William); Furqaan to agree |
 | 2026-10-13 | [Requests and errors are logged by our own middleware, with ids only](2026-10-13-requests-and-errors-are-logged-by-our-own-middleware.md) | Accepted |
+| 2026-10-13 | [A failed job is logged at once, and kept, without its message](2026-10-13-a-failed-job-is-logged-and-kept-without-its-message.md) | Accepted |
