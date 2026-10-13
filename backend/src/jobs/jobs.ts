@@ -2,6 +2,7 @@
  * Timers and retries, kept as rows in Postgres (money path spec MP-FR-42, MP-FR-43;
  * docs/decisions/2026-10-08-jobs-table-in-postgres.md).
  */
+import { described, inWords } from "../errors/described";
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
 
 /** A job to run at or after `runAt`. The payload carries ids only, never emails, tokens or PayPal payloads. */
@@ -45,7 +46,11 @@ export interface RunOptions {
   /** The moment the worker is running at. Passed in so the runner has no clock of its own. */
   now: Date;
   settings?: JobSettings;
-  /** Where a job that has given up is reported. It is given the job's id and name, never its payload. */
+  /**
+   * Where a job that fails is reported, each time it fails (deal set-up spec DS-FR-52). It is given the
+   * job's id and name, the deal's and post's id from its payload, and the error by its name, its code
+   * and where it was thrown. Never the rest of the payload, and never the error's message.
+   */
   log?: (...parts: unknown[]) => void;
 }
 
@@ -93,8 +98,17 @@ async function claim(prisma: PrismaClient, now: Date, settings: JobSettings): Pr
 const retryDelaySeconds = (failures: number, settings: JobSettings) =>
   Math.min(settings.firstRetrySeconds * 2 ** (failures - 1), settings.longestRetrySeconds);
 
-/** Only the message, shortened. An error can carry a response body, and that must not reach the table. */
-const errorMessage = (error: unknown) => (error instanceof Error ? error.message : "Unknown error").slice(0, 500);
+/** What an id looks like. Anything else in a payload where an id goes is left out of the log. */
+const ID = /^[\w-]{1,64}$/;
+
+/** The deal's and the post's id from a job's payload, when it has them and they look like ids. Nothing else of it. */
+function idsIn(payload: unknown): { dealId?: string; deliverableId?: string } {
+  const { dealId, deliverableId } = (payload ?? {}) as { dealId?: unknown; deliverableId?: unknown };
+  return {
+    ...(typeof dealId === "string" && ID.test(dealId) ? { dealId } : {}),
+    ...(typeof deliverableId === "string" && ID.test(deliverableId) ? { deliverableId } : {}),
+  };
+}
 
 /** Runs every job that is due at `now`, one at a time, and returns how many it ran. */
 export async function runDueJobs(prisma: PrismaClient, handlers: JobHandlers, options: RunOptions): Promise<number> {
@@ -118,19 +132,24 @@ export async function runDueJobs(prisma: PrismaClient, handlers: JobHandlers, op
     } catch (error) {
       const failures = job.failures + 1;
       const gaveUp = failures >= settings.maxFailures;
+      // The error by its name, its code and where it was thrown. Its message is neither kept nor logged: it
+      // can repeat what the database or PayPal said, and this table outlives a deleted account (DS-FR-53).
+      const said = described(error);
+      const lastError = inWords(said).slice(0, 500);
       await prisma.job.update({
         where: { id: job.id },
         data: gaveUp
-          ? { status: "failed", failures, lastError: errorMessage(error), finishedAt: now, lockedUntil: null }
+          ? { status: "failed", failures, lastError, finishedAt: now, lockedUntil: null }
           : {
               status: "pending",
               failures,
-              lastError: errorMessage(error),
+              lastError,
               runAt: secondsAfter(now, retryDelaySeconds(failures, settings)),
               lockedUntil: null,
             },
       });
-      if (gaveUp) log("Job gave up after its retry limit", { id: job.id, name: job.name, failures });
+      // Said when it happens, not when the job gives up many tries later (DS-FR-52).
+      log("A job failed", { jobId: job.id, name: job.name, ...idsIn(job.payload), attempt: job.attempts, failures, next: gaveUp ? "gave_up" : "retry", error: said.name, ...(said.code ? { code: said.code } : {}), at: said.at });
     }
   }
 }

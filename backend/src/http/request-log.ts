@@ -12,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import type { Context, ErrorHandler, MiddlewareHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { matchedRoutes } from "hono/route";
+import { described } from "../errors/described";
 import type { AppEnv } from "./http";
 
 export const REQUEST_ID_HEADER = "X-Request-Id";
@@ -66,21 +67,6 @@ export function requestLog(log?: RequestLogger): MiddlewareHandler<AppEnv> {
   };
 }
 
-/** Where in the service's own code an error was thrown: file and line, nearest first. Nothing of the error's own words. */
-function thrownAt(error: Error): string[] {
-  const places: string[] = [];
-  for (const frame of (error.stack ?? "").split("\n")) {
-    // A frame, not the first line: that one is the name and the message.
-    const place = /^\s*at .*?\(?((?:\/|[A-Za-z]:\\)[^()\s]*?):(\d+):\d+\)?\s*$/.exec(frame);
-    if (!place || place[1]!.includes("node_modules")) continue;
-    const from = place[1]!.lastIndexOf("/src/");
-    const file = (from === -1 ? place[1]!.split("/").slice(-2).join("/") : place[1]!.slice(from + 1)).replace(/[^\w./-]/g, "");
-    places.push(`${file}:${place[2]}`);
-    if (places.length === 5) break;
-  }
-  return places;
-}
-
 /**
  * Answers an error no route handled with 500 in the one error shape, and logs it once (DS-FR-50).
  * The answer says nothing of what went wrong. The log says what kind of error it was and where.
@@ -89,13 +75,7 @@ export function unhandled(log: RequestLogger): ErrorHandler<AppEnv> {
   return (error, c) => {
     // An answer a middleware chose to give by throwing it is that answer, not a failure.
     if (error instanceof HTTPException) return error.getResponse();
-    const code = (error as { code?: unknown }).code;
-    log("A request failed", {
-      requestId: c.get("requestId"),
-      name: /^\w{1,60}$/.test(error.name) ? error.name : "Error",
-      ...(typeof code === "string" && /^\w{1,40}$/.test(code) ? { code } : {}),
-      at: thrownAt(error),
-    });
+    log("A request failed", { requestId: c.get("requestId"), ...described(error) });
     return c.json({ error: { code: "server_error" } }, 500);
   };
 }

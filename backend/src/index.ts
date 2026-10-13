@@ -181,7 +181,8 @@ const app = createApp({
 // Timers and follow-ups: reading briefs, checking drafts and live posts, and the money path's deadlines and
 // unanswered PayPal calls.
 const handlers: JobHandlers = { ...deals.handlers, ...money?.handlers, ...review.handlers, ...drafts?.handlers, ...notices.handlers, ...publishing?.handlers, ...instagramConnections?.handlers, ...removal.handlers };
-const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now() }) });
+// A job that fails is logged when it fails, in one line, without its error's message (DS-FR-52).
+const worker = startWorker({ pass: () => runDueJobs(prisma, handlers, { now: now(), log: (message, details) => console.error(message, JSON.stringify(details)) }) });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.once(signal, async () => {
     // Let the job in flight finish, so nothing is left half done.
