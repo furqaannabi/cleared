@@ -1,6 +1,6 @@
 # Deal set-up: FRD
 
-**Status:** Signed by Furqaan (revision 1.2). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no demo accounts) are Furqaan's; William has to agree.
+**Status:** Signed by Furqaan (revision 1.3). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no demo accounts) are Furqaan's; William has to agree.
 
 **Surface:** Backend. Steps 1 to 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: a creator signs in, starts a deal, has its brief turned into a checklist, sets the terms and makes the brand's link; the brand opens the link, asks for changes or agrees, and approves a PayPal hold for each post.
 
@@ -181,6 +181,14 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | DS-FR-47 | **One document.** Every route declares what it accepts and returns as a schema. The same schemas check each request when it arrives and produce an OpenAPI document, which is written to `contract/` with TypeScript types generated from it. A test fails if the document in the repo is out of date. |
 | DS-FR-48 | **Errors** share one shape: a code and, where useful, a field. The codes are the refusal reasons in this spec and the money path's. No error carries a stack trace or anything from another deal. |
 
+### Requests and errors (1.3)
+
+| ID | Requirement |
+| --- | --- |
+| DS-FR-49 | **A log of requests.** Every request is logged once, when it is answered: a request id, the method, the route's pattern (`/deliverables/{deliverableId}`, never the path that was asked for and never the query string), the deal's and the post's id when the route has them, the creator's id when one is signed in, the status and how long it took ([decision](../decisions/2026-10-13-requests-and-errors-are-logged-by-our-own-middleware.md)). A path with no route is logged as having none, not as what was typed. The health check is not logged. |
+| DS-FR-50 | **An error no route handled** is answered 500 in the one error shape (DS-FR-48), with the code `server_error` and nothing else. It is logged once, with the request id, the error's name and code, and where in the code it was thrown. Its message is never logged: a message can repeat what the database or another service was sent. |
+| DS-FR-51 | **A request id on every answer.** Each answer carries its request id in an `X-Request-Id` header, made by the service and never taken from the request, so a person shown an error can quote it and its line can be found. |
+
 ## Business rules
 
 | ID | Rule |
@@ -199,7 +207,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | DS-BR-12 | Amounts are stored as whole cents and exchanged as decimal strings. No amount is ever a floating-point number. |
 | DS-BR-13 | The creator's PayPal email appears in nothing a brand can read. Google's tokens appear in nothing anyone can read. |
 | DS-BR-14 | Google's refresh token is encrypted before it is stored, with a key the database does not hold. Read-only access is the only access ever asked for. |
-| DS-BR-15 | Logs carry ids only: creator, deal, deliverable, session and request ids. Never a brief, a note, an email, a token, a link or a model's answer. |
+| DS-BR-15 | Logs carry ids only: creator, deal, deliverable, session and request ids. Never a brief, a note, an email, a token, a link or a model's answer. (1.3) Nor a path as it was asked for, a query string, a body, a header, an IP address, a user agent or an error's message. |
 | DS-BR-16 | A read that is refused for a limit, or that fails before the model is called, does not count against any limit. A read that fails after the model was called does. |
 | DS-BR-17 | **Removed in revision 1.2.** There are no demo accounts: every creator signs in with Google ([decision](../decisions/2026-10-11-no-demo-accounts.md)). |
 
@@ -229,6 +237,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 - **Paths** follow the provisional ones in William's specs (BC, IN, CH, SI) wherever they exist, so his pages change as little as possible. The sign-in routes are `/auth/google`, `/auth/google/callback` and `/auth/sign-out`; connecting YouTube is `/connect/youtube` and its callback.
 - **The contract** is generated with Hono's OpenAPI add-on from Zod schemas ([decision](../decisions/2026-10-09-api-contract-generated-from-zod.md)).
 - **The token key** is the one setting with no default. The service does not start without it: the brand's links are worked out from it and Google's tokens are encrypted with it.
+- **Requests and errors (1.3).** One small middleware of our own and one error handler, placed ahead of every route. No new library: morgan is for Express, and Hono's own logger prints the real path, which holds the brand's token.
 - **Settings**, each with the value in this spec as its default: session lengths, the link's expiry, the three read limits, the model id, the region, the app's and the API's addresses.
 
 ### Requests for William
@@ -270,6 +279,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **Holds:** the three routes over the fake PayPal, including a hold started before agreeing and an order id from another post.
 - **The contract:** the generated document matches the one in the repo.
 - **Against real services, by hand:** one real brief read by Claude on Bedrock, and one deal taken from a brief to a real sandbox hold through the routes.
+- **Requests and errors (1.3):** one line for each request with exactly the parts in DS-FR-49; a brand's token, a one-time code in a query string and a file's name never in any line; a path with no route logged without the path; an error thrown by a route answered 500 in the one shape, with its message in neither the answer nor the log; the request id the same in the header and the line, and never the one a caller sent.
 
 ## Out of Scope
 
@@ -318,6 +328,13 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 
 **Waiting on William.** No Cognito, the API on its own subdomain, the generated contract, and no demo accounts are shared decisions. Furqaan decided them; William has to agree.
 
+**Added in revision 1.3 and accepted by Furqaan at sign-off.** These were not asked in the question session.
+
+- **DS-FR-49:** the health check is not logged, and a path with no route is logged without the path.
+- **DS-FR-49:** PayPal's webhook is logged like any request, with nothing from its body.
+- **DS-FR-49:** the lines each service already writes about its own calls stay as they are.
+- **DS-FR-51:** the request id is a header on every answer, and is not added to the error shape.
+
 ## Revision
 
 | Version | Change | Record |
@@ -327,3 +344,5 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.1 | Signed by Furqaan. How the brand's link is kept: a hash and a salt, with the token worked out again from a key each time its creator fetches it, so DS-FR-32 no longer contradicts itself (DS-FR-32, DS-BR-11); an expired link is still returned to its creator, marked expired; the token key is required for the service to start. Found while building: Bedrock's structured answers and the real time and cost of a read are verified; four more requests for William on the invite | [Link worked out again](../decisions/2026-10-09-an-invite-link-is-worked-out-again.md) |
 | 1.2 | Demo accounts are removed: DS-FR-06, DS-FR-07 and DS-BR-17 go, `GET /me` no longer says whether an account is a demo (DS-FR-08), and every creator has one limit on briefs (DS-FR-26). Demo accounts that exist are deleted with what they made. Brought into line with the Instagram Reels spec: a deal can hold a Reel (DS-FR-13), and each platform a deal has a post on must be connected before the link is made (DS-FR-31) | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
 | 1.2 | Signed by Furqaan | none |
+| 1.3 | A log of requests with ids and the route's pattern only (DS-FR-49); an error no route handled answered 500 in the one shape and logged without its message (DS-FR-50); a request id on every answer (DS-FR-51); DS-BR-15 says what a log line never holds | [Our own middleware](../decisions/2026-10-13-requests-and-errors-are-logged-by-our-own-middleware.md) |
+| 1.3 | Signed by Furqaan | none |
