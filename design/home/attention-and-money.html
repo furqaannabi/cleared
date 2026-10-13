@@ -1,0 +1,157 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Needs you and the money card</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hm.css"><style>
+/* Two questions for William: how a deal that needs the creator shows in the rail, and the money card without marigold.
+   Shared pieces from hm.css / hm.js; new classes prefixed am-. Example data. */
+.am-opts{display:grid;gap:34px}
+.am-opt>h2{font-family:var(--head);font-size:21px;line-height:1.2}
+.am-opt>p{color:var(--ink-2);max-width:76ch;margin:4px 0 14px}
+.am-row3{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.am-cap{font-size:12.5px;font-weight:800;color:var(--ink-3);margin:0 0 6px}
+
+/* --- the rail --- */
+.am-rail{width:248px;background:var(--espresso-deep);color:#fff;padding:18px 14px;border-radius:18px;display:grid;gap:4px}
+.am-rail.fold{width:72px;padding:18px 10px;justify-items:center}
+.am-nav{font-size:12px;font-weight:700;color:rgb(255 255 255/.6);padding:10px 10px 4px}
+.am-deal{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;min-height:44px;font-size:14px;font-weight:700}
+.am-deal.on{background:rgb(255 255 255/.12)}
+.am-deal small{display:block;font-weight:500;color:rgb(255 255 255/.65);font-size:12px}
+.am-av{position:relative;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;background:#fce3ec;color:#9c2a55;flex:none}
+.am-av.sky{background:#dcebff;color:#1f4e9c}.am-av.sun{background:#fff1c9;color:#7a5200}
+/* the dot sits on the avatar's top-right corner, ringed in the rail's colour so it reads as separate */
+.am-av i{position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;border:2px solid var(--espresso-deep)}
+.v1 .am-av i{background:var(--marigold)}
+.v2 .am-av i{background:#e5544c}
+.v3 .am-av i{background:var(--marigold)}
+.v3 .am-deal.need small{color:#fff;font-weight:700}
+
+/* phone: the top bar's Deals button and the sheet */
+.am-phone{color:#fff;width:330px;border:1px solid var(--line);border-radius:24px;overflow:hidden;background:var(--espresso-deep)}
+.am-top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:#fff;font-weight:800}
+.am-top .h-logo{font-size:19px}
+.am-dbtn{position:relative;display:inline-flex;gap:8px;align-items:center;min-height:44px;font-size:14.5px}
+.am-dbtn i{position:absolute;top:8px;left:12px;width:10px;height:10px;border-radius:50%;border:2px solid var(--espresso-deep)}
+.v1 .am-dbtn i,.v3 .am-dbtn i{background:var(--marigold)}.v2 .am-dbtn i{background:#e5544c}
+.am-sheet{padding:4px 12px 16px;display:grid;gap:2px;border-top:1px solid rgb(255 255 255/.1)}
+
+/* --- the money card: three looks, each as Overview's card and the deal page's card --- */
+.am-pair{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1100px){.am-pair{grid-template-columns:minmax(0,1fr) 360px;align-items:start}}
+.am-ov,.am-dc{border-radius:20px;overflow:hidden;position:relative}
+.am-track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.am-stage{padding:20px 24px}
+.am-stage+.am-stage{border-left:1px solid var(--am-rule)}
+.am-lab{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--am-ink2)}
+.am-lab svg{width:16px;height:16px}
+.am-amt{font-family:var(--head);font-size:32px;font-weight:800;line-height:1.1;margin-top:4px;letter-spacing:-.01em;color:var(--am-ink)}
+.am-stage.paid .am-amt{font-size:36px}
+.am-cnt{font-size:13px;color:var(--am-ink2);margin-top:2px}
+.am-see{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:14px;font-weight:700;color:var(--am-ink);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--am-rule)}
+.am-see svg{width:15px;height:15px}
+.am-foot{background:var(--surface);padding:10px 24px;border-top:1px solid var(--line)}
+.am-dc{padding:18px}
+.am-dc .am-k{font-size:13px;font-weight:700;color:var(--am-ink2);max-width:22ch}
+.am-dc .am-big{font-family:var(--head);font-size:38px;font-weight:800;line-height:1.05;color:var(--am-ink);margin-top:6px;letter-spacing:-.01em}
+.am-dc .am-sub{font-size:13px;font-weight:600;color:var(--am-ink2);margin-top:6px}
+.am-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.am-steps span{text-align:center;font-size:12.5px;font-weight:700;padding:7px 0;border-radius:999px;color:var(--am-ink2);background:var(--am-chip)}
+.am-steps span.now{background:var(--am-now);color:var(--am-now-ink)}
+.am-to{display:flex;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--am-rule);font-size:13px;font-weight:600;color:var(--am-ink2)}
+.am-to b{color:var(--am-ink);font-weight:800;min-width:0;overflow-wrap:anywhere;text-align:right}
+.am-seal{position:absolute;top:16px;right:18px;width:46px;height:46px;z-index:2}
+.am-seal svg{width:100%;height:100%}
+
+/* look 1: espresso card */
+.m1{--am-ink:#fff;--am-ink2:rgb(255 255 255/.72);--am-rule:rgb(255 255 255/.16);--am-chip:rgb(255 255 255/.1);--am-now:var(--latte);--am-now-ink:var(--espresso-deep);
+  background:var(--espresso-deep);box-shadow:0 2px 4px rgb(28 21 10/.12),0 14px 32px rgb(28 21 10/.22)}
+.m1 .am-seal .fill{fill:var(--latte)}.m1 .am-seal .glyph{stroke:var(--espresso-deep)}
+.m1.am-ov::after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;background:rgb(243 238 229/.06);top:-100px;right:-70px;pointer-events:none}
+/* look 2: light card, espresso ink */
+.m2{--am-ink:var(--espresso-ink);--am-ink2:var(--ink-3);--am-rule:var(--line);--am-chip:var(--latte-wash);--am-now:var(--espresso);--am-now-ink:#fff;
+  background:var(--surface);border:1px solid var(--latte-line);box-shadow:0 1px 2px rgb(28 21 10/.05),0 10px 24px rgb(28 21 10/.06)}
+.m2 .am-seal .fill{fill:var(--espresso)}.m2 .am-seal .glyph{stroke:var(--latte)}
+/* look 3: an espresso band over a light card */
+.m3{--am-ink:var(--espresso-ink);--am-ink2:var(--ink-3);--am-rule:var(--line);--am-chip:var(--latte-wash);--am-now:var(--espresso);--am-now-ink:#fff;
+  background:var(--surface);border:1px solid var(--latte-line);box-shadow:0 1px 2px rgb(28 21 10/.05),0 10px 24px rgb(28 21 10/.06)}
+.am-band{background:var(--espresso-deep);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 18px;font-size:13.5px;font-weight:700}
+.am-band small{display:block;font-weight:500;color:rgb(255 255 255/.7);font-size:12.5px}
+.am-band .am-seal{position:static;width:36px;height:36px;flex:none}
+.m3 .am-seal .fill{fill:var(--latte)}.m3 .am-seal .glyph{stroke:var(--espresso-deep)}
+.m3.am-dc{padding:0}.m3 .am-dcbody{padding:16px 18px 18px}
+
+/* look 4: a latte card */
+.m4{--am-ink:var(--espresso-ink);--am-ink2:var(--ink-2);--am-rule:rgb(63 51 34/.14);--am-chip:var(--latte-line);--am-now:var(--espresso);--am-now-ink:#fff;
+  background:var(--latte);border:1px solid var(--latte-line);box-shadow:0 2px 4px rgb(63 51 34/.06),0 12px 28px rgb(63 51 34/.1)}
+.m4 .am-seal .fill{fill:var(--espresso)}.m4 .am-seal .glyph{stroke:var(--latte)}
+.m4.am-ov::after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;background:rgb(255 255 255/.45);top:-100px;right:-70px;pointer-events:none}
+.m4 .am-foot{border-top:1px solid var(--latte-line)}
+/* phone widths */
+.am-narrow .am-track{grid-template-columns:1fr}
+.am-narrow .am-stage{padding:14px 18px}
+.am-narrow .am-stage+.am-stage{border-left:0;border-top:1px solid var(--am-rule)}
+.am-narrow .am-amt{font-size:28px}.am-narrow .am-stage.paid .am-amt{font-size:32px}
+.am-narrow .am-foot{padding:10px 18px}
+.am-pw{max-width:390px}
+/* the stuck line, as in payments.html */
+.h-stuck{display:flex;gap:8px;font-size:14px;color:var(--fail);text-decoration:none;min-height:44px;align-items:center}
+.h-stuck svg{width:18px;height:18px;flex:none}
+.h-stuck span{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--fail-line)}
+</style></head><body><div class="h-doc">
+<h1>Needs you, and the money card without marigold</h1>
+<p class="h-why">Two choices. First, how the rail shows a deal that needs the creator: one dot on the avatar's top-right corner, in the same place expanded, folded and on phones, and on the phone's Deals button when any deal needs you. It shows while the deal needs you and goes when the thing is done (from the API's <code>needsCreator</code> and stuck payouts, as Overview's Needs you). Second, the money card in espresso instead of marigold, shown as Overview's card and the deal page's card. Example data.</p>
+
+<h2 class="h-sec" style="margin-top:8px">1 · Needs you in the rail</h2>
+<p class="h-quiet" style="margin:4px 0 18px">The rail is dark espresso, so an espresso dot would vanish on it. Version 1 uses the logo's own marigold as the dot: a pinpoint, not a card.</p>
+<div class="am-opts" id="dots"></div>
+
+<h2 class="h-sec" style="margin-top:46px">2 · The money card</h2>
+<p class="h-quiet" style="margin:4px 0 18px">Each look on Overview (desktop, then 390 px) and on the deal page. The stage chips stay text; only the colours change.</p>
+<div class="am-opts" id="money"></div>
+</div>
+<script src="hm.js"></script><script>
+const seal = (glyph) => {
+  const pts = [], n = 14;
+  for (let i = 0; i < n * 2; i++) { const a = (Math.PI * i) / n, r = i % 2 ? 21.5 : 24; pts.push(`${(24 + r * Math.sin(a)).toFixed(2)},${(24 - r * Math.cos(a)).toFixed(2)}`); }
+  return `<span class="am-seal" aria-hidden="true"><svg viewBox="0 0 48 48"><polygon class="fill" points="${pts.join(" ")}"/>${glyph}</svg></span>`;
+};
+const LOCK = `<g class="glyph" fill="none" stroke-width="2.6" stroke-linecap="round"><rect x="16.5" y="22.5" width="15" height="11" rx="2"/><path d="M19.5 22.5v-3a4.5 4.5 0 0 1 9 0v3"/></g>`;
+
+/* --- 1: the dots --- */
+const ROWS = [["GT", "", "Glow Theory", "Draft check · 2 to fix", true], ["JS", "sky", "Juniper &amp; Salt", "Payout didn’t go through", true], ["PC", "sun", "Pine &amp; Co", "Brand review · 31h left", false, true], ["MM", "", "Maple &amp; Moss", "Waiting for brand", false], ["KA", "sky", "Kora Audio", "Paid", false]];
+const av = (b, c, need) => `<span class="am-av ${c}">${b}${need ? '<i></i><span class="h-sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Needs you</span>' : ""}</span>`;
+const dealRow = ([b, c, name, st, need, on]) => `<div class="am-deal${need ? " need" : ""}${on ? " on" : ""}">${av(b, c, need)}<span>${name}<small>${st}</small></span></div>`;
+const railFull = () => `<div class="am-rail"><span class="h-logo" style="padding:0 10px 10px"><i></i>Cleared</span><span class="am-nav">Deals</span>${ROWS.map(dealRow).join("")}</div>`;
+const railFold = () => `<div class="am-rail fold"><span class="h-logo" style="padding-bottom:10px"><i></i></span>${ROWS.map(([b, c, , , need, on]) => `<div class="am-deal${on ? " on" : ""}" style="padding:8px">${av(b, c, need)}</div>`).join("")}</div>`;
+const phone = () => `<div class="am-phone"><div class="am-top"><span class="h-logo"><i></i>Cleared</span><span class="am-dbtn"><i></i>${I.menu}Deals</span></div><div class="am-sheet">${ROWS.map(dealRow).join("")}</div></div>`;
+const DOTS = [
+  ["v1", "Version 1 · A marigold dot", "The logo's marigold, as a pinpoint ringed in the rail's colour. Calm and on-brand: the row's own status line still says what's needed."],
+  ["v2", "Version 2 · A red dot", "More urgent. Red already means “Fix needed” across the app, so every dot reads as a problem, even “answer the brand's changes”."],
+  ["v3", "Version 3 · The dot and the reason in bold", "Version 1's dot, and the status line of a deal that needs you turns full white and bold, so the eye goes to the dot and then reads why. Text over pills."],
+];
+document.getElementById("dots").innerHTML = DOTS.map(([v, h, p]) => `<section class="am-opt ${v}"><h2>${h}</h2><p>${p}</p><div class="am-row3">
+  <div><p class="am-cap">Rail, desktop</p>${railFull()}</div><div><p class="am-cap">Folded</p>${railFold()}</div><div><p class="am-cap">Phone · the Deals button and the sheet</p>${phone()}</div></div></section>`).join("");
+
+/* --- 2: the money card --- */
+const stage = (cls, icon, lab, t) => `<div class="am-stage ${cls}"><p class="am-lab">${icon}${lab}</p><p class="am-amt">${t.amount}</p><p class="am-cnt">${t.posts}</p>${cls === "paid" ? `<a href="#" class="am-see">See payments ${I.arrow}</a>` : ""}</div>`;
+const overview = (m, band) => `<section class="am-ov ${m}" aria-label="Your money">${band ? `<div class="am-band"><span>Your money<small>Held in PayPal, on its way, and paid to you</small></span>${seal(LOCK)}</div>` : seal(LOCK)}
+  <div class="am-track" style="position:relative;z-index:1">${stage("", I.lock, "Held for you", TOTALS.held)}${stage("", I.clock, "On its way", TOTALS.way)}${stage("paid", I.check, "Paid", TOTALS.paid)}</div>
+  <div class="am-foot">${stuckLine()}</div></section>`;
+const dealCard = (m, band) => {
+  const body = `<p class="am-k">${band ? "" : "Held in PayPal for this YouTube video"}</p><p class="am-big">$1,000.00</p><p class="am-sub">Elapse’s hold · PayPal ref 7HK21934LM</p>
+  <div class="am-steps"><span class="now">Held</span><span>Confirmed</span><span>Captured</span><span>Paid</span></div>
+  <div class="am-to"><span>Paid to</span><b>sb-fztgq53303978@business.example.com</b></div>`;
+  return band
+    ? `<section class="am-dc ${m}"><div class="am-band"><span>Held in PayPal<small>for this YouTube video</small></span>${seal(LOCK)}</div><div class="am-dcbody">${body}</div></section>`
+    : `<section class="am-dc ${m}">${seal(LOCK)}${body}</section>`;
+};
+const MONEY = [
+  ["m1", false, "Look 1 · Espresso card", "Deep espresso with white figures and the seal in latte: the logo's pairing. Reads as serious money, and matches the rail and the brand's header. The busiest look on a light page."],
+  ["m2", false, "Look 2 · Light card, espresso ink", "White with a latte edge, large espresso figures, the seal in espresso. The quietest: money sits with the rest of the page and leans on size, not colour."],
+  ["m4", false, "Look 4 · Latte card", "Our warm latte, the cream of the logo's pairing, with large espresso figures and the seal in espresso. It stands apart from the white panels by warmth, not darkness: special without being the heaviest thing on the page."],
+  ["m3", true, "Look 3 · Espresso band", "A light card under an espresso band that carries the label and the seal. Between the two: a clear money header, light figures underneath."],
+];
+document.getElementById("money").innerHTML = MONEY.map(([m, band, h, p]) => `<section class="am-opt"><h2>${h}</h2><p>${p}</p>
+  <p class="am-cap">Overview · desktop</p>${overview(m, band)}
+  <div class="am-pair" style="margin-top:16px"><div class="am-pw am-narrow"><p class="am-cap">Overview · 390 px</p>${overview(m, band)}</div><div class="am-pw"><p class="am-cap">Deal page · the post’s money card</p>${dealCard(m, band)}</div></div></section>`).join("");
+</script></body></html>

@@ -256,7 +256,7 @@ Cleared has to win two people at once. Creators should feel welcomed: the screen
 
 **Key Characteristics:**
 - Light, warm-neutral ground under a committed espresso shell (rail, top bar, primary actions, selected tabs).
-- Marigold is the money colour: the money card is the brightest thing on the screen.
+- Marigold is the money colour: the deal page's money card is the brightest thing on the screen. Overview's money card is latte (HM 1.6).
 - Evidence and money on the same screen: the money card sits beside the proof.
 - Status colours (green, red, amber, grey) never collide with the brand colours.
 - Every status is an icon plus a word inside a seal or chip, never colour alone.
@@ -268,7 +268,7 @@ Cleared has to win two people at once. Creators should feel welcomed: the screen
 - **Espresso** (`espresso`): primary buttons, selected tabs, completed steps, timestamps, focus rings. `espresso-deep` is the rail and top bar; `espresso-ink` is for the darkest marks and video scrims; `espresso-hover` is the hover state of espresso controls. `latte`, `latte-line` and `latte-wash` are its tints for selection, scrubber fill, table headers, hover rows, quoted evidence and the next-step bar.
 
 ### Secondary
-- **Marigold** (`marigold`): the money card, the logo seal and the current deal step. On marigold, text is `marigold-ink` (headline, current stage) and `marigold-ink-2` (supporting text); upcoming money stages sit on `marigold-chip`.
+- **Marigold** (`marigold`): the deal page's money card, the logo seal, the current deal step and the rail's "needs you" dot (DC 1.26). Overview's money card is latte with espresso figures and seal (HM 1.6). On marigold, text is `marigold-ink` (headline, current stage) and `marigold-ink-2` (supporting text); upcoming money stages sit on `marigold-chip`.
 
 ### Neutral
 - **Ground** (`ground`) behind everything, **surface** (`surface`) for panels, `line` and `line-soft` for borders and row rules.
@@ -280,7 +280,7 @@ Cleared has to win two people at once. Creators should feel welcomed: the screen
 - **Avatars:** `avatar-rose`, `avatar-sky` and `avatar-sun` (each with its `-ink`) tint deal initials in navigation. They identify a deal and carry no status.
 
 ### Named Rules
-**The Marigold Is Money Rule.** Marigold marks money and progress only: the money card, the logo seal and the current deal step. Never on decoration, never on a button, never as a page wash.
+**The Marigold Is Money Rule.** Marigold marks money, progress and the one thing that needs you: the deal page's money card, the logo seal, the current deal step and the rail's "needs you" dot (a pinpoint, never a surface). Never on decoration, never on a button, never as a page wash.
 
 **The Brand Is Not A Status Rule.** Espresso and marigold never stand in for passed, failed, unsure or waiting. Green means passed and nothing else on the screen is green, including an item the brand accepted. The one use of espresso inside a status is the accepted icon, which marks a person's decision rather than a result.
 
@@ -354,7 +354,7 @@ The same pill track under the page title, one pill per deliverable. Each pill is
 - **No draft:** the player area becomes a quiet `latte-wash` panel (no border of its own) with an ink-4 play-frame mark, "No draft yet" and "Your draft will play here once you upload it." It is deliberately not styled as an upload target (no dashed border, no upload arrow): the upload action is the next-step bar's. A short panel on phones, the post's shape from `md:` up. The timeline is hidden until there is a draft.
 
 ### Navigation
-Espresso rail with a marigold-seal logo, rail section labels, deal rows with initial avatars and a one-line status ("Brand review · 31h left"). The current page is a lighter fill. On tablet and phone it collapses to an espresso top bar with a "Deals" menu button (44px target).
+Espresso rail with a marigold-seal logo, rail section labels, deal rows with initial avatars and a one-line status ("Brand review · 31h left"). The current page is a lighter fill. On tablet and phone it collapses to an espresso top bar with a "Deals" menu button (44px target). A deal that needs the creator (DC-FR-31, 1.26) carries a marigold dot, 11px ringed 2px in `espresso-deep`, on its avatar's top-right corner, and its status line turns bold white; the same dot sits on the folded rail's avatar and the phone's Deals button.
 
 ### Money card (signature)
 Marigold card with a large soft white circle in the top-right corner: an espresso-ink lock seal, "Held in PayPal for this video", the amount, PayPal reference and date, a four-stage track (Held → Confirmed → Captured → Paid) where the current stage is an espresso-ink pill with marigold text, and a "Pays out to" footer. It is the one place money appears, and it sits next to the evidence.
@@ -409,7 +409,7 @@ Settings (docs/specs/settings-frd.md, design A in design/settings/option-a.html)
 The tab icon is the logo's seal alone (`web/src/app/icon.svg`): the marigold 14-scallop seal with the espresso-deep check in its centre half. On a home screen (`apple-icon.png`, 180px) the same seal sits on espresso-deep.
 
 ### Overview and Payments
-The creator's home in two pages (docs/specs/creator-home-frd.md 1.2; design A in design/home/option-a.html, split as option 2 of design/home/payments.html). "Overview" and "Payments" are the first two links in the rail and the phone's Deals sheet, each with its icon (house, card).
+The creator's home in two pages (docs/specs/creator-home-frd.md 1.2; design A in design/home/option-a.html, split as option 2 of design/home/payments.html). "Overview" and "Payments" are the first two links in the rail and the phone's Deals sheet, each with its icon (house, card). (HM 1.6) Overview's money card is latte, not marigold: `latte` ground with a `latte-line` border and a soft espresso-tinted shadow, figures in `espresso-ink`, labels in `ink-2`, the seal in `espresso`, and the stuck footer white.
 
 **Overview** at `/deals`: the money card leads. The money card is stretched into the page's headline: one marigold card with the money-card shadow and its soft white circle, holding three stages in a row from `lg:` (stacked on phones, divided by `marigold-ink` rules at 14%): "Held for you" (lock), "On its way" (clock) and "Paid" (check), each label in `marigold-ink-2`, the amount in Bricolage (34px, Paid 38px; 30px and 34px on phones) and "{n} posts" under it. Under the Paid total, "See payments" with an arrow, bold in `marigold-ink`, underlined at 35%. A white footer on the card says "What you receive, after Cleared's 5% fee." and lists any stuck payout as a fail-coloured link with a cross ("{brand} · {post}: the payout didn't go through."). Then one white panel, "How you're doing": the three figures (label in ink-2, the count bold at 19px, what it counts in ink-3), each with a small espresso trend line; from `lg:` side by side, divided by `line-soft` rules; stacked on phones. Then "Deals" in one panel grouped Needs you, Under way and Finished (a group label with its count; each row the brand in bold, each post's platform mark, name and status as icon plus word, an arrow).
 

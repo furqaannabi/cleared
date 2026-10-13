@@ -1,6 +1,6 @@
 # Creator home: FRD
 
-**Status:** Signed by William (revision 1.5).
+**Status:** Signed by William (revision 1.6).
 
 **Surface:** The creator's home, in two pages (1.2). The overview at `/deals`: the money overview, the performance figures and the deals with what needs the creator first; signing in and the landing page's button land here. Payments at `/payments`: what was paid each month and the payment history with its CSV. The brand has no home.
 
@@ -52,7 +52,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-05 | **Three totals, in what the creator receives.** "Held for you" (posts whose hold is in place and not yet captured), "On its way" (captured, payout not yet paid: sending, delayed, unclaimed or failed) and "Paid" (payout paid). Each is the sum of the posts' `received` amounts from the API, after Cleared's fee; the page never works out a fee itself. Each total says how many posts it counts ("3 posts"). A total of zero shows "$0.00", never hidden, once the creator has any deal. (1.1) Under the totals: "What you receive, after Cleared's 5% fee." (1.4) The API gives what the creator receives only once a hold is taken (AH-FR-06), so "Held for you" is the held posts' deal amounts, with "{n} posts · before Cleared's fee" under it; "On its way" and "Paid" stay what the creator receives. The footer says "On its way and Paid are what you receive, after Cleared's 5% fee." A post approved but never paid (`approved_not_paid`) counts in no total. |
+| HM-FR-05 | **Three totals, in what the creator receives.** "Held for you" (posts whose hold is in place and not yet captured), "On its way" (captured, payout not yet paid: sending, delayed, unclaimed or failed) and "Paid" (payout paid). Each is the sum of the posts' `received` amounts from the API, after Cleared's fee; the page never works out a fee itself. Each total says how many posts it counts ("3 posts"). A total of zero shows "$0.00", never hidden, once the creator has any deal. (1.1) Under the totals: "What you receive, after Cleared's 5% fee." (1.4) The API gives what the creator receives only once a hold is taken (AH-FR-06), so "Held for you" is the held posts' deal amounts, with "{n} posts · before Cleared's fee" under it; "On its way" and "Paid" stay what the creator receives. The footer says "On its way and Paid are what you receive, after Cleared's 5% fee." A post approved but never paid (`approved_not_paid`) counts in no total. (1.6) The card is latte, not marigold: espresso figures and labels in the ink ramp, the seal in espresso at the top right, a latte border and a soft shadow; the stuck lines keep their white footer in the fail colour (HM-FR-06). Only Overview's card changes; the deal page's money card stays marigold (DC). Look 4 of `design/home/attention-and-money.html`. |
 | HM-FR-06 | **What's stuck.** When any post on its way has a payout that failed or wasn't claimed, a line under "On its way" names each: "{brand} · {post}: the payout didn't go through." or "{brand} · {post}: PayPal is waiting for you to accept it.", each linking to the post, where its fix lives (PP). Past three, "and {n} more". |
 | HM-FR-25 | **See payments.** (1.2) Under the "Paid" total, a link "See payments" to `/payments`. "Held for you" and "On its way" have no link; the stuck lines keep linking to their posts (HM-FR-06). (1.4) Always shown. |
 | HM-FR-07 | **Amounts.** Dollars with cents ("$1,140.00"), from integer minor units; totals added in minor units, never floats. |
@@ -175,3 +175,5 @@ One home page that answers "where's my money?" first: three totals in what the c
 | 1.4 signed | Revision 1.4 signed by William | none |
 | 1.5 | From William: a post whose payout is on its way reads "Payout on its way" on the overview (HM-FR-15) | none |
 | 1.5 signed | Revision 1.5 signed by William | none |
+| 1.6 | From William, after the sandbox run: Overview's money card in latte with espresso figures and seal, in place of marigold (HM-FR-05); the deal page's card is unchanged. Look 4 of `design/home/attention-and-money.html` | none |
+| 1.6 signed | Revision 1.6 signed by William | none |
