@@ -14,10 +14,11 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: 
 // PayPal's script can't load here: a stand-in offers PayPal's approve and close.
 vi.mock("@paypal/react-paypal-js", () => ({
   PayPalScriptProvider: ({ children }: { children: ReactNode }) => children,
+  usePayPalScriptReducer: () => [{ isPending: false, isRejected: false, isResolved: true }, () => {}],
   PayPalButtons: (p: { createOrder: () => Promise<string>; onApprove: () => Promise<void>; onCancel: () => void }) => (
     <div>
       <button type="button" onClick={async () => { await p.createOrder(); await p.onApprove(); }}>PayPal: approve</button>
-      <button type="button" onClick={() => p.onCancel()}>PayPal: close</button>
+      <button type="button" onClick={async () => { await p.createOrder(); p.onCancel(); }}>PayPal: close</button>
     </div>
   ),
 }));
@@ -46,15 +47,15 @@ const row = (name: string) => within(holds()).getByRole("group", { name });
 
 /** Opens PayPal for a post and approves, or closes it. */
 async function approve(post: string, button: "PayPal: approve" | "PayPal: close" = "PayPal: approve") {
-  await userEvent.click(within(row(post)).getByRole("button", { name: "Approve with PayPal" }));
-  await userEvent.click(await within(row(post)).findByRole("button", { name: button }));
+  await userEvent.click(within(row(post)).getByRole("button", { name: button }));
 }
 
 describe("CH-FR-17 one hold per post, after agreeing", () => {
-  test("each post has its own Approve with PayPal, and the count starts at none held", async () => {
+  test("each post has its own PayPal buttons, and the count starts at none held", async () => {
     await openAgreed();
     expect(within(holds()).getByRole("heading", { name: "Holds · 0 of 3 held" })).toBeVisible();
-    expect(within(holds()).getAllByRole("button", { name: "Approve with PayPal" })).toHaveLength(3);
+    expect(within(holds()).getAllByRole("button", { name: "PayPal: approve" })).toHaveLength(3);
+    expect(within(holds()).getAllByText("Approve the hold with PayPal or a card")).toHaveLength(3);
   });
 });
 
@@ -63,31 +64,31 @@ describe("CH-FR-18 each hold's state", () => {
     await openAgreed({ del_maple_video: { state: "held", reference: "7HK21934LM", deadline: "2026-10-26" } });
     await approve("YouTube video");
     expect(await within(row("YouTube video")).findByText("Held · $1,200.00 · PayPal ref 7HK21934LM · Ada Okafor posts by 26 Oct")).toBeVisible();
-    expect(within(row("YouTube video")).queryByRole("button", { name: "Approve with PayPal" })).toBeNull();
+    expect(within(row("YouTube video")).queryByRole("button", { name: "PayPal: approve" })).toBeNull();
     expect(within(holds()).getByRole("heading", { name: "Holds · 1 of 3 held" })).toBeVisible();
     const sheet = screen.getByRole("region", { name: "Sponsorship terms" });
     expect(within(within(sheet).getByRole("group", { name: "YouTube video" })).getByText(/Ada Okafor posts by/)).toBeVisible();
   });
 
-  test("declined: says nothing was taken, and the button is back", async () => {
+  test("declined: says nothing was taken, and PayPal's buttons are back", async () => {
     await openAgreed({ del_maple_reel: { state: "declined" } });
     await approve("Instagram Reel");
     expect(await within(row("Instagram Reel")).findByText(/^PayPal didn’t approve this hold\. Nothing was taken\./)).toBeVisible();
-    expect(within(row("Instagram Reel")).getByRole("button", { name: "Approve with PayPal" })).toBeEnabled();
+    expect(within(row("Instagram Reel")).getByRole("button", { name: "PayPal: approve" })).toBeVisible();
   });
 
-  test("closed: nothing was held, and the button is back", async () => {
+  test("closed: nothing was held, and PayPal's buttons are back", async () => {
     await openAgreed();
     await approve("YouTube Short", "PayPal: close");
     expect(await within(row("YouTube Short")).findByText("You closed PayPal. Nothing was held.")).toBeVisible();
-    expect(within(row("YouTube Short")).getByRole("button", { name: "Approve with PayPal" })).toBeEnabled();
+    expect(within(row("YouTube Short")).getByRole("button", { name: "PayPal: approve" })).toBeVisible();
   });
 
-  test("CH-BR-05: still checking with PayPal, the button is off", async () => {
+  test("CH-BR-05: still checking with PayPal, there are no buttons (1.9)", async () => {
     await openAgreed({ del_maple_short: { state: "pending" } });
     await approve("YouTube Short");
     expect(await within(row("YouTube Short")).findByText("Checking with PayPal…")).toBeVisible();
-    expect(within(row("YouTube Short")).getByRole("button", { name: "Approve with PayPal" })).toBeDisabled();
+    expect(within(row("YouTube Short")).queryByRole("button", { name: "PayPal: approve" })).toBeNull();
   });
 });
 
@@ -96,12 +97,12 @@ describe("CH-FR-19, CH-FR-20 all held, and coming back", () => {
     await openAgreed();
     for (const post of Object.keys(POST_IDS)) await approve(post);
     expect(await within(holds()).findByText("All held. Ada Okafor is making the posts.")).toBeVisible();
-    expect(within(holds()).queryByRole("button", { name: "Approve with PayPal" })).toBeNull();
+    expect(within(holds()).queryByRole("button", { name: "PayPal: approve" })).toBeNull();
   });
 });
 
 describe("CH-FR-18 (1.7) a post never held", () => {
-  test("says it is closed and why, with no Approve with PayPal", async () => {
+  test("says it is closed and why, with no PayPal buttons", async () => {
     stubMapleDeal({
       step: "agreed",
       agreedAt: new Date().toISOString(),
@@ -111,6 +112,6 @@ describe("CH-FR-18 (1.7) a post never held", () => {
     render(<BrandDealPage dealId="deal_maple" />);
     const reel = within(await screen.findByRole("region", { name: /^Holds/ })).getByRole("group", { name: "Instagram Reel" });
     expect(within(reel).getByText("Not held. No hold was approved within 7 days of agreeing, so this post is closed. Nothing was taken.")).toBeVisible();
-    expect(within(reel).queryByRole("button", { name: "Approve with PayPal" })).toBeNull();
+    expect(within(reel).queryByRole("button", { name: "PayPal: approve" })).toBeNull();
   });
 });

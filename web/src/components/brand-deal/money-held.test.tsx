@@ -48,7 +48,8 @@ describe("CH-FR-32 (1.6) before approving", () => {
     render(<BrandDealPage dealId="deal_maple" />);
     const holds = await screen.findByRole("region", { name: /^Holds/ });
     const link = within(holds).getByRole("button", { name: "How your money is held" });
-    const approve = within(holds).getAllByRole("button", { name: "Approve with PayPal" })[0];
+    // 1.9: the link sits above each post's PayPal buttons.
+    const approve = within(holds).getAllByText("Approve the hold with PayPal or a card")[0];
     expect(link.compareDocumentPosition(approve) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await userEvent.click(link);
     expect(screen.getByText(POINTS[0])).toBeVisible();
