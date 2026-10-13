@@ -167,6 +167,8 @@ const app = createApp({
   apiOrigin: env.apiOrigin,
   google,
   removal,
+  // One line for each request, to the service's ordinary output. Failures go to its error output, as every other line does.
+  requestLog: (message, details) => console.log(message, JSON.stringify(details)),
   testSession: env.testSessionSecret ? { secret: env.testSessionSecret } : undefined,
   instagram,
   instagramConnections,

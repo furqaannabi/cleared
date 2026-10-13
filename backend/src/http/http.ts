@@ -7,7 +7,8 @@ import type { Sessions } from "../sessions/sessions";
 
 /** The variables a route can read once its middleware has run. */
 export interface AppEnv {
-  Variables: { creatorId: string };
+  /** `requestId` is the service's own id for the request, on every one (DS-FR-51). */
+  Variables: { creatorId: string; requestId: string };
 }
 
 export const SESSION_COOKIE = "cleared_session";

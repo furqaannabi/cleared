@@ -30,6 +30,7 @@ import { registerGoogleRoutes } from "./routes/google";
 import { registerInstagramRoutes } from "./routes/instagram";
 import { registerInviteRoutes } from "./routes/invite";
 import { registerPaymentRoutes } from "./routes/payments";
+import { REQUEST_ID_HEADER, requestLog, unhandled, type RequestLogger } from "./http/request-log";
 import { TEST_SESSION_PATH, testSession, usable, type TestSessionConfig } from "./routes/test-session";
 import { createPaymentHistory } from "./payments/history";
 import type { Secrets } from "./secrets/secrets";
@@ -47,6 +48,8 @@ export interface AppDeps {
   log?: (...parts: unknown[]) => void;
   /** The address of Cleared's own app. The only origin that may make changing requests (DS-BR-03). */
   appOrigin?: string;
+  /** Told of each request once it is answered (DS-FR-49). Without it no request is logged; errors and request ids are unaffected. */
+  requestLog?: RequestLogger;
   /** The secret that lets end-to-end tests be signed in as the one test creator (AH-FR-25). Without it there is no such route. */
   testSession?: TestSessionConfig;
   /** The clock. Passed in so the app has none of its own. */
@@ -103,6 +106,11 @@ export function createApp(deps: AppDeps) {
     },
   });
 
+  // Ahead of everything: each request gets an id and one log line, and an error no route handled is
+  // answered in the one error shape and logged without its message (DS-FR-49 to DS-FR-51).
+  app.use("*", requestLog(deps.requestLog));
+  app.onError(unhandled((message, details) => log(message, JSON.stringify(details))));
+
   // Browsers let only the app's own address call the API with a session.
   app.use(
     "*",
@@ -111,6 +119,8 @@ export function createApp(deps: AppDeps) {
       credentials: true,
       allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
       allowHeaders: ["Content-Type"],
+      // The app's own pages may read an answer's request id, to show beside an error (DS-FR-51).
+      exposeHeaders: [REQUEST_ID_HEADER],
       maxAge: 600,
     }),
   );
