@@ -9,13 +9,14 @@ import { useNotes } from "./notes";
  * own optional email for anything after the post is live, and "Agree to
  * these terms". With notes not yet sent the button asks "Agree
  * without sending your {n} notes?". Fixed to the bottom of the screen on
- * phones, so it's always in reach.
+ * phones, so it's always in reach, unless the send bar has that place (CH 1.10).
  *
  * @param summary - the summary line, from the terms view
  * @param agreeing - whether the agreement is being sent
  * @param problem - why the last try didn't go through, if it didn't
  * @param creator - the creator's name, for the email's line
  * @param onAgree - agrees to the version shown, with the brand's email if given
+ * @param pinned - fixed to the bottom on phones (default); false while notes are unsent
  * @see docs/specs/confirm-and-hold-frd.md CH-FR-14, CH-FR-15, CH-FR-26
  */
 export function AgreePanel({
@@ -24,12 +25,14 @@ export function AgreePanel({
   agreeing,
   problem,
   onAgree,
+  pinned = true,
 }: {
   summary: string;
   creator: string;
   agreeing: boolean;
   problem: string | null;
   onAgree: (email?: string) => void;
+  pinned?: boolean;
 }) {
   const { drafts } = useNotes();
   const n = drafts.length;
@@ -46,7 +49,7 @@ export function AgreePanel({
   return (
     <section
       aria-label="Agree"
-      className="fixed inset-x-3 bottom-3 z-10 grid gap-2.5 rounded-[16px] bg-surface p-3.5 shadow-floating-bar lg:static lg:rounded-[18px] lg:border lg:border-line lg:p-[18px] lg:shadow-none"
+      className={`grid gap-2.5 bg-surface lg:static lg:rounded-[18px] lg:border lg:border-line lg:p-[18px] lg:shadow-none ${pinned ? "fixed inset-x-3 bottom-3 z-10 rounded-[16px] p-3.5 shadow-floating-bar" : "rounded-[18px] border border-line p-[18px]"}`}
     >
       <p className="text-[13.5px] text-ink-2 lg:text-[14.5px]">{summary}</p>
       <div>

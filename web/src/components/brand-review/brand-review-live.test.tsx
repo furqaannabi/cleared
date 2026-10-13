@@ -44,14 +44,18 @@ describe("RW-FR-31 (1.2) the session ends during an action", () => {
     server.use(http.post(`${postPath}/objections`, () => apiError({ code: "signed_out" }, 401)));
     render(<BrandReviewPage dealId={post.dealId} deliverableId={post.deliverableId} />);
     const review = await screen.findByRole("region", { name: "Your review" });
-    await userEvent.click(screen.getByRole("button", { name: "Object to Say the code TIDE15" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add objection to Say the code TIDE15" }));
     await userEvent.type(screen.getByRole("textbox", { name: "What’s wrong with Say the code TIDE15?" }), "Say it slower.");
     await userEvent.click(screen.getByRole("button", { name: "Save objection" }));
-    await userEvent.click(within(review).getByRole("button", { name: "Send 1 objection to Ada Okafor" }));
-    await userEvent.click(within(review).getByRole("button", { name: "Yes, send" }));
-    expect(await within(review).findByText(ended)).toBeVisible();
-    expect(within(review).getByText("Say it slower.")).toBeVisible();
-    expect(within(review).getByRole("button", { name: "Yes, send" })).toBeVisible();
+    // RW 1.3: sending happens in the send bar, which keeps the problem, the note and the confirmation.
+    const bar = screen.getByRole("region", { name: "Your unsent objections" });
+    await userEvent.click(within(bar).getByRole("button", { name: "Send to Ada Okafor" }));
+    await userEvent.click(within(bar).getByRole("button", { name: "Yes, send" }));
+    expect(await within(bar).findByText(ended)).toBeVisible();
+    expect(within(bar).getByText("Say it slower.")).toBeVisible();
+    expect(within(bar).getByRole("button", { name: "Yes, send" })).toBeVisible();
+    expect(screen.getAllByText(ended)).toHaveLength(1);
+    expect(review).toBeVisible();
   });
 
   test("asking for a fix says so beside the item, and the note being written stays", async () => {
@@ -84,11 +88,12 @@ describe("RW-FR-20 (1.2) the window ended while objections were being written", 
     );
     render(<BrandReviewPage dealId={post.dealId} deliverableId={post.deliverableId} />);
     const review = await screen.findByRole("region", { name: "Your review" });
-    await userEvent.click(screen.getByRole("button", { name: "Object to Say the code TIDE15" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add objection to Say the code TIDE15" }));
     await userEvent.type(screen.getByRole("textbox", { name: "What’s wrong with Say the code TIDE15?" }), "Say it slower.");
     await userEvent.click(screen.getByRole("button", { name: "Save objection" }));
-    await userEvent.click(within(review).getByRole("button", { name: "Send 1 objection to Ada Okafor" }));
-    await userEvent.click(within(review).getByRole("button", { name: "Yes, send" }));
+    const bar = screen.getByRole("region", { name: "Your unsent objections" });
+    await userEvent.click(within(bar).getByRole("button", { name: "Send to Ada Okafor" }));
+    await userEvent.click(within(bar).getByRole("button", { name: "Yes, send" }));
     expect(await within(review).findByText(/so this draft is approved\. Your objections weren’t sent\./)).toBeVisible();
     expect(within(review).getByText("Say it slower.")).toBeVisible();
     expect(within(review).queryByRole("button", { name: /^Send/ })).toBeNull();

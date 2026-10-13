@@ -25,6 +25,7 @@ async function openPost(post: BrandPost, heading: string) {
   return review;
 }
 const review = () => screen.getByRole("region", { name: "Your review" });
+const sendBar = () => screen.getByRole("region", { name: "Your unsent objections" });
 const checklist = () => screen.getByRole("region", { name: "Checklist" });
 const card = (name: string) => within(checklist()).getByRole("button", { name: new RegExp(`^${name}`) }).closest("li")!;
 
@@ -67,19 +68,25 @@ describe("RW-FR-07, RW-FR-10, RW-FR-15 the window", () => {
     });
     const sent = recordRequests();
     await user.click(within(checklist()).getByRole("button", { name: /^Say the code TIDE15/ }));
-    await user.click(screen.getByRole("button", { name: "Object to Say the code TIDE15" }));
+    await user.click(screen.getByRole("button", { name: "Add objection to Say the code TIDE15" }));
     await user.click(screen.getByRole("button", { name: "Save objection" }));
     expect(screen.getByText("Say what’s wrong with this item.")).toBeVisible();
     await user.type(screen.getByRole("textbox", { name: "What’s wrong with Say the code TIDE15?" }), "Say it slower.");
     await user.click(screen.getByRole("button", { name: "Save objection" }));
-    expect(within(review()).getByText("Say it slower.")).toBeVisible();
+    // RW 1.3: unsent objections are sent from the bar pinned to the bottom, never listed in "Your review".
+    expect(within(review()).queryByText("Say it slower.")).toBeNull();
+    expect(within(review()).queryByRole("button", { name: /^Send/ })).toBeNull();
+    expect(within(sendBar()).getByText("1 objection for Ada Okafor")).toBeVisible();
+    expect(within(sendBar()).getByText("Say the code TIDE15")).toBeVisible();
 
-    await user.click(within(review()).getByRole("button", { name: "Send 1 objection to Ada Okafor" }));
-    expect(within(review()).getByText(/Send 1 objection\?/)).toBeVisible();
-    await user.click(within(review()).getByRole("button", { name: "Yes, send" }));
+    await user.click(within(sendBar()).getByRole("button", { name: "Send to Ada Okafor" }));
+    expect(within(sendBar()).getByText(/Send 1 objection\?/)).toBeVisible();
+    expect(within(sendBar()).getByText("Say it slower.")).toBeVisible();
+    await user.click(within(sendBar()).getByRole("button", { name: "Yes, send" }));
     expect(await within(review()).findByText("You asked Ada Okafor to fix 1 item.")).toBeVisible();
     expect(within(review()).getByRole("button", { name: "Approve this draft anyway" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: /^Object to/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Add objection to/ })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Your unsent objections" })).toBeNull();
     expect(sent).toContainEqual({
       method: "POST",
       path: "/brand/deals/deal_juniper/deliverables/del_juniper_video/objections",
@@ -88,6 +95,24 @@ describe("RW-FR-07, RW-FR-10, RW-FR-15 the window", () => {
     // RW-FR-08: the objected item's note is worded for the brand, never the creator's "asked you".
     expect(screen.getAllByText("You objected:").length).toBeGreaterThan(0);
     expect(screen.queryByText(/asked you to change it/)).toBeNull();
+  });
+
+  test("RW-FR-29 (1.3): while objections are unsent the send bar takes the dock's place, and Approve stays on the page", async () => {
+    const user = userEvent.setup();
+    await openPost(juniperVideo(), "YouTube video");
+    expect(screen.getByTestId("review-dock")).toBeInTheDocument();
+    await user.click(within(checklist()).getByRole("button", { name: /^Say the code TIDE15/ }));
+    await user.click(screen.getByRole("button", { name: "Add objection to Say the code TIDE15" }));
+    await user.type(screen.getByRole("textbox", { name: "What’s wrong with Say the code TIDE15?" }), "Say it slower.");
+    await user.click(screen.getByRole("button", { name: "Save objection" }));
+    expect(screen.queryByTestId("review-dock")).toBeNull();
+    const outside = screen.getAllByRole("button", { name: "Approve draft" }).filter((b) => !review().contains(b));
+    expect(outside).toHaveLength(1);
+    await user.click(outside[0]);
+    expect(within(review()).getByRole("button", { name: "Yes, approve" })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Remove your objection to Say the code TIDE15" }));
+    expect(screen.queryByRole("region", { name: "Your unsent objections" })).toBeNull();
   });
 
   test("RW-FR-16: approving asks first, in place, and says what it means for the money", async () => {
@@ -106,14 +131,14 @@ describe("RW-FR-07, RW-FR-10, RW-FR-15 the window", () => {
     const user = userEvent.setup();
     await openPost(juniperVideo(), "YouTube video");
     await user.click(within(checklist()).getByRole("button", { name: /^Say the code TIDE15/ }));
-    await user.click(screen.getByRole("button", { name: "Object to Say the code TIDE15" }));
+    await user.click(screen.getByRole("button", { name: "Add objection to Say the code TIDE15" }));
     await user.type(screen.getByRole("textbox", { name: "What’s wrong with Say the code TIDE15?" }), "Say it slower.");
     await user.click(screen.getByRole("button", { name: "Save objection" }));
     // The window ends now: sending is too late, and the post reads as approved by the window.
     stubReview(juniperVideo({}, { state: "approved", approvedAt: now(), by: "window" }));
     server.use(http.post(`${apiBaseUrl}/brand/deals/${DEAL}/deliverables/del_juniper_video/objections`, () => apiError({ code: "window_ended" }, 409)));
-    await user.click(within(review()).getByRole("button", { name: "Send 1 objection to Ada Okafor" }));
-    await user.click(within(review()).getByRole("button", { name: "Yes, send" }));
+    await user.click(within(sendBar()).getByRole("button", { name: "Send to Ada Okafor" }));
+    await user.click(within(sendBar()).getByRole("button", { name: "Yes, send" }));
     expect(await within(review()).findByText(/so this draft is approved\. Your objections weren’t sent\./)).toBeVisible();
     expect(within(review()).getByText("Say it slower.")).toBeVisible();
     expect(within(review()).getByText("Approved · No objection in 48 hours")).toBeVisible();

@@ -16,6 +16,7 @@ import { BrandTermsSheet } from "./brand-terms-sheet";
 import { DraftsPanel } from "./drafts-panel";
 import { HoldsPanel } from "./holds-panel";
 import { NotesPanel } from "./notes-panel";
+import { ChangesBar } from "./changes-bar";
 import { NotesProvider, useNotes } from "./notes";
 import { useBrandDeal } from "./use-brand-deal";
 import { MoneyHeldProvider } from "./money-held";
@@ -160,33 +161,39 @@ function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal)
 
   return (
     <div className="mt-[22px] grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_330px] lg:gap-8">
-      <BrandTermsSheet
-        deal={deal}
-        view={view}
-        renderCancel={(id) => {
-          const p = deal.posts.find((x) => x.deliverableId === id)!;
-          return (
-            <PostCancelSlot
-              post={cancelPosts.find((x) => x.deliverableId === id)!}
-              cancelled={p.cancelled}
-              side="brand"
-              brandName={deal.brandName}
-              creatorName={deal.creatorName}
-              sendOne={cancelOne}
-              onUpdated={onDeal}
-            />
-          );
-        }}
-      />
+      <div className="grid min-w-0 gap-4">
+        <BrandTermsSheet
+          deal={deal}
+          view={view}
+          renderCancel={(id) => {
+            const p = deal.posts.find((x) => x.deliverableId === id)!;
+            return (
+              <PostCancelSlot
+                post={cancelPosts.find((x) => x.deliverableId === id)!}
+                cancelled={p.cancelled}
+                side="brand"
+                brandName={deal.brandName}
+                creatorName={deal.creatorName}
+                sendOne={cancelOne}
+                onUpdated={onDeal}
+              />
+            );
+          }}
+        />
+        {/* CH-FR-11 (1.10): unsent notes are sent from the bar pinned to the bottom. */}
+        <ChangesBar creator={deal.creatorName} sending={sending} problem={sendProblem} onSend={send} />
+        {notes.drafts.length > 0 && <div aria-hidden="true" className="h-24 lg:hidden" />}
+      </div>
       <div className={`grid gap-4 lg:sticky lg:top-6 ${deal.step === "agreed" ? "order-first lg:order-none" : ""}`}>
         <DraftsPanel deal={deal} />
         {deal.step === "agreed" && <HoldsPanel deal={deal} onDeal={onDeal} />}
-        <NotesPanel deal={deal} sending={sending} problem={sendProblem} onSend={send} />
+        <NotesPanel deal={deal} />
         {deal.step === "waiting_for_brand" && (
           <>
-            <AgreePanel summary={view.summary} creator={deal.creatorName} agreeing={agreeing} problem={agreeProblem} onAgree={agree} />
+            {/* CH-FR-11 (1.10): on phones the send bar takes the Agree panel's place while notes are unsent. */}
+            <AgreePanel summary={view.summary} creator={deal.creatorName} agreeing={agreeing} problem={agreeProblem} onAgree={agree} pinned={notes.drafts.length === 0} />
             {/* CH-FR-28: on phones the fixed panel is taller with the email field; the page scrolls clear of it. */}
-            <div aria-hidden="true" className="h-36 lg:hidden" />
+            {notes.drafts.length === 0 && <div aria-hidden="true" className="h-36 lg:hidden" />}
           </>
         )}
         {/* CN-FR-02: the deal's cancel, under the side panel. */}

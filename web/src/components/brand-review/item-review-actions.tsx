@@ -12,7 +12,7 @@ type Item = BrandReviewView["items"][number];
 /**
  * What the brand can do about one item, in its open card (phones) or the
  * evidence panel (tablet and up): answer an ask (RW-FR-12 to RW-FR-14),
- * object in the window (RW-FR-17), or read the note it already sent.
+ * add an objection in the window (RW-FR-17, 1.3), or read the note it already sent.
  *
  * @param item - the item, with its status for the brand
  * @param view - the post's review view, for which actions are on
@@ -88,8 +88,8 @@ export function ItemReviewActions({ item, view, creator, actions }: { item: Item
       </div>
     );
   return (
-    <button type="button" aria-label={`Object to ${item.name}`} onClick={() => actions.edit(item.id)} className={`${TEXT_LINK} -my-1.5`}>
-      Object
+    <button type="button" aria-label={`Add objection to ${item.name}`} onClick={() => actions.edit(item.id)} className={`${TEXT_LINK} -my-1.5`}>
+      Add objection
     </button>
   );
 }

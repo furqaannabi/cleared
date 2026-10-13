@@ -20,6 +20,8 @@ import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { ItemReviewActions } from "./item-review-actions";
 import { ReviewPanel } from "./review-panel";
 import { ReviewDock } from "./review-dock";
+import { ObjectionsBar } from "./objections-bar";
+import { OUTLINE } from "./styles";
 import { CancelPost } from "@/components/cancel/cancel-post";
 import { brandCancelInfo } from "@/lib/cancel/cancel-view";
 import { useBrandDeliverable } from "./use-brand-deliverable";
@@ -163,6 +165,22 @@ function Review({ post, setPost, reload }: { post: BrandDeliverable; setPost: (p
                   </section>
                 </>
               )}
+              {/* RW-FR-29 (1.3): on phones, while the send bar holds the bottom, Approve sits under the items. */}
+              {view.actions.approve && actions.objections.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    actions.confirm("approve");
+                    document.getElementById("your-review")?.scrollIntoView?.({ block: "start" });
+                  }}
+                  className={`${OUTLINE} lg:hidden`}
+                >
+                  Approve draft
+                </button>
+              )}
+              <ObjectionsBar view={view} actions={actions} creator={post.creatorName} />
+              {/* The page scrolls clear of the fixed bar on phones. */}
+              {actions.objections.length > 0 && <div aria-hidden="true" className="h-24 lg:hidden" />}
             </div>
             {/* CN-FR-01: "Cancel this post" under the hold; the hold turns over to confirm (design B). */}
             <div className="lg:col-start-2 lg:row-start-2">
@@ -193,7 +211,7 @@ function Review({ post, setPost, reload }: { post: BrandDeliverable; setPost: (p
               </CancelPost>
             </div>
           </div>
-          <ReviewDock view={view} actions={actions} creator={post.creatorName} />
+          <ReviewDock view={view} actions={actions} />
         </SeekProvider>
       </ChecklistWordsProvider>
     </BrandFrame>

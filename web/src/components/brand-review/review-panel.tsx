@@ -8,12 +8,10 @@ import { useId, useState } from "react";
 import { FIELD, GHOST, OUTLINE, PRIMARY } from "./styles";
 import type { ReviewActions } from "./use-review-actions";
 
-const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
-
 /**
  * "Your review": what happens next on this post and the brand's answer. In
- * the window: the time left, the saved objections, Send and Approve, each
- * confirmed in place. After objecting: the objections and "Approve this
+ * the window: the time left and Approve, confirmed in place; unsent
+ * objections are in the send bar (RW 1.3). After objecting: the objections and "Approve this
  * draft anyway". Beside the work from `lg:`; first on phones.
  *
  * @param post - the post as the brand sees it
@@ -58,28 +56,16 @@ export function ReviewPanel({ post, view, actions, timeZone }: { post: BrandDeli
         view.items
           .filter((i) => i.status.value === "objected")
           .map((i) => <Saved key={i.id} name={i.name} note={i.note ?? ""} />)}
-      {view.actions.object && actions.objections.map((o) => <Saved key={o.itemId} name={nameOf(o.itemId)} note={o.note} />)}
       {view.actions.object && actions.editing && n === 0 && <p className="text-meta text-ink-3">Writing an objection…</p>}
 
-      {actions.problem && !actions.problemItem && (
+      {/* RW 1.3: a failed send shows in the send bar. */}
+      {actions.problem && !actions.problemItem && n === 0 && (
         <p role="alert" className="text-meta font-bold text-fail">
           {actions.problem}
         </p>
       )}
 
-      {actions.confirming === "send" ? (
-        <Confirm
-          busy={actions.busy}
-          yes="Yes, send"
-          onYes={actions.send}
-          onNo={() => actions.confirm(null)}
-          text={
-            <>
-              <b>Send {plural(n, "objection")}?</b> The clock stops and {c} makes a new draft. You can still approve this draft until {c} sends one.
-            </>
-          }
-        />
-      ) : actions.confirming === "confirm_post" || actions.confirming === "accept_post" ? (
+      {actions.confirming === "confirm_post" || actions.confirming === "accept_post" ? (
         <Confirm
           busy={actions.busy}
           yes={actions.confirming === "confirm_post" ? "Yes, confirm" : "Yes, accept"}
@@ -107,11 +93,6 @@ export function ReviewPanel({ post, view, actions, timeZone }: { post: BrandDeli
         />
       ) : (
         <>
-          {view.actions.object && n > 0 && (
-            <button type="button" onClick={() => actions.confirm("send")} className={PRIMARY}>
-              Send {plural(n, "objection")} to {c}
-            </button>
-          )}
           {view.actions.approve && (
             <button type="button" onClick={() => actions.confirm("approve")} className={n > 0 ? OUTLINE : PRIMARY}>
               Approve draft

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test, vi } from "vitest";
@@ -85,9 +85,11 @@ describe("CH-FR-29 (1.4) the session ends during an action", () => {
     await userEvent.click(await screen.findByRole("button", { name: `Ask for a change to ${item}` }));
     await userEvent.type(screen.getByRole("textbox", { name: `Your note about ${item}` }), "In the first 30 seconds.");
     await userEvent.click(screen.getByRole("button", { name: "Save note" }));
-    await userEvent.click(screen.getByRole("button", { name: "Send 1 change to Ada Okafor" }));
-    expect(await screen.findByText(ended)).toBeVisible();
-    expect(screen.getByRole("button", { name: "Send 1 change to Ada Okafor" })).toBeVisible();
+    const bar = screen.getByRole("region", { name: "Your unsent changes" });
+    await userEvent.click(within(bar).getByRole("button", { name: "Send to Ada Okafor" }));
+    await userEvent.click(within(bar).getByRole("button", { name: "Yes, send" }));
+    expect(await within(bar).findByText(ended)).toBeVisible();
+    expect(within(bar).getByRole("button", { name: "Yes, send" })).toBeVisible();
     expect(screen.queryByText("Your notes didn’t send. Try again.")).toBeNull();
   });
 });

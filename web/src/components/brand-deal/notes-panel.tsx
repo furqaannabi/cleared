@@ -6,24 +6,20 @@ import { AskForChange } from "./ask-for-change";
 import { useNotes } from "./notes";
 
 /**
- * "Your notes for {creator}". Before sending: the brand's unsent notes, the
- * note about the deal as a whole, and "Send {n} changes to {creator}". Once
- * sent: what happens next and the notes, read-only. On a later version: the
- * earlier notes with the creator's replies.
+ * "Your notes for {creator}". Before sending: the note about the deal as a
+ * whole; unsent notes are in the send bar (1.10). Once sent: what happens
+ * next and the notes, read-only. On a later version: the earlier notes with
+ * the creator's replies.
  *
  * @param deal - the deal as the brand sees it
- * @param sending - whether the notes are being sent
- * @param problem - why the last send failed, if it did
- * @param onSend - sends the notes
  * @see docs/specs/confirm-and-hold-frd.md CH-FR-10 to CH-FR-13
  */
-export function NotesPanel({ deal, sending, problem, onSend }: { deal: BrandDeal; sending: boolean; problem: string | null; onSend: () => void }) {
+export function NotesPanel({ deal }: { deal: BrandDeal }) {
   const { drafts } = useNotes();
   const creator = deal.creatorName;
   const sent = deal.step === "changes_requested";
   const current = deal.notes.filter((n) => n.version === deal.version);
   const earlier = deal.notes.filter((n) => n.version < deal.version);
-  const n = drafts.length;
   if (deal.step === "agreed" && earlier.length === 0) return null;
   return (
     <section aria-labelledby="notes-heading" className="grid gap-3 rounded-[18px] border border-line bg-surface p-[18px]">
@@ -47,27 +43,8 @@ export function NotesPanel({ deal, sending, problem, onSend }: { deal: BrandDeal
           )}
           {deal.step === "waiting_for_brand" && (
             <>
-              {n === 0 ? (
-                <p className="text-meta text-ink-3">Nothing yet. Use “Ask for a change” on anything that’s wrong.</p>
-              ) : (
-                <NoteList notes={drafts} />
-              )}
+              {drafts.length === 0 && <p className="text-meta text-ink-3">Nothing yet. Use “Ask for a change” on anything that’s wrong.</p>}
               <AskForChange about={{ kind: "deal" }} target="this deal" label="Anything else about this deal?" />
-              {n > 0 && (
-                <button
-                  type="button"
-                  disabled={sending}
-                  onClick={onSend}
-                  className="inline-flex min-h-11 items-center justify-center rounded-pill border border-latte-line bg-surface px-[18px] text-[14.5px] font-bold text-espresso disabled:opacity-50"
-                >
-                  {`Send ${n} ${n === 1 ? "change" : "changes"} to ${creator}`}
-                </button>
-              )}
-              {problem && (
-                <p role="alert" className="text-meta font-bold text-fail">
-                  {problem}
-                </p>
-              )}
             </>
           )}
         </>

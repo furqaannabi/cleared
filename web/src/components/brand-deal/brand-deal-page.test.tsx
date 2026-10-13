@@ -94,7 +94,7 @@ describe("CH-FR-06 to CH-FR-09 the checklist and where it came from", () => {
 });
 
 describe("CH-FR-10, CH-FR-11 asking for a change", () => {
-  test("a note on an item opens in place, saves beside it, and the panel offers to send it", async () => {
+  test("a note on an item opens in place, saves beside it, and the send bar offers to send it (1.10)", async () => {
     await openDeal();
     const item = () => within(post("YouTube video")).getByRole("listitem", { name: "Says the code MOSS10" });
     await userEvent.click(within(item()).getByRole("button", { name: "Ask for a change to Says the code MOSS10 (YouTube video)" }));
@@ -105,8 +105,12 @@ describe("CH-FR-10, CH-FR-11 asking for a change", () => {
     await userEvent.click(within(item()).getByRole("button", { name: "Save note" }));
     expect(within(item()).getByText("Use MOSS15, please.")).toBeVisible();
     const panel = screen.getByRole("region", { name: "Your notes for Ada Okafor" });
-    expect(within(panel).getByText("Use MOSS15, please.")).toBeVisible();
-    expect(within(panel).getByRole("button", { name: "Send 1 change to Ada Okafor" })).toBeVisible();
+    expect(within(panel).queryByText("Use MOSS15, please.")).toBeNull();
+    expect(within(panel).queryByRole("button", { name: /^Send/ })).toBeNull();
+    const bar = screen.getByRole("region", { name: "Your unsent changes" });
+    expect(within(bar).getByText("1 change for Ada Okafor")).toBeVisible();
+    expect(within(bar).getByText("Says the code MOSS10 (YouTube video)")).toBeVisible();
+    expect(within(bar).getByRole("button", { name: "Send to Ada Okafor" })).toBeVisible();
   });
 });
 
@@ -126,10 +130,10 @@ describe("CH-FR-10 to CH-FR-12 notes, then sending them", () => {
     expect(field).toHaveValue("Use MOSS15.");
     await userEvent.type(field, " Thanks!");
     await userEvent.click(screen.getByRole("button", { name: "Save note" }));
-    expect(screen.getAllByText("Use MOSS15. Thanks!")).toHaveLength(2);
+    expect(screen.getAllByText("Use MOSS15. Thanks!")).toHaveLength(1);
     await userEvent.click(screen.getByRole("button", { name: "Remove your note about Says the code MOSS10 (YouTube video)" }));
     expect(screen.queryByText("Use MOSS15. Thanks!")).toBeNull();
-    expect(screen.queryByRole("button", { name: /^Send/ })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Your unsent changes" })).toBeNull();
   });
 
   test("notes can be about a line left out, a post's amount or deadline, and the deal as a whole", async () => {
@@ -138,13 +142,18 @@ describe("CH-FR-10 to CH-FR-12 notes, then sending them", () => {
     await note("Ask about the amount for the YouTube video", "Your note about the amount for the YouTube video", "We said $1,100.");
     await note("Ask about the deadline for the Instagram Reel", "Your note about the deadline for the Instagram Reel", "7 days, please.");
     await note("Anything else about this deal?", "Your note about this deal", "We agreed four posts.");
-    expect(screen.getByRole("button", { name: "Send 4 changes to Ada Okafor" })).toBeVisible();
+    expect(within(screen.getByRole("region", { name: "Your unsent changes" })).getByText("4 changes for Ada Okafor")).toBeVisible();
   });
 
   test("sending moves the page to waiting for the creator, with the notes read-only and nothing left to ask or agree", async () => {
     await openDeal();
     await note("Ask for a change to Says the code MOSS10 (YouTube video)", "Your note about Says the code MOSS10 (YouTube video)", "Use MOSS15.");
-    await userEvent.click(screen.getByRole("button", { name: "Send 1 change to Ada Okafor" }));
+    const bar = screen.getByRole("region", { name: "Your unsent changes" });
+    await userEvent.click(within(bar).getByRole("button", { name: "Send to Ada Okafor" }));
+    expect(within(bar).getByText("Send 1 change?")).toBeVisible();
+    expect(within(bar).getByText(/Ada Okafor updates the terms and sends you a new version\./)).toBeVisible();
+    expect(within(bar).getByText("Use MOSS15.")).toBeVisible();
+    await userEvent.click(within(bar).getByRole("button", { name: "Yes, send" }));
     expect(await screen.findByText("Sent to Ada Okafor. When they update the terms, this page shows the new version. You can close it.")).toBeVisible();
     const sent = screen.getByRole("region", { name: "Your notes for Ada Okafor" });
     expect(within(sent).getByText("Use MOSS15.")).toBeVisible();
