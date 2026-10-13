@@ -177,6 +177,18 @@ describe("creator draft check page", () => {
     expect(await within(await screen.findByRole("region", { name: "What happens next" })).findByText(/We’re checking your draft against the 6 items/)).toBeVisible();
   });
 
+  test("DC-FR-04, DC-FR-05: while the check runs, the page asks the API again and shows the results without a reload", async () => {
+    posts.on("del_glow_failed_ours", "post", "/check/retry", (d) => ({ ...d, state: "checking", checkFailure: undefined, items: d.items.map((i) => (i.status === "at_live_check" ? i : { ...i, status: "checking" })) }));
+    render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
+    const next = () => within(screen.getByRole("region", { name: "What happens next" }));
+    await next().findByText(/We’re checking your draft/);
+    // The check finishes on the backend; nothing on the page is touched.
+    const done = seededPosts().find((d) => d.id === "del_glow_video")!;
+    server.use(http.get(`${apiBaseUrl}/deliverables/del_glow_failed_ours`, () => HttpResponse.json({ ...done, id: "del_glow_failed_ours" })));
+    expect(await next().findByText("Fix 1 item, and decide on 1 unsure item.", {}, { timeout: 8000 })).toBeVisible();
+  }, 12_000);
+
   test("DC-FR-09: if the retry itself fails, the bar says so", async () => {
     server.use(http.post(`${apiBaseUrl}/deliverables/:id/check/retry`, () => HttpResponse.json({}, { status: 500 })));
     render(<DraftCheckPage dealId="deal_glow" deliverableId="del_glow_failed_ours" />);

@@ -15,14 +15,15 @@ export type DeliverableLoad =
 let onScreen: { dealId: string; deliverable: Deliverable } | null = null;
 
 /**
- * Loads one deliverable through the API client and exposes a retry. Opening
+ * Loads one deliverable through the API client and exposes a retry; while
+ * its check runs, asks the API again every 2.5 s. Opening
  * another post in the same deal starts as `switching`, with the post on
  * screen, rather than `loading`.
  *
  * @param deliverableId - the deliverable's opaque id from the route
  * @param dealId - its deal
  * @returns the load state, a function to load again, and one to show an updated deliverable
- * @see docs/specs/creator-draft-check-frd.md DC-FR-01, DC-FR-39
+ * @see docs/specs/creator-draft-check-frd.md DC-FR-01, DC-FR-04, DC-FR-05, DC-FR-39
  */
 export function useDeliverable(
   deliverableId: string,
@@ -59,6 +60,17 @@ export function useDeliverable(
       current = false;
     };
   }, [deliverableId, attempt]);
+
+  // DC-FR-04, DC-FR-05: the backend runs the check; while it does, ask the API again.
+  const checking = load.status === "ready" && load.deliverable.id === deliverableId && load.deliverable.state === "checking";
+  useEffect(() => {
+    if (!checking) return;
+    const t = setInterval(async () => {
+      const r = await api.getDeliverable(deliverableId);
+      if (r.ok) setLoad({ status: "ready", deliverable: r.data });
+    }, 2500);
+    return () => clearInterval(t);
+  }, [checking, deliverableId]);
 
   const retry = useCallback(() => {
     setLoad({ status: "loading" });
