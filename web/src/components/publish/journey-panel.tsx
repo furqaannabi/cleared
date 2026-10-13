@@ -79,12 +79,13 @@ const SEAL: Record<JourneyStep["state"], { fill: string; icon: React.ReactNode }
   problem: { fill: "fill-fail-wash", icon: <path d="M6 21V4M6 4h11l-2 4 2 4H6" /> },
 };
 
+// A PayPal email has no spaces; `wrap-anywhere` breaks it rather than letting it run out of the step (PP-FR-17).
 function Step({ step, last, children }: { step: JourneyStep; last: boolean; children?: React.ReactNode }) {
   const open = step.state === "now" || step.state === "problem";
   return (
     <li
       aria-current={open ? "step" : undefined}
-      className={`relative grid grid-cols-[24px_minmax(0,1fr)] gap-x-3 gap-y-0.5 py-3 ${open ? `-mx-2.5 my-1 rounded-[14px] px-2.5 ${step.state === "problem" ? "bg-fail-tint" : "bg-latte-wash"}` : ""}`}
+      className={`relative grid grid-cols-[24px_minmax(0,1fr)] gap-x-3 wrap-anywhere gap-y-0.5 py-3 ${open ? `-mx-2.5 my-1 rounded-[14px] px-2.5 ${step.state === "problem" ? "bg-fail-tint" : "bg-latte-wash"}` : ""}`}
     >
       {!last && !open && <span aria-hidden="true" className={`absolute top-[34px] -bottom-3 left-[11px] w-0.5 ${step.state === "done" ? "bg-latte-line" : "bg-line"}`} />}
       <Seal fillClassName={SEAL[step.state].fill} className={`z-[1] size-6 ${step.state === "problem" ? "text-fail" : "text-espresso"}`}>
