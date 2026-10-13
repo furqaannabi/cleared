@@ -81,3 +81,13 @@
     .lp-result .lp-now { animation: lp-settle linear both; animation-timeline: view(); animation-range: entry 40% cover 40%; }
   }
 }
+
+/* LP-FR-18 (1.9): the way in is hidden (inline) while the page asks GET /me. An
+   animation outranks the inline style, so at 1.5 s the signed-out way in shows,
+   with or without JavaScript. Not motion, so it runs under reduced motion too. */
+@keyframes lp-reveal { to { visibility: visible; } }
+.lp-wait { animation: lp-reveal 0s 1.5s forwards; }
+@keyframes lp-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .lp-fade { animation: lp-fade 150ms ease-out; }
+}

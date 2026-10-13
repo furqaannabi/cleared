@@ -16,9 +16,11 @@ describe("Landing page", () => {
     ).toBeInTheDocument();
   });
 
-  test("LP-FR-03, LP-FR-17 (1.3): Sign in with Google alone, in the hero and the closing band, with no demo and no note", () => {
+  test("LP-FR-03, LP-FR-17 (1.3): Sign in with Google alone, in the hero and the closing band, with no demo and no note", async () => {
+    const { stubSession } = await import("@/test/stub-api");
+    stubSession(null);
     page();
-    const google = screen.getAllByRole("link", { name: "Sign in with Google" });
+    const google = await screen.findAllByRole("link", { name: "Sign in with Google" });
     expect(google).toHaveLength(2);
     for (const g of google) expect(g.getAttribute("href")).toMatch(/\/auth\/google\?next=%2Fdeals$/);
     expect(screen.queryByText(/demo/i)).toBeNull();
@@ -104,21 +106,25 @@ describe("Landing page", () => {
 });
 
 describe("LP-FR-18 (1.5) signed in", () => {
-  test("both buttons read Open your deals and go home; the Instagram line is left out", async () => {
+  test("both buttons read Open your deals and go home; the Instagram line is not shown", async () => {
     const { aProfile, stubSession } = await import("@/test/stub-api");
     stubSession(aProfile());
     page();
+    // 1.9: a signed-in creator never sees the Google button first.
+    expect(screen.queryByRole("link", { name: "Sign in with Google" })).toBeNull();
     const open = await screen.findAllByRole("link", { name: "Open your deals" });
     expect(open).toHaveLength(2);
     for (const o of open) expect(o).toHaveAttribute("href", "/deals");
     expect(screen.queryByRole("link", { name: "Sign in with Google" })).toBeNull();
-    expect(screen.queryByText(/Instagram-only/)).toBeNull();
+    // 1.9: the line is not shown, but its room is kept.
+    expect(screen.getByText(/Instagram-only/)).not.toBeVisible();
   });
 
   test("(1.6) the header's Sign in reads Your deals", async () => {
     const { aProfile, stubSession } = await import("@/test/stub-api");
     stubSession(aProfile());
     page();
+    expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
     expect(await within(screen.getByRole("banner")).findByRole("link", { name: "Your deals" })).toHaveAttribute("href", "/deals");
     expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
   });
@@ -130,6 +136,35 @@ describe("LP-FR-18 (1.5) signed in", () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(screen.getAllByRole("link", { name: "Sign in with Google" })).toHaveLength(2);
     expect(screen.queryByRole("link", { name: "Open your deals" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/sign-in");
+  });
+});
+
+describe("LP-FR-18 (1.9) no way in shows while the page asks", () => {
+  test("while GET /me has not answered, no way in is visible, and the space is kept", async () => {
+    const { http } = await import("msw");
+    const { server } = await import("@/test/server");
+    const { apiBaseUrl } = await import("@/lib/api");
+    server.use(http.get(`${apiBaseUrl}/me`, () => new Promise<Response>(() => {})));
+    const { container } = page();
+    await new Promise((r) => setTimeout(r, 50));
+    for (const name of ["Sign in with Google", "Sign in", "Open your deals", "Your deals"]) {
+      expect(screen.queryByRole("link", { name })).toBeNull();
+    }
+    const google = container.querySelectorAll('a[href*="/auth/google"]');
+    expect(google).toHaveLength(2);
+    for (const link of google) expect(link).not.toBeVisible();
+    expect(screen.getByText(/Instagram-only/)).not.toBeVisible();
+  });
+
+  test("if the call fails, the signed-out way in shows", async () => {
+    const { http, HttpResponse } = await import("msw");
+    const { server } = await import("@/test/server");
+    const { apiBaseUrl } = await import("@/lib/api");
+    server.use(http.get(`${apiBaseUrl}/me`, () => HttpResponse.json({}, { status: 500 })));
+    page();
+    expect(await screen.findAllByRole("link", { name: "Sign in with Google" })).toHaveLength(2);
+    expect(screen.getByText(/Instagram-only/)).toBeVisible();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/sign-in");
   });
 });
