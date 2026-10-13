@@ -41,6 +41,10 @@ import { PageSkeleton } from "./page-skeleton";
 import { useDeliverable } from "./use-deliverable";
 import { useItemActions } from "./use-item-actions";
 import { useUrlSelection } from "./use-url-selection";
+import { DraftDrop } from "./draft-drop";
+import type { NextStepAction } from "@/lib/deliverable/next-step";
+
+const UPLOAD_ACTIONS: (NextStepAction | null)[] = ["upload_draft", "upload_new_draft", "upload_again"];
 
 /**
  * The creator's draft check page for one deliverable: loads it and shows
@@ -232,7 +236,17 @@ function Loaded({
       <DraftCheckLayout
         vertical={deliverable.platform !== "youtube_video"}
         money={sideMoney && withCancel(sideMoney)}
-        player={playerSlot}
+        player={
+          // DC-FR-56 (1.28): from md:, a video dragged over the page is dropped onto the player area.
+          <DraftDrop
+            on={wide}
+            canUpload={Boolean(onUpload) && !draftUpload.uploading && UPLOAD_ACTIONS.includes(view.nextStep.action)}
+            hasDraft={Boolean(deliverable.draft)}
+            onDrop={draftUpload.drop}
+          >
+            {playerSlot}
+          </DraftDrop>
+        }
         next={
           // DC-FR-30: phones show the bar only when it has an action (or a problem to report).
           // DC-FR-45 (1.18): while uploading, Cancel is in the player and the phone bar steps aside.

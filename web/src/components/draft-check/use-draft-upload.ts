@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { checkDraftFile, readVideoLength } from "@/lib/draft/check-draft-file";
-import { fromAnswer, fromCheck, type UploadProblem } from "@/lib/draft/upload-problem";
+import { fromAnswer, fromCheck, severalFiles, type UploadProblem } from "@/lib/draft/upload-problem";
 import type { Deliverable } from "@/lib/deliverable/types";
 
 /** A draft on its way up: its name, size and how far it has got. */
@@ -14,6 +14,7 @@ export type Uploading = { fileName: string; size: number; percent: number };
  * uploads it with its progress and Cancel, asks before the page is left
  * mid-upload, and once the API has it reads the post back (now Checking).
  * A file, limit or other problem is kept for the page to show (DC-FR-53).
+ * Dropped files come in through `drop` (DC-FR-56).
  *
  * @param deliverableId - the post
  * @param onUpdated - takes the post as the API now has it
@@ -60,5 +61,14 @@ export function useDraftUpload(deliverableId: string, onUpdated: (d: Deliverable
     [deliverableId, reload],
   );
 
-  return { upload, uploading, problem, cancel: () => stop.current?.abort() };
+  // DC-FR-56: one dropped video goes up as if chosen; several are refused, none sent.
+  const drop = useCallback(
+    (files: File[]) => {
+      if (files.length > 1) return setProblem(severalFiles(files.length));
+      if (files[0]) void upload(files[0]);
+    },
+    [upload],
+  );
+
+  return { upload, drop, uploading, problem, cancel: () => stop.current?.abort() };
 }

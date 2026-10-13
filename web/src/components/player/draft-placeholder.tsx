@@ -27,7 +27,11 @@ export function DraftPlaceholder({ platform }: { platform: Deliverable["platform
             <path d="m10 9.5 4.5 2.5-4.5 2.5z" fill="currentColor" />
           </svg>
           <p className="text-body-strong font-bold text-ink-2">No draft yet</p>
-          <p className="max-w-[28ch] text-meta text-ink-3">Your draft will play here once you upload it.</p>
+          <p className="max-w-[34ch] text-meta text-ink-3">
+            Your draft will play here once you upload it.
+            {/* DC-FR-02 (1.28): from md:, where there is a mouse, the panel takes a dropped video (DC-FR-56). */}
+            <span className="hidden md:inline"> Drag your video here, or use Upload draft.</span>
+          </p>
         </div>
       </div>
     </section>

@@ -27,6 +27,16 @@ const tooLong = (fileName: string, length?: { lengthSec: number; lengthCapSec: n
 const format = (fileName: string): UploadProblem => ({ show: "file", heading: `We couldn’t check ${fileName}`, body: `We can’t check ${fileName} in this format. Upload an MP4 or MOV.` });
 
 /**
+ * Several files dropped at once: none is sent.
+ *
+ * @param n - how many were dropped
+ * @see docs/specs/creator-draft-check-frd.md DC-FR-56 (1.28)
+ */
+export function severalFiles(n: number): UploadProblem {
+  return { show: "file", heading: "Drop one video at a time.", body: `You dropped ${n} files. Nothing was sent.` };
+}
+
+/**
  * A file the browser checked and stopped before sending.
  *
  * @see docs/specs/creator-draft-check-frd.md DC-FR-45 (1.18), DC-FR-08
