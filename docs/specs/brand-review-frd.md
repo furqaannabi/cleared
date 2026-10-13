@@ -1,6 +1,6 @@
 # Brand review: FRD
 
-**Status:** Signed by William (revision 1.2). The objection rule and review links are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.3). The objection rule and review links are decided by William; Furqaan can supersede them.
 
 **Surface:** Both sides of step 5 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's side:** each post's review status on the brand's deal page, and a review page per post where the brand answers the creator's asks, then approves the draft or objects to items in the 48-hour review window. **The creator's side** (amending the [creator draft check](creator-draft-check-frd.md), revision 1.14): objections, the approved state, and a link to send the brand.
 
@@ -110,8 +110,8 @@ This spec ends at "Approved". Re-confirming the hold and publishing are step 6.
 | --- | --- |
 | RW-FR-15 | **Window open.** When the API reports the window has started: "Every item passed. You have until {date, time} to review" (with the viewer's own time per DC-FR-44) and the time left, and "If you say nothing, the draft is approved." Two actions: "Approve draft" and "Object to an item". |
 | RW-FR-16 | **Approve.** "Approve draft" opens an inline confirmation in place (not a modal): "Approve this draft? {creator} can then post it. Your {amount} is taken only once the live post checks out." with "Yes, approve" and "Not yet". |
-| RW-FR-17 | **Object.** Every Passed item has "Object", which opens a note field in place (required, plain text, up to 500 characters). Saved objections show beside their items with Edit and Remove; a bar says "{n} objections" and "Send to {creator}". Items the brand accepted and At live check items have no "Object" (RW-BR-03). |
-| RW-FR-18 | **Send objections.** "Send to {creator}" opens an inline confirmation listing each item and note: "Send {n} objections? The clock stops and {creator} makes a new draft. You can still approve this draft until they do." with "Yes, send" and "Not yet". |
+| RW-FR-17 | **Add objection (1.3).** Every Passed item has "Add objection", which opens a note field in place (required, plain text, up to 500 characters). Saved objections show beside their items with Edit and Remove. Items the brand accepted and At live check items have no "Add objection" (RW-BR-03). Once one objection is saved, the **send bar** is pinned to the bottom of the screen at every width (over the work column from `lg:`): "1 objection for {creator}" or "{n} objections for {creator}", the items' names on one line under it, and "Send to {creator}". It goes when the last objection is removed or they are sent. "Your review" doesn't list unsent objections (`design/brand-review/send-bar.html`, look 2). |
+| RW-FR-18 | **Send objections.** "Send to {creator}" opens the confirmation in the send bar (1.3), listing each item and note: "Send {n} objections? ("1 objection" for one) The clock stops and {creator} makes a new draft. You can still approve this draft until they do." with "Yes, send" and "Not yet". |
 | RW-FR-19 | **Last hour.** In the window's last hour the time left leads, with "Less than an hour left to object." |
 | RW-FR-20 | **Window ended.** When the API reports the window ended with no objection, the page shows RW-FR-22. If the brand was writing objections, it adds "The review window ended at {time}, so this draft is approved. Your objections weren't sent." and keeps the unsent notes visible, read-only, so they can be copied. A send the API refuses as too late shows the same. |
 
@@ -119,7 +119,7 @@ This spec ends at "Approved". Re-confirming the hold and publishing are step 6.
 
 | ID | Requirement |
 | --- | --- |
-| RW-FR-21 | **Objected.** "You asked {creator} to fix {n} items. The clock has stopped. {creator} makes a new draft by {date}; if they don't, the hold comes back to you." The objections are listed with their notes, read-only. One action: "Approve this draft anyway", with RW-FR-16's confirmation. No objections can be added, edited or withdrawn one by one. |
+| RW-FR-21 | **Objected.** "You asked {creator} to fix {n} items ("1 item" for one). The clock has stopped. {creator} makes a new draft by {date}; if they don't, the hold comes back to you." The objections are listed with their notes, read-only. One action: "Approve this draft anyway", with RW-FR-16's confirmation. No objections can be added, edited or withdrawn one by one. |
 | RW-FR-22 | **Approved.** "Approved · {date}" ("by you", or "No objection in 48 hours" when the window ended), then "{creator} posts by {date}. Your {amount} is taken only once the live post checks out." No actions. |
 | RW-FR-23 | **A new draft.** When the creator uploads a new draft after an objection or a fix request, the page shows nothing new until RW-FR-06 applies again; earlier objections, acceptances and fix requests aren't carried over (DC-BR-04). |
 | RW-FR-24 | **Released.** When the API reports the hold was released, the page says so with the date and why, read-only, as on the creator's side (DC-FR-10). |
@@ -137,8 +137,8 @@ This spec ends at "Approved". Re-confirming the hold and publishing are step 6.
 
 | ID | Requirement |
 | --- | --- |
-| RW-FR-29 | Mobile-first at 375 px (designed at 390 px first): one column with the work first (banner, what happens next, player, items, then the hold), every target at least 44 px, note fields full width, the brand's actions in a bar fixed to the bottom on phones, no sideways page scroll. Layout from `md:` follows the creator's draft check (DESIGN.md). |
-| RW-FR-30 | Every control is reachable by keyboard and named ("Object to {item}", "Accept {item}"); timeline markers as DC-FR-24; the countdown is announced at most when it crosses the last hour, not every minute; accepting, sending, approving and a window that ended are announced politely; reduced motion is respected. |
+| RW-FR-29 | Mobile-first at 375 px (designed at 390 px first): one column with the work first (banner, what happens next, player, items, then the hold), every target at least 44 px, note fields full width, the brand's actions in a bar fixed to the bottom on phones; while objections are unsent the send bar (RW-FR-17) takes its place and "Approve draft" moves under the items; no sideways page scroll. Layout from `md:` follows the creator's draft check (DESIGN.md). |
+| RW-FR-30 | Every control is reachable by keyboard and named ("Add objection to {item}", "Accept {item}"; the send bar is a named region); timeline markers as DC-FR-24; the countdown is announced at most when it crosses the last hour, not every minute; accepting, sending, approving and a window that ended are announced politely; reduced motion is respected. |
 
 ## Business rules
 
@@ -268,3 +268,5 @@ The creator's deliverable (DC) gains `state: "objected" | "approved"`, item stat
 | 1.1 | Signed by William | none |
 | 1.2 | The move onto the live API, from the grill-me with William: the review routes and shapes up to Approved matched the contract, the differences past Approved go to publish and pay; no review link email (RW-FR-03, RW-FR-25); a 401 reads as no session (RW-FR-04); the session ending during an action keeps everything on the page and says to open the link again (new RW-FR-31); a window ending proven in Vitest, with a test-only end-window route asked of Furqaan; the doubled sentence in the Status line removed | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md), [Mocks go in one last slice](../decisions/2026-10-11-mocks-go-in-one-last-slice.md), [No email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md) |
 | 1.2 signed | Revision 1.2 signed by William | none |
+| 1.3 | From the sandbox run and the grill-me with William: "Add objection" replaces "Object"; saved objections are sent from a bar pinned to the bottom at every width, with the confirmation in the bar, in place of "Your review" (RW-FR-17, RW-FR-18); "Your review" no longer lists unsent objections; on phones the send bar takes the dock's place while objections are unsent, with "Approve draft" under the items (RW-FR-29); "1 item" and "1 objection" for one (RW-FR-18, RW-FR-21). Look 2 of `design/brand-review/send-bar.html` | none |
+| 1.3 signed | Revision 1.3 signed by William | none |

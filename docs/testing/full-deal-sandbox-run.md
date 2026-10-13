@@ -60,7 +60,7 @@ Expect: the deal at "{brand} · Waiting for brand"; the terms read-only. (IN-FR-
 
 1. Open the link. "Opening your deal…", then `/brand/deals/{id}` with the token gone from the address bar.
 2. The terms: the post, "Within 7 days of your hold", $150.00, "Paid to {creator}'s PayPal" and never the email. Each item says "From your brief: …" or "Added by {creator}".
-3. Optional detour: "Ask for a change" on one item, send it, answer it as the creator, "Send updated terms to {brand}", and see "Version 2" with "Changed" on the brand's side. (CH-FR-10 to CH-FR-13)
+3. Optional detour: "Ask for a change" on one item, "Save note", then "Send to {creator}" in the bar at the bottom → "Yes, send"; answer it as the creator, "Send updated terms to {brand}", and see "Version 2" with "Changed" on the brand's side. (CH-FR-10 to CH-FR-13)
 4. "Agree to these terms". Expect "Agreed · version {n} · {date}".
 5. "Approve with PayPal" (CH 1.9: PayPal's own "PayPal" button under "Approve the hold with PayPal or a card"; one click opens PayPal). In PayPal's window, log in with the sandbox personal account and approve. Never with the business account Cleared's PayPal app belongs to: PayPal refuses it as "the seller for this purchase". Use a different account from the creator's payout email, so the sandbox shows who paid whom.
 
@@ -125,8 +125,8 @@ A new deal, held as in steps 2 to 5.
 1. Upload the cut with the on-screen code missing. Expect that item "Fix needed" with a "Suggested fix", and the rest passed. No review window. (DC-FR-06, DC-FR-46)
 2. If any item is "Unsure": "Ask {brand} to accept". Brand: "Ask {creator} to fix it" with a note. Creator: the item says "{brand} asked you to fix this". (DC-FR-14, DC-FR-17, RW-FR-14)
 3. Upload the good video. Expect "Was Fix needed, now Passed" on the fixed item. (DC-FR-19, DC-FR-48)
-4. Brand: "Object" on one passed item, a note, "Send to {creator}" → "Yes, send". Expect "You asked {creator} to fix 1 items. The clock has stopped." (RW-FR-17, RW-FR-18, RW-FR-21)
-5. Creator: "{brand} asked you to fix 1 items. Upload a new draft by {date}." (DC-FR-50)
+4. Brand: "Add objection" on one passed item, a note, "Save objection". Expect the send bar at the bottom: "1 objection for {creator}". "Send to {creator}" → "Yes, send" in the bar. Expect "You asked {creator} to fix 1 item. The clock has stopped." (RW-FR-17, RW-FR-18, RW-FR-21)
+5. Creator: "{brand} asked you to fix 1 item. Upload a new draft by {date}." (DC-FR-50)
 6. Brand: "Approve this draft anyway". Creator: approved, as step 7.
 
 ## Path C: cancelling, and silence

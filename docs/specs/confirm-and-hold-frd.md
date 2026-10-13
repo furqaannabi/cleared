@@ -1,6 +1,6 @@
 # Confirm and hold: FRD
 
-**Status:** Signed by William (revision 1.9).
+**Status:** Signed by William (revision 1.10).
 
 **Surface:** Both sides of step 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's deal page:** the brand opens the creator's link, reads the terms and every checklist with where each item came from, asks for changes or agrees, then approves one PayPal hold per post. **The creator's side:** the brand's notes beside what they're about, "Send updated terms", and each post's hold as it comes in.
 
@@ -100,7 +100,7 @@ The brand can "Ask for a change" on any item, line left out, amount or deadline,
 | ID | Requirement |
 | --- | --- |
 | CH-FR-10 | **Ask for a change.** Available, until the brand agrees, on every item, every line under "Not on the checklist", and every post's amount and deadline. It opens a note field in place (plain text, up to 500 characters). One more note, "Anything else about this deal?", covers the deal as a whole. |
-| CH-FR-11 | **Notes before sending.** Each saved note shows beside what it's about, with Edit and Remove. A bar lists how many there are and "Send {n} changes to {creator}". **Depends on backend** for keeping unsent notes across devices; on mocks they're kept for the page's life. |
+| CH-FR-11 | **Notes before sending (1.10).** Each saved note shows beside what it's about, with Edit and Remove. Once one note is saved, the **send bar** is pinned to the bottom of the screen at every width, as RW-FR-17: "1 change for {creator}" or "{n} changes for {creator}", what the notes are about on one line under it, and "Send to {creator}", which opens a confirmation in the bar listing each note: "Send {n} changes? {creator} updates the terms and sends you a new version." ("1 change" for one) with "Yes, send" and "Not yet". It goes when the last note is removed or they are sent. "Your notes for {creator}" no longer lists unsent notes; it keeps "Anything else about this deal?", the sent notes and the earlier versions with the creator's replies. On phones, while notes are unsent, the send bar takes the Agree panel's place and the Agree panel moves under the posts, keeping CH-FR-14's "Agree without sending your {n} notes?" (`design/brand-review/send-bar.html`, look 2). **Depends on backend** for keeping unsent notes across devices; on mocks they're kept for the page's life. |
 | CH-FR-12 | **Sent.** Sending moves the deal to `changes_requested`. The page then says "Sent to {creator}. When they update the terms, this page shows the new version. You can close it." with the notes listed, read-only. |
 | CH-FR-13 | **The new version.** When the creator sends updated terms, the same link shows them as "Version {n}", each changed item, line, amount or deadline marked "Changed" (plain text), and each of the brand's notes under "Your notes" with the creator's reply, if any. |
 
@@ -267,3 +267,5 @@ The creator's deal summary and invite gain `step: "changes_requested" | "agreed"
 | 1.8 signed | Revision 1.8 signed by William | none |
 | 1.9 | From the sandbox run and the grill-me with William: PayPal's buttons are the only approve buttons, loaded as soon as the brand agrees, one click to PayPal, under "Approve the hold with PayPal or a card", with "Loading PayPal…" and "Try again" (CH-FR-17); PayPal account and card only, Pay Later, PayPal Credit and Venmo off; the card hold to verify in the sandbox before the demo (Open items); CH-FR-18 and CH-FR-32 follow | [PayPal account or card](../decisions/2026-10-13-brand-holds-with-paypal-or-card.md) |
 | 1.9 signed | Revision 1.9 signed by William | none |
+| 1.10 | From the sandbox run and the grill-me with William: unsent notes are sent from a bar pinned to the bottom at every width, as the brand review's, with the confirmation in the bar; "Your notes" no longer lists unsent notes; on phones the send bar takes the Agree panel's place while notes are unsent (CH-FR-11). Look 2 of `design/brand-review/send-bar.html` | none |
+| 1.10 signed | Revision 1.10 signed by William | none |

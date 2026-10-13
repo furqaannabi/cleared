@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.26). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.27). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus its side of step 5 (the brand's review: objections and approval, with the brand's side in the [brand review FRD](brand-review-frd.md)) and the released state.
 
@@ -108,7 +108,7 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | ID | Requirement |
 | --- | --- |
 | DC-FR-49 | **Objected item.** An item the brand objected to shows Objected by brand. Its evidence panel and expanded card say "The check passed this. {brand} asked you to change it:" followed by the brand's note, before the brief line. It has no ask action. A new draft clears it (DC-BR-04). |
-| DC-FR-50 | **Objected.** Shown when the API reports the brand objected. The next-step bar: "{brand} asked you to fix {n} items. Upload a new draft by {date}. If {brand} approves this draft instead, you're cleared to publish." Its primary action is "Upload new draft". The first objected item is selected on load. The deal steps keep Brand review as current. See [Objection settled by the two sides](../decisions/2026-10-08-objection-settled-by-the-two-sides.md). |
+| DC-FR-50 | **Objected.** Shown when the API reports the brand objected. The next-step bar: "{brand} asked you to fix {n} items ("1 item" for one). Upload a new draft by {date}. If {brand} approves this draft instead, you're cleared to publish." Its primary action is "Upload new draft". The first objected item is selected on load. The deal steps keep Brand review as current. See [Objection settled by the two sides](../decisions/2026-10-08-objection-settled-by-the-two-sides.md). |
 | DC-FR-51 | **Approved.** Shown when the API reports the draft approved: a banner "{brand} approved this draft" or "No objection from {brand} in 48 hours, so this draft is approved", then "Don't publish yet. Cleared confirms {brand}'s hold with PayPal first." There is no primary action and no upload. The deal steps mark Brand review done and Publish current. |
 | DC-FR-52 | **Copy link for the brand.** While the brand has something to do on this deliverable (an ask waiting, the window open, or objected), the next step offers "Copy link for {brand}". The link is copied, never shown in full, stored or logged. 1.18: nothing is emailed, so no "We've emailed it" line. Beside it: "{brand} hasn't opened it yet." or "{brand} opened it on {date, time}." (from `reviewOpenedAt`). When the API marks the link expired: "This link has expired." with "Make a new link" in place of Copy; the new link (`POST /deliverables/{id}/review-link`) is copied, and that is announced. See [Fresh brand link per review](../decisions/2026-10-08-fresh-brand-link-per-review.md). |
 | DC-FR-53 | **A limit on drafts (1.18).** When the API refuses a draft at a limit (429 `draft_limit`), a banner in the draft area says which: the post's limit, "This post has had all the checks one post can have, so this draft can't be checked. Your last results stay as they are.", and the post's upload actions are hidden; the limit across everyone, "Cleared has checked all the video it can today. You can upload this draft from {time}." (the reset in the creator's local time; without one, "tomorrow"), and uploading stays available. No limit numbers are shown (DR-FR-06 to DR-FR-09). |
@@ -392,3 +392,5 @@ Fields:
 | 1.25 signed | Revision 1.25 signed by William | none |
 | 1.26 | From William, after the sandbox run: a "needs you" dot in the rail, on the deals that need the creator by Overview's rule, with the status line in bold; on the folded rail and the phone's Deals button too (DC-FR-31). Version 3 of `design/home/attention-and-money.html` | none |
 | 1.26 signed | Revision 1.26 signed by William | none |
+| 1.27 | From the sandbox run: "1 item" for one (DC-FR-50) | none |
+| 1.27 signed | Revision 1.27 signed by William | none |

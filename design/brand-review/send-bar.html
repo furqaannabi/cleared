@@ -1,0 +1,174 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brand send bar</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* One pinned send bar for the brand's unsent notes: checklist changes (CH) and draft objections (RW).
+   Design prototype, never shipped. Self-contained; tokens copied from web/src/app/globals.css. Classes prefixed sb-. Example data. */
+:root{--espresso:#3f3322;--espresso-deep:#2c2314;--espresso-ink:#1c150a;--latte-line:#e4dcce;--latte:#f3eee5;--latte-wash:#faf8f4;
+  --ink:#1e1a14;--ink-2:#4a4339;--ink-3:#675f55;--surface:#fff;--line:#e8e4dc;--line-soft:#f1eee8;--pass:#0b6b3a;--fail:#b8302a;
+  --page:#f7f5f0;--head:"Bricolage Grotesque",system-ui,sans-serif;--body:Figtree,system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--body);color:var(--ink);background:#ece8e0;line-height:1.45}
+.sb-doc{max-width:1500px;margin:0 auto;padding:36px 24px 80px}
+.sb-doc>h1{font-family:var(--head);font-size:30px;line-height:1.15;letter-spacing:-.01em}
+.sb-why{color:var(--ink-2);max-width:80ch;margin:8px 0 6px}
+.sb-look{margin-top:48px}
+.sb-look>h2{font-family:var(--head);font-size:22px}
+.sb-look>p{color:var(--ink-2);max-width:80ch;margin:4px 0 16px}
+.sb-row{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+.sb-cap{font-size:12.5px;font-weight:800;color:var(--ink-3);margin:0 0 6px}
+
+/* frames: a fixed viewport; the bar is absolute to it, as it would be fixed to the screen */
+.sb-frame{position:relative;overflow:hidden;background:var(--page);border:1px solid var(--line);border-radius:22px}
+.sb-phone{width:390px;height:760px}
+.sb-desk{width:1040px;height:640px;border-radius:14px}
+.sb-scroll{padding:18px 16px 0}
+.sb-desk .sb-scroll{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;padding:26px 28px 0;align-items:start}
+
+/* page content, simplified */
+.sb-crumb{font-size:13.5px;color:var(--ink-3)}
+.sb-title{font-family:var(--head);font-size:24px;font-weight:800;line-height:1.15;margin:4px 0 2px}
+.sb-sub{font-size:14px;color:var(--ink-3)}
+.sb-player{margin:14px 0;aspect-ratio:16/9;border-radius:14px;background:radial-gradient(120% 90% at 30% 35%,#7b6447 0,#4a3c2a 45%,#231c12 100%)}
+.sb-desk .sb-player{aspect-ratio:auto;height:150px}
+.sb-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:4px 16px}
+.sb-card h3{font-family:var(--head);font-size:17px;font-weight:800;padding:12px 0 2px}
+.sb-item{display:grid;grid-template-columns:18px minmax(0,1fr);gap:2px 10px;padding:12px 0;border-top:1px solid var(--line-soft)}
+.sb-item>*:not(.sb-st){grid-column:2}
+.sb-st{width:18px;height:18px;margin-top:2px}
+.sb-name{font-weight:700;font-size:15px}
+.sb-meta{font-size:13px;color:var(--ink-3)}
+.sb-word{font-size:13px;font-weight:700;color:var(--pass)}
+.sb-word.obj{color:var(--ink-2)}
+.sb-link{display:inline-flex;min-height:44px;align-items:center;font-size:13.5px;font-weight:700;color:var(--espresso);text-decoration:underline;text-underline-offset:3px;justify-self:start;margin:-8px 0}
+.sb-note{margin-top:6px;background:var(--latte-wash);border-radius:8px;padding:9px 12px;font-size:13.5px;color:var(--ink-2)}
+.sb-note b{color:var(--ink)}
+.sb-note span.sb-acts{display:flex;gap:16px}
+.sb-note .sb-link{margin:0}
+.sb-flow{display:grid;gap:8px;margin:16px 0 0}
+.sb-btn{display:inline-flex;min-height:44px;align-items:center;justify-content:center;border-radius:999px;padding:0 18px;font:700 14.5px var(--body);border:0;cursor:pointer;white-space:nowrap}
+.sb-primary{background:var(--espresso);color:#fff;box-shadow:0 2px 6px rgb(28 21 10/.2)}
+.sb-outline{background:var(--surface);color:var(--espresso);border:1px solid var(--latte-line)}
+.sb-ghost{background:transparent;color:var(--espresso)}
+.sb-side{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:10px}
+.sb-side h3{font-family:var(--head);font-size:18px;font-weight:700}
+.sb-left{font-family:var(--head);font-size:28px;font-weight:800}
+.sb-left small{font-family:var(--body);font-size:14px;font-weight:500;color:var(--ink-2);margin-left:6px}
+.sb-next b{display:block;font-size:15px}.sb-next span{font-size:14px;color:var(--ink-2)}
+.sb-terms .sb-amt{font-size:13.5px;color:var(--ink-2)}
+.sb-field{display:grid;gap:4px;font-size:13.5px;font-weight:700}
+.sb-field i{display:block;min-height:44px;border:1px solid var(--latte-line);border-radius:10px;background:var(--surface)}
+.sb-field small{font-weight:500;font-size:12.5px;color:var(--ink-3)}
+
+/* --- the bar, common structure --- */
+.sb-bar{grid-template-columns:minmax(0,1fr);position:absolute;z-index:3;left:12px;right:12px;bottom:12px;display:grid;gap:10px;padding:14px}
+.sb-desk .sb-bar{left:28px;right:352px;bottom:18px;padding:14px 16px}
+.sb-sum{display:flex;align-items:center;gap:12px}
+.sb-sum>div{min-width:0;flex:1}
+.sb-sum b{display:block;font-size:15px}
+.sb-sum span{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-q{font-size:14.5px}
+.sb-q b{font-family:var(--head);font-size:18px;font-weight:800;display:block;margin-bottom:2px}
+.sb-list{display:grid;gap:6px;font-size:13.5px;max-height:200px;overflow:auto;padding:10px 12px;border-radius:10px}
+.sb-list p b{font-weight:800}
+.sb-yes{display:flex;gap:8px;flex-wrap:wrap}
+
+/* look 1: espresso bar */
+.l1 .sb-bar{background:var(--espresso-deep);color:#fff;border-radius:18px;box-shadow:0 2px 4px rgb(28 21 10/.14),0 14px 32px rgb(28 21 10/.3)}
+.l1 .sb-sum span,.l1 .sb-q{color:rgb(255 255 255/.75)}
+.l1 .sb-q b{color:#fff}
+.l1 .sb-bar .sb-primary{background:var(--latte);color:var(--espresso-ink);box-shadow:none}
+.l1 .sb-bar .sb-ghost{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.l1 .sb-list{background:rgb(255 255 255/.08);color:rgb(255 255 255/.8)}.l1 .sb-list b{color:#fff}
+
+/* look 2: white floating bar, like today's review dock */
+.l2 .sb-bar{background:var(--surface);border-radius:16px;box-shadow:0 1px 2px rgb(28 21 10/.06),0 8px 24px rgb(28 21 10/.22)}
+.l2 .sb-sum span,.l2 .sb-q{color:var(--ink-2)}
+.l2 .sb-list{background:var(--latte-wash);color:var(--ink-2)}.l2 .sb-list b{color:var(--ink)}
+
+/* look 3: a latte shelf across the bottom edge, not floating */
+.l3 .sb-bar{left:0;right:0;bottom:0;background:var(--latte);border-top:1px solid var(--latte-line);border-radius:0;padding:14px 16px 18px;box-shadow:0 -6px 18px rgb(63 51 34/.08)}
+.l3.sb-desk .sb-bar,.l3 .sb-desk .sb-bar{left:0;right:0;padding:14px 352px 18px 28px}
+.l3 .sb-sum span,.l3 .sb-q{color:var(--ink-2)}
+.l3 .sb-list{background:var(--surface);border:1px solid var(--latte-line);color:var(--ink-2)}.l3 .sb-list b{color:var(--ink)}
+.l3 .sb-bar .sb-ghost{text-decoration:underline;text-underline-offset:3px}
+</style></head><body><div class="sb-doc">
+<h1>One send bar for the brand’s notes</h1>
+<p class="sb-why">Once the brand saves a first note, a bar is pinned to the bottom of the screen with the count and Send. Tapping Send opens the confirmation in the bar itself, listing each item and its note. On phones it takes the place of the Agree panel or the review dock until the notes are sent or removed. Agree and Approve move into the page, under the items. The right column no longer lists unsent notes. The same bar is used for objections in the draft review (“Add objection”) and for changes on the checklist (“Ask for a change”). Each look is shown with two objections saved, then with the confirmation open, at 390 px and on desktop, and finally on the checklist step. Example data.</p>
+<div id="looks"></div>
+</div>
+<script>
+const SEAL = (c) => `<svg class="sb-st" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="${c}"/><path d="M15 25l6 6 12-13" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const DOT = `<svg class="sb-st" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="#675f55" stroke-width="4"/><path d="M24 14v12" stroke="#675f55" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="33" r="2.6" fill="#675f55"/></svg>`;
+
+const RW = {
+  saved: { head: "2 objections for Sam", names: "Shows the price on screen · Says the code MOSS10", send: "Send to Sam" },
+  confirm: { q: "Send 2 objections?", text: "The clock stops and Sam makes a new draft. You can still approve this draft until Sam sends one.",
+    list: [["Shows the price on screen", "The price is covered by the caption at 0:42. Move it up."], ["Says the code MOSS10", "Say it a bit slower, it’s hard to catch."]] },
+};
+const CH = { head: "1 change for Sam", names: "Amount for YouTube video", send: "Send to Sam" };
+
+const items = (obj) => `
+  <div class="sb-card"><h3>Checklist</h3>
+    <div class="sb-item">${SEAL("#0b6b3a")}<span class="sb-name">Shows the price on screen</span><span class="sb-word obj">Passed · you objected</span>
+      <div class="sb-note"><b>Your objection:</b> The price is covered by the caption at 0:42. Move it up.<span class="sb-acts"><a class="sb-link">Edit</a><a class="sb-link">Remove</a></span></div></div>
+    <div class="sb-item">${SEAL("#0b6b3a")}<span class="sb-name">Says the code MOSS10</span><span class="sb-word obj">Passed · you objected</span>
+      <div class="sb-note"><b>Your objection:</b> Say it a bit slower, it’s hard to catch.<span class="sb-acts"><a class="sb-link">Edit</a><a class="sb-link">Remove</a></span></div></div>
+    <div class="sb-item">${SEAL("#0b6b3a")}<span class="sb-name">Shows the bottle in use</span><span class="sb-word">Passed · 1:12</span><a class="sb-link">Add objection</a></div>
+    <div class="sb-item">${DOT}<span class="sb-name">Link in the description</span><span class="sb-meta">At live check</span></div>
+  </div>`;
+
+const reviewSide = `<aside class="sb-side"><h3>Your review</h3><p class="sb-left">31 h<small>left</small></p>
+  <p class="sb-next"><b>Every item passed.</b><span>If you say nothing, the draft is approved on Thu 15 Oct, 2:40 pm.</span></p>
+  <button class="sb-btn sb-outline">Approve draft</button></aside>`;
+
+const bar = (state, d) => state === "confirm" ? `
+  <div class="sb-bar" role="dialog" aria-label="Send objections">
+    <p class="sb-q"><b>${RW.confirm.q}</b>${RW.confirm.text}</p>
+    <div class="sb-list">${RW.confirm.list.map(([n, t]) => `<p><b>${n}:</b> ${t}</p>`).join("")}</div>
+    <div class="sb-yes"><button class="sb-btn sb-primary">Yes, send</button><button class="sb-btn sb-ghost">Not yet</button></div>
+  </div>` : `
+  <div class="sb-bar" role="region" aria-label="Your unsent notes">
+    <div class="sb-sum"><div><b>${d.head}</b><span>${d.names}</span></div><button class="sb-btn sb-primary">${d.send}</button></div>
+  </div>`;
+
+const phoneRW = (state) => `<div class="sb-frame sb-phone"><div class="sb-scroll">
+  <p class="sb-crumb">Moss & Co · YouTube video</p><h2 class="sb-title">Review Sam’s draft</h2><p class="sb-sub"><b>31 h</b> left to review</p>
+  <div class="sb-player"></div>${items()}
+  <div class="sb-flow"><button class="sb-btn sb-outline">Approve draft</button></div></div>${bar(state, RW.saved)}</div>`;
+
+const deskRW = (state) => `<div class="sb-frame sb-desk"><div class="sb-scroll"><div>
+  <p class="sb-crumb">Moss & Co · YouTube video</p><h2 class="sb-title">Review Sam’s draft</h2>
+  <div class="sb-player"></div>${items()}</div>${reviewSide}</div>${bar(state, RW.saved)}</div>`;
+
+const phoneCH = () => `<div class="sb-frame sb-phone"><div class="sb-scroll">
+  <p class="sb-crumb">From Sam Okoro</p><h2 class="sb-title">Check the terms</h2><p class="sb-sub">Version 1 · 1 post</p>
+  <div class="sb-card sb-terms" style="margin-top:14px"><h3>YouTube video</h3>
+    <div class="sb-item">${DOT}<span class="sb-name">$950.00 · within 7 days of your hold</span>
+      <div class="sb-note"><b>Your note:</b> Can we do $800? That’s our budget for this one.<span class="sb-acts"><a class="sb-link">Edit</a><a class="sb-link">Remove</a></span></div></div>
+    <div class="sb-item">${DOT}<span class="sb-name">Says the code MOSS10</span><span class="sb-meta">From your brief: “Say the code MOSS10 out loud.”</span><a class="sb-link">Ask for a change</a></div>
+    <div class="sb-item">${DOT}<span class="sb-name">Shows the bottle in use</span><span class="sb-meta">From your brief: “Show it being used.”</span><a class="sb-link">Ask for a change</a></div>
+  </div>
+  <div class="sb-flow"><div class="sb-side"><p class="sb-terms"><span class="sb-amt">1 post · $950.00 held by PayPal until the post is live</span></p>
+    <label class="sb-field">Your email (optional)<i></i><small>We’ll only email you if Sam’s post needs your answer after it’s live.</small></label>
+    <button class="sb-btn sb-outline">Agree to these terms</button></div></div>
+  </div>${bar("saved", CH)}</div>`;
+
+const LOOKS = [
+  ["l1", "Look 1 · Espresso bar", "Dark, like the rail. It stands apart from the page and only shows when there’s something to send, so it reads as “you have unsent notes”. Send is latte on espresso."],
+  ["l2", "Look 2 · White floating bar", "The same card as today’s phone review dock, with the same shadow. The quietest change: the brand has seen this bar before. Send is the usual espresso button."],
+  ["l3", "Look 3 · Latte shelf", "Attached to the bottom edge, full width, not floating. It reads as part of the page rather than a popup. On desktop it lines up with the work column and leaves the right column clear."],
+];
+document.getElementById("looks").innerHTML = LOOKS.map(([k, h, p]) => `
+  <section class="sb-look"><h2>${h}</h2><p>${p}</p>
+    <div class="sb-row ${k}">
+      <div><p class="sb-cap">390 px · 2 objections saved</p>${phoneRW("saved")}</div>
+      <div><p class="sb-cap">390 px · Send tapped</p>${phoneRW("confirm")}</div>
+      <div><p class="sb-cap">390 px · checklist step, 1 change saved</p>${phoneCH()}</div>
+    </div>
+    <div class="sb-row ${k}" style="margin-top:22px">
+      <div><p class="sb-cap">Desktop · 2 objections saved</p>${deskRW("saved")}</div>
+      <div><p class="sb-cap">Desktop · Send tapped</p>${deskRW("confirm")}</div>
+    </div>
+  </section>`).join("");
+</script></body></html>
