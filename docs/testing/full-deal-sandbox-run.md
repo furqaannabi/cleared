@@ -62,11 +62,13 @@ Expect: the deal at "{brand} · Waiting for brand"; the terms read-only. (IN-FR-
 2. The terms: the post, "Within 7 days of your hold", $150.00, "Paid to {creator}'s PayPal" and never the email. Each item says "From your brief: …" or "Added by {creator}".
 3. Optional detour: "Ask for a change" on one item, send it, answer it as the creator, "Send updated terms to {brand}", and see "Version 2" with "Changed" on the brand's side. (CH-FR-10 to CH-FR-13)
 4. "Agree to these terms". Expect "Agreed · version {n} · {date}".
-5. "Approve with PayPal". In PayPal's window, log in with the sandbox personal account and approve.
+5. "Approve with PayPal" (CH 1.9: PayPal's own "PayPal" button under "Approve the hold with PayPal or a card"; one click opens PayPal). In PayPal's window, log in with the sandbox personal account and approve. Never with the business account Cleared's PayPal app belongs to: PayPal refuses it as "the seller for this purchase". Use a different account from the creator's payout email, so the sandbox shows who paid whom.
 
 Expect: "Held · $150.00 · PayPal ref …", then "All held. {creator} is making the posts." On the creator's side: "Held · $150.00 · PayPal ref …" and "Open draft check". (CH-FR-14 to CH-FR-19, CH-FR-25)
 
 Also try once: close PayPal's window without approving. Expect "You closed PayPal. Nothing was held." and the button back.
+
+Once CH 1.9 is built, on a second deal: "Debit or Credit Card" with a sandbox test card. Expect PayPal's card form inside the page, then "Held" as above. No Pay Later, PayPal Credit or Venmo should be offered anywhere.
 
 In the PayPal sandbox (developer.paypal.com → the business account's activity), the order should show as authorized, not captured.
 
