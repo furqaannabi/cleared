@@ -8,6 +8,10 @@ export interface ChecklistWords {
   status: (item: { id: string; status: ItemStatus }) => string;
   /** In place of a brief line, on an item the creator added (DC-FR-12). */
   addedBy: string;
+  /** Above the brand's note on an objected item (DC-FR-49; RW-FR-08 for the brand). */
+  objected: string;
+  /** Above the brand's note on an Unsure item sent back to be fixed (DC-FR-17; RW-FR-08 for the brand). */
+  fixAsked: string;
 }
 
 const WordsContext = createContext<ChecklistWords | null>(null);
@@ -30,6 +34,11 @@ export function ChecklistWordsProvider({ words, children }: { words: ChecklistWo
  * @param brandName - the deal's brand, named in the creator's words
  */
 export function useChecklistWords(brandName: string): ChecklistWords {
-  const own = useMemo<ChecklistWords>(() => ({ status: (i) => describeStatus(i.status, brandName).label, addedBy: "Added by you" }), [brandName]);
+  const own = useMemo<ChecklistWords>(() => ({
+      status: (i) => describeStatus(i.status, brandName).label,
+      addedBy: "Added by you",
+      objected: `The check passed this. ${brandName} asked you to change it:`,
+      fixAsked: `${brandName} asked you to fix this`,
+    }), [brandName]);
   return useContext(WordsContext) ?? own;
 }

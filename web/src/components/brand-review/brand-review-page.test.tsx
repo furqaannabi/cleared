@@ -85,6 +85,9 @@ describe("RW-FR-07, RW-FR-10, RW-FR-15 the window", () => {
       path: "/brand/deals/deal_juniper/deliverables/del_juniper_video/objections",
       body: { objections: [{ itemId: "jv_3", note: "Say it slower." }] },
     });
+    // RW-FR-08: the objected item's note is worded for the brand, never the creator's "asked you".
+    expect(screen.getAllByText("You objected:").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/asked you to change it/)).toBeNull();
   });
 
   test("RW-FR-16: approving asks first, in place, and says what it means for the money", async () => {

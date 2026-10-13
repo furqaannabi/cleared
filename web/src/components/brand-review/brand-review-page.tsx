@@ -101,7 +101,7 @@ function Review({ post, setPost, reload }: { post: BrandDeliverable; setPost: (p
   const items = useMemo(() => toItemViews(view.items), [view.items]);
   const words = useMemo<ChecklistWords>(() => {
     const labels = new Map(view.items.map((i) => [i.id, i.status.label]));
-    return { status: (i) => labels.get(i.id) ?? "", addedBy: `Added by ${post.creatorName}` };
+    return { status: (i) => labels.get(i.id) ?? "", addedBy: `Added by ${post.creatorName}`, objected: "You objected:", fixAsked: `You asked ${post.creatorName} to fix this:` };
   }, [view.items, post.creatorName]);
   const [selectedId, setSelectedId] = useState<string | null>(view.selectedId);
   const [seekKey, setSeekKey] = useState(0);
