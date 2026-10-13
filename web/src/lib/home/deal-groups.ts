@@ -29,6 +29,38 @@ const STUCK_WORDS: Partial<Record<NonNullable<PaymentRow["payout"]>["state"], st
   unclaimed: "Waiting for you to accept the payout",
 };
 
+/** Each post whose payout failed or wasn't claimed, with what to call it. */
+function stuckPayouts(payments: PaymentRow[]): Map<string, string> {
+  return new Map(
+    payments.flatMap((p) => {
+      const words = p.stage === "captured" && p.payout ? STUCK_WORDS[p.payout.state] : undefined;
+      return words ? [[p.deliverableId, words] as const] : [];
+    }),
+  );
+}
+
+/**
+ * The deals that need the creator: the deal is at a step that is the
+ * creator's, the API says a post waits on them, or a payout failed or wasn't
+ * claimed. One rule for Overview's "Needs you" and the rail's dot.
+ *
+ * @param deals - the creator's deals
+ * @param payments - the payment rows, for stuck payouts; empty when not loaded
+ * @returns the ids of the deals that need the creator
+ * @see docs/specs/creator-home-frd.md HM-FR-15; docs/specs/creator-draft-check-frd.md DC-FR-31 (1.26)
+ */
+export function needsYouIds(deals: DealSummary[], payments: PaymentRow[]): Set<string> {
+  const stuck = stuckPayouts(payments);
+  return new Set(
+    deals
+      .filter((d) => {
+        const agreed = !d.step || d.step === "agreed";
+        return (d.step && NEEDS_YOU_STEPS.has(d.step)) || (agreed && d.deliverables.some((p) => p.needsCreator)) || d.deliverables.some((p) => stuck.has(p.id));
+      })
+      .map((d) => d.id),
+  );
+}
+
 /**
  * The creator's deals in three groups, in the API's order within each:
  * Needs you (the deal is at a step that is the creator's, the API says a post
@@ -40,12 +72,8 @@ const STUCK_WORDS: Partial<Record<NonNullable<PaymentRow["payout"]>["state"], st
  * @see docs/specs/creator-home-frd.md HM-FR-15 (1.3)
  */
 export function dealGroups(deals: DealSummary[], payments: PaymentRow[]): DealGroup[] {
-  const stuckWords = new Map(
-    payments.flatMap((p) => {
-      const words = p.stage === "captured" && p.payout ? STUCK_WORDS[p.payout.state] : undefined;
-      return words ? [[p.deliverableId, words] as const] : [];
-    }),
-  );
+  const stuckWords = stuckPayouts(payments);
+  const needs = needsYouIds(deals, payments);
   const groups: DealGroup[] = [
     { name: "Needs you", deals: [] },
     { name: "Under way", deals: [] },
@@ -53,7 +81,7 @@ export function dealGroups(deals: DealSummary[], payments: PaymentRow[]): DealGr
   ];
   for (const d of deals) {
     const agreed = !d.step || d.step === "agreed";
-    const needsYou = (d.step && NEEDS_YOU_STEPS.has(d.step)) || (agreed && d.deliverables.some((p) => p.needsCreator)) || d.deliverables.some((p) => stuckWords.has(p.id));
+    const needsYou = needs.has(d.id);
     const finished = agreed && d.deliverables.length > 0 && d.deliverables.every((p) => ENDED.has(p.state));
     groups[needsYou ? 0 : finished ? 2 : 1].deals.push({
       id: d.id,

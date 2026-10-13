@@ -27,6 +27,7 @@ const initials = (name: string) =>
  * @param currentDealId - the deal being viewed
  * @param tone - "rail" for the espresso rail, "sheet" for the light sheet
  * @param slim - the folded rail: the avatar alone, the brand as its name and tooltip, no status (DC-FR-55)
+ * @param needsYou - the deals that need the creator: a dot on the avatar, "Needs you" for screen readers, and the status in bold (1.26)
  * @see docs/specs/creator-draft-check-frd.md DC-FR-31, DC-FR-55; DESIGN.md "Navigation"
  */
 export function DealsNav({
@@ -34,11 +35,13 @@ export function DealsNav({
   currentDealId,
   tone = "rail",
   slim = false,
+  needsYou = new Set(),
 }: {
   deals: DealSummary[];
   currentDealId: string | null;
   tone?: "rail" | "sheet";
   slim?: boolean;
+  needsYou?: ReadonlySet<string>;
 }) {
   const rail = tone === "rail";
   return (
@@ -46,6 +49,7 @@ export function DealsNav({
       <ul className="flex flex-col gap-0.5">
         {deals.map((deal, i) => {
           const current = deal.id === currentDealId;
+          const needs = needsYou.has(deal.id);
           return (
             <li key={deal.id}>
               <Link
@@ -57,9 +61,11 @@ export function DealsNav({
                     : `text-ink hover:bg-latte-wash ${current ? "bg-latte" : ""}`
                 }`}
               >
-                <span aria-hidden="true" className={`grid size-7 flex-none place-items-center rounded-full text-label font-extrabold ${TINTS[i % TINTS.length]}`}>
+                <span aria-hidden="true" className={`relative grid size-7 flex-none place-items-center rounded-full text-label font-extrabold ${TINTS[i % TINTS.length]}`}>
                   {initials(deal.brandName)}
+                  {needs && <NeedsYouDot tone={tone} />}
                 </span>
+                {needs && <span className="sr-only">Needs you</span>}
                 {slim ? (
                   <>
                     <span className="sr-only">{deal.brandName}</span>
@@ -68,7 +74,9 @@ export function DealsNav({
                 ) : (
                   <span className="min-w-0">
                     <span className="block truncate text-body-strong font-semibold">{deal.brandName}</span>
-                    <span className={`block truncate text-label font-medium ${rail ? (current ? "text-white/95" : "text-white/70") : "text-ink-3"}`}>
+                    <span
+                      className={`block truncate text-label ${needs ? `font-bold ${rail ? "text-white" : "text-ink"}` : `font-medium ${rail ? (current ? "text-white/95" : "text-white/70") : "text-ink-3"}`}`}
+                    >
                       {deal.status}
                     </span>
                   </span>
@@ -79,5 +87,22 @@ export function DealsNav({
         })}
       </ul>
     </nav>
+  );
+}
+
+/**
+ * The "needs you" dot on a deal's avatar or the Deals button: marigold on the
+ * espresso rail, espresso on the light sheet (marigold is too faint there),
+ * ringed in the ground it sits on. Decorative; the words are beside it.
+ *
+ * @param tone - "rail" or "sheet"
+ * @see docs/specs/creator-draft-check-frd.md DC-FR-31 (1.26); DESIGN.md "Navigation"
+ */
+export function NeedsYouDot({ tone, className = "-top-[3px] -right-[3px]" }: { tone: "rail" | "sheet"; className?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`absolute size-[11px] rounded-full border-2 ${tone === "rail" ? "border-espresso-deep bg-marigold" : "border-surface bg-espresso"} ${className}`}
+    />
   );
 }

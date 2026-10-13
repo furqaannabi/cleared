@@ -100,6 +100,8 @@
   /* Shadows: an edge or a lift, never both */
   --shadow-panel: 0 1px 2px rgb(28 21 10 / 0.05);
   --shadow-money-card: 0 2px 4px rgb(120 80 0 / 0.12), 0 14px 32px rgb(120 80 0 / 0.18);
+  /* HM 1.6: Overview's latte money card. */
+  --shadow-money-card-latte: 0 2px 4px rgb(63 51 34 / 0.06), 0 12px 28px rgb(63 51 34 / 0.1);
   --shadow-floating-bar: 0 8px 24px rgb(28 21 10 / 0.22);
 
   /* Motion */

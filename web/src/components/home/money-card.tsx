@@ -1,23 +1,27 @@
 import Link from "next/link";
+import { Seal } from "@/components/ui/seal";
 import type { ReactNode } from "react";
 import type { MoneyOverview, MoneyTotal } from "@/lib/home/money-overview";
 import { ArrowIcon, CheckIcon, ClockIcon, CrossIcon, LockIcon } from "./icons";
 
 function Stage({ icon, label, total, big = false, children }: { icon: ReactNode; label: string; total: MoneyTotal; big?: boolean; children?: ReactNode }) {
   return (
-    <div className="px-[18px] py-4 text-marigold-ink not-first:border-t not-first:border-marigold-ink/14 lg:px-[26px] lg:py-[22px] lg:not-first:border-t-0 lg:not-first:border-l">
-      <p className="flex items-center gap-2 text-[13.5px] font-bold text-marigold-ink-2">
+    <div className="px-[18px] py-4 text-espresso-ink not-first:border-t not-first:border-espresso/14 lg:px-[26px] lg:py-[22px] lg:not-first:border-t-0 lg:not-first:border-l">
+      <p className="flex items-center gap-2 text-[13.5px] font-bold text-ink-2">
         {icon}
         {label}
       </p>
       <p className={`mt-1 font-head font-extrabold tracking-[-0.01em] tabular-nums ${big ? "text-[34px] leading-[1.05] lg:text-amount" : "text-[30px] leading-[1.1] lg:text-[34px]"}`}>{total.text}</p>
-      <p className="mt-0.5 text-[13px] text-marigold-ink-2">{total.posts}</p>
+      <p className="mt-0.5 text-[13px] text-ink-2">{total.posts}</p>
       {children}
     </div>
   );
 }
 
 /**
+ * (HM 1.6) Latte, not marigold: espresso figures, labels in the ink ramp and
+ * the seal in espresso; only the deal page's money card stays marigold.
+ *
  * The money card stretched into home's headline: held for you, on its way and
  * paid, in a row from `lg:` and stacked on phones, with Paid the largest and
  * "See payments" under it. A white footer says the totals are after the fee and names any stuck payout,
@@ -28,13 +32,16 @@ function Stage({ icon, label, total, big = false, children }: { icon: ReactNode;
  */
 export function MoneyCard({ overview }: { overview: MoneyOverview }) {
   return (
-    <section aria-label="Your money" className="relative mt-4 overflow-hidden rounded-lg bg-marigold shadow-money-card">
-      <span aria-hidden="true" className="pointer-events-none absolute -top-[90px] -right-[70px] size-[220px] rounded-full bg-white/22" />
+    <section aria-label="Your money" className="relative mt-4 overflow-hidden rounded-lg border border-latte-line bg-latte shadow-money-card-latte">
+      <span aria-hidden="true" className="pointer-events-none absolute -top-[90px] -right-[70px] size-[220px] rounded-full bg-white/45" />
+      <Seal fillClassName="fill-espresso" className="absolute top-4 right-[18px] z-[1] size-[46px] lg:right-[26px]">
+        <LockIcon className="size-full text-latte" />
+      </Seal>
       <div className="relative grid lg:grid-cols-[1fr_1fr_1.15fr]">
         <Stage icon={<LockIcon />} label="Held for you" total={overview.held} />
         <Stage icon={<ClockIcon />} label="On its way" total={overview.onItsWay} />
         <Stage icon={<CheckIcon />} label="Paid" total={overview.paid} big>
-          <Link href="/payments" className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-[14px] font-bold text-marigold-ink underline decoration-marigold-ink/35 underline-offset-3">
+          <Link href="/payments" className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-[14px] font-bold text-espresso-ink underline decoration-espresso/35 underline-offset-3">
             See payments
             <ArrowIcon className="size-[15px]" />
           </Link>

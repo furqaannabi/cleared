@@ -1,11 +1,12 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { apiBaseUrl } from "@/lib/api";
 import { deals } from "@/test/fixtures/deals";
 import { server } from "@/test/server";
-import { aProfile, stubDeals, stubSession } from "@/test/stub-api";
+import { aProfile, stubDeals, stubPayments, stubSession } from "@/test/stub-api";
+import { aPayment } from "@/lib/home/test-rows";
 import { AppShell } from "./app-shell";
 
 function screenWidth(px: number) {
@@ -20,6 +21,7 @@ afterEach(() => vi.unstubAllGlobals());
 beforeEach(() => {
   stubSession(aProfile());
   stubDeals(deals);
+  stubPayments([]);
 });
 
 const shell = () =>
@@ -147,6 +149,8 @@ describe("DC-FR-55 (1.23) folding the rail", () => {
     expect(unfold).toHaveAttribute("aria-expanded", "false");
     for (const name of ["New deal", "Overview", "Payments", "Glow Theory"]) expect(within(rail()).getByRole("link", { name: new RegExp(name) })).toBeInTheDocument();
     expect(within(rail()).queryByText("Draft check")).toBeNull();
+    // DC-FR-31 (1.26): folded, the dot stays on the avatar.
+    expect(within(rail()).getByRole("link", { name: /Glow Theory/ })).toHaveTextContent("Needs you");
     // DC-FR-55 (1.24): at the top of the rail, before New deal.
     const order = Array.from(rail().querySelectorAll("a, button")).map((el) => el.getAttribute("aria-label") ?? el.textContent);
     expect(order.indexOf("Expand sidebar")).toBeLessThan(order.findIndex((n) => n?.includes("New deal")));
@@ -182,5 +186,34 @@ describe("DC-FR-55 (1.23) folding the rail", () => {
     screenWidth(375);
     open();
     expect(screen.queryByRole("button", { name: /Collapse sidebar|Expand sidebar/ })).toBeNull();
+  });
+});
+
+describe("DC-FR-31 (1.26) needs you", () => {
+  const needsYou = (name: RegExp) => within(screen.getByRole("navigation", { name: "Deals" })).getByRole("link", { name }).textContent?.includes("Needs you");
+
+  test("in the rail, the deals whose posts need the creator, and one with a payout that didn't go through, say Needs you; the others don't", async () => {
+    screenWidth(1280);
+    stubPayments([aPayment({ dealId: "deal_wren", deliverableId: "del_wren_video", stage: "captured", payout: { state: "failed" }, paidAt: undefined })]);
+    shell();
+    await screen.findByRole("link", { name: /Northbound Coffee/ });
+    expect(needsYou(/Glow Theory/)).toBe(true);
+    expect(needsYou(/Kora Audio/)).toBe(true);
+    expect(needsYou(/Northbound Coffee/)).toBe(false);
+    await waitFor(() => expect(needsYou(/Wren Coffee/)).toBe(true));
+  });
+
+  test("on phones, the Deals button says a deal needs the creator", async () => {
+    screenWidth(375);
+    shell();
+    expect(await screen.findByRole("button", { name: "Deals, a deal needs you" })).toBeVisible();
+  });
+
+  test("with nothing needing the creator, no dot anywhere", async () => {
+    screenWidth(375);
+    stubDeals(deals.map((d) => ({ ...d, deliverables: d.deliverables.map((p) => ({ ...p, needsCreator: false })) })));
+    shell();
+    await userEvent.click(await screen.findByRole("button", { name: "Deals" }));
+    expect(within(screen.getByRole("dialog", { name: "Deals" })).queryByText("Needs you")).toBeNull();
   });
 });

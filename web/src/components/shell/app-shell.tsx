@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { AccountMenu } from "@/components/session/account-menu";
 import { SignedIn } from "@/components/session/signed-in";
 import { SessionProvider } from "@/components/session/use-session";
 import { Sheet } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { useRailFolded } from "@/lib/hooks/use-rail-folded";
-import { DealsNav } from "./deals-nav";
+import { DealsNav, NeedsYouDot } from "./deals-nav";
+import { usePayments } from "@/components/home/use-payments";
+import { needsYouIds } from "@/lib/home/deal-groups";
 import { Logo } from "./logo";
 import { RailTip } from "./rail-tip";
 import { DealsProvider, useDeals, type DealsLoad } from "./use-deals";
@@ -42,6 +44,12 @@ type Page = "overview" | "payments";
 function Frame({ currentDealId, page, children }: { currentDealId: string | null; page: Page | null; children: ReactNode }) {
   const desktop = useMediaQuery("(min-width: 1024px)");
   const deals = useDeals();
+  // DC-FR-31 (1.26): Overview's rule, so stuck payouts count; payments that fail to load just add none.
+  const { load: payments } = usePayments();
+  const needsYou = useMemo(
+    () => (deals.status === "ready" ? needsYouIds(deals.deals, payments.status === "ready" ? payments.rows : []) : new Set<string>()),
+    [deals, payments],
+  );
   // DC-FR-55 (1.23): the rail can fold to its icons, for a wider page.
   const [folded, toggleFolded] = useRailFolded();
 
@@ -71,7 +79,7 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
               Deals
             </p>
           )}
-          <DealsBody load={deals} currentDealId={currentDealId} tone="rail" slim={folded} />
+          <DealsBody load={deals} currentDealId={currentDealId} tone="rail" slim={folded} needsYou={needsYou} />
           {/* SI-FR-11: the creator's name, with Sign out, at the foot of the rail. */}
           <div className="mt-auto pt-4">
             <AccountMenu tone="rail" slim={folded} />
@@ -93,10 +101,15 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
           title="Deals"
           trigger={
             <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-nav px-3 text-body-strong font-bold text-white hover:bg-white/10">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true" className="size-[18px]">
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <span className="relative">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true" className="size-[18px]">
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                {/* DC-FR-31 (1.26): any deal that needs the creator. */}
+                {needsYou.size > 0 && <NeedsYouDot tone="rail" className="-top-1 -right-1.5" />}
+              </span>
               Deals
+              {needsYou.size > 0 && <span className="sr-only">, a deal needs you</span>}
             </button>
           }
         >
@@ -104,7 +117,7 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
             <NewDealLink tone="sheet" />
             <PageLinks tone="sheet" page={page} />
           </div>
-          <DealsBody load={deals} currentDealId={currentDealId} tone="sheet" />
+          <DealsBody load={deals} currentDealId={currentDealId} tone="sheet" needsYou={needsYou} />
           <div className="mt-6">
             <AccountMenu tone="sheet" />
           </div>
@@ -115,8 +128,20 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
   );
 }
 
-function DealsBody({ load, currentDealId, tone, slim = false }: { load: DealsLoad; currentDealId: string | null; tone: "rail" | "sheet"; slim?: boolean }) {
-  if (load.status === "ready") return <DealsNav deals={load.deals} currentDealId={currentDealId} tone={tone} slim={slim} />;
+function DealsBody({
+  load,
+  currentDealId,
+  tone,
+  slim = false,
+  needsYou,
+}: {
+  load: DealsLoad;
+  currentDealId: string | null;
+  tone: "rail" | "sheet";
+  slim?: boolean;
+  needsYou: ReadonlySet<string>;
+}) {
+  if (load.status === "ready") return <DealsNav deals={load.deals} currentDealId={currentDealId} tone={tone} slim={slim} needsYou={needsYou} />;
   // Folded, the rail has no room for these words; the page says what's wrong.
   if (slim) return null;
   const text = tone === "rail" ? "text-white/70" : "text-ink-3";
