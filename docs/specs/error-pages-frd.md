@@ -1,6 +1,6 @@
 # Error pages: FRD
 
-**Status:** Signed by William (revision 1.1).
+**Status:** Signed by Furqaan (revision 1.2); earlier revisions signed by William. The contact address is Furqaan's decision; William has to agree.
 
 **Surface:** The app-wide pages for an address that matches no page (not found), a page that crashes (something went wrong), and the whole app failing (the last-resort fallback). For anyone: a signed-in creator, a brand, or a stranger.
 
@@ -37,7 +37,7 @@ Three small pages in Sponing's world. Not found says the page can't be found and
 
 | ID | Requirement |
 | --- | --- |
-| EP-FR-03 | **A page crashes.** In place of the page: the heading "Something went wrong on this page", the line "Try again. If it keeps happening, email williamikeji@gmail.com." (the address a mailto link), and a "Try again" button that re-renders only the broken part. Inside the creator app the rail (or top bar) stays, so the deals are still reachable; on the brand's pages the slim brand frame stays. |
+| EP-FR-03 | **A page crashes.** In place of the page: the heading "Something went wrong on this page", the line "Try again. If it keeps happening, email williamikeji@gmail.com." (the address a mailto link; (1.2) the address is hi@sponing.com, the legal pages' contact, LG-FR-04), and a "Try again" button that re-renders only the broken part. Inside the creator app the rail (or top bar) stays, so the deals are still reachable; on the brand's pages the slim brand frame stays. |
 | EP-FR-04 | **The reference.** When Next gives the error a digest (a server error), a small "Reference: {digest}" line in ink-3, selectable; it names the error in the server logs and shows nothing private. With no digest, the line is left out. The error's message and stack are never shown. |
 | EP-FR-05 | **The whole app fails.** When even the root layout fails, a bare page with its own `html` and `body`: the same heading, line and reference, and "Reload" (reloads the page), in the world's colours and fonts with no other app code. |
 
@@ -82,3 +82,5 @@ Three small pages in Sponing's world. Not found says the page can't be found and
 | 1.0 | Signed by William | none |
 | 1.1 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
 | 1.1 signed | Revision 1.1 signed by William | none |
+| 1.2 | The contact address is hi@sponing.com, the same as the legal pages' (LG 1.3) | [Allynt Labs runs Sponing](../decisions/2026-10-14-allynt-labs-runs-sponing.md) |
+| 1.2 signed | Revision 1.2 signed by Furqaan | none |
