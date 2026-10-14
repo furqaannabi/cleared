@@ -34,6 +34,10 @@ export const paymentRowSchema = z.object({
   paidAt: z.string().datetime().optional(),
   // Absent until a draft check has finished.
   firstCheckPassed: z.boolean().optional(),
+  // HM-FR-29, HM-FR-30 (1.8; AH-FR-30): on released and approved-not-paid rows only.
+  releasedBecause: z.enum(["deadline", "cancelled", "day_28", "fix_window_ended", "not_accepted", "ruled_not_to_pay", "hold_not_confirmed"]).optional(),
+  releasedAt: z.string().datetime().optional(),
+  cancelledBy: z.enum(["creator", "brand"]).optional(),
 });
 // HM 1.4: a payment row is the contract's `Payment`, checked both ways at compile time.
 const paymentIsTheContracts: SameShape<z.infer<typeof paymentRowSchema>, components["schemas"]["Payment"]> = true;

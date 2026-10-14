@@ -45,11 +45,18 @@ describe("HM-FR-23, HM-FR-24 the page and the year", () => {
     expect(within(year).getByText("$1,757.50").tagName).toBe("B");
   });
 
+  test("(1.8) under it, the same posts' deal amounts and Sponing's fees", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-15T12:00:00.000Z") });
+    await openPayments([tide, aPayment(), held(50000)]);
+    expect(await screen.findByText("$1,850.00 in deal amounts, less $92.50 in Sponing’s fees")).toBeVisible();
+  });
+
   test("left out while nothing has been paid this year", async () => {
     vi.useFakeTimers({ toFake: ["Date"], now: new Date("2027-01-03T12:00:00.000Z") });
     await openPayments([aPayment()]);
     await screen.findByRole("region", { name: "Payment history" });
     expect(screen.queryByText(/received in/)).toBeNull();
+    expect(screen.queryByText(/in deal amounts/)).toBeNull();
   });
 
   test("then Paid each month, with its text for screen readers, then the history", async () => {
@@ -138,5 +145,50 @@ describe("HM-FR-16 to HM-FR-19 the payment history", () => {
       expect.stringMatching(/^2026-09-2\d,'=Tide Studio,Short,1050\.00,52\.50,997\.50,8RT4410ZPA,3MV88201QD$/),
     ]);
     click.mockRestore();
+  });
+});
+
+const cancelled = aPayment({ deliverableId: "del_maple", dealId: "deal_maple", brandName: "Maple & Moss", platform: "youtube_short", stage: "released", amountMinor: 120000, feeMinor: undefined, receivedMinor: undefined, payout: undefined, paidAt: undefined, releasedBecause: "cancelled", cancelledBy: "brand", releasedAt: "2026-10-02T10:00:00.000Z" });
+
+describe("HM-FR-28 to HM-FR-30 (1.8) Paid and Not paid", () => {
+  test("with a post not paid: two tabs under Payment history, Paid first with Download CSV", async () => {
+    await openPayments([aPayment(), cancelled]);
+    const history = await screen.findByRole("region", { name: "Payment history" });
+    const tabs = within(history).getAllByRole("tab");
+    expect(tabs.map((t) => t.textContent)).toEqual(["Paid 1", "Not paid 1"]);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(within(history).getByRole("button", { name: "Download CSV" })).toBeVisible();
+    expect(within(history).getByText("Kora Audio · YouTube video")).toBeVisible();
+  });
+
+  test("Not paid lists why, without Download CSV, and the arrow keys move between the tabs", async () => {
+    await openPayments([aPayment(), cancelled]);
+    const history = await screen.findByRole("region", { name: "Payment history" });
+    await userEvent.click(within(history).getByRole("tab", { name: /Not paid/ }));
+    const panel = within(history).getByRole("tabpanel");
+    expect(panel).toHaveTextContent("Posts whose hold went back to the brand, or was never collected.");
+    const row = within(panel).getByRole("link", { name: /Maple & Moss/ });
+    expect(row).toHaveAttribute("href", "/deals/deal_maple/deliverables/del_maple");
+    expect(row).toHaveTextContent("Maple & Moss cancelled the post");
+    expect(row).toHaveTextContent("$1,200.00");
+    expect(row).toHaveTextContent("2 Oct 2026");
+    expect(within(history).queryByRole("button", { name: "Download CSV" })).toBeNull();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(within(history).getByRole("tab", { name: /^Paid/ })).toHaveAttribute("aria-selected", "true");
+    expect(within(history).getByRole("tab", { name: /^Paid/ })).toHaveFocus();
+  });
+
+  test("with nothing unpaid, no tabs: the history as before", async () => {
+    await openPayments([aPayment()]);
+    const history = await screen.findByRole("region", { name: "Payment history" });
+    expect(within(history).queryByRole("tab")).toBeNull();
+  });
+
+  test("HM-FR-26 nothing paid yet: the Not paid list under its own heading, with no tabs", async () => {
+    await openPayments([cancelled]);
+    expect(await screen.findByText("Nothing paid yet.")).toBeVisible();
+    const list = screen.getByRole("region", { name: "Not paid" });
+    expect(within(list).getByRole("link", { name: /Maple & Moss/ })).toHaveTextContent("Maple & Moss cancelled the post");
+    expect(screen.queryByRole("tab")).toBeNull();
   });
 });

@@ -4,9 +4,11 @@ import Link from "next/link";
 import { PageSkeleton } from "@/components/draft-check/page-skeleton";
 import { useDeals } from "@/components/shell/use-deals";
 import { dealGroups } from "@/lib/home/deal-groups";
+import { dueNext } from "@/lib/home/due-next";
 import { moneyOverview } from "@/lib/home/money-overview";
 import { figureTrends } from "@/lib/home/months";
 import { performanceFigures } from "@/lib/home/performance";
+import { DueNext } from "./due-next";
 import { HomeDeals } from "./home-deals";
 import { HowYoureDoing } from "./how-youre-doing";
 import { MoneyCard } from "./money-card";
@@ -65,6 +67,7 @@ export function OverviewPage() {
           {money.status === "ready" && (
             <>
               <MoneyCard overview={moneyOverview(rows)} />
+              <DueNext {...dueNext(rows, new Date(), timeZone)} />
               <HowYoureDoing figures={performanceFigures(rows)} trends={figureTrends(rows, timeZone)} />
             </>
           )}

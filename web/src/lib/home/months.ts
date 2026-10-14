@@ -61,19 +61,27 @@ export function paidEachMonth(rows: PaymentRow[], now: Date, timeZone: string): 
 /**
  * The line for the year on Payments: "{total} received in {year} · {n} posts",
  * from posts paid this calendar year in the creator's time zone, as the total
- * (shown bold) and the rest; null while nothing has been paid this year.
+ * (shown bold) and the rest, and (1.8) the line under it with the deal amounts
+ * and Sponing's fees; null while nothing has been paid this year.
  *
  * @param rows - every post that has had a hold
  * @param now - today
  * @param timeZone - the creator's time zone
  * @see docs/specs/creator-home-frd.md HM-FR-24
  */
-export function yearReceived(rows: PaymentRow[], now: Date, timeZone: string): { total: string; rest: string } | null {
+export function yearReceived(rows: PaymentRow[], now: Date, timeZone: string): { total: string; rest: string; beforeFees: string } | null {
   const year = monthKey(now, timeZone).slice(0, 4);
   const paid = rows.filter((r) => r.stage === "paid" && r.paidAt && monthKey(r.paidAt, timeZone).startsWith(`${year}-`));
   if (paid.length === 0) return null;
   const total = formatMoney(paid.reduce((sum, r) => sum + (r.receivedMinor ?? 0), 0), "USD");
-  return { total, rest: ` received in ${year} · ${paid.length} ${paid.length === 1 ? "post" : "posts"}` };
+  // 1.8: the same posts' deal amounts and Sponing's fees, added in minor units.
+  const deals = formatMoney(paid.reduce((sum, r) => sum + r.amountMinor, 0), "USD");
+  const fees = formatMoney(paid.reduce((sum, r) => sum + (r.feeMinor ?? 0), 0), "USD");
+  return {
+    total,
+    rest: ` received in ${year} · ${paid.length} ${paid.length === 1 ? "post" : "posts"}`,
+    beforeFees: `${deals} in deal amounts, less ${fees} in Sponing’s fees`,
+  };
 }
 
 /** Points by month for one figure, or undefined with fewer than three months to count (HM-FR-13). */

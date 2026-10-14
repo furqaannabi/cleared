@@ -70,6 +70,28 @@ describe("HM-FR-05, HM-FR-06 the money overview", () => {
   });
 });
 
+describe("HM-FR-27 (1.8) what's due next", () => {
+  test("its own section after the money, before how you're doing: held posts not yet posted, soonest first, each a link", async () => {
+    const soon = aPayment({ deliverableId: "del_pine", dealId: "deal_pine", brandName: "Pine & Co", platform: "youtube_short", stage: "held", payout: undefined, paidAt: undefined, publishedAt: undefined, deadline: "2099-01-02T22:59:00.000Z", receivedMinor: 42750 });
+    const later = aPayment({ deliverableId: "del_maple", dealId: "deal_maple", brandName: "Maple & Moss", platform: "instagram_reel", stage: "held", payout: undefined, paidAt: undefined, publishedAt: undefined, deadline: "2099-01-09T22:59:00.000Z", receivedMinor: 147250 });
+    await openHome({ payments: [later, aPayment(), soon] });
+    const due = await screen.findByRole("region", { name: "What’s due next" });
+    expect(due).toHaveTextContent("Held for you, not yet posted. What you’ll receive.");
+    const links = within(due).getAllByRole("link");
+    expect(links.map((l) => l.getAttribute("href"))).toEqual(["/deals/deal_pine/deliverables/del_pine", "/deals/deal_maple/deliverables/del_maple"]);
+    expect(links[0]).toHaveTextContent("Pine & Co · Short");
+    expect(links[0]).toHaveTextContent("$427.50");
+    const order = [...document.querySelectorAll("section")].map((el) => el.getAttribute("aria-label") ?? el.querySelector("h2")?.textContent);
+    expect(order.indexOf("What’s due next")).toBe(order.indexOf("Your money") + 1);
+  });
+
+  test("left out when nothing held is waiting to be posted", async () => {
+    await openHome({ payments: [aPayment()] });
+    await screen.findByRole("region", { name: "Your money" });
+    expect(screen.queryByRole("region", { name: "What’s due next" })).toBeNull();
+  });
+});
+
 describe("HM-FR-25 See payments", () => {
   test("under the Paid total, a link to Payments, and on no other total", async () => {
     await openHome();
