@@ -85,10 +85,10 @@ describe("Landing page", () => {
     expect(footer).toHaveTextContent("Claude on Amazon Bedrock");
     expect(footer).toHaveTextContent("AG Grid");
     expect(footer).toHaveTextContent("APIMatic");
-    expect(within(footer).getByRole("link", { name: "GitHub repository" })).toHaveAttribute("href", "https://github.com/furqaannabi/cleared");
+    expect(within(footer).getByRole("link", { name: "GitHub repository" })).toHaveAttribute("href", "https://github.com/furqaannabi/sponing");
     expect(within(footer).getByRole("link", { name: "MIT licence" })).toHaveAttribute(
       "href",
-      "https://github.com/furqaannabi/cleared/blob/main/LICENSE",
+      "https://github.com/furqaannabi/sponing/blob/main/LICENSE",
     );
   });
 

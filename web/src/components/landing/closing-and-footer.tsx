@@ -22,7 +22,7 @@ export function Closing() {
   );
 }
 
-const REPO = "https://github.com/furqaannabi/cleared";
+const REPO = "https://github.com/furqaannabi/sponing";
 
 /**
  * The footer: the hackathon, sandbox only, the PayPal and AI technology and

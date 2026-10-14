@@ -227,7 +227,7 @@ Judging has two stages. Stage one is pass or fail: does the project fit the them
 
 The concept was first written up as SponsorProof, a name already in use by another public project. It was then called Cleared: the content is cleared to publish, and the payment clears. On 14 October 2026 the product was renamed Sponing ([the product is named Sponing](decisions/2026-10-14-the-product-is-named-sponing.md)). "Cleared" stays as the word for a deliverable that has passed its live check and been paid, and the tagline is unchanged. The app is at `sponing.com` and the API at `backend.sponing.com`.
 
-The repo is [github.com/furqaannabi/cleared](https://github.com/furqaannabi/cleared), public, under an MIT licence.
+The repo is [github.com/furqaannabi/sponing](https://github.com/furqaannabi/sponing), public, under an MIT licence.
 
 ## Still open
 
