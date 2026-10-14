@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-06T14:27:23+00:00",
-  "title": "Design System: Cleared",
+  "title": "Design System: Sponing",
   "extensions": {
     "colorMeta": {
       "espresso": {
@@ -257,7 +257,7 @@
   ],
   "narrative": {
     "northStar": "Proof earns the seal, the seal releases the money.",
-    "overview": "Cleared has to win two people at once. Creators should feel welcomed: the screen is warm, rounded and plain-spoken, and it always says what happens next. Brands should feel they are dealing with a creator who takes the work seriously: the screen reads like a calm, premium finance product, never a hype tool. The world gives the product four things only: an espresso and marigold palette, friendly rounded type, comfortable density, and one signature move, the scalloped seal. Everything else is standard, familiar product UI.",
+    "overview": "Sponing has to win two people at once. Creators should feel welcomed: the screen is warm, rounded and plain-spoken, and it always says what happens next. Brands should feel they are dealing with a creator who takes the work seriously: the screen reads like a calm, premium finance product, never a hype tool. The world gives the product four things only: an espresso and marigold palette, friendly rounded type, comfortable density, and one signature move, the scalloped seal. Everything else is standard, familiar product UI.",
     "keyCharacteristics": [
       "Light, warm-neutral ground under a committed espresso shell (rail, top bar, primary actions, selected tabs).",
       "Marigold is the money colour: the money card is the brightest thing on the screen.",

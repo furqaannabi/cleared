@@ -1,6 +1,6 @@
 # Deal set-up: FRD
 
-**Status:** Signed by Furqaan (revision 1.4). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no demo accounts) are Furqaan's; William has to agree.
+**Status:** Draft 1.5, not signed (revision 1.4 signed by Furqaan). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no demo accounts) are Furqaan's; William has to agree.
 
 **Surface:** Backend. Steps 1 to 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: a creator signs in, starts a deal, has its brief turned into a checklist, sets the terms and makes the brand's link; the brand opens the link, asks for changes or agrees, and approves a PayPal hold for each post.
 
@@ -27,7 +27,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 3. As a creator, I want to sign out and know it ended, so that a shared device is safe.
 4. As a creator, I want to land back on the page I was going to after signing in, so that a link someone sent me still works.
 5. As a creator, I want only my own deals to be visible to me, and mine to nobody else, so that my deals are private.
-6. As a creator, I want to connect my YouTube channel with read-only access, so that Cleared can later confirm my post is on my channel without being able to change anything.
+6. As a creator, I want to connect my YouTube channel with read-only access, so that Sponing can later confirm my post is on my channel without being able to change anything.
 7. As a creator, I want to save the PayPal email I am paid at, so that payouts reach me.
 8. As a creator, I want to start a deal by naming the brand and the posts, so that the deal exists before I paste anything.
 9. As a creator, I want to paste the brief and get a checklist, so that I do not have to pull the requirements out by hand.
@@ -66,7 +66,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 36. (Removed in revision 1.2: there are no demo accounts.)
 37. As a judge, I want the demo to run a real brief and a real sandbox hold, so that I am judging the product and not a recording.
 
-**Cleared (the team)**
+**Sponing (the team)**
 
 38. As the team, I want every route to check the caller is a party to the deal, so that a guessed id shows nothing.
 39. As the team, I want the brief and the model's answer treated as untrusted, so that nothing in a brief can change the rules or trigger an action.
@@ -85,7 +85,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | DS-FR-01 | **Sign in with Google.** A route starts Google's sign-in and another receives its answer. The backend asks only for the person's identity (their Google id, name and email). The answer is accepted only if it matches the request that started it and Google's signature on it checks out. |
 | DS-FR-02 | **First sign-in makes the creator.** A Google account not seen before becomes a new creator. One seen before signs into the same creator. |
 | DS-FR-03 | **The session.** A successful sign-in sets a session cookie the page cannot read (HttpOnly, Secure, SameSite=Lax) and sends the browser back into the app. A creator session lasts 14 days from its last use. |
-| DS-FR-04 | **Back where they were going.** The sign-in carries a `next` path. It is used only if it is a path on Cleared's own app; anything else is dropped and the creator lands on the default page. A first sign-in lands on the welcome page. |
+| DS-FR-04 | **Back where they were going.** The sign-in carries a `next` path. It is used only if it is a path on Sponing's own app; anything else is dropped and the creator lands on the default page. A first sign-in lands on the welcome page. |
 | DS-FR-05 | **Sign out.** Ends the session on the backend and clears the cookie. The same cookie sent again is refused. |
 | DS-FR-06 | **Removed in revision 1.2.** There are no demo accounts: every creator signs in with Google ([decision](../decisions/2026-10-11-no-demo-accounts.md)). |
 | DS-FR-07 | **Removed in revision 1.2,** with DS-FR-06. Demo accounts that exist when this is built are deleted with everything they made. Their money is the PayPal sandbox's and is not touched here: the money path finishes it on its own timers. |
@@ -197,7 +197,7 @@ Every route checks who is calling and that they are a party to the deal. The bri
 | --- | --- |
 | DS-BR-01 | Every creator route requires a creator session and checks the deal belongs to that creator. Every brand route requires a session for that deal. A deal that is not the caller's and a deal that does not exist get the same answer. |
 | DS-BR-02 | A session is a random token. The backend stores only its hash. It is sent only in an HttpOnly, Secure cookie, never in a URL or a response body, and is never logged. |
-| DS-BR-03 | A request that changes anything is refused unless it comes from Cleared's own app: its `Origin` must be the app's address and its body must be JSON. This is on top of the SameSite cookie. |
+| DS-BR-03 | A request that changes anything is refused unless it comes from Sponing's own app: its `Origin` must be the app's address and its body must be JSON. This is on top of the SameSite cookie. |
 | DS-BR-04 | A brief, a note, a reply and an item's wording are untrusted plain text. They are stored and returned as text, never treated as markup or instructions, and nothing in them can change a rule or trigger an action. |
 | DS-BR-05 | The model's answer is checked against a strict schema. An answer that fails is asked for once more; a second failure makes the read fail (DS-FR-22). Nothing from a failed answer is saved. |
 | DS-BR-06 | Every item the model returns must cite a line number that exists in the brief. An item that cites no line, or a line that is not there, is dropped and that line is left as "not checked". No item from the model exists without a citation. |
@@ -357,3 +357,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.3 | Signed by Furqaan | none |
 | 1.4 | A job that fails is logged at once, without its message (DS-FR-52), and the jobs table keeps the same in place of the message (DS-FR-53). A job that finishes or waits is not logged | [A failed job](../decisions/2026-10-13-a-failed-job-is-logged-and-kept-without-its-message.md) |
 | 1.4 | Signed by Furqaan | none |
+| 1.5 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |

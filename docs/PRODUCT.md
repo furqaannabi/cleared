@@ -1,8 +1,8 @@
-# Cleared
+# Sponing
 
 **Status:** Signed off on 6 October 2026. Nothing described here is built yet. What is not yet decided is listed under [Still open](#still-open).
 
-Cleared is where a creator and a brand run a sponsorship deal they have already agreed. The brand's money is held in PayPal, AI checks the creator's video against the brief, and the money is released when the approved post is live.
+Sponing is where a creator and a brand run a sponsorship deal they have already agreed. The brand's money is held in PayPal, AI checks the creator's video against the brief, and the money is released when the approved post is live.
 
 **Brand deals where the content and the payment clear together.**
 
@@ -18,24 +18,24 @@ Both sides are missing the same two things: proof of what was delivered, and mon
 
 ## Who it is for
 
-| | Who | What they do on Cleared |
+| | Who | What they do on Sponing |
 | --- | --- | --- |
 | Main user | The creator | Starts each deal, submits drafts, publishes, gets paid |
 | Invited user | The brand | Opens a link, confirms the checklist, approves a PayPal hold, reviews the draft |
 
 The creator is the main user because they feel the problem most and do many deals a year. They bring each brand in with a link, the way a freelancer sends a client an invoice.
 
-Cleared is aimed first at direct deals between small brands and mid-size creators, with no agency in between.
+Sponing is aimed first at direct deals between small brands and mid-size creators, with no agency in between.
 
-**Cleared is not a marketplace.** Creators and brands do not find each other here. They agree the deal wherever they already do, and bring it to Cleared to run it.
+**Sponing is not a marketplace.** Creators and brands do not find each other here. They agree the deal wherever they already do, and bring it to Sponing to run it.
 
 ## What is different
 
-The similar projects found as of 6 October 2026 read text or code, and judge the work only once it is public. Cleared differs in four ways.
+The similar projects found as of 6 October 2026 read text or code, and judge the work only once it is public. Sponing differs in four ways.
 
 - **It checks the video itself.** What is said, what appears as on-screen text and what is shown in frame are each checked, and each finding points to a timestamp.
 - **It checks before publishing.** A wrong discount code is caught while the video is still a draft and can be fixed. A check that runs only after posting can approve or reject, but cannot help the creator get it right.
-- **It ties the post to the creator's real account.** The creator signs in with YouTube or Instagram, and Cleared confirms through the platform that the live post is on that account. Nothing has to be pasted into the content to prove who made it.
+- **It ties the post to the creator's real account.** The creator signs in with YouTube or Instagram, and Sponing confirms through the platform that the live post is on that account. Nothing has to be pasted into the content to prove who made it.
 - **It uses PayPal accounts both sides already have.** There is no crypto wallet and no token. The brand's money is an ordinary PayPal hold.
 
 ## Words used in this document
@@ -50,7 +50,7 @@ The similar projects found as of 6 October 2026 read text or code, and judge the
 | Draft check | AI checking the video file against the checklist before it is published |
 | Review window | The 48 hours the brand has to approve or object to a passing draft |
 | Re-confirming the hold | Asking PayPal, just before the creator publishes, to confirm the reserved funds are still there. PayPal calls this reauthorizing. |
-| Go-ahead | Cleared telling the creator, after re-confirming the hold, that they can publish. It lasts 48 hours. |
+| Go-ahead | Sponing telling the creator, after re-confirming the hold, that they can publish. It lasts 48 hours. |
 | Live check | Confirming through the platform's API that the approved post is published |
 | Manual approval | A person decides whether the deliverable is paid, in place of the timer or the live check |
 | Cleared | A deliverable that has passed its live check and been paid |
@@ -66,8 +66,8 @@ Each deliverable is checked twice: as a draft, while a mistake can still be fixe
 | 3. Confirm and hold | The brand reviews the checklist and can ask the creator for changes ([decision](decisions/2026-10-08-brand-asks-for-changes-not-edits.md)). Once both sides accept the same checklist, amounts and release rule, the brand approves one PayPal hold per deliverable. | PayPal Orders |
 | 4. Draft check | The creator uploads the video file. AI checks every item and shows timestamped evidence. The creator fixes any failures and resubmits. | S3, a backend job, Amazon Bedrock |
 | 5. Brand review | From a fully passing draft, the brand has 48 hours to approve it or to object to a specific item. Silence clears it. | A backend timer, AG Grid |
-| 6. Publish | The creator says they are ready. Cleared re-confirms the hold with PayPal, and then the creator publishes. | PayPal Payments |
-| 7. Live check | Cleared confirms through the platform's own API that the approved content is public, on the creator's own account, on time, with the required link, code and disclosure. | A backend job, YouTube Data API, Instagram API |
+| 6. Publish | The creator says they are ready. Sponing re-confirms the hold with PayPal, and then the creator publishes. | PayPal Payments |
+| 7. Live check | Sponing confirms through the platform's own API that the approved content is public, on the creator's own account, on time, with the required link, code and disclosure. | A backend job, YouTube Data API, Instagram API |
 | 8. Pay | A passing live check captures the hold and pays the creator. Both sides see held, captured and paid, each with its PayPal reference. | PayPal Payments, Payouts, Webhooks |
 
 ## Rules
@@ -93,12 +93,12 @@ The rules that link to a decision were set by Furqaan on 8 October 2026. William
 | The brand says nothing for 48 hours on a fully passing draft | The draft is cleared to publish. |
 | The brand objects to an item | The clock stops. The creator makes a new draft, or the brand approves this one anyway; with neither by the deadline, the hold is released ([decision](decisions/2026-10-08-objection-settled-by-the-two-sides.md)). |
 | PayPal cannot re-confirm the hold at step 6 | The creator is told not to publish, and the brand is told to check its PayPal funding. The hold stays in place and the creator can ask again. |
-| The live post cannot be tied to the approved draft | The brand has 48 hours to confirm the post or object with a reason. Confirming, or saying nothing, pays the creator. An objection goes to a person at Cleared. See [Platforms](#platforms) for when this happens. |
+| The live post cannot be tied to the approved draft | The brand has 48 hours to confirm the post or object with a reason. Confirming, or saying nothing, pays the creator. An objection goes to a person at Sponing. See [Platforms](#platforms) for when this happens. |
 | The live check fails on something the creator can still fix, such as a missing link | The creator fixes it and has it checked again, until the deadline or 24 hours after the failure if that is later. Still failing then, the hold is released. |
 | The deadline passes and no approved post was published in time | The hold is released back to the brand. A post published in time keeps its hold while its live check finishes. |
 | The creator or the brand cancels before the go-ahead to publish | The hold is released back to the brand. During a go-ahead, and once a post is published, nobody can cancel. |
 | The brand agrees but never approves a hold | After 7 days that post is closed as not held. Posts already held carry on. |
-| PayPal refuses the capture for an approved post | Cleared tries again until day 28 and tells both sides why. If it never succeeds, the deliverable ends as approved, not paid. |
+| PayPal refuses the capture for an approved post | Sponing tries again until day 28 and tells both sides why. If it never succeeds, the deliverable ends as approved, not paid. |
 | The payout does not reach the creator | The deliverable stays captured, never paid. The creator accepts the money at that email, or corrects their PayPal email and has it sent again. |
 | A hold is still undecided on day 28 | It is released back to the brand. |
 
@@ -126,7 +126,7 @@ Version one covers YouTube videos and Shorts, and Instagram Reels. Stories, phot
 | --- | --- | --- |
 | Creator connects | Google sign-in, read-only | Instagram Login with one read-only permission; professional accounts only ([decision](decisions/2026-10-11-instagram-login-read-only.md)) |
 | Draft | The file, plus the same video uploaded to their channel as unlisted | The file |
-| Can Cleared fetch the published video? | No. The API does not offer it, and downloading breaks YouTube's terms. | Yes, unless the Reel uses licensed music |
+| Can Sponing fetch the published video? | No. The API does not offer it, and downloading breaks YouTube's terms. | Yes, unless the Reel uses licensed music |
 | How the live post is tied to the draft | Same video, switched to public. The file's size and length match YouTube's record of the upload. | The live file's transcript and length match the draft's |
 | Also checked live | Own channel, publish date, description, paid-promotion flag | Own account, post date, Reel format, caption |
 | Goes to manual approval when | YouTube's file record is unavailable or does not match | The file cannot be fetched |
@@ -138,23 +138,23 @@ No field for the paid-partnership label was found in Instagram's API, so on Inst
 | Stage | What happens in PayPal | What both sides see |
 | --- | --- | --- |
 | Held | The brand approves an authorization for the deliverable's amount. The money is reserved, not taken. | Held, with the PayPal reference |
-| Re-confirmed | Just before publishing, Cleared asks PayPal to confirm the reserved funds again. | A go-ahead that lasts 48 hours, or a warning not to publish |
-| Captured | After a passing live check, the hold is captured to Cleared's PayPal account. | Captured, with the PayPal reference |
-| Paid | Cleared pays the amount, less its 5% fee, out to the creator's PayPal email. | Paid, with the PayPal reference |
+| Re-confirmed | Just before publishing, Sponing asks PayPal to confirm the reserved funds again. | A go-ahead that lasts 48 hours, or a warning not to publish |
+| Captured | After a passing live check, the hold is captured to Sponing's PayPal account. | Captured, with the PayPal reference |
+| Paid | Sponing pays the amount, less its 5% fee, out to the creator's PayPal email. | Paid, with the PayPal reference |
 | Released | On a missed deadline, a cancellation, or day 28, the hold is released and the money returns to the brand. | Released, with the reason |
 
 - **There is one hold per deliverable.** A deal with three posts has three holds, each captured or released on its own.
 - **A hold lasts 29 days, and PayPal guarantees the funds only for the first 3.** This is why the hold is re-confirmed before publishing, and why a deliverable's deadline is capped at 21 days after the hold.
-- **Cleared's fee is 5%, taken from the creator's payout.** PayPal's own charges come out of that fee. A $1,200 post pays the creator $1,140 ([decision](decisions/2026-10-08-cleared-fee-and-amount-limits.md)).
+- **Sponing's fee is 5%, taken from the creator's payout.** PayPal's own charges come out of that fee. A $1,200 post pays the creator $1,140 ([decision](decisions/2026-10-08-cleared-fee-and-amount-limits.md)).
 - **One hold is between $20 and $10,000.**
-- **The hold is captured to Cleared's account and then paid out.** Capturing straight to the creator was considered and closed, because the fee has to pass through Cleared's account.
+- **The hold is captured to Sponing's account and then paid out.** Capturing straight to the creator was considered and closed, because the fee has to pass through Sponing's account.
 - **The sandbox accounts are US accounts.** The build uses US sandbox business and personal accounts, and PayPal payouts need US sandbox recipients.
 
 ## Limits in version one
 
 - **Deadlines are capped at 21 days after the hold**, for the reason given above.
-- **Payment goes through Cleared's PayPal account**, not directly from brand to creator.
-- **A post PayPal never lets Cleared collect for ends as "approved, not paid".** Getting paid after that is outside Cleared.
+- **Payment goes through Sponing's PayPal account**, not directly from brand to creator.
+- **A post PayPal never lets Sponing collect for ends as "approved, not paid".** Getting paid after that is outside Sponing.
 - **The paid-partnership label on Instagram is a manual check.**
 - **Instagram creators need a professional account.**
 - **Only the team's tester accounts can connect Instagram** until Meta has reviewed the app, which is not asked for during the hackathon ([decision](decisions/2026-10-11-no-meta-review-for-the-hackathon.md)).
@@ -225,13 +225,13 @@ Judging has two stages. Stage one is pass or fail: does the project fit the them
 
 ## The name
 
-The concept was first written up as SponsorProof, a name already in use by another public project. Cleared was chosen instead: the content is cleared to publish, and the payment clears. No product of that name was found in creator sponsorship.
+The concept was first written up as SponsorProof, a name already in use by another public project. It was then called Cleared: the content is cleared to publish, and the payment clears. On 14 October 2026 the product was renamed Sponing ([the product is named Sponing](decisions/2026-10-14-the-product-is-named-sponing.md)). "Cleared" stays as the word for a deliverable that has passed its live check and been paid, and the tagline is unchanged. The app is at `sponing.com` and the API at `backend.sponing.com`.
 
 The repo is [github.com/furqaannabi/cleared](https://github.com/furqaannabi/cleared), public, under an MIT licence.
 
 ## Still open
 
-- **How a judge runs the demo.** Decided by William, Furqaan to agree: judges test Cleared as users do, with their own Google account and YouTube channel, the PayPal sandbox details given in the submission, and a judge guide ([decision](decisions/2026-10-12-judges-test-cleared-as-users.md)).
+- **How a judge runs the demo.** Decided by William, Furqaan to agree: judges test Sponing as users do, with their own Google account and YouTube channel, the PayPal sandbox details given in the submission, and a judge guide ([decision](decisions/2026-10-12-judges-test-cleared-as-users.md)).
 - **Team.** The build is planned for two people. Who the second person is, and what they take, is not settled.
 - **First spec.** Not yet written. It should turn [How a deal runs](#how-a-deal-runs) into numbered requirements before any code.
 

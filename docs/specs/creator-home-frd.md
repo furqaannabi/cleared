@@ -1,6 +1,6 @@
 # Creator home: FRD
 
-**Status:** Signed by William (revision 1.6).
+**Status:** Signed by William (revision 1.7).
 
 **Surface:** The creator's home, in two pages (1.2). The overview at `/deals`: the money overview, the performance figures and the deals with what needs the creator first; signing in and the landing page's button land here. Payments at `/payments`: what was paid each month and the payment history with its CSV. The brand has no home.
 
@@ -19,8 +19,8 @@ One home page that answers "where's my money?" first: three totals in what the c
 1. As a creator, I want to land on one page after signing in, so that I see everything before choosing a deal.
 2. As a creator, I want to see how much is held for me, so that I know what money is reserved and coming.
 3. As a creator, I want to see how much is on its way, so that I know what has been taken from the brand but hasn't reached me yet.
-4. As a creator, I want to see how much I've been paid, so that I know what I've earned through Cleared.
-5. As a creator, I want every total to be what I actually receive, so that I don't count Cleared's fee as mine.
+4. As a creator, I want to see how much I've been paid, so that I know what I've earned through Sponing.
+5. As a creator, I want every total to be what I actually receive, so that I don't count Sponing's fee as mine.
 6. As a creator with a payout that failed or wasn't claimed, I want to be told on home and taken to that post, so that I can fix it before the money is stuck.
 7. As a creator, I want to see what I was paid each month, so that I can tell whether I'm earning more.
 8. As a creator, I want to see how many of my posts went live on time, so that I can show brands I'm reliable.
@@ -52,7 +52,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-05 | **Three totals, in what the creator receives.** "Held for you" (posts whose hold is in place and not yet captured), "On its way" (captured, payout not yet paid: sending, delayed, unclaimed or failed) and "Paid" (payout paid). Each is the sum of the posts' `received` amounts from the API, after Cleared's fee; the page never works out a fee itself. Each total says how many posts it counts ("3 posts"). A total of zero shows "$0.00", never hidden, once the creator has any deal. (1.1) Under the totals: "What you receive, after Cleared's 5% fee." (1.4) The API gives what the creator receives only once a hold is taken (AH-FR-06), so "Held for you" is the held posts' deal amounts, with "{n} posts · before Cleared's fee" under it; "On its way" and "Paid" stay what the creator receives. The footer says "On its way and Paid are what you receive, after Cleared's 5% fee." A post approved but never paid (`approved_not_paid`) counts in no total. (1.6) The card is latte, not marigold: espresso figures and labels in the ink ramp, the seal in espresso at the top right, a latte border and a soft shadow; the stuck lines keep their white footer in the fail colour (HM-FR-06). Only Overview's card changes; the deal page's money card stays marigold (DC). Look 4 of `design/home/attention-and-money.html`. |
+| HM-FR-05 | **Three totals, in what the creator receives.** "Held for you" (posts whose hold is in place and not yet captured), "On its way" (captured, payout not yet paid: sending, delayed, unclaimed or failed) and "Paid" (payout paid). Each is the sum of the posts' `received` amounts from the API, after Sponing's fee; the page never works out a fee itself. Each total says how many posts it counts ("3 posts"). A total of zero shows "$0.00", never hidden, once the creator has any deal. (1.1) Under the totals: "What you receive, after Sponing's 5% fee." (1.4) The API gives what the creator receives only once a hold is taken (AH-FR-06), so "Held for you" is the held posts' deal amounts, with "{n} posts · before Sponing's fee" under it; "On its way" and "Paid" stay what the creator receives. The footer says "On its way and Paid are what you receive, after Sponing's 5% fee." A post approved but never paid (`approved_not_paid`) counts in no total. (1.6) The card is latte, not marigold: espresso figures and labels in the ink ramp, the seal in espresso at the top right, a latte border and a soft shadow; the stuck lines keep their white footer in the fail colour (HM-FR-06). Only Overview's card changes; the deal page's money card stays marigold (DC). Look 4 of `design/home/attention-and-money.html`. |
 | HM-FR-06 | **What's stuck.** When any post on its way has a payout that failed or wasn't claimed, a line under "On its way" names each: "{brand} · {post}: the payout didn't go through." or "{brand} · {post}: PayPal is waiting for you to accept it.", each linking to the post, where its fix lives (PP). Past three, "and {n} more". |
 | HM-FR-25 | **See payments.** (1.2) Under the "Paid" total, a link "See payments" to `/payments`. "Held for you" and "On its way" have no link; the stuck lines keep linking to their posts (HM-FR-06). (1.4) Always shown. |
 | HM-FR-07 | **Amounts.** Dollars with cents ("$1,140.00"), from integer minor units; totals added in minor units, never floats. |
@@ -92,7 +92,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 
 | ID | Requirement |
 | --- | --- |
-| HM-FR-16 | **One row per paid post.** Date paid, brand, post ("YouTube video", "Short", "Reel"), deal amount, Cleared's fee, received, payout reference and hold reference, newest first, each linking to its post. Only paid posts; money on its way is in the overview. Shown once any post has been paid. (1.2) On Payments. |
+| HM-FR-16 | **One row per paid post.** Date paid, brand, post ("YouTube video", "Short", "Reel"), deal amount, Sponing's fee, received, payout reference and hold reference, newest first, each linking to its post. Only paid posts; money on its way is in the overview. Shown once any post has been paid. (1.2) On Payments. |
 | HM-FR-17 | **Desktop grid.** From `md:`, AG Grid: sort by date, brand or amount; filter by brand; references in the tabular face, selectable to copy. No sideways scroll at `md:`; lower-priority columns (hold reference, fee) collapse first. |
 | HM-FR-18 | **Phone cards.** Below `md:`, one card per row with the same fields in the same order. Both renderings come from one list of rows and show the same thing for every row. |
 | HM-FR-19 | **CSV.** "Download CSV" exports the whole history whatever the grid is filtered to, built in the browser, named `cleared-payments-{YYYY-MM-DD}.csv`. Columns: Date paid, Brand, Post, Deal amount, Fee, Received, Payout reference, Hold reference. Amounts as plain decimals ("1140.00"), dates as `YYYY-MM-DD`. Any field starting with `=`, `+`, `-`, `@`, tab or carriage return is prefixed with `'`; fields are quoted per RFC 4180. |
@@ -145,7 +145,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 - **Pure modules:** totals across stages, the stuck list past three, received never recomputed; each figure with none, one and several posts; on time at the deadline's edge; months across a time-zone boundary and a year boundary; deal groups for every state; CSV escaping (`=`, `+`, `-`, `@`, quotes, commas, newlines) and the date in the file name.
 - **Components:** home with no deals; with deals and the flag off; with the flag on: totals, stuck line linking to the post, figures absent and present, chart text equivalents; history as cards at 375 px and as a grid from `md:`, the same rows in both; Download CSV gives the whole history while filtered; payments failing leaves the deals.
 - **1.2:** the overview without the chart and history, with "See payments" under Paid; Payments with the line for the year (shown, left out with nothing paid this year, "1 post"), the chart, the history and CSV; nothing paid yet with and without held or on-its-way money; with the flag off, no Payments link, no "See payments", and `/payments` not found; the rail's Overview and Payments links, each marked current on its page.
-- **1.4:** Held for you as deal amounts with "before Cleared's fee"; the footer; `approved_not_paid` in no total and not in the history; rows without a fee or received amount accepted; the payment row checked against the contract's `Payment` at compile time; no flag anywhere.
+- **1.4:** Held for you as deal amounts with "before Sponing's fee"; the footer; `approved_not_paid` in no total and not in the history; rows without a fee or received amount accepted; the payment row checked against the contract's `Payment` at compile time; no flag anywhere.
 - **Live end to end:** by hand until Furqaan's test-session route exists.
 
 ## Out of Scope
@@ -177,3 +177,5 @@ One home page that answers "where's my money?" first: three totals in what the c
 | 1.5 signed | Revision 1.5 signed by William | none |
 | 1.6 | From William, after the sandbox run: Overview's money card in latte with espresso figures and seal, in place of marigold (HM-FR-05); the deal page's card is unchanged. Look 4 of `design/home/attention-and-money.html` | none |
 | 1.6 signed | Revision 1.6 signed by William | none |
+| 1.7 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.7 signed | Revision 1.7 signed by William | none |

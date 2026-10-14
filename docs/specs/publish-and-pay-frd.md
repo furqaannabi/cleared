@@ -1,6 +1,6 @@
 # Publish and pay: FRD
 
-**Status:** Signed by William (revision 1.5). The money rules are the money path FRD's (Furqaan's).
+**Status:** Signed by William (revision 1.6). The money rules are the money path FRD's (Furqaan's).
 
 **Surface:** Both sides of steps 6 to 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The creator's side:** the draft check page past "Approved" (DC-FR-51): the go-ahead, "I've posted it", the live check in the checklist, and the money card through captured and paid, including every "not paid yet". **The brand's side:** the Drafts panel and the review page past "Approved" (RW-FR-22): confirming or objecting to a post the live check couldn't decide, accepting a post that failed, and paid.
 
@@ -8,15 +8,15 @@
 
 ## Problem Statement
 
-A creator with an approved draft needs to know when it is safe to post, because a published video can't be taken back, and then where their money is at every moment until it lands: whether the live post checked out, what's missing if it didn't and until when it can be fixed, and why a payment hasn't arrived. "Processing" with no reason is the problem Cleared exists to fix.
+A creator with an approved draft needs to know when it is safe to post, because a published video can't be taken back, and then where their money is at every moment until it lands: whether the live post checked out, what's missing if it didn't and until when it can be fixed, and why a payment hasn't arrived. "Processing" with no reason is the problem Sponing exists to fix.
 
 The brand needs to know when its money is taken and for what, and to make the two decisions only it can make after publishing: whether a post the live check couldn't judge is fine, and whether to pay for a post that failed anyway.
 
 ## Solution
 
-On the creator's page, after "Approved", the next step is "Get the go-ahead". Cleared asks PayPal to confirm the brand's hold and answers: post now, before a stated time (with a countdown); wait until a stated time; or don't post, because the hold couldn't be confirmed. Once posted, the creator taps "I've posted it" (a Reel also gives its link). The live check judges the "At live check" items in the same checklist, each with evidence from the live post, and a banner says what it found: passed; something the creator can still fix, with "Check again" until a stated time; something that can't be fixed, which the brand may accept; or a post it couldn't judge, which the brand confirms (silence pays). The money card follows captured, then paid, with the fee and each PayPal reference, and says plainly what to do when a payout is unclaimed or bounced.
+On the creator's page, after "Approved", the next step is "Get the go-ahead". Sponing asks PayPal to confirm the brand's hold and answers: post now, before a stated time (with a countdown); wait until a stated time; or don't post, because the hold couldn't be confirmed. Once posted, the creator taps "I've posted it" (a Reel also gives its link). The live check judges the "At live check" items in the same checklist, each with evidence from the live post, and a banner says what it found: passed; something the creator can still fix, with "Check again" until a stated time; something that can't be fixed, which the brand may accept; or a post it couldn't judge, which the brand confirms (silence pays). The money card follows captured, then paid, with the fee and each PayPal reference, and says plainly what to do when a payout is unclaimed or bounced.
 
-On the brand's side, the Drafts panel and the review page carry on: "Confirm the post" or "Object" when the check couldn't decide, "Accept the post anyway" when it failed, a note while a person at Cleared decides, and "Paid" with what was taken. Each 48-hour decision says what silence does, because the two point in opposite directions.
+On the brand's side, the Drafts panel and the review page carry on: "Confirm the post" or "Object" when the check couldn't decide, "Accept the post anyway" when it failed, a note while a person at Sponing decides, and "Paid" with what was taken. Each 48-hour decision says what silence does, because the two point in opposite directions.
 
 Cancelling is not in this spec; it gets its own.
 
@@ -30,20 +30,20 @@ Cancelling is not in this spec; it gets its own.
 4. As a creator told to wait, I want to know until when and why, so that I ask again at the right time.
 5. As a creator whose brand's hold couldn't be confirmed, I want to be told not to post and that the brand was told, so that I don't publish for free.
 6. As a creator whose go-ahead ran out before I posted, I want to be able to ask again, so that a busy day doesn't cost me the deal.
-7. As a creator who posted on YouTube, I want one tap to tell Cleared, so that the live check starts.
-8. As a creator who posted a Reel, I want to paste its link, so that Cleared checks the right post.
+7. As a creator who posted on YouTube, I want one tap to tell Sponing, so that the live check starts.
+8. As a creator who posted a Reel, I want to paste its link, so that Sponing checks the right post.
 9. As a creator, I want to know that the live check still runs if I forget to tap, so that I'm not penalised.
 10. As a creator, I want each "At live check" item to show its result and evidence from the live post, so that I see what was checked.
 11. As a creator whose post failed on something I can still fix, I want to know what, until when, and to check again, so that a missing link doesn't cost me the payment.
 12. As a creator whose post failed on something I can't fix, I want to know the brand can still accept it and by when, so that I know where I stand.
 13. As a creator whose post the check couldn't judge, I want to know the brand has 48 hours and that silence pays me, so that I'm not anxious.
-14. As a creator whose brand objected to the live post, I want to know a person at Cleared decides and by when.
+14. As a creator whose brand objected to the live post, I want to know a person at Sponing decides and by when.
 15. As a creator, I want to see when the money was captured, with its PayPal reference, and what I'll receive after the fee.
 16. As a creator, I want to see when I was paid, with the PayPal reference, so that I can find it in PayPal.
 17. As a creator whose payout is unclaimed, I want to be told to accept it in PayPal at the email it went to, and to send it again if needed.
 18. As a creator whose payout bounced, I want to correct my PayPal email and send it again from the same place.
-19. As a creator whose brand's payment failed at capture, I want to know Cleared keeps trying and until when.
-20. As a creator whose post ended "approved, not paid", I want that said plainly, so that I know Cleared can't collect it.
+19. As a creator whose brand's payment failed at capture, I want to know Sponing keeps trying and until when.
+20. As a creator whose post ended "approved, not paid", I want that said plainly, so that I know Sponing can't collect it.
 21. As a creator whose hold went back to the brand, I want the reason in plain words, so that I understand what happened.
 22. As a creator, I want the deal steps and the rail to say where each post is, through to Paid.
 
@@ -55,7 +55,7 @@ Cancelling is not in this spec; it gets its own.
 26. As a brand, I want to be told that saying nothing pays the creator, so that silence is a choice.
 27. As a brand, I want confirming to say my money is taken, so that I confirm knowingly.
 28. As a brand whose post failed, I want to accept it anyway or let the hold come back to me, knowing that silence returns my money.
-29. As a brand who objected, I want to know a person at Cleared decides and by when.
+29. As a brand who objected, I want to know a person at Sponing decides and by when.
 30. As a brand, I want to see that my money was taken, how much, and the PayPal reference.
 31. As a brand whose hold came back, I want to know why and when.
 
@@ -95,25 +95,25 @@ Cancelling is not in this spec; it gets its own.
 | PP-FR-11 | **Passed.** Banner: "Your live post checked out." The money card moves on (PP-FR-17). |
 | PP-FR-12 | **Fixable.** Banner: "{n} items to fix on your live post. Fix them and check again before {time}." with "Check again". The failing items are selected first and say what's missing. If the window ends, the release shows (PP-FR-22). 1.3: while a check again runs (the API's `checking`), the banner stays and the action reads "Checking again…", off. |
 | PP-FR-13 | **Not fixable.** Banner: "Your live post doesn't match the approved draft." (or the API's reason) and "{brand} has until {time} to accept it anyway. If they don't, the hold goes back to them." No action for the creator. |
-| PP-FR-14 | **Couldn't decide.** Banner: "We couldn't check {what} automatically." and "{brand} has until {time} to confirm. If they say nothing, you're paid. If they object, a person at Cleared decides." 1.3: `{what}` is the API's list in words, joined with "and": the file record, "whether it's the same file"; paid promotion, "YouTube's paid promotion label"; a written item, "a written item"; for a Reel, "Instagram's paid partnership label", "whether the Reel could be read", "whether it's the approved Reel". 1.5: the Reel's codes, worded: `paid_partnership_label`, "Instagram's paid partnership label"; `reel_not_fetched`, "the Reel's video, which Instagram wouldn't let us fetch" (was "whether the Reel could be read"); `reel_match`, "whether it's the approved draft" (was "whether it's the approved Reel"). The brand's side (PP-FR-27) uses the same words. |
-| PP-FR-15 | **Objected after posting.** "{brand} objected to the live post: “{reason}”. A person at Cleared decides by {date}." |
+| PP-FR-14 | **Couldn't decide.** Banner: "We couldn't check {what} automatically." and "{brand} has until {time} to confirm. If they say nothing, you're paid. If they object, a person at Sponing decides." 1.3: `{what}` is the API's list in words, joined with "and": the file record, "whether it's the same file"; paid promotion, "YouTube's paid promotion label"; a written item, "a written item"; for a Reel, "Instagram's paid partnership label", "whether the Reel could be read", "whether it's the approved Reel". 1.5: the Reel's codes, worded: `paid_partnership_label`, "Instagram's paid partnership label"; `reel_not_fetched`, "the Reel's video, which Instagram wouldn't let us fetch" (was "whether the Reel could be read"); `reel_match`, "whether it's the approved draft" (was "whether it's the approved Reel"). The brand's side (PP-FR-27) uses the same words. |
+| PP-FR-15 | **Objected after posting.** "{brand} objected to the live post: “{reason}”. A person at Sponing decides by {date}." |
 | PP-FR-38 | **Can't check yet (1.3).** Reconnect: "We can't read your YouTube channel, so your live post isn't checked yet." then "Reconnect YouTube and we check it straight away. Your deadline still runs." with "Reconnect YouTube" (Instagram the same, worded for it). Not found: "We can't find your video on YouTube." then "Make sure it's still on {channel} and public, then tap I've posted it again. Your deadline still runs." with "I've posted it" (PT-FR-17). 1.5, a Reel: `reconnect_instagram`, "We can't read your Instagram account, so your live Reel isn't checked yet." then "Reconnect Instagram and we check it straight away. Your deadline still runs." with "Reconnect Instagram"; the Reel not found, "We can't find your Reel on Instagram." then "Make sure it's still on {account} and public, then give its link again. Your deadline still runs." with "I've posted it", which opens the link field (PP-FR-07; IG-FR-27). |
-| PP-FR-39 | **Approved after posting (1.3).** Who approved it: "{brand} confirmed your live post."; "{brand} didn't answer in 48 hours, so your live post is approved."; "{brand} accepted your live post."; "A person at Cleared approved your live post." Until the capture arrives, under it: "Collecting {brand}'s payment with PayPal…". |
-| PP-FR-40 | **The brand's link for a live post (1.3).** When the brand's decision on a live post is due and the API sends a review link (Cleared has no email for the brand, PT), the link line leads with "{brand} has to {confirm, or accept} your live post by {time}. We don't have their email, so send them this link.", then DC-FR-52's Copy link, opened line and Make a new link. During a draft review nothing changes. |
+| PP-FR-39 | **Approved after posting (1.3).** Who approved it: "{brand} confirmed your live post."; "{brand} didn't answer in 48 hours, so your live post is approved."; "{brand} accepted your live post."; "A person at Sponing approved your live post." Until the capture arrives, under it: "Collecting {brand}'s payment with PayPal…". |
+| PP-FR-40 | **The brand's link for a live post (1.3).** When the brand's decision on a live post is due and the API sends a review link (Sponing has no email for the brand, PT), the link line leads with "{brand} has to {confirm, or accept} your live post by {time}. We don't have their email, so send them this link.", then DC-FR-52's Copy link, opened line and Make a new link. During a draft review nothing changes. |
 
 ### Money (creator)
 
 | ID | Requirement |
 | --- | --- |
 | PP-FR-16 | **The money card's stages.** Held → Confirmed → Captured → Paid, each with its PayPal reference when the API sends one (DC-FR-27). Amounts and the fee are the API's; the page never works them out. |
-| PP-FR-17 | **Captured.** "Captured · {amount} · PayPal ref {ref}" and "Sending {payout} to {email} ({amount} less Cleared's 5% fee of {fee})." |
+| PP-FR-17 | **Captured.** "Captured · {amount} · PayPal ref {ref}" and "Sending {payout} to {email} ({amount} less Sponing's 5% fee of {fee})." |
 | PP-FR-18 | **Paid.** "Paid · {payout} · PayPal ref {ref}", the date, and a cleared seal. The deal steps all show done; the next step says "Cleared. Nothing more to do on this post." |
 | PP-FR-19 | **Unclaimed.** "PayPal is holding {payout} for {email}. Accept it in PayPal with that email." When the API allows it, "Send it again" (the API cancels the unclaimed one first, MP-FR-30). |
 | PP-FR-20 | **Failed or returned.** "{payout} couldn't be paid to {email}." and the API's reason in plain words, then "Correct your PayPal email" in place (as IN-FR-12, saved to the profile) and "Send it again". Offered only when the API allows it. 1.3: the reason in words: returned, "PayPal sent it back: there's no PayPal account for that email, or it can't receive money."; blocked, "PayPal blocked the payment to that account."; denied, "PayPal turned the payment down for that account."; failed, "PayPal couldn't complete it." |
 | PP-FR-21 | **Capture refused.** "Approved. PayPal couldn't take {brand}'s payment yet. We try again until {date} and have told {brand}." No action. At the end without success: "Approved, not paid" (PP-FR-23). |
-| PP-FR-22 | **Released, every reason.** The released state (DC-FR-10, DC-FR-29) names the reason in plain words: the deadline passed with no approved post; cancelled (and by whom); day 28; the fix window ended with {items} still failing; {brand} didn't accept the post within 48 hours; a person at Cleared ruled not to pay; {brand}'s hold couldn't be confirmed before the deadline. With the date, and that nothing more can happen. 1.3: the release's PayPal reference shows only when the API sends one; the contract has none yet (Requests for Furqaan). |
-| PP-FR-23 | **Approved, not paid.** "This post was approved, but PayPal never let Cleared collect {brand}'s payment, so you weren't paid through Cleared." Final; no action. |
-| PP-FR-35 | **Payout delayed on Cleared's side** (MP-FR-45). The Paid step is current, not a problem: "Sending {payout} to {email} is delayed", then "The delay is on Cleared's side, with our PayPal account. Your money is safe with Cleared, and we keep trying until it's sent. There's nothing you need to do." No action (MP-FR-30) and no time for the next try. The heading stays "Captured from {brand}". |
+| PP-FR-22 | **Released, every reason.** The released state (DC-FR-10, DC-FR-29) names the reason in plain words: the deadline passed with no approved post; cancelled (and by whom); day 28; the fix window ended with {items} still failing; {brand} didn't accept the post within 48 hours; a person at Sponing ruled not to pay; {brand}'s hold couldn't be confirmed before the deadline. With the date, and that nothing more can happen. 1.3: the release's PayPal reference shows only when the API sends one; the contract has none yet (Requests for Furqaan). |
+| PP-FR-23 | **Approved, not paid.** "This post was approved, but PayPal never let Sponing collect {brand}'s payment, so you weren't paid through Sponing." Final; no action. |
+| PP-FR-35 | **Payout delayed on Sponing's side** (MP-FR-45). The Paid step is current, not a problem: "Sending {payout} to {email} is delayed", then "The delay is on Sponing's side, with our PayPal account. Your money is safe with Sponing, and we keep trying until it's sent. There's nothing you need to do." No action (MP-FR-30) and no time for the next try. The heading stays "Captured from {brand}". |
 | PP-FR-36 | **Sending again after an unclaimed payout** (MP-FR-30). While PayPal cancels the unclaimed payout: the Paid step is current, "Sending {payout} again", then "PayPal is cancelling the unclaimed payment first, then we send it to {email}." No action; the page keeps checking as it does while sending. |
 | PP-FR-24 | **Steps and the rail.** The deal steps mark Publish, Live check and Paid from the API's state (DC-FR-34). Rail lines: "Post before {time}", "Live check", "{brand} to confirm", "Paid", "Payout needs you", among others. "Payout needs you" only for an unclaimed or failed payout; a delayed or cancelling one keeps the captured line (PP-FR-35, PP-FR-36). |
 
@@ -121,11 +121,11 @@ Cancelling is not in this spec; it gets its own.
 
 | ID | Requirement |
 | --- | --- |
-| PP-FR-25 | **Drafts lines.** RW-FR-01's lines continue: "{creator} has the go-ahead · posts by {date}"; "Posted · checking the live post"; "Confirm the post · {time left}" and "Review post" (needs the brand); "Accept the post? · {time left}" and "Review post" (needs the brand); "A person at Cleared is deciding"; "Paid · {amount} taken"; "Approved, not paid"; and the release reason. Posts that need the brand come first (RW-FR-02). 1.3: "Approved · taking your {amount}" while PayPal is asked for the money, and "Payment failed at PayPal · we try again until {date}" for a refused capture. |
+| PP-FR-25 | **Drafts lines.** RW-FR-01's lines continue: "{creator} has the go-ahead · posts by {date}"; "Posted · checking the live post"; "Confirm the post · {time left}" and "Review post" (needs the brand); "Accept the post? · {time left}" and "Review post" (needs the brand); "A person at Sponing is deciding"; "Paid · {amount} taken"; "Approved, not paid"; and the release reason. Posts that need the brand come first (RW-FR-02). 1.3: "Approved · taking your {amount}" while PayPal is asked for the money, and "Payment failed at PayPal · we try again until {date}" for a refused capture. |
 | PP-FR-26 | **The live post.** Once posted, the review page shows "View the live post" (opening the platform in a new tab) and each "At live check" item's live result. 1.3: the live results come in the post's own items; each is matched to the checklist by item id, and an "At live check" item takes its live status and evidence in the same grid and cards. Items not in them keep their draft result. |
-| PP-FR-27 | **Confirm or object.** When the check couldn't decide: why ("We couldn't check {what} automatically"), "If you say nothing by {time}, {creator} is paid.", "Confirm the post" (inline confirmation: "Confirm? Your {amount} is taken and {creator} is paid.") and "Object" (a reason, required, plain text up to 500 characters; "A person at Cleared will decide. Your money stays held until then."). |
+| PP-FR-27 | **Confirm or object.** When the check couldn't decide: why ("We couldn't check {what} automatically"), "If you say nothing by {time}, {creator} is paid.", "Confirm the post" (inline confirmation: "Confirm? Your {amount} is taken and {creator} is paid.") and "Object" (a reason, required, plain text up to 500 characters; "A person at Sponing will decide. Your money stays held until then."). |
 | PP-FR-28 | **Accept anyway.** When the post failed and can't be fixed: what failed, "If you don't accept it by {time}, the hold comes back to you.", and "Accept the post anyway" (inline confirmation: "Accept? Your {amount} is taken and {creator} is paid."). 1.3: what failed, from the API's reason: not on the channel, "The live post isn't on {creator}'s connected channel."; not the approved file, "The live post isn't the draft you approved." PP-FR-27's `{what}` uses PP-FR-14's words. |
-| PP-FR-29 | **With Cleared.** "You objected: “{reason}”. A person at Cleared decides by {date}. Your money stays held until then." |
+| PP-FR-29 | **With Sponing.** "You objected: “{reason}”. A person at Sponing decides by {date}. Your money stays held until then." |
 | PP-FR-30 | **Taken and paid.** "Your {amount} was taken on {date} · PayPal ref {ref}", then "{creator} was paid." The brand never sees the creator's payout email or the payout's own problems; while a payout is unsettled the brand reads "Your {amount} was taken. {creator}'s payment is on its way.", including while it is delayed or being sent again (PP-FR-35, PP-FR-36). |
 | PP-FR-31 | **Released, for the brand.** "Your {amount} came back to you on {date}" and the reason from the brand's side. A capture PayPal refused: "Your payment for this post failed at PayPal. Check your PayPal funding; we try again until {date}." |
 | PP-FR-41 | **Taking (1.3).** Once paying is approved and PayPal is being asked for the money: "Approved. Taking your {amount} with PayPal…". No actions; the page asks the API again every few seconds. |
@@ -247,7 +247,7 @@ Each maps to a function his money module already has (MP "Implementation Decisio
 ## Out of Scope
 
 - Cancelling a deal or a post (its own spec next).
-- The real live check, re-confirmation, capture and payout (the backend's), and a screen for Cleared's ruling (MP).
+- The real live check, re-confirmation, capture and payout (the backend's), and a screen for Sponing's ruling (MP).
 - Emailing notices; refunds, reversals and disputes after capture.
 - Payouts and Connected accounts pages.
 
@@ -271,3 +271,5 @@ Each maps to a function his money module already has (MP "Implementation Decisio
 | 1.4 signed | Revision 1.4 signed by William | none |
 | 1.5 | From the contract-alignment grill-me with William: a Reel's couldn't-decide codes in words (PP-FR-14, PP-FR-27; two of 1.3's Reel words replaced), and a Reel's reconnect and not-found states worded (PP-FR-38), now that the contract has them (IG 1.2) | none |
 | 1.5 signed | Revision 1.5 signed by William | none |
+| 1.6 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.6 signed | Revision 1.6 signed by William | none |

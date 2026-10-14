@@ -1,6 +1,6 @@
 # Landing page: FRD
 
-**Status:** Signed by William (revision 1.9).
+**Status:** Signed by William (revision 1.10).
 
 **Surface:** Landing, at `/`. Anyone can open it. A static Server Component (CLAUDE.md "Surfaces"). It is the first thing a judge sees at the hosted demo URL, and the front door of the product's story.
 
@@ -8,15 +8,15 @@
 
 ## Problem Statement
 
-A mid-size creator doing a direct deal with a small brand has no safe way to run it. They post, then chase payment for weeks while it sits in "processing". The brand may say the video missed something after it is live and can no longer be changed. A visitor arriving at `/` today sees only a wordmark and a tagline: nothing says what Cleared does, why it is safe, or how to see it working.
+A mid-size creator doing a direct deal with a small brand has no safe way to run it. They post, then chase payment for weeks while it sits in "processing". The brand may say the video missed something after it is live and can no longer be changed. A visitor arriving at `/` today sees only a wordmark and a tagline: nothing says what Sponing does, why it is safe, or how to see it working.
 
 ## Solution
 
-One page, written for creators, that says in plain words what Cleared does, shows the product itself (the held money beside the checked items), walks through how a deal runs, states the rules that protect the creator, and gets the visitor into a running deal with one button. Brands get one short section; they normally arrive through a creator's invite link, not this page. The hackathon, the tools used and the repository sit in the footer.
+One page, written for creators, that says in plain words what Sponing does, shows the product itself (the held money beside the checked items), walks through how a deal runs, states the rules that protect the creator, and gets the visitor into a running deal with one button. Brands get one short section; they normally arrive through a creator's invite link, not this page. The hackathon, the tools used and the repository sit in the footer.
 
 ## User Stories
 
-1. As a creator, I want to understand in one sentence what Cleared does, so that I know whether it is for me.
+1. As a creator, I want to understand in one sentence what Sponing does, so that I know whether it is for me.
 2. As a creator, I want to see the product itself on the first screen, so that I believe it exists and know what it looks like.
 3. As a creator, I want one obvious way to see a deal running, so that I can try it without signing up.
 4. As a creator, I want to be told no real money moves (the PayPal sandbox), so that I am not misled. (1.3: said in the footer.)
@@ -42,8 +42,8 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 
 | ID | Requirement |
 | --- | --- |
-| LP-FR-01 | **Header.** The Cleared logo, linking to `/`. From `md:` up, "See a deal in action" is repeated on the right. No navigation menu (there are no other pages). |
-| LP-FR-02 | **Headline and one sentence.** The tagline "Brand deals where the content and the payment clear together." as the page's only `h1`, and one plain sentence on what Cleared does: the brand's money is held in PayPal, AI checks the video against the brief, and the creator is paid when the approved post is live. |
+| LP-FR-01 | **Header.** The Sponing logo, linking to `/`. From `md:` up, "See a deal in action" is repeated on the right. No navigation menu (there are no other pages). |
+| LP-FR-02 | **Headline and one sentence.** The tagline "Brand deals where the content and the payment clear together." as the page's only `h1`, and one plain sentence on what Sponing does: the brand's money is held in PayPal, AI checks the video against the brief, and the creator is paid when the approved post is live. |
 | LP-FR-03 | **One way in (1.3).** The sign-in FRD's "Sign in with Google" (primary, SI-FR-01), alone, with SI-FR-01's Instagram-only line under it. It is the page's only action. No waitlist or "coming soon". |
 | LP-FR-15 | **`/deals` opens home.** (1.4) The landing page's button and signing in land on the creator's home at `/deals` ([creator home](creator-home-frd.md) HM-FR-01), which no longer opens the first deal. With no deals home says "You have no deals yet." (HM-FR-03); while it loads it shows the app's loading state; if the deals fail it offers Try again (HM-FR-04). No deal id is written into the landing page. A signed-out visitor is sent to `/sign-in?next=/deals` first (SI-FR-06). |
 | LP-FR-16 | **One photo.** The draft video's frame is a photo of a hand holding a serum dropper bottle: no face and no real brand, free licence (Unsplash). Served optimised (AVIF/WebP, sized per screen), with empty alt text since it is decorative beside the labelled example. |
@@ -68,7 +68,7 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 | ID | Requirement |
 | --- | --- |
 | LP-FR-12 | **Footer.** Built for the PayPal AI Hackathon; PayPal sandbox only, no real money moves; what is used: PayPal (holds, capture and payouts), Claude on Amazon Bedrock (checking), AG Grid and APIMatic; links to the GitHub repository and its MIT licence. (1.7) With `NEXT_PUBLIC_LEGAL_PAGES` on, "Privacy", "Terms" and "Data deletion" linking to `/privacy`, `/terms` and `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-14, LG-FR-15). (1.8) The legal pages' flag is retired (LG 1.1), so these links always show. |
-| LP-FR-13 | **Metadata.** Title "Cleared: brand deals where the content and the payment clear together"; a one-sentence description; a share image with the logo and the held-money card. |
+| LP-FR-13 | **Metadata.** Title "Sponing: brand deals where the content and the payment clear together"; a one-sentence description; a share image with the logo and the held-money card. |
 | LP-FR-14 | **Static.** A Server Component with no client JavaScript of its own; no API calls; fonts already loaded by the app. |
 
 ## Business rules
@@ -129,3 +129,5 @@ Wording below is the agreed content. Design may refine the words; it may not cha
 | 1.8 signed | Revision 1.8 signed by William | none |
 | 1.9 | From William after refreshing the landing page signed in and seeing the Google buttons first: LP-FR-18 hides the way in while `GET /me` asks, fades in the right one, and shows the signed-out one after 1.5 seconds without an answer (in CSS); the hero keeps room for the Instagram-only line; tests follow | none |
 | 1.9 signed | Revision 1.9 signed by William | none |
+| 1.10 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.10 signed | Revision 1.10 signed by William | none |

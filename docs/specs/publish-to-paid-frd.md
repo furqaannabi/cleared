@@ -1,22 +1,22 @@
 # Publish to paid: FRD
 
-**Status:** Signed by Furqaan (revision 1.2). It accepts William's cancel spec as the backend's rules and adds to what his publish and pay, confirm and hold, and cancel pages call; those additions are listed for him. One of its decisions is product behaviour he shares (email for the brand's notices) and is recorded as Furqaan's for him to agree.
+**Status:** Draft 1.3, not signed (revision 1.2 signed by Furqaan). It accepts William's cancel spec as the backend's rules and adds to what his publish and pay, confirm and hold, and cancel pages call; those additions are listed for him. One of its decisions is product behaviour he shares (email for the brand's notices) and is recorded as Furqaan's for him to agree.
 
-**Surface:** Backend. Steps 6 to 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and cancelling, as an API the pages William has built can call: the creator asks for the go-ahead and publishes, Cleared checks the live post against YouTube's own record of it, the brand decides what the check could not, and both sides see the hold captured and the creator paid, or released.
+**Surface:** Backend. Steps 6 to 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and cancelling, as an API the pages William has built can call: the creator asks for the go-ahead and publishes, Sponing checks the live post against YouTube's own record of it, the brand decides what the check could not, and both sides see the hold captured and the creator paid, or released.
 
-**Scope of this build:** the routes, the data behind them, the live check, the two emails to the brand, the commands for a person at Cleared to rule, and the cancel routes. Every money step is the [money path](money-path-frd.md)'s own function, called and never re-decided here. It is built and tested locally: Postgres in Docker, the PayPal sandbox, and stand-ins for YouTube and email, with a real YouTube channel and Resend for the checks run by hand. Deployment is a later spec, and so is everything under [Out of Scope](#out-of-scope).
+**Scope of this build:** the routes, the data behind them, the live check, the two emails to the brand, the commands for a person at Sponing to rule, and the cancel routes. Every money step is the [money path](money-path-frd.md)'s own function, called and never re-decided here. It is built and tested locally: Postgres in Docker, the PayPal sandbox, and stand-ins for YouTube and email, with a real YouTube channel and Resend for the checks run by hand. Deployment is a later spec, and so is everything under [Out of Scope](#out-of-scope).
 
 ## Problem Statement
 
 A draft can now be approved, and then the deal stops again. The creator has no way to ask whether it is safe to publish, nothing looks at the live post, and nobody is paid. The money path can re-confirm a hold, capture it and pay out, but only a script can ask it to. William's publish and pay and cancel pages show made-up results.
 
-This is the step where money moves, so it is where a mistake costs most. A creator who publishes against a hold that has lapsed has given the work away. A brand that pays for a post that is not the one it approved, or that drops the link it was promised, has been charged for something else. And the two moments after publishing where silence decides (pay when Cleared could not look, refund when the post cannot be fixed) are only fair if the brand actually knows a decision is waiting.
+This is the step where money moves, so it is where a mistake costs most. A creator who publishes against a hold that has lapsed has given the work away. A brand that pays for a post that is not the one it approved, or that drops the link it was promised, has been charged for something else. And the two moments after publishing where silence decides (pay when Sponing could not look, refund when the post cannot be fixed) are only fair if the brand actually knows a decision is waiting.
 
 ## Solution
 
-When a draft is approved, the creator uploads the same file to their YouTube channel as unlisted and asks for the go-ahead with its link. Cleared reads YouTube's record of that upload and checks it is the approved file on the creator's own channel, before anything is public. Then the money path re-confirms the hold with PayPal. Only with both does the creator see "you can post now".
+When a draft is approved, the creator uploads the same file to their YouTube channel as unlisted and asks for the go-ahead with its link. Sponing reads YouTube's record of that upload and checks it is the approved file on the creator's own channel, before anything is public. Then the money path re-confirms the hold with PayPal. Only with both does the creator see "you can post now".
 
-Once the video is public, Cleared reads its record again: public, on the creator's channel, the same file, the link, code and hashtags in the description, and the paid-promotion mark. A passing check captures the hold and pays the creator, less Cleared's fee. Something the creator can still fix gives them time to fix it. A post that is not the approved file goes to the brand to accept or not. What YouTube would not tell Cleared goes to the brand to confirm, and the brand is emailed, because there its silence pays.
+Once the video is public, Sponing reads its record again: public, on the creator's channel, the same file, the link, code and hashtags in the description, and the paid-promotion mark. A passing check captures the hold and pays the creator, less Sponing's fee. Something the creator can still fix gives them time to fix it. A post that is not the approved file goes to the brand to accept or not. What YouTube would not tell Sponing goes to the brand to confirm, and the brand is emailed, because there its silence pays.
 
 Either side can cancel a post until there is a go-ahead. Both sides see every money stage with its PayPal reference, and every state that is not "paid" says why and what happens next.
 
@@ -27,14 +27,14 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 3. As a creator, I want to be told not to publish when PayPal cannot confirm the brand's hold, so that I do not publish for money that is not there.
 4. As a creator, I want the go-ahead to say until when it lasts, so that I know how long I have.
 5. As a creator, I want to ask again when a go-ahead has run out, so that a busy day does not end the deal.
-6. As a creator, I want to tell Cleared I have posted, so that the live check starts at once.
-7. As a creator, I want Cleared to check my channel itself when my go-ahead ends, so that forgetting to tap does not cost me.
+6. As a creator, I want to tell Sponing I have posted, so that the live check starts at once.
+7. As a creator, I want Sponing to check my channel itself when my go-ahead ends, so that forgetting to tap does not cost me.
 8. As a creator, I want each live-check item to show its result with evidence from the live post, so that I can see what was found.
 9. As a creator, I want to fix a missing link or disclosure and have it checked again, so that a small slip does not cost me the deal.
 10. As a creator, I want to know until when I can fix it, so that I do not run out of time unawares.
-11. As a creator, I want to be told to reconnect YouTube when Cleared can no longer read my channel, so that I can put it right.
+11. As a creator, I want to be told to reconnect YouTube when Sponing can no longer read my channel, so that I can put it right.
 12. As a creator, I want to see the hold captured and the payout sent, each with its PayPal reference, so that I know where my money is.
-13. As a creator, I want to see Cleared's fee and what I am paid as exact figures, so that nothing is a surprise.
+13. As a creator, I want to see Sponing's fee and what I am paid as exact figures, so that nothing is a surprise.
 14. As a creator, I want every "not paid yet" state to say why and what happens next, so that I am never left with "processing".
 15. As a creator, I want to have a payout sent again after correcting my PayPal email, so that a typo does not lose my money.
 16. As a creator, I want a new PayPal email to apply to my posts that have not been paid out yet, so that I do not have to fix each one.
@@ -42,15 +42,15 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 18. As a creator, I want to see when the brand cancelled and its note, so that I know the deal is off and why.
 19. As a brand, I want to be emailed when a live post needs my decision, so that my silence is never used against me without my knowing.
 20. As a brand, I want to give my own email for those notices when I agree, so that they come to me and not to an address someone else typed.
-21. As a brand, I want to confirm a live post Cleared could not check, or object with a reason, so that I am not charged for a post I dispute.
+21. As a brand, I want to confirm a live post Sponing could not check, or object with a reason, so that I am not charged for a post I dispute.
 22. As a brand, I want to accept a live post that failed on something that cannot be fixed, so that I can still pay for work I am happy with.
 23. As a brand, I want to see that my hold was taken, for how much and with which PayPal reference, so that I can match it to my records.
 24. As a brand, I want to see that a hold was released, when and why, so that I know the money is back.
 25. As a brand, I want to cancel a post before the go-ahead, with a note, so that I can back out while nothing is public.
 26. As a brand, I want never to see the creator's PayPal email or payout problems, so that their details stay theirs.
 27. (Removed in revision 1.2: there are no demo accounts.)
-28. As a person at Cleared, I want to list the posts waiting for a ruling with both sides' reasons, so that I can decide.
-29. As a person at Cleared, I want to record "pay" or "release" with my name, so that a disputed post is settled before day 28.
+28. As a person at Sponing, I want to list the posts waiting for a ruling with both sides' reasons, so that I can decide.
+29. As a person at Sponing, I want to record "pay" or "release" with my name, so that a disputed post is settled before day 28.
 30. As the team, I want the live check to give the money path an answer only when it has actually looked, so that silence never pays for a post nobody checked.
 31. As the team, I want nothing in a video's description to be able to change a result code decides, so that a description cannot talk its way to a pass.
 32. As the team, I want every money step to stay the money path's own, so that this spec adds routes and never a second place where money is decided.
@@ -67,16 +67,16 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 | PT-FR-03 | **Unlisted or already public.** A video that is unlisted is the usual case. One that is already public is accepted too: the creator published before asking, at their own risk, and everything that follows is the same. A private video is refused, because the brand could never see it. |
 | PT-FR-04 | **When YouTube will not say.** If YouTube returns the video but not its file's size and length, the video is accepted on its channel alone, and the live check will not be able to decide the match (PT-FR-13). |
 | PT-FR-05 | **Then the hold.** With the video accepted it is recorded for the post, and the money path is asked for the go-ahead (MP-FR-10). Its answer is passed on as it is: go until a time, wait until a time, or not confirmed. The money path's refusals are passed on with their reasons. |
-| PT-FR-06 | **Asking again.** The creator can ask again after a go-ahead ends, after "not confirmed", and once a "wait until" time has come. Until a post is published they can give a different video, which is read and matched afresh. Once it is published, a different video is refused: the one Cleared saw public is the one the live check looks at. |
+| PT-FR-06 | **Asking again.** The creator can ask again after a go-ahead ends, after "not confirmed", and once a "wait until" time has come. Until a post is published they can give a different video, which is read and matched afresh. Once it is published, a different video is refused: the one Sponing saw public is the one the live check looks at. |
 | PT-FR-07 | **Lost access.** If YouTube cannot be read for the creator at all (access revoked or expired), the go-ahead is refused with "reconnect YouTube", and nothing is asked of PayPal. |
 
 ### Posting
 
 | ID | Requirement |
 | --- | --- |
-| PT-FR-08 | **"I've posted it."** The creator says the video is public. Cleared reads the recorded video's record at once. If it is public, the money path is told a post was published (MP-FR-16) and the live check starts. If it is not public yet, the answer says so and nothing changes. Saying so again while a check is waiting or finished starts nothing new. A post with no video given for a go-ahead is refused. |
+| PT-FR-08 | **"I've posted it."** The creator says the video is public. Sponing reads the recorded video's record at once. If it is public, the money path is told a post was published (MP-FR-16) and the live check starts. If it is not public yet, the answer says so and nothing changes. Saying so again while a check is waiting or finished starts nothing new. A post with no video given for a go-ahead is refused. |
 | PT-FR-09 | **If they forget.** When a go-ahead ends, and again at the deadline, the money path asks whether a post was published (MP-FR-15, MP-FR-22). The answer is read from YouTube: the recorded video, public. If it is, the live check starts as if the creator had said so. A post found public at the deadline is in time (MP-FR-22, [decision](../decisions/2026-10-10-a-post-found-public-at-the-deadline-is-in-time.md)). If YouTube fails then, the money path's question has no answer and is asked again. |
-| PT-FR-10 | **When it was published** is the moment Cleared first saw the recorded video public. YouTube's own date is kept beside it as evidence and decides nothing. |
+| PT-FR-10 | **When it was published** is the moment Sponing first saw the recorded video public. YouTube's own date is kept beside it as evidence and decides nothing. |
 
 ### The live check
 
@@ -99,7 +99,7 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 | PT-FR-20 | **A link for the brand.** When either 48 hours start, a fresh link to that post is made for the brand, by the review link's rules (DR-FR-44, DR-FR-45). It stops opening new sessions when the brand has decided or the time is up. |
 | PT-FR-21 | **An email.** When either 48 hours start, the brand is emailed that link, with which post it is about, what it is asked, and until when ([decision](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md)). It goes to the address the brand gave when it agreed; else to the one the creator gave at the invite; else none is sent, and the creator's post carries the link to send. It is sent once for each window, as a job. |
 | PT-FR-22 | **The brand's own address.** When the brand agrees to the terms it can give an email for these notices. It is optional, stored for the deal, and never shown to the creator. |
-| PT-FR-23 | **Where it stands, for the brand.** The brand's view of a post and of its deal gain every state after approval: the creator may post until a time; the live check is running; the brand's confirmation or acceptance is wanted until a time, with what or why; a person at Cleared is deciding, by when; the hold was taken, with the amount, PayPal's reference, the time and whether the creator has been paid; a capture was refused and is being tried until a time; approved but not paid; released, when and why. Never the creator's PayPal email or a payout's troubles. |
+| PT-FR-23 | **Where it stands, for the brand.** The brand's view of a post and of its deal gain every state after approval: the creator may post until a time; the live check is running; the brand's confirmation or acceptance is wanted until a time, with what or why; a person at Sponing is deciding, by when; the hold was taken, with the amount, PayPal's reference, the time and whether the creator has been paid; a capture was refused and is being tried until a time; approved but not paid; released, when and why. Never the creator's PayPal email or a payout's troubles. |
 
 ### What the creator sees of the money
 
@@ -125,7 +125,7 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 
 | ID | Requirement |
 | --- | --- |
-| PT-FR-34 | **List.** A command lists the posts waiting for a person at Cleared to rule: the deal, the post, the brand's objection, the live check's findings, and by when a ruling is due. |
+| PT-FR-34 | **List.** A command lists the posts waiting for a person at Sponing to rule: the deal, the post, the brand's objection, the live check's findings, and by when a ruling is due. |
 | PT-FR-35 | **Rule.** A command records "pay" or "release" for one post, with the name of who ruled, and passes it to the money path (MP-FR-19). It is run by a person with access to the service, never by a route ([decision](../decisions/2026-10-10-a-ruling-is-a-command-not-a-page.md)). |
 
 ### Demo accounts
@@ -141,8 +141,8 @@ Either side can cancel a post until there is a go-ahead. Both sides see every mo
 | PT-BR-01 | No route or job here moves money or decides a money state. Each calls one function of the money path and reports what it answers. The money path's rules are not repeated or overridden. |
 | PT-BR-02 | No model moves money or gives the money path an answer. Claude judges only written items that need judgment, its pass counts only if its quote is in the description, and fixed code turns the findings into the one answer (PT-FR-13). |
 | PT-BR-03 | The live check gives the money path an answer only when it has read the video's record. A check that could not read YouTube, for any reason, says nothing. Silence never pays for a post nobody looked at. |
-| PT-BR-04 | "Cannot decide" is for what YouTube did not return or a judgment that is unsure. It is never the answer for something Cleared looked at and found wrong. |
-| PT-BR-05 | A go-ahead is given only for a video Cleared has read on the creator's own channel. No "post now" is ever shown without the money path's go-ahead. |
+| PT-BR-04 | "Cannot decide" is for what YouTube did not return or a judgment that is unsure. It is never the answer for something Sponing looked at and found wrong. |
+| PT-BR-05 | A go-ahead is given only for a video Sponing has read on the creator's own channel. No "post now" is ever shown without the money path's go-ahead. |
 | PT-BR-06 | A video's title, description and channel name are untrusted. They are given to a model as material to examine, never as instructions, and nothing in them can change a result code decides or cause any action. |
 | PT-BR-07 | YouTube is only ever read. The access asked for is read-only, and no route writes to a creator's channel. |
 | PT-BR-08 | Every creator route checks the post belongs to a deal of that creator. Every brand route checks the session is for the deal and the post is in it. A post that is not the caller's and one that does not exist get the same answer. |
@@ -188,7 +188,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | Publish and pay (PP-FR-06) | "I've posted it" sends no link for YouTube; the video is the one given at the go-ahead. `POST /deliverables/{id}/posted` answers 409 with `not_public_yet`, `no_video`, `video_not_found` or `reconnect_youtube`, and 503 with `youtube_unavailable` |
 | Publish and pay (PP-FR-12) | `POST /deliverables/{id}/live-check/again` answers 409 `not_in_fix_window` when the post is not waiting on its creator or the time is over |
 | Publish and pay (PP-FR-01) | One more refusal at the go-ahead: `already_published`, for a different video once the post is published |
-| Publish and pay (PP-FR-09 to PP-FR-15) | The post says "reconnect YouTube" when Cleared cannot read the channel, in place of a live check result |
+| Publish and pay (PP-FR-09 to PP-FR-15) | The post says "reconnect YouTube" when Sponing cannot read the channel, in place of a live check result |
 | Confirm and hold (CH-FR-14) | Agreeing can carry the brand's own email for notices: `POST /brand/deals/{id}/agree` with `{ version, email? }`. The page needs the field and one line saying what it is for |
 | Publish and pay (PP-FR-14, PP-FR-13) | The brand is emailed when its confirmation or acceptance is wanted. Where no address is known, the creator's post carries the link to send, as for a draft review |
 | Draft check (DC-FR-52) | A review link can now also be about a live post |
@@ -215,7 +215,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 ## Out of Scope
 
 - **Instagram and Reels.**
-- **A page for rulings,** or any sign-in for people at Cleared.
+- **A page for rulings,** or any sign-in for people at Sponing.
 - **Email for anything else:** the invite, a draft review, a cancel, a payout.
 - **Checking a post again after it has passed.** A creator who edits the description after being paid is not looked at.
 - **Finding the unlisted video for the creator.** They paste its link.
@@ -229,7 +229,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **PT-FR-03:** a video that is already public is accepted at the go-ahead, and a private one is refused.
 - **PT-FR-04:** a video whose file record YouTube does not return is still given a go-ahead, on its channel alone.
 - **PT-FR-06:** the creator can give a different video on a later ask, until a post is published.
-- **PT-FR-10:** a post counts as published when Cleared first sees it public, not by YouTube's own date.
+- **PT-FR-10:** a post counts as published when Sponing first sees it public, not by YouTube's own date.
 - **PT-FR-12:** a written item that needs judgment is judged by Claude, with its quote checked against the description.
 - **PT-FR-13:** a written item judged missing is fixable, and one judged unsure is "cannot decide".
 - **PT-FR-21:** the email is plain text, sent once for each window.
@@ -273,3 +273,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.1 | Signed by Furqaan, with the four items settled while building accepted as written | none |
 | 1.2 | Demo accounts are removed, so the shared demo channel goes (PT-FR-36) with its setting | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
 | 1.2 | Signed by Furqaan | none |
+| 1.3 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |

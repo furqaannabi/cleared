@@ -1,10 +1,10 @@
-# Cleared
+# Sponing
 
 ## Authority
 
 **Human is architect. Agent is senior engineer.**
 
-- **Spec-driven. No code without a signed spec.** Check `docs/specs/` before every task. Doc hierarchy: `docs/PRODUCT.md` (what Cleared is, how a deal runs, the rules, v1 limits) → `docs/specs/*-frd.md` (numbered FRs/BRs per surface; the human signs before build) → `DESIGN.md` (the recorded visual world) → `README.md` (repo map).
+- **Spec-driven. No code without a signed spec.** Check `docs/specs/` before every task. Doc hierarchy: `docs/PRODUCT.md` (what Sponing is, how a deal runs, the rules, v1 limits) → `docs/specs/*-frd.md` (numbered FRs/BRs per surface; the human signs before build) → `DESIGN.md` (the recorded visual world) → `README.md` (repo map).
 - `docs/PRODUCT.md` is signed off (6 October 2026). Its "Still open" list is undecided: never build against an open item as if it were settled.
 - Every feature maps to an FR id. Know which one before writing code. Tests are named after the FR. Commits list the FRs they close.
 - Before starting any feature: invoke the `grill-me` skill to stress-test requirements as developer questions, one at a time, with a recommended answer for each.
@@ -28,11 +28,13 @@
 
 ## Project
 
-Cleared is where a creator and a brand run a sponsorship deal they have **already agreed**. The brand's money is held in PayPal, AI checks the creator's video against the brief, and the money is released when the approved post is live.
+Sponing is where a creator and a brand run a sponsorship deal they have **already agreed**. The brand's money is held in PayPal, AI checks the creator's video against the brief, and the money is released when the approved post is live.
 
 Tagline: **Brand deals where the content and the payment clear together.**
 
-The creator is the main user: they start each deal and invite the brand with a link, the way a freelancer sends an invoice. Aimed first at direct deals between small brands and mid-size creators, no agency. **Cleared is not a marketplace.**
+The product was called Cleared until 14 October 2026 (see `docs/decisions/2026-10-14-the-product-is-named-sponing.md`). "Cleared" is still the word for a paid deliverable (see Domain Language); older decision records and Revision rows keep the old name. The app is at `sponing.com`, the API at `backend.sponing.com`.
+
+The creator is the main user: they start each deal and invite the brand with a link, the way a freelancer sends an invoice. Aimed first at direct deals between small brands and mid-size creators, no agency. **Sponing is not a marketplace.**
 
 Team: William (frontend lead) and Furqaan (backend lead).
 
@@ -83,7 +85,7 @@ Chosen in `docs/PRODUCT.md`:
 | Package manager and repo layout | pnpm workspace with `web/`, `backend/`, `contract/` (see `docs/decisions/2026-10-06-repo-layout-and-package-manager.md`; accepted by Furqaan, 9 Oct) |
 | Brand access | The invite link is swapped for an HttpOnly session scoped to one deal; no brand account in v1; PayPal login guards the holds (see `docs/decisions/2026-10-08-brand-access-by-link-session.md`; accepted by Furqaan, 9 Oct) |
 | Schema validation | Zod, for every API response and request body (see `docs/decisions/2026-10-06-schema-validation-zod.md`) |
-| Frontend mocks | None in dev or the hosted app: the frontend runs on the live API (`hack.furqaannabi.com`; a local backend on `localhost:4000` for local work). Vitest stubs each test's own requests with MSW, typed from `contract/`, on a server that fails any request without a stub; Playwright runs against the local backend with the test session, up to the invite, and skips without `TEST_SESSION_SECRET` (see `docs/decisions/2026-10-11-frontend-on-the-live-api.md`, which supersedes part of `2026-10-06-frontend-mocks-msw.md`, and `docs/decisions/2026-10-12-playwright-live-suite-stops-at-the-invite.md`). The shared mocks are deleted |
+| Frontend mocks | None in dev or the hosted app: the frontend runs on the live API (`backend.sponing.com`; a local backend on `localhost:4000` for local work). Vitest stubs each test's own requests with MSW, typed from `contract/`, on a server that fails any request without a stub; Playwright runs against the local backend with the test session, up to the invite, and skips without `TEST_SESSION_SECRET` (see `docs/decisions/2026-10-11-frontend-on-the-live-api.md`, which supersedes part of `2026-10-06-frontend-mocks-msw.md`, and `docs/decisions/2026-10-12-playwright-live-suite-stops-at-the-invite.md`). The shared mocks are deleted |
 
 Everything behind the frontend uses AWS or the hackathon's sponsor tools, with one exception: Resend, for email. PRODUCT.md lists the sponsor tools not used; do not add them.
 
@@ -117,7 +119,7 @@ From `docs/PRODUCT.md`. Do not re-open without explicit human instruction.
 
 | Rule | Detail |
 | --- | --- |
-| Not a marketplace | Creator and brand agree the deal elsewhere; Cleared runs it |
+| Not a marketplace | Creator and brand agree the deal elsewhere; Sponing runs it |
 | One deliverable = one post on one platform | Each has its own amount, deadline, checklist and hold |
 | Checklist before money | Both sides agree the same checklist before any hold. The checklist is the only thing a deliverable is judged against |
 | Every checklist item cites the brief | AI cites the brief line each item came from and asks about anything ambiguous |
@@ -132,26 +134,26 @@ From `docs/PRODUCT.md`. Do not re-open without explicit human instruction.
 | One hold per deliverable | A deal with three posts has three holds, each captured or released on its own |
 | Review window | 48 hours from a fully passing draft |
 | Deadline cap | 21 days after the hold (a hold lasts 29 days; funds are guaranteed only for the first 3) |
-| Payment route (v1) | Hold captured to Cleared's PayPal account, then paid out to the creator's PayPal email, less Cleared's fee. Capturing straight to the creator is closed |
-| Cleared's fee | 5% of the deliverable's amount, taken from the creator's payout, in whole cents rounded down. PayPal's charges come out of it. One hold is $20 to $10,000 (see `docs/decisions/2026-10-08-cleared-fee-and-amount-limits.md`; William to review) |
+| Payment route (v1) | Hold captured to Sponing's PayPal account, then paid out to the creator's PayPal email, less Sponing's fee. Capturing straight to the creator is closed |
+| Sponing's fee | 5% of the deliverable's amount, taken from the creator's payout, in whole cents rounded down. PayPal's charges come out of it. One hold is $20 to $10,000 (see `docs/decisions/2026-10-08-cleared-fee-and-amount-limits.md`; William to review) |
 | Go-ahead | A re-confirmed hold gives a go-ahead to publish that lasts 48 hours; then the creator asks again. If PayPal cannot re-confirm, the brand is told and the creator can ask again (see `docs/decisions/2026-10-08-go-ahead-cancel-and-unheld-posts.md`; William to review) |
 | Cancel | Either side, while there is no go-ahead and nothing is published. Nobody after that (same record) |
 | Never held | A post with no hold 7 days after the brand agreed is closed as not held. A hold attempt with no answer after 24 hours is cancelled (same record) |
 | Missed deadline | Released only if no approved post was published in time (see `docs/decisions/2026-10-08-what-ends-a-hold-after-publishing.md`; William to review) |
-| Live check cannot decide | The brand has 48 hours to confirm or object; silence pays; an objection goes to a person at Cleared (same record) |
+| Live check cannot decide | The brand has 48 hours to confirm or object; silence pays; an objection goes to a person at Sponing (same record) |
 | Live check fails, fixable | The creator fixes and re-checks until the deadline, or 24 hours after the failure if later; then released (same record) |
 | Day 28 | A hold neither captured nor released on day 28 is released. A refused capture is retried until then (same record) |
 | Platforms (v1) | YouTube videos and Shorts, Instagram Reels. Everything else in "Not included" stays out |
 | Instagram paid-partnership label | Always a manual check in v1 |
 | Instagram accounts | Professional accounts only. A Reel with licensed music cannot be fetched, so it goes to manual approval |
 
-**Still open (do not assume):** the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`; the "To verify while building" items in `docs/specs/draft-check-and-review-frd.md`, which Nova model among them; the "To verify while building" items in `docs/specs/publish-to-paid-frd.md`, first among them whether YouTube returns a video's file size and length; and Furqaan's agreement that judges test Cleared as users do (`docs/decisions/2026-10-12-judges-test-cleared-as-users.md`, William's).
+**Still open (do not assume):** the "To verify in the sandbox" items in `docs/specs/money-path-frd.md`; the "To verify while building" items in `docs/specs/draft-check-and-review-frd.md`, which Nova model among them; the "To verify while building" items in `docs/specs/publish-to-paid-frd.md`, first among them whether YouTube returns a video's file size and length; and Furqaan's agreement that judges test Sponing as users do (`docs/decisions/2026-10-12-judges-test-cleared-as-users.md`, William's).
 
 ---
 
 ## Security First
 
-Cleared moves money and holds creators' account tokens and unpublished videos. Every decision starts with security.
+Sponing moves money and holds creators' account tokens and unpublished videos. Every decision starts with security.
 
 | Concern | Rule |
 | --- | --- |
@@ -204,7 +206,7 @@ Route names are set in the specs.
 
 - Use the product's words exactly: deal, deliverable, checklist, hold, draft check, review window, live check, cleared.
 - Plain language for both sides. No PayPal or AWS jargon in the UI.
-- Every "not paid yet" state says why and what happens next. Silent "processing" is the problem Cleared exists to fix.
+- Every "not paid yet" state says why and what happens next. Silent "processing" is the problem Sponing exists to fix.
 
 ### Components
 

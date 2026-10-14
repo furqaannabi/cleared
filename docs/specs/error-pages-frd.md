@@ -1,6 +1,6 @@
 # Error pages: FRD
 
-**Status:** Signed by William (revision 1.0).
+**Status:** Signed by William (revision 1.1).
 
 **Surface:** The app-wide pages for an address that matches no page (not found), a page that crashes (something went wrong), and the whole app failing (the last-resort fallback). For anyone: a signed-in creator, a brand, or a stranger.
 
@@ -8,20 +8,20 @@
 
 ## Problem Statement
 
-A mistyped or old address shows Next's bare default 404, and a page that crashes shows Next's raw error screen. Neither looks like Cleared or says what to do next, which breaks the rule that nothing on Cleared is silent.
+A mistyped or old address shows Next's bare default 404, and a page that crashes shows Next's raw error screen. Neither looks like Sponing or says what to do next, which breaks the rule that nothing on Sponing is silent.
 
 ## Solution
 
-Three small pages in Cleared's world. Not found says the page can't be found and offers the right next step for who is reading. Something went wrong says so, offers Try again and an email, and gives a reference to quote. The fallback does the same in a bare page when even the layout fails.
+Three small pages in Sponing's world. Not found says the page can't be found and offers the right next step for who is reading. Something went wrong says so, offers Try again and an email, and gives a reference to quote. The fallback does the same in a bare page when even the layout fails.
 
 ## User Stories
 
 1. As a creator who mistypes an address, I want to be taken back to my deals, so that I'm not stuck.
-2. As a stranger following an old link, I want to reach the home page, so that I can find out what Cleared is.
+2. As a stranger following an old link, I want to reach the home page, so that I can find out what Sponing is.
 3. As a brand following a creator's link that went wrong, I want to know to open the link again or ask for a new one, so that I can get back to the deal.
 4. As a creator whose page crashed, I want to try again without losing my place in the app, so that I can carry on.
 5. As a creator whose page keeps crashing, I want an email address and a reference to quote, so that the team can find what happened.
-6. As anyone, I want these pages to look like Cleared, so that I trust I'm still in the right place.
+6. As anyone, I want these pages to look like Sponing, so that I trust I'm still in the right place.
 7. As a reader on a phone, I want every action reachable with my thumb, so that I can recover anywhere.
 
 ## Requirements
@@ -80,3 +80,5 @@ Three small pages in Cleared's world. Not found says the page can't be found and
 | --- | --- | --- |
 | 0.1 | First draft, from the grill-me session with William: app-wide pages only; one not-found page for everyone with the next step by who is reading; something went wrong with Try again, the contact email and the digest as a reference, keeping the rail or brand frame; a bare whole-app fallback; the existing in-page messages unchanged | none |
 | 1.0 | Signed by William | none |
+| 1.1 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.1 signed | Revision 1.1 signed by William | none |

@@ -49,7 +49,7 @@ Look for: an item citing a line that does not say it, or a code checked by AI in
 
 1. "Set amounts and invite {brand}".
 2. Amount: try `10` first. Expect a refusal (the minimum is $20.00). Then `150`.
-3. Deadline: 7 days. Try 22: "Up to 21 days. PayPal only holds money for 29 days, so Cleared keeps a margin."
+3. Deadline: 7 days. Try 22: "Up to 21 days. PayPal only holds money for 29 days, so Sponing keeps a margin."
 4. "Connect YouTube" if not connected. Back on the page, the card says the channel's name and "Connected".
 5. Your PayPal email: the sandbox payout email.
 6. "Create link for {brand}". Copy the link.
@@ -62,7 +62,7 @@ Expect: the deal at "{brand} · Waiting for brand"; the terms read-only. (IN-FR-
 2. The terms: the post, "Within 7 days of your hold", $150.00, "Paid to {creator}'s PayPal" and never the email. Each item says "From your brief: …" or "Added by {creator}".
 3. Optional detour: "Ask for a change" on one item, "Save note", then "Send to {creator}" in the bar at the bottom → "Yes, send"; answer it as the creator, "Send updated terms to {brand}", and see "Version 2" with "Changed" on the brand's side. (CH-FR-10 to CH-FR-13)
 4. "Agree to these terms". Expect "Agreed · version {n} · {date}".
-5. "Approve with PayPal" (CH 1.9: PayPal's own "PayPal" button under "Approve the hold with PayPal or a card"; one click opens PayPal). In PayPal's window, log in with the sandbox personal account and approve. Never with the business account Cleared's PayPal app belongs to: PayPal refuses it as "the seller for this purchase". Use a different account from the creator's payout email, so the sandbox shows who paid whom.
+5. "Approve with PayPal" (CH 1.9: PayPal's own "PayPal" button under "Approve the hold with PayPal or a card"; one click opens PayPal). In PayPal's window, log in with the sandbox personal account and approve. Never with the business account Sponing's PayPal app belongs to: PayPal refuses it as "the seller for this purchase". Use a different account from the creator's payout email, so the sandbox shows who paid whom.
 
 Expect: "Held · $150.00 · PayPal ref …", then "All held. {creator} is making the posts." On the creator's side: "Held · $150.00 · PayPal ref …" and "Open draft check". (CH-FR-14 to CH-FR-19, CH-FR-25)
 
@@ -90,7 +90,7 @@ Look for: a pass with no timestamp, a timestamp past the video's end, or "Unsure
 3. Play the draft; click an item; the video seeks.
 4. "Approve draft" → "Approve this draft? {creator} can then post it. Your $150.00 is taken only once the live post checks out." → "Yes, approve".
 
-Expect: brand "Approved · {date}"; creator "{brand} approved this draft" and "Don't publish yet. Cleared confirms {brand}'s hold with PayPal first." (RW-FR-15, RW-FR-16, RW-FR-22, DC-FR-51)
+Expect: brand "Approved · {date}"; creator "{brand} approved this draft" and "Don't publish yet. Sponing confirms {brand}'s hold with PayPal first." (RW-FR-15, RW-FR-16, RW-FR-22, DC-FR-51)
 
 Do not wait the 48 hours; silence clearing is tested in path C.
 
@@ -110,7 +110,7 @@ If YouTube does not return the file's size and length, the live check cannot tie
 
 ### 9. Paid (both)
 
-1. Creator: "Your live post checked out.", then "Captured · $150.00 · PayPal ref …" and "Sending $142.50 to {email} ($150.00 less Cleared's 5% fee of $7.50)."
+1. Creator: "Your live post checked out.", then "Captured · $150.00 · PayPal ref …" and "Sending $142.50 to {email} ($150.00 less Sponing's 5% fee of $7.50)."
 2. Then "Paid · $142.50 · PayPal ref …", the cleared seal, and "Cleared. Nothing more to do on this post."
 3. Brand: "Your $150.00 was taken on {date} · PayPal ref …" and "{creator} was paid."
 4. Payments page: the post under Paid, $142.50. Overview's money card agrees.

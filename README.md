@@ -1,7 +1,7 @@
 # cleared
 Brand deals where the content and the payment clear together.
 
-Cleared is where a creator and a brand run a sponsorship deal they have already agreed. Built for the PayPal AI Hackathon; PayPal sandbox only. See [docs/PRODUCT.md](docs/PRODUCT.md).
+Sponing is where a creator and a brand run a sponsorship deal they have already agreed. Built for the PayPal AI Hackathon; PayPal sandbox only. See [docs/PRODUCT.md](docs/PRODUCT.md).
 
 ## Repository
 

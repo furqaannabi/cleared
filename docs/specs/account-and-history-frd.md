@@ -1,14 +1,14 @@
 # Account and history: FRD
 
-**Status:** Signed by Furqaan (revision 1.0). Four of its decisions are product behaviour William shares (what deleting an account removes, revoking at Google, how long things are kept, and a test session); they are recorded as Furqaan's for him to agree.
+**Status:** Draft 1.1, not signed (revision 1.0 signed by Furqaan). Four of its decisions are product behaviour William shares (what deleting an account removes, revoking at Google, how long things are kept, and a test session); they are recorded as Furqaan's for him to agree.
 
-**Surface:** Backend. What William's home, Settings and legal pages have asked for and the contract does not have: a post that was never held, as both sides see it; the creator's payment history; disconnecting an account; deleting the account; how long Cleared keeps things; and a way for end-to-end tests to be signed in on the live backend.
+**Surface:** Backend. What William's home, Settings and legal pages have asked for and the contract does not have: a post that was never held, as both sides see it; the creator's payment history; disconnecting an account; deleting the account; how long Sponing keeps things; and a way for end-to-end tests to be signed in on the live backend.
 
 **Scope of this build:** six parts, built one at a time, each with its routes and types in `contract/`. Nothing here moves money or changes a money rule: every amount, state and date is read from the [money path](money-path-frd.md). Deleting an account removes the creator's name and emails from finished money records and changes nothing else in them.
 
 ## Problem Statement
 
-Three of William's pages are built and switched off, each waiting on the backend. The home page's money sections have no route to read. Settings cannot disconnect an account or delete one. The legal pages cannot be linked, because nobody has said how long Cleared keeps a draft or how fast it deletes an account, and a page may promise only what the backend does.
+Three of William's pages are built and switched off, each waiting on the backend. The home page's money sections have no route to read. Settings cannot disconnect an account or delete one. The legal pages cannot be linked, because nobody has said how long Sponing keeps a draft or how fast it deletes an account, and a page may promise only what the backend does.
 
 Two smaller gaps sit beside them. A post that was never held, or whose hold PayPal never answered, is shown to both sides without the reason. And William's end-to-end tests cannot sign in on the live backend at all, because signing in needs a person at Google's screen, so the last of the frontend's mocks cannot be removed.
 
@@ -22,7 +22,7 @@ One route gives the creator their payment history: a row for every post that has
 
 A creator can disconnect YouTube or Instagram, unless a post on that platform is under way. A creator can delete their account, unless a deal is still open. Deleting removes what they made and said, and keeps one anonymous row per post with its amounts, dates and PayPal references. Someone who cannot sign in asks by email, and Furqaan runs a command that does the same thing.
 
-Each thing Cleared keeps gets a stated period and something that enforces it. Drafts get the daily job they were promised.
+Each thing Sponing keeps gets a stated period and something that enforces it. Drafts get the daily job they were promised.
 
 End-to-end tests get a session through a route that exists only when a secret is set on the server, and can only ever be one fixed test creator.
 
@@ -32,16 +32,16 @@ End-to-end tests get a session through a route that exists only when a secret is
 2. As a brand, I want to be told when PayPal never answered my hold, so that I know nothing was taken and I can try again.
 3. As a creator, I want my deals list to say which posts are waiting on me, so that I start with those.
 4. As a creator, I want every payment I have been part of in one list, so that I can see what I earned and what is still held.
-5. As a creator, I want the fee and what I received as Cleared's own figures, so that the page and PayPal agree.
-6. As a creator, I want to disconnect an account I no longer use, so that Cleared stops reading it.
+5. As a creator, I want the fee and what I received as Sponing's own figures, so that the page and PayPal agree.
+6. As a creator, I want to disconnect an account I no longer use, so that Sponing stops reading it.
 7. As a creator, I want to be told which posts stop me disconnecting, so that I know what to finish first.
-8. As a creator, I want Cleared to withdraw its access at Google when I disconnect, so that it is gone on both sides.
+8. As a creator, I want Sponing to withdraw its access at Google when I disconnect, so that it is gone on both sides.
 9. As a creator, I want to delete my account, so that my videos, my brief and my details are not kept.
 10. As a creator, I want to be told what is in the way of deleting, deal by deal, so that I can finish or cancel it.
 11. As a creator who lost their Google account, I want to ask for deletion by email, so that I am not stuck.
 12. As a brand, I want my email deleted when the deal's records are, so that it is not kept for nothing.
 13. As a creator, I want my drafts deleted a month after a post ends, so that an unpublished video does not sit in a bucket.
-14. As anyone, I want the privacy page to say how long each thing is kept, so that I can decide whether to use Cleared.
+14. As anyone, I want the privacy page to say how long each thing is kept, so that I can decide whether to use Sponing.
 15. As the team, I want every stated period to have something that enforces it, so that the page never promises what nothing does.
 16. As the team, I want deleting refused while money is in motion, so that a hold or a payout is never orphaned.
 17. As the team, I want the kept money records to carry no name and no email, so that what is kept is only what a payment needs.
@@ -106,7 +106,7 @@ End-to-end tests get a session through a route that exists only when a secret is
 | A live Reel's fetched video | Until its match is decided, minutes | The live check (IG-FR-20) |
 | The brief, checklist, notes, check results and their evidence, the brand's email | While the creator's account exists | Deleting the account (AH-FR-17) |
 | Access to YouTube and Instagram | Until disconnected, lost, or the account is deleted | AH-FR-10, AH-FR-17, IG-FR-06 |
-| Payment records | For as long as Cleared runs, with no name or email once the account is deleted | AH-FR-18 |
+| Payment records | For as long as Sponing runs, with no name or email once the account is deleted | AH-FR-18 |
 | The account itself, after deleting | Gone at once; files within 24 hours | AH-FR-20 |
 | Sessions | 14 days after last use | DS-FR-03 |
 | Server logs, which carry ids only | 30 days | Log rotation on the server, set by Furqaan |
@@ -184,7 +184,7 @@ End-to-end tests get a session through a route that exists only when a secret is
 - **Meta's data-deletion callback,** after the hackathon.
 - **Giving a creator a copy of their data.** Asked for by email and done by hand.
 - **Restoring a deleted account.**
-- **A fixed end for payment records.** They are kept for as long as Cleared runs.
+- **A fixed end for payment records.** They are kept for as long as Sponing runs.
 - **Paging the payment history.** Every row is returned.
 - **Rotating logs from code.** It is set on the server.
 
@@ -221,3 +221,4 @@ End-to-end tests get a session through a route that exists only when a secret is
 | --- | --- | --- |
 | 0.1 | First draft, from the question session with Furqaan: deleting an account removes what the creator made and said and keeps anonymous money records; disconnecting deletes stored access and then asks Google to revoke it; drafts 30 days after a post ends, with the job the earlier decision lacked, and the rest kept with the account; a request by email done within 30 days with a command; a test session behind a secret for one fixed test creator, and no other test route. The not-held states and the payment history follow William's requests | [Deleting an account](../decisions/2026-10-12-deleting-an-account-keeps-the-money-records.md), [disconnecting](../decisions/2026-10-12-disconnecting-deletes-then-revokes-at-google.md), [how long things are kept](../decisions/2026-10-12-how-long-cleared-keeps-things.md), [a test session](../decisions/2026-10-12-a-test-session-behind-a-secret.md) |
 | 1.0 | Signed by Furqaan, with the eight items added while drafting accepted as written | none |
+| 1.1 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |

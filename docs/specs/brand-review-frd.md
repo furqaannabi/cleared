@@ -1,6 +1,6 @@
 # Brand review: FRD
 
-**Status:** Signed by William (revision 1.3). The objection rule and review links are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.4). The objection rule and review links are decided by William; Furqaan can supersede them.
 
 **Surface:** Both sides of step 5 of [How a deal runs](../PRODUCT.md#how-a-deal-runs). **The brand's side:** each post's review status on the brand's deal page, and a review page per post where the brand answers the creator's asks, then approves the draft or objects to items in the 48-hour review window. **The creator's side** (amending the [creator draft check](creator-draft-check-frd.md), revision 1.14): objections, the approved state, and a link to send the brand.
 
@@ -16,7 +16,7 @@ The creator needs to know whether the brand approved, objected or said nothing, 
 
 Each post on the brand's deal page shows where its draft stands and, when the brand has something to do, a "Review draft" link. The review page mirrors the creator's draft check: the video and its timeline, every item with its status, the brief line it came from and its evidence (an AG Grid from `md:`, cards on phones), and the post's hold. It shows only the latest draft, and only once the brand has something to do.
 
-When the creator asks about an Unsure item, the brand can accept it or ask the creator to fix it. When every item passes, the brand has 48 hours: it can approve the draft, or object to one or more items, each with a note. An objection stops the clock; the creator then uploads a new draft that fixes it, or the brand approves the draft anyway. If neither happens by the deadline, the hold goes back to the brand ([decision](../decisions/2026-10-08-objection-settled-by-the-two-sides.md)). Each time a draft needs the brand, Cleared makes a fresh link for it, emails it if there's a brand email, and the creator can copy it to send themselves ([decision](../decisions/2026-10-08-fresh-brand-link-per-review.md)).
+When the creator asks about an Unsure item, the brand can accept it or ask the creator to fix it. When every item passes, the brand has 48 hours: it can approve the draft, or object to one or more items, each with a note. An objection stops the clock; the creator then uploads a new draft that fixes it, or the brand approves the draft anyway. If neither happens by the deadline, the hold goes back to the brand ([decision](../decisions/2026-10-08-objection-settled-by-the-two-sides.md)). Each time a draft needs the brand, Sponing makes a fresh link for it, emails it if there's a brand email, and the creator can copy it to send themselves ([decision](../decisions/2026-10-08-fresh-brand-link-per-review.md)).
 
 This spec ends at "Approved". Re-confirming the hold and publishing are step 6.
 
@@ -130,7 +130,7 @@ This spec ends at "Approved". Re-confirming the hold and publishing are step 6.
 | --- | --- |
 | RW-FR-25 | **Copy link for the brand.** While the brand has something to do on a post (an ask waiting, the window open, or objected), the creator's draft check page shows "Copy link for {brand}" beside the next step. 1.2: nothing is emailed, so there is no "We've emailed it"; the link line, when the brand opened it, and "Make a new link" for an expired link are DC-FR-52's (DC 1.18). On mocks it copies the demo link. |
 | RW-FR-26 | **Objected, for the creator.** Specified in DC 1.14 (DC-FR-49, DC-FR-50): each objected item shows "{brand} objected" with the note, and the next step names the items and the deadline. |
-| RW-FR-27 | **Approved, for the creator.** Specified in DC 1.14 (DC-FR-51): "{brand} approved this draft" or "No objection from {brand} in 48 hours, so this draft is approved", then "Don't publish yet. Cleared confirms {brand}'s hold with PayPal first." |
+| RW-FR-27 | **Approved, for the creator.** Specified in DC 1.14 (DC-FR-51): "{brand} approved this draft" or "No objection from {brand} in 48 hours, so this draft is approved", then "Don't publish yet. Sponing confirms {brand}'s hold with PayPal first." |
 | RW-FR-28 | **Demo draft.** In mock builds only, DC-FR-45's simulated upload lets the creator pick the run's outcome: "passes every item" (the window starts) or "one Unsure item". Supplied only through the mock gate, like Demo PayPal; never in a real build. 1.2: it goes with the mocks in the last slice ([mocks go in one last slice](../decisions/2026-10-11-mocks-go-in-one-last-slice.md)). |
 
 ### Responsive and accessibility
@@ -270,3 +270,5 @@ The creator's deliverable (DC) gains `state: "objected" | "approved"`, item stat
 | 1.2 signed | Revision 1.2 signed by William | none |
 | 1.3 | From the sandbox run and the grill-me with William: "Add objection" replaces "Object"; saved objections are sent from a bar pinned to the bottom at every width, with the confirmation in the bar, in place of "Your review" (RW-FR-17, RW-FR-18); "Your review" no longer lists unsent objections; on phones the send bar takes the dock's place while objections are unsent, with "Approve draft" under the items (RW-FR-29); "1 item" and "1 objection" for one (RW-FR-18, RW-FR-21). Look 2 of `design/brand-review/send-bar.html` | none |
 | 1.3 signed | Revision 1.3 signed by William | none |
+| 1.4 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.4 signed | Revision 1.4 signed by William | none |

@@ -1,6 +1,6 @@
 # Money path: FRD
 
-**Status:** Signed by Furqaan (revision 1.5). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
+**Status:** Draft 1.6, not signed (revision 1.5 signed by Furqaan). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
 
 **Surface:** Backend. Everything that happens to one deliverable's money, from the brand approving a hold to the deliverable being cleared or its hold being released: steps 3, 6 and 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and the money side of every row in [When something does not go to plan](../PRODUCT.md#when-something-does-not-go-to-plan).
 
@@ -10,11 +10,11 @@
 
 A brand that reserves money for a post needs to know that it is reserved and not taken, that it is taken only when the post it approved is live, and that it comes back if the creator does not deliver. A creator needs to know, before publishing something that cannot be unpublished, that the money is really there, and afterwards exactly where the payment stands and why.
 
-Both of those are promises about money, and money breaks in ways the happy path hides: PayPal answers late or not at all, a request is sent twice, a guarantee lapses, a payout goes to an email with no account, a deadline passes while a check is still running. If any of those is handled by guesswork, someone is charged twice, paid twice, or left unpaid with no explanation, which is the problem Cleared exists to fix.
+Both of those are promises about money, and money breaks in ways the happy path hides: PayPal answers late or not at all, a request is sent twice, a guarantee lapses, a payout goes to an email with no account, a deadline passes while a check is still running. If any of those is handled by guesswork, someone is charged twice, paid twice, or left unpaid with no explanation, which is the problem Sponing exists to fix.
 
 ## Solution
 
-One money module owns every change to a deliverable's money. Each deliverable has one hold. The brand approves it with PayPal, and the money is reserved. Before the creator publishes, Cleared re-confirms the hold with PayPal and gives a go-ahead that lasts 48 hours. Once the approved post is live and checks out, the hold is captured to Cleared's PayPal account and the creator is paid the amount less Cleared's 5% fee. If the creator does not post in time, or the deal is cancelled before the go-ahead, the hold is released to the brand.
+One money module owns every change to a deliverable's money. Each deliverable has one hold. The brand approves it with PayPal, and the money is reserved. Before the creator publishes, Sponing re-confirms the hold with PayPal and gives a go-ahead that lasts 48 hours. Once the approved post is live and checks out, the hold is captured to Sponing's PayPal account and the creator is paid the amount less Sponing's 5% fee. If the creator does not post in time, or the deal is cancelled before the go-ahead, the hold is released to the brand.
 
 Every case in between has one defined outcome with a reason both sides can be shown. Nothing stays undecided past day 28 of a hold, one day before PayPal would end it. Every PayPal call carries a request id, the recorded state is checked before each call, and a checker job and verified webhooks settle anything PayPal did not answer clearly, so no step is ever repeated blindly.
 
@@ -41,7 +41,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 **The creator**
 
 16. As a creator, I want to see that a post is held, for how much and until when, so that I know it is safe to start.
-17. As a creator, I want Cleared to confirm the money is still there before I publish, so that I never publish against a hold that has gone.
+17. As a creator, I want Sponing to confirm the money is still there before I publish, so that I never publish against a hold that has gone.
 18. As a creator, I want to know how long my go-ahead lasts, so that I publish while the money is guaranteed.
 19. As a creator, I want to be told not to publish, and why, when PayPal cannot confirm the hold, so that I do not post for nothing.
 20. As a creator, I want to ask for the go-ahead again later, so that a temporary problem with the brand's funding does not end the deal.
@@ -57,7 +57,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 30. As a creator, I want never to be shown "Paid" until PayPal says the money arrived, so that I can trust the word.
 31. As a creator, I want to know when the brand's payment is failing at PayPal, so that I understand why I am not paid yet.
 
-**Cleared (the team)**
+**Sponing (the team)**
 
 32. As the team, I want every money change to happen in fixed code and never from a model's output, so that an AI mistake cannot move money.
 33. As the team, I want every PayPal call to be safe to send twice, so that a crash or a retry cannot double-charge or double-pay.
@@ -103,8 +103,8 @@ Every case in between has one defined outcome with a reason both sides can be sh
 | --- | --- |
 | MP-FR-16 | **Published.** The module records when an approved post was published, as reported by the live check. It can also ask the live check, through one interface, whether a post has been published; tests supply the answer. |
 | MP-FR-17 | **Live check passed.** The hold is captured (MP-FR-24). |
-| MP-FR-18 | **Live check cannot decide.** The brand has 48 hours to confirm or to object with a reason. Confirming, or saying nothing for 48 hours, captures the hold. Objecting sends the deliverable to a person at Cleared (MP-FR-19). |
-| MP-FR-19 | **Cleared's ruling.** A person at Cleared rules to pay, which captures the hold, or not to pay, which releases it. Until a route exists for it, the ruling is made through the sandbox script. |
+| MP-FR-18 | **Live check cannot decide.** The brand has 48 hours to confirm or to object with a reason. Confirming, or saying nothing for 48 hours, captures the hold. Objecting sends the deliverable to a person at Sponing (MP-FR-19). |
+| MP-FR-19 | **Sponing's ruling.** A person at Sponing rules to pay, which captures the hold, or not to pay, which releases it. Until a route exists for it, the ruling is made through the sandbox script. |
 | MP-FR-20 | **Live check failed, fixable.** The creator has a fix window: until the deadline, or until 24 hours after the failure was reported if that is later. Each new result within it is handled as it comes (MP-FR-17, MP-FR-18). If the post still fails when the window ends, the hold is released. |
 | MP-FR-21 | **Live check failed, not fixable.** The brand has 48 hours to accept the post anyway, which captures the hold. Without an acceptance the hold is released. Silence does not pay here. |
 | MP-FR-22 | **The deadline.** At the deadline the module asks whether an approved post is published. **A post that is published when that question is answered counts as published in time,** because the answer always comes a moment after the deadline; so does one already recorded as published. The hold is then kept until the steps above finish. If no post is published, the hold is released. When the last request for a go-ahead was not confirmed, the release reason says the brand's hold could not be confirmed. |
@@ -114,21 +114,21 @@ Every case in between has one defined outcome with a reason both sides can be sh
 
 | ID | Requirement |
 | --- | --- |
-| MP-FR-24 | **Capture.** With an approval on record (MP-FR-17, 18, 19 or 21), the module captures the hold in full to Cleared's PayPal account and records the PayPal reference. **If the hold's guarantee has ended, the hold is re-confirmed first,** as it is before a retry (MP-FR-25). |
+| MP-FR-24 | **Capture.** With an approval on record (MP-FR-17, 18, 19 or 21), the module captures the hold in full to Sponing's PayPal account and records the PayPal reference. **If the hold's guarantee has ended, the hold is re-confirmed first,** as it is before a retry (MP-FR-25). |
 | MP-FR-25 | **Capture refused.** If PayPal refuses the capture, the module tries again every 6 hours until day 28, re-confirming the hold first when PayPal allows it. A notice is recorded for each side: for the creator, that the post is approved but PayPal could not collect from the brand; for the brand, that its payment failed and to check its PayPal funding. If no attempt succeeds by day 28, the hold is released and the deliverable ends as approved, not paid. |
 | MP-FR-26 | **Capture not answered.** If PayPal gives no clear answer to a capture, the same request is checked or resent with the same request id until it is settled. A second capture is never started. |
-| MP-FR-27 | **The fee.** Cleared's fee is 5% of the deliverable's amount, set in configuration, worked out in whole cents and rounded down. The creator's payout is the amount less the fee. Both figures are recorded at capture. PayPal's own charges come out of the fee and are not passed on. |
+| MP-FR-27 | **The fee.** Sponing's fee is 5% of the deliverable's amount, set in configuration, worked out in whole cents and rounded down. The creator's payout is the amount less the fee. Both figures are recorded at capture. PayPal's own charges come out of the fee and are not passed on. |
 | MP-FR-28 | **Payout.** As soon as the capture completes, the module sends the payout to the creator's PayPal email as it stands at that moment. |
 | MP-FR-29 | **Payout results.** The deliverable is paid only when PayPal reports the payout succeeded. Until then it stays captured, with the reason and the next step: sending; unclaimed (the creator must accept the money at that email); or failed, returned, blocked or denied (the creator must correct their PayPal email and send it again). |
 | MP-FR-30 | **Sending a payout again.** The creator can have the payout sent again only when the last one has finished without paying. An unclaimed payout is first cancelled with PayPal, and a new one is sent only once PayPal confirms the cancellation. There is never more than one payout in flight. |
 | MP-FR-31 | **Cleared.** A deliverable whose payout succeeded is cleared. Nothing more can happen to its money. |
-| MP-FR-45 | **Payout PayPal will not send.** If PayPal refuses to send a payout at all, nothing has been sent and the reason lies with Cleared's own PayPal account (for example its balance, or what the account is allowed to do), not with the creator. The deliverable stays captured. The same payout is sent again every 6 hours under the same request id, so it can never be sent twice, and there is no end date: the money is already captured, so it keeps trying until it is sent. At the first refusal a notice is recorded for a person at Cleared, and one for the creator: the payout is delayed on Cleared's side and there is nothing they need to do. The creator cannot ask for it to be sent again meanwhile (MP-FR-30). |
+| MP-FR-45 | **Payout PayPal will not send.** If PayPal refuses to send a payout at all, nothing has been sent and the reason lies with Sponing's own PayPal account (for example its balance, or what the account is allowed to do), not with the creator. The deliverable stays captured. The same payout is sent again every 6 hours under the same request id, so it can never be sent twice, and there is no end date: the money is already captured, so it keeps trying until it is sent. At the first refusal a notice is recorded for a person at Sponing, and one for the creator: the payout is delayed on Sponing's side and there is nothing they need to do. The creator cannot ask for it to be sent again meanwhile (MP-FR-30). |
 
 ### Release and cancel
 
 | ID | Requirement |
 | --- | --- |
-| MP-FR-32 | **Release.** Releasing cancels the hold with PayPal and records when and why: deadline passed, cancelled (and by whom), day 28, fix window ended, not accepted by the brand, or ruled by Cleared. If PayPal reports the hold already ended, the deliverable is recorded as released. |
+| MP-FR-32 | **Release.** Releasing cancels the hold with PayPal and records when and why: deadline passed, cancelled (and by whom), day 28, fix window ended, not accepted by the brand, or ruled by Sponing. If PayPal reports the hold already ended, the deliverable is recorded as released. |
 | MP-FR-33 | **Cancelling a held deliverable.** The creator or the brand can cancel while there is no go-ahead and no post has been published. Cancelling releases the hold. While a go-ahead is running, or once a post is published, a cancel is refused with that reason. |
 | MP-FR-34 | **Cancelling before the hold.** Cancelling a deliverable that is not yet held closes it. Any attempt in progress is cancelled with PayPal first. |
 
@@ -140,7 +140,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 | MP-FR-36 | **Counted once.** A verified event is stored under its PayPal event id. An event id seen before is acknowledged and ignored. |
 | MP-FR-37 | **What an event can do.** A verified event goes through the same transition rules as the module's own calls. It can settle a pending or unknown attempt and report a payout's result. It can never reverse a finished stage, and an event that fits no allowed change is logged and ignored. |
 | MP-FR-38 | **The checker.** Any PayPal call recorded as started without a final answer is followed up by a job that asks PayPal for the real status, backing off between tries. It works without webhooks, so the service runs on a laptop with no public address. |
-| MP-FR-39 | **After capture.** A refund, reversal or dispute reported after a capture is recorded and the deliverable is marked for a person at Cleared. No money is moved in response. |
+| MP-FR-39 | **After capture.** A refund, reversal or dispute reported after a capture is recorded and the deliverable is marked for a person at Sponing. No money is moved in response. |
 
 ### What can be read
 
@@ -160,7 +160,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 
 | ID | Requirement |
 | --- | --- |
-| MP-FR-44 | A development-only script creates a test deliverable, starts a hold, prints PayPal's approval link for a sandbox buyer, and then steps through each function above against the real sandbox: approve, go-ahead, publish and live check results, capture, payout, cancel, release and Cleared's ruling. It refuses to run in production. |
+| MP-FR-44 | A development-only script creates a test deliverable, starts a hold, prints PayPal's approval link for a sandbox buyer, and then steps through each function above against the real sandbox: approve, go-ahead, publish and live check results, capture, payout, cancel, release and Sponing's ruling. It refuses to run in production. |
 
 ## Business rules
 
@@ -174,7 +174,7 @@ Every case in between has one defined outcome with a reason both sides can be sh
 | MP-BR-06 | Every call that creates or moves money (create, authorize, renew, capture, cancel, payout) carries a request id. One attempt has one id. A call with no clear answer is checked or resent with the same id; a new attempt with a new id is made only after PayPal has clearly refused the last one. |
 | MP-BR-07 | Before any PayPal call the deliverable's recorded state is locked and checked, and the attempt is recorded as started. The answer, the change of stage and any follow-up job are recorded together afterwards. |
 | MP-BR-08 | Paid, released, approved not paid, and closed as not held are final. Nothing changes a deliverable's money after it reaches one of them. |
-| MP-BR-09 | While a go-ahead is running, or once a post is published, a hold is released only by the fix window ending, the brand not accepting a failed post, Cleared's ruling, or day 28. |
+| MP-BR-09 | While a go-ahead is running, or once a post is published, a hold is released only by the fix window ending, the brand not accepting a failed post, Sponing's ruling, or day 28. |
 | MP-BR-10 | Sandbox only. The PayPal address is fixed to the sandbox in code and cannot be changed by configuration. |
 | MP-BR-11 | PayPal's secret and webhook id are server-side configuration, never in code or logs. Logs carry deliverable ids, attempt ids and PayPal reference ids only: no payloads, no emails, no tokens. |
 | MP-BR-12 | An event that fails verification changes nothing. |
@@ -184,12 +184,12 @@ Every case in between has one defined outcome with a reason both sides can be sh
 
 ## Implementation Decisions
 
-- **One money module** with a small set of functions: start a hold, approved, closed, ask for the go-ahead, record published, take a live check result, the brand's confirm, accept and object, Cleared's ruling, cancel, send the payout again, and read the money view. Everything else in the service, including the routes built later, calls these and nothing deeper.
+- **One money module** with a small set of functions: start a hold, approved, closed, ask for the go-ahead, record published, take a live check result, the brand's confirm, accept and object, Sponing's ruling, cancel, send the payout again, and read the money view. Everything else in the service, including the routes built later, calls these and nothing deeper.
 - **A pure transition function** inside it: given the current state and an event (a call, a job falling due, a PayPal answer, a webhook), it returns the next state and what to do next, or a refusal with a reason. It has no database or PayPal access and is tested on its own. Own calls, jobs and webhooks all go through it.
 - **A PayPal port:** one interface for create order, authorize, read status, renew, capture, cancel, send payout, read payout, cancel payout and verify webhook. The real one uses PayPal's server SDK for Orders and Payments and plain HTTP for Payouts and webhook verification ([decision](../decisions/2026-10-08-paypal-client-sdk-behind-port.md)). Tests use a fake.
 - **A published-post port:** one interface that answers whether an approved post has been published and when. The live check implements it later; tests use a fake.
 - **A jobs runner** over the jobs table, with handlers registered by name ([decision](../decisions/2026-10-08-jobs-table-in-postgres.md)). It is general: the draft check pipeline will use it too.
-- **Stages.** A deliverable's money is in one of: not held, held, captured, paid, released, approved not paid, closed as not held. "Confirmed" is not a stage: it is a held deliverable with a go-ahead that has not run out. Waiting on the brand, on Cleared, on a fix or on a capture retry are recorded on the held stage with their own end times.
+- **Stages.** A deliverable's money is in one of: not held, held, captured, paid, released, approved not paid, closed as not held. "Confirmed" is not a stage: it is a held deliverable with a go-ahead that has not run out. Waiting on the brand, on Sponing, on a fix or on a capture retry are recorded on the held stage with their own end times.
 - **Schema.** One row per deliverable holds its money: the whole state the transition function produces, saved as one document, beside typed columns for what is searched (the stage and the amount) and a version number that goes up with every change. Hold attempts, the capture and the payout live inside that document, not in tables of their own, so the rules and the database cannot drift apart and locking a deliverable is locking one row. Separate tables hold: PayPal calls (purpose, request id, started or settled, PayPal reference), which is also how a webhook's reference finds its deliverable; the money record; PayPal events (for MP-FR-36); and jobs. The row carries the creator's payout email beside the document, never inside it. The terms the document starts from (amount, deadline in days, creator's timezone, when the brand agreed) are supplied when the row is made; the next backend spec decides where they come from.
 - **Order of work around a PayPal call:** lock and check the state and record the call as started in one transaction; call PayPal with no transaction open; record the answer, the transition and the next job in a second transaction. A crash between the two leaves a started call for the checker.
 - **Configuration:** the fee rate, the amount limits, the go-ahead length, the windows (48 hours, 24 hours, 7 days), the capture retry interval and the job retry limit are named settings with the values in this spec as defaults.
@@ -203,13 +203,13 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 
 | For | Needs |
 | --- | --- |
-| Invite (IN-FR-04, IN-FR-08, IN-FR-14) | The creator sees Cleared's fee and what they receive: per post and in total, for example "You receive $1,140.00 after Cleared's 5% fee" ([decision](../decisions/2026-10-08-cleared-fee-and-amount-limits.md)) |
-| Invite (IN-FR-05) | It says "Cleared sets no other ceiling". The limits are now $20.00 to $10,000.00; the API refuses others with a reason, which IN-FR-06 already shows |
+| Invite (IN-FR-04, IN-FR-08, IN-FR-14) | The creator sees Sponing's fee and what they receive: per post and in total, for example "You receive $1,140.00 after Sponing's 5% fee" ([decision](../decisions/2026-10-08-cleared-fee-and-amount-limits.md)) |
+| Invite (IN-FR-05) | It says "Sponing sets no other ceiling". The limits are now $20.00 to $10,000.00; the API refuses others with a reason, which IN-FR-06 already shows |
 | Confirm and hold (CH-FR-05) | Whether the brand's terms mention the fee. The brand's hold is unchanged, so this spec does not require it |
 | Confirm and hold (CH-FR-18) | An attempt cancelled after 24 hours arrives as `declined`; its reason differs ("PayPal didn't answer in time. Nothing was taken.") |
 | Confirm and hold (open item) | A post not held 7 days after agreeing is closed as not held: a new state on both sides' pages |
 | Draft check (DC-FR-27) | "Confirmed" lasts only as long as the go-ahead. The card needs the go-ahead's end time, "wait until" and "not confirmed" |
-| Draft check (DC-FR-10, DC-FR-29) | More release reasons than `deadline` and `cancelled`: day 28, fix window ended, not accepted, ruled by Cleared, and the brand's hold could not be confirmed |
+| Draft check (DC-FR-10, DC-FR-29) | More release reasons than `deadline` and `cancelled`: day 28, fix window ended, not accepted, ruled by Sponing, and the brand's hold could not be confirmed |
 | Not yet specified | The brand's page after publishing (confirm or object within 48 hours; accept a failed post); cancel on both sides; the creator's payout problems and "send again"; "approved, not paid"; the fix window after a failed live check |
 
 ## Testing Decisions
@@ -229,7 +229,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - Every brand and creator route, sessions, the link, terms versions and agreeing. The next backend spec.
 - The live check and the draft check. Their results are inputs here.
 - Emailing or showing notices. This spec records them.
-- A screen for Cleared's ruling.
+- A screen for Sponing's ruling.
 - Getting paid after "approved, not paid", and any second payment flow for the brand.
 - Acting on a refund, reversal or dispute after capture (MP-FR-39 records it).
 - Currencies other than US dollars, partial captures, and tax.
@@ -279,3 +279,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.4 | Signed by Furqaan | none |
 | 1.5 | MP-FR-22: a post found published when the module asks at the deadline counts as in time; the module no longer compares the moment it was seen with the deadline. Found while building the live check: a video public for days, first seen five seconds after the deadline, was released | [A post found public at the deadline is in time](../decisions/2026-10-10-a-post-found-public-at-the-deadline-is-in-time.md) |
 | 1.5 | Signed by Furqaan | none |
+| 1.6 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |

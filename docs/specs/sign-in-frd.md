@@ -1,6 +1,6 @@
 # Sign-in and welcome: FRD
 
-**Status:** Signed by William (revision 1.4). The sign-in itself is the backend's (Furqaan's [deal set-up](deal-setup-frd.md)).
+**Status:** Signed by William (revision 1.5). The sign-in itself is the backend's (Furqaan's [deal set-up](deal-setup-frd.md)).
 
 **Surface:** How a creator gets into the creator app, and their first minute in it. The landing's "Sign in with Google", `/sign-in` for a signed-out visitor, `/welcome` the first time, and the account menu on the creator's name in the rail. The brand's side is unchanged: it gets in by its link ([brand access](../decisions/2026-10-08-brand-access-by-link-session.md)).
 
@@ -8,17 +8,17 @@
 
 ## Problem Statement
 
-Today `/deals` opens straight into a made-up creator's deals: there is no account, so a real creator can't start their own deals, and a judge can't tell the product from a mockup. A creator needs to sign in, find their own deals, and understand on day one what Cleared does for them.
+Today `/deals` opens straight into a made-up creator's deals: there is no account, so a real creator can't start their own deals, and a judge can't tell the product from a mockup. A creator needs to sign in, find their own deals, and understand on day one what Sponing does for them.
 
 ## Solution
 
-The landing offers one way in. "Sign in with Google" signs a creator in through the backend, which sets an HttpOnly session; the first time, a welcome page states Cleared's promise in three lines and offers three skippable setup rows (YouTube, Instagram, PayPal email) before "Start your first deal". A signed-out visitor who opens a creator page is sent to a small sign-in page and returned where they were going. The creator's name in the rail opens a menu with their email and "Sign out".
+The landing offers one way in. "Sign in with Google" signs a creator in through the backend, which sets an HttpOnly session; the first time, a welcome page states Sponing's promise in three lines and offers three skippable setup rows (YouTube, Instagram, PayPal email) before "Start your first deal". A signed-out visitor who opens a creator page is sent to a small sign-in page and returned where they were going. The creator's name in the rail opens a menu with their email and "Sign out".
 
 ## User Stories
 
 1. As a creator, I want to sign in with my Google account, so that I don't need another password.
 2. As a new creator, I want my account created the first time I sign in, so that there's no separate sign-up.
-3. As a new creator, I want to be told plainly what Cleared does for me, so that I know why to use it.
+3. As a new creator, I want to be told plainly what Sponing does for me, so that I know why to use it.
 4. As a new creator, I want to know my brand's money is held before I start, so that I don't make content for free.
 5. As a new creator, I want to know my draft is checked against the brief before I publish, so that I'm not surprised at review.
 6. As a new creator, I want to know I'm paid when my post goes live, so that I don't chase invoices.
@@ -55,7 +55,7 @@ The landing offers one way in. "Sign in with Google" signs a creator in through 
 
 | ID | Requirement |
 | --- | --- |
-| SI-FR-05 | **The sign-in page.** `/sign-in`: the Cleared mark, "Sign in to see your deals", and SI-FR-01's button and line. No other content. (1.1) |
+| SI-FR-05 | **The sign-in page.** `/sign-in`: the Sponing mark, "Sign in to see your deals", and SI-FR-01's button and line. No other content. (1.1) |
 | SI-FR-06 | **Back where they were going.** A creator page that gets "not signed in" from `GET /me` goes to `/sign-in?next={path}`. The sign-in passes `next` to the backend, which returns the creator there after signing in. The page sends `next` only when it is a path on this site (starts with a single `/`, no scheme, no `//`); otherwise it drops it. |
 | SI-FR-07 | **A session that ends** mid-use (any creator request answering "not signed in") goes to `/sign-in?next=` with the current path. Nothing typed is kept. |
 
@@ -160,3 +160,5 @@ POST /me/welcomed                 // marks the welcome seen
 | 1.3 signed | Revision 1.3 signed by William | none |
 | 1.4 | The legal pages' flag is retired (LG 1.1): the terms line under Sign in with Google always shows | none |
 | 1.4 signed | Revision 1.4 signed by William | none |
+| 1.5 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.5 signed | Revision 1.5 signed by William | none |

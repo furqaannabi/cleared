@@ -1,6 +1,6 @@
 # Instagram Reels: FRD
 
-**Status:** Signed by Furqaan (revision 1.2). It adds Instagram to what William's invite, publish and pay, and profile pages call; those additions are listed for him. One of its decisions is product behaviour he shares (no Meta review for the hackathon) and is recorded as Furqaan's for him to agree.
+**Status:** Draft 1.3, not signed (revision 1.2 signed by Furqaan). It adds Instagram to what William's invite, publish and pay, and profile pages call; those additions are listed for him. One of its decisions is product behaviour he shares (no Meta review for the hackathon) and is recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. Instagram Reels through the whole of [How a deal runs](../PRODUCT.md#how-a-deal-runs): a creator connects their Instagram account, a deal can hold a Reel, and the Reel gets its own go-ahead, its own way of saying "I've posted it", and its own live check. Everything else a Reel needs already exists and is not rebuilt: the checklist, the draft check on the file, the review, the money path, the brand's decisions, cancelling and rulings.
 
@@ -8,7 +8,7 @@
 
 ## Problem Statement
 
-Version one promises YouTube and Instagram Reels, and a Reel is refused the moment a creator adds one to a deal. Most sponsored short video is on Instagram, so a creator whose deal is for a Reel cannot use Cleared at all.
+Version one promises YouTube and Instagram Reels, and a Reel is refused the moment a creator adds one to a deal. Most sponsored short video is on Instagram, so a creator whose deal is for a Reel cannot use Sponing at all.
 
 A Reel is also not a YouTube video with another name. There is no unlisted upload, so nothing can be looked at before it is public. Instagram re-encodes every file, so the live video cannot be matched by its size. The paid-partnership label is not in the API. And a Reel that uses licensed music cannot be fetched at all. Each of these is a place where a careless rule would pay for a post nobody checked, or refuse one that was fine.
 
@@ -16,31 +16,31 @@ A Reel is also not a YouTube video with another name. There is no unlisted uploa
 
 A creator connects their Instagram account once, with one read-only permission. A deal can then hold a Reel beside its YouTube posts, and the Reel goes through the same checklist, draft check and review as any other post.
 
-When the draft is approved the creator asks for the go-ahead. Cleared checks it can still read their account, and the money path re-confirms the hold. The creator posts the Reel and pastes its link. Cleared finds that Reel among the creator's own posts, fetches its video, and decides by fixed code whether it is the approved draft: the same length, and the same words in the same order. The caption is checked for the link, code and hashtags the checklist asks for.
+When the draft is approved the creator asks for the go-ahead. Sponing checks it can still read their account, and the money path re-confirms the hold. The creator posts the Reel and pastes its link. Sponing finds that Reel among the creator's own posts, fetches its video, and decides by fixed code whether it is the approved draft: the same length, and the same words in the same order. The caption is checked for the link, code and hashtags the checklist asks for.
 
-What Instagram will not show, Cleared does not guess: the paid-partnership label, and a Reel whose video cannot be fetched, go to the brand to confirm, with the same email and the same 48 hours as on YouTube. A live Reel that is not the approved draft goes to the brand to accept or not.
+What Instagram will not show, Sponing does not guess: the paid-partnership label, and a Reel whose video cannot be fetched, go to the brand to confirm, with the same email and the same 48 hours as on YouTube. A live Reel that is not the approved draft goes to the brand to accept or not.
 
 ## User Stories
 
-1. As a creator, I want to connect my Instagram account with a read-only permission, so that Cleared can confirm my Reel is on my own account without being able to post for me.
+1. As a creator, I want to connect my Instagram account with a read-only permission, so that Sponing can confirm my Reel is on my own account without being able to post for me.
 2. As a creator, I want to be told plainly if my account cannot be connected, so that I know whether to switch to a professional account or try again.
 3. As a creator, I want my connection to keep working without signing in again every two months, so that a deal does not stall on an expired sign-in.
 4. As a creator, I want to add a Reel to a deal beside my YouTube posts, so that one deal covers everything I agreed with the brand.
 5. As a creator, I want to be told before I send the terms that Instagram is not connected, so that I do not invite a brand to a deal I cannot finish.
 6. As a creator, I want my Reel's draft checked as any draft is, so that I fix problems before anything is public.
-7. As a creator, I want the go-ahead to tell me if Cleared can no longer read my Instagram account, so that I reconnect before I post, not after.
+7. As a creator, I want the go-ahead to tell me if Sponing can no longer read my Instagram account, so that I reconnect before I post, not after.
 8. As a creator, I want to be told not to post when PayPal cannot confirm the brand's hold, so that I do not post for money that is not there.
-9. As a creator, I want to say I have posted by pasting my Reel's link, so that Cleared checks the right post.
+9. As a creator, I want to say I have posted by pasting my Reel's link, so that Sponing checks the right post.
 10. As a creator, I want to be told when the link is not a Reel on my account, so that I paste the right one.
 11. As a creator, I want to know that I must paste the link before my deadline, so that I do not lose the payment by forgetting.
 12. As a creator, I want each live-check item to show what was found in my caption, so that I can see why it passed or what to change.
 13. As a creator, I want to fix my caption and have it checked again, so that a missing hashtag does not cost me the deal.
 14. As a creator, I want to be told when my Reel's video could not be fetched and why, so that I understand why the brand is being asked.
-15. As a creator, I want to be told to reconnect Instagram when Cleared can no longer read my account, so that I can put it right.
+15. As a creator, I want to be told to reconnect Instagram when Sponing can no longer read my account, so that I can put it right.
 16. As a brand, I want the live Reel matched to the draft I approved, so that I pay for the video I agreed to.
-17. As a brand, I want to be asked when Cleared could not check the paid-partnership label, so that I can look at it myself before I am charged.
+17. As a brand, I want to be asked when Sponing could not check the paid-partnership label, so that I can look at it myself before I am charged.
 18. As a brand, I want to be asked when the live Reel is not the draft I approved, so that I decide whether to pay for it.
-19. As a brand, I want a link to the live Reel that Instagram itself gave Cleared, so that I am never sent somewhere a person typed.
+19. As a brand, I want a link to the live Reel that Instagram itself gave Sponing, so that I am never sent somewhere a person typed.
 20. (Removed in revision 1.1: there are no demo accounts.)
 21. As the team, I want Meta's API proven by hand before anything is built on it, so that a month is not spent on a field Meta does not return.
 22. As the team, I want a Reel found only among the creator's own posts, so that nobody can claim someone else's Reel.
@@ -90,10 +90,10 @@ What Instagram will not show, Cleared does not guess: the paid-partnership label
 | ID | Requirement |
 | --- | --- |
 | IG-FR-14 | **"I've posted it," with the Reel's link.** The creator gives the link of the Reel. A link that is not an Instagram Reel or post link is refused. Its short code is taken from it by code; the link itself is never fetched. |
-| IG-FR-15 | **Found among the creator's own posts.** Cleared lists the creator's own recent media, newest first, and looks for that short code. If it is there and is a Reel, it is the post. If it is not there, the answer says the Reel is not on the creator's account. If it is there and is not a Reel, the answer says so. |
+| IG-FR-15 | **Found among the creator's own posts.** Sponing lists the creator's own recent media, newest first, and looks for that short code. If it is there and is a Reel, it is the post. If it is not there, the answer says the Reel is not on the creator's account. If it is there and is not a Reel, the answer says so. |
 | IG-FR-16 | **Recorded.** The Reel is recorded for the post: Instagram's id for it, the link Instagram itself gives for it, and Instagram's date for it, kept as evidence. The moment is recorded as when the post was published (PT-FR-10), the money path is told (MP-FR-16), and the live check starts. Saying so again starts nothing new, and a different Reel cannot be given once one is recorded. |
 | IG-FR-17 | **Without a go-ahead.** A link is accepted once the draft is approved and the hold is held, whether or not a go-ahead is running. A creator who posts without one does so at their own risk, as on YouTube (PT-FR-03). |
-| IG-FR-18 | **No link, nothing seen.** When a go-ahead ends, and at the deadline, the money path asks whether a post was published (MP-FR-15, MP-FR-22). For a Reel the answer is yes only if one is recorded. Cleared does not look for a Reel it was not told about ([decision](../decisions/2026-10-11-a-reel-nobody-gave-a-link-for-is-not-looked-for.md)). The link must therefore be given before the deadline. |
+| IG-FR-18 | **No link, nothing seen.** When a go-ahead ends, and at the deadline, the money path asks whether a post was published (MP-FR-15, MP-FR-22). For a Reel the answer is yes only if one is recorded. Sponing does not look for a Reel it was not told about ([decision](../decisions/2026-10-11-a-reel-nobody-gave-a-link-for-is-not-looked-for.md)). The link must therefore be given before the deadline. |
 
 ### The live check
 
@@ -131,7 +131,7 @@ What Instagram will not show, Cleared does not guess: the paid-partnership label
 | IG-BR-03 | No route or job here moves money or decides a money state. Each calls one function of the money path and reports what it answers. |
 | IG-BR-04 | No model moves money or gives the money path an answer. The match is fixed code over two readings with stated limits. Claude judges only written items that need judgment, and its pass counts only if its quote is in the caption. |
 | IG-BR-05 | The live check gives the money path an answer only when it has read the Reel's record. A check that could not read Instagram, for any reason, says nothing. |
-| IG-BR-06 | "Cannot decide" is for what Instagram did not show and for a match that is unclear. It is never the answer for something Cleared looked at and found wrong. |
+| IG-BR-06 | "Cannot decide" is for what Instagram did not show and for a match that is unclear. It is never the answer for something Sponing looked at and found wrong. |
 | IG-BR-07 | A Reel is found only among the media Instagram lists for the creator's own account. A link to anyone else's Reel can never be recorded. |
 | IG-BR-08 | A link a person typed is never fetched: only its short code is taken, and only from Instagram's own addresses. The Reel's video is fetched only from the address Instagram's API returned, over HTTPS, into the private bucket, with a limit on its size. |
 | IG-BR-09 | A caption, an account's name and a Reel's spoken words are untrusted. They are given to a model as material to examine, never as instructions, and nothing in them can change a result code decides or cause any action. |
@@ -167,7 +167,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | New deal (BC) | A Reel is no longer refused |
 | Publish and pay (PP-FR-01) | For a Reel the go-ahead takes no link. New refusals: `reconnect_instagram`, `instagram_unavailable` |
 | Publish and pay (PP-FR-07) | "I've posted it" for a Reel sends `{ url }`. New refusals: `not_an_instagram_link`, `reel_not_found`, `not_a_reel`. The page should say the link must be given before the deadline |
-| Publish and pay (PP-FR-08) | The line "if you forget to tap, we check" is not true for a Reel: Cleared does not look for a Reel it was not given |
+| Publish and pay (PP-FR-08) | The line "if you forget to tap, we check" is not true for a Reel: Sponing does not look for a Reel it was not given |
 | Publish and pay (PP-FR-13, PP-FR-14) | What the check could not decide gains `paid_partnership_label`, `reel_not_fetched` and `reel_match`; the creator's post can say `reconnect_instagram` or that the Reel was not found |
 | Demo | **Revision 1.1:** there are no demo accounts, so no sample Reel is offered |
 | All pages | The generated types in `contract/` gain these as they are built |
@@ -246,3 +246,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.1 | Signed by Furqaan | none |
 | 1.2 | A fetched video is read at most three times, then the brand is asked (IG-FR-26). A video too large, or of a kind the service does not read, counts as not fetched (IG-FR-20, IG-FR-24) | [Three readings](../decisions/2026-10-12-a-reels-reading-is-tried-three-times.md) |
 | 1.2 | Signed by Furqaan | none |
+| 1.3 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |

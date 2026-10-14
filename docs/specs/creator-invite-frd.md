@@ -1,6 +1,6 @@
 # Creator invite: FRD
 
-**Status:** Signed by William (revision 1.4).
+**Status:** Signed by William (revision 1.5).
 
 **Surface:** Creator app. Step 2 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): once the checklist is ready, the creator sets the amount and deadline for each post, connects the YouTube or Instagram account the posts go on, gives the PayPal email to be paid at, and sends the brand a link. The brand's side of the link (confirm the checklist, approve the hold) is the next surface.
 
@@ -12,7 +12,7 @@ A creator and a brand agree a fee in a chat, and that's the last time the money 
 
 ## Solution
 
-An invite page that comes straight after "Checklist ready". For each post the creator sets an amount and a deadline (a number of days after the brand approves the hold), connects the account the post goes on, and gives the PayPal email to be paid at. The page states the four rules of how the money moves, in plain words. "Create link" locks those terms into one link for the brand, which the creator copies or shares (and, optionally, Cleared emails to the brand). Changing anything later turns the old link off and makes a new one, so the brand can only ever approve the terms the creator set.
+An invite page that comes straight after "Checklist ready". For each post the creator sets an amount and a deadline (a number of days after the brand approves the hold), connects the account the post goes on, and gives the PayPal email to be paid at. The page states the four rules of how the money moves, in plain words. "Create link" locks those terms into one link for the brand, which the creator copies or shares (and, optionally, Sponing emails to the brand). Changing anything later turns the old link off and makes a new one, so the brand can only ever approve the terms the creator set.
 
 ## User Stories
 
@@ -21,7 +21,7 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 3. As a creator, I want to see the deal's total and that it's held as one hold per post, so that I know what the brand will be asked to approve.
 4. As a creator, I want to set each post's deadline as days after the brand approves the hold, so that the deadline can't be broken by the brand taking a while.
 5. As a creator, I want an example date for each deadline, so that "14 days" means something concrete.
-6. As a creator, I want to be told I can't go past 21 days, and why, so that I don't promise a date Cleared can't hold money for.
+6. As a creator, I want to be told I can't go past 21 days, and why, so that I don't promise a date Sponing can't hold money for.
 7. As a creator, I want to connect only the accounts my posts need, so that I don't hand over access I don't have to.
 8. As a creator on Instagram, I want to know up front that I need a professional account, so that I'm not surprised at the end.
 9. As a creator, I want an account I've connected before to stay connected on new deals, so that I do it once.
@@ -33,7 +33,7 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 15. As a creator, I want a failed save shown beside the field with Try again, so that I never think something is saved when it isn't.
 16. As a creator, I want "Create link" to tell me what's still missing, so that I know what to do next.
 17. As a creator, I want to copy the link, or share it from my phone, so that I can send it the way I already talk to the brand.
-18. As a creator, I want Cleared to email the link to the brand if I give their email, so that it reaches the right person and they hear from Cleared again later.
+18. As a creator, I want Sponing to email the link to the brand if I give their email, so that it reaches the right person and they hear from Sponing again later.
 19. As a creator, I want to know the link expires and who can open it, so that I send it carefully.
 20. As a creator, I want to make a new link if I sent it to the wrong person or it expired, so that the old one stops working.
 21. As a creator, I want to change the terms after sending, knowing the old link stops working, so that the brand can't approve terms I've changed.
@@ -59,7 +59,7 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 | IN-FR-04 | **One block per deliverable,** named as on the checklist ("YouTube video", "Instagram Reel"), each with its amount and deadline. |
 | IN-FR-05 | **Amount.** In US dollars, shown with "$"; no currency choice. Accepts more than $0, at most two decimal places, up to $9,999,999.99. Anything else is explained beside the field ("Enter an amount in dollars, like 1200 or 1200.50"). Sent to the API as a decimal string (`"1200.00"`), never a number. 1.3: one post is $20.00 to $10,000.00 ([fee and amount limits](../decisions/2026-10-08-cleared-fee-and-amount-limits.md)); outside that, beside the field before saving: "The least one post can be is $20.00." or "The most one post can be is $10,000.00.", and the post counts as not ready for Create link. |
 | IN-FR-06 | **The API's refusal (1.3).** If the API still refuses an amount when it is saved (400 with `amount_below_minimum` or `amount_above_maximum`, for instance after its settings change), IN-FR-05's same message shows beside that post's amount and it is not shown as saved. There is no `amountProblem` field. |
-| IN-FR-07 | **Deadline in days.** "Post within {n} days of {brand} approving the hold", 1 to 21 days, with a number field and − / + buttons. Above 21 it says "Up to 21 days. PayPal only holds money for 29 days, so Cleared keeps a margin." Below it shows an example: "If {brand} approves today, that's {date}." |
+| IN-FR-07 | **Deadline in days.** "Post within {n} days of {brand} approving the hold", 1 to 21 days, with a number field and − / + buttons. Above 21 it says "Up to 21 days. PayPal only holds money for 29 days, so Sponing keeps a margin." Below it shows an example: "If {brand} approves today, that's {date}." |
 | IN-FR-08 | **Total.** Under the posts: "Total for this deal: ${sum}, held as one hold per post." Shown only when every amount is valid. |
 
 ### Your accounts
@@ -68,14 +68,14 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 | --- | --- |
 | IN-FR-09 | **Only what the posts need.** A YouTube card if any post is a YouTube video or Short; an Instagram card if any post is a Reel. |
 | IN-FR-10 | **Connected.** A connected card shows the account's name and "Connected". Accounts belong to the creator, so one connected on an earlier deal shows connected here. |
-| IN-FR-11 | **Connect (1.3).** "Connect YouTube" (Google, read-only) and "Connect Instagram" are links to the backend's `GET /connect/youtube?next=` and `/connect/instagram?next=`, with `next` the page they are on (the welcome page's rows too, SI-FR-09). The Instagram card says "Professional accounts only" before connecting. Back on the page: `connected=…` shows the card's connected state and nothing else; `connect=…` shows a message on that card: `failed` "We couldn't connect {YouTube \| Instagram}. Try again."; `declined` "YouTube isn't connected, because access wasn't allowed. Cleared only reads your channel." (for Instagram: "…Cleared only reads your Reels."); `no_channel` "That Google account has no YouTube channel. Connect the account that owns your channel."; `not_professional` "That Instagram account isn't a professional account. Switch it to Creator or Business in Instagram, then connect again." The page then takes the result out of the address, so a reload doesn't repeat it. |
+| IN-FR-11 | **Connect (1.3).** "Connect YouTube" (Google, read-only) and "Connect Instagram" are links to the backend's `GET /connect/youtube?next=` and `/connect/instagram?next=`, with `next` the page they are on (the welcome page's rows too, SI-FR-09). The Instagram card says "Professional accounts only" before connecting. Back on the page: `connected=…` shows the card's connected state and nothing else; `connect=…` shows a message on that card: `failed` "We couldn't connect {YouTube \| Instagram}. Try again."; `declined` "YouTube isn't connected, because access wasn't allowed. Sponing only reads your channel." (for Instagram: "…Sponing only reads your Reels."); `no_channel` "That Google account has no YouTube channel. Connect the account that owns your channel."; `not_professional` "That Instagram account isn't a professional account. Switch it to Creator or Business in Instagram, then connect again." The page then takes the result out of the address, so a reload doesn't repeat it. |
 
 ### Payment
 
 | ID | Requirement |
 | --- | --- |
 | IN-FR-12 | **PayPal email.** "Your PayPal email", filled from the creator's profile if they've given one before. Must look like an email. Under it: "We send your payment here. Check it: a payment to the wrong email can't be pulled back." Saving it here updates the profile. 1.3: a new email reaches every payout not yet sent to PayPal; when some already are, a note under the field after saving lists them: "Saved. A payout already with PayPal still goes to {old email}: {brand} · {post}." (one line per post) ([PayPal email change](../decisions/2026-10-10-a-paypal-email-change-reaches-where-no-payout-has-started.md)). |
-| IN-FR-13 | **The brand's email (optional).** "{brand}'s email (optional)", with under it (1.3): "Only used if {brand} needs to act after your post is live. You send the link yourself." Cleared never emails the link ([no email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md)); the address is the fallback for the brand's two notices after publishing ([the brand's notices](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md)). Must look like an email if filled. |
+| IN-FR-13 | **The brand's email (optional).** "{brand}'s email (optional)", with under it (1.3): "Only used if {brand} needs to act after your post is live. You send the link yourself." Sponing never emails the link ([no email yet](../decisions/2026-10-09-no-email-yet-the-creator-sends-the-review-link.md)); the address is the fallback for the brand's two notices after publishing ([the brand's notices](../decisions/2026-10-10-email-for-the-brands-two-notices-after-publishing.md)). Must look like an email if filled. |
 | IN-FR-14 | **How you'll be paid.** A fixed block, four lines, not editable: (1) "{brand} approves a hold for each post. The money is reserved, not taken." (2) "Your draft is checked against the checklist. If every item passes, {brand} has 48 hours to object. If they don't, it's approved. Anything that doesn't pass waits for you to fix it or for {brand} to accept it." (3) "Post by the deadline. Once the live post checks out, you're paid to your PayPal." (4) "Miss the deadline, and the hold goes back to {brand}." |
 
 ### Saving and the link
@@ -194,3 +194,5 @@ interface CreatorProfile {
 | 1.3 | Signed by William | none |
 | 1.4 | From a grill-me with William: a refused Create link or Send updated terms says why and re-reads the page (new IN-FR-23), for `youtube_not_connected`, `instagram_not_connected` (IG spec), `paypal_email_missing` and `terms_incomplete` | none |
 | 1.4 | Signed by William | none |
+| 1.5 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.5 signed | Revision 1.5 signed by William | none |

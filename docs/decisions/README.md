@@ -1,6 +1,6 @@
 # Decisions
 
-Architecture and product decisions for Cleared, one file per decision.
+Architecture and product decisions for Sponing, one file per decision.
 
 ## Rules
 
@@ -112,3 +112,4 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-13 | [Requests and errors are logged by our own middleware, with ids only](2026-10-13-requests-and-errors-are-logged-by-our-own-middleware.md) | Accepted |
 | 2026-10-13 | [A failed job is logged at once, and kept, without its message](2026-10-13-a-failed-job-is-logged-and-kept-without-its-message.md) | Accepted |
 | 2026-10-13 | [The brand holds with a PayPal account or a card, and nothing else](2026-10-13-brand-holds-with-paypal-or-card.md) | Accepted (William); Furqaan to agree |
+| 2026-10-14 | [The product is named Sponing](2026-10-14-the-product-is-named-sponing.md) | Accepted |

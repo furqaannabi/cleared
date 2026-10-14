@@ -1,6 +1,6 @@
 # Settings: FRD
 
-**Status:** Signed by William (revision 1.4). Disconnecting and deleting the account are product behaviour shared with Furqaan, who builds their routes; they are written here as requests.
+**Status:** Signed by William (revision 1.5). Disconnecting and deleting the account are product behaviour shared with Furqaan, who builds their routes; they are written here as requests.
 
 **Surface:** The creator's account settings at `/settings`: the signed-in email, the PayPal email, the connected YouTube and Instagram accounts, signing out, and (behind a flag until the backend has them) disconnecting an account and deleting the account. Reached from the account menu on the creator's name ([sign-in](sign-in-frd.md) SI-FR-11). The brand has no account and no settings.
 
@@ -8,23 +8,23 @@
 
 ## Problem Statement
 
-After the welcome, a creator has nowhere to change their PayPal email, see which YouTube channel or Instagram account Cleared reads, reconnect one whose access lapsed, or leave Cleared. The PayPal email can only be changed from inside a deal's invite, and a lapsed connection is only found out when a go-ahead or a live check is refused.
+After the welcome, a creator has nowhere to change their PayPal email, see which YouTube channel or Instagram account Sponing reads, reconnect one whose access lapsed, or leave Sponing. The PayPal email can only be changed from inside a deal's invite, and a lapsed connection is only found out when a go-ahead or a live check is refused.
 
 ## Solution
 
-One settings page, reached from the name menu, that says who is signed in, where the money goes, and which accounts Cleared reads, and lets the creator change each. Disconnecting or deleting is refused, with the reason, while it would put a deal at risk; otherwise each is confirmed in place.
+One settings page, reached from the name menu, that says who is signed in, where the money goes, and which accounts Sponing reads, and lets the creator change each. Disconnecting or deleting is refused, with the reason, while it would put a deal at risk; otherwise each is confirmed in place.
 
 ## User Stories
 
 1. As a creator, I want to see which Google account I'm signed in with, so that I know whose deals I'm looking at.
 2. As a creator, I want to change my PayPal email in one place, so that I don't have to open a deal to do it.
 3. As a creator, I want to be told which payouts keep my old PayPal email, so that I know where money already on its way will land.
-4. As a creator, I want to see the name of the YouTube channel and Instagram account Cleared reads, so that I know it's the right one.
+4. As a creator, I want to see the name of the YouTube channel and Instagram account Sponing reads, so that I know it's the right one.
 5. As a creator, I want to connect an account I haven't connected, so that I can take deals on that platform.
 6. As a creator, I want to reconnect an account whose access lapsed, so that my go-ahead and live check can run.
-7. As a creator, I want to disconnect an account I no longer want Cleared to read, so that it stops having access.
+7. As a creator, I want to disconnect an account I no longer want Sponing to read, so that it stops having access.
 8. As a creator with a post under way on a platform, I want to be stopped from disconnecting it and told which post, so that I don't lose a payment by accident.
-9. As a creator, I want to delete my account, so that Cleared no longer holds my details.
+9. As a creator, I want to delete my account, so that Sponing no longer holds my details.
 10. As a creator with an open deal, I want to be told what has to finish first, so that deleting never leaves a brand or a payment half-done.
 11. As a creator, I want deleting to need a deliberate step, so that I can't do it by accident.
 12. As a creator, I want to sign out from the settings page too, so that I find it where I expect it.
@@ -52,7 +52,7 @@ One settings page, reached from the name menu, that says who is signed in, where
 | ID | Requirement |
 | --- | --- |
 | ST-FR-06 | **Each platform.** A row each for YouTube and Instagram. Connected: the account's name from the profile and "Reconnect". Not connected: "Not connected" and "Connect YouTube" or "Connect Instagram". Both actions are the existing connect links (IN 1.3), coming back to `/settings`, and the result shows as it does there. Instagram keeps its note that only professional accounts can connect. |
-| ST-FR-07 | **Disconnect (behind the flag).** A connected row also offers "Disconnect". It opens an inline confirmation: "Disconnect {name}? Cleared stops reading it. You can connect it again later." with "Disconnect" and "Keep it". Sent as `DELETE /connect/{platform}`; the row then shows Not connected. (1.3) Always offered on a connected account the profile does not say is in use; no flag. |
+| ST-FR-07 | **Disconnect (behind the flag).** A connected row also offers "Disconnect". It opens an inline confirmation: "Disconnect {name}? Sponing stops reading it. You can connect it again later." with "Disconnect" and "Keep it". Sent as `DELETE /connect/{platform}`; the row then shows Not connected. (1.3) Always offered on a connected account the profile does not say is in use; no flag. |
 | ST-FR-08 | **Refused while a post is under way.** When a post on that platform is held and not yet paid or released, disconnecting is refused and the row says: "You can't disconnect {platform} while a post is under way: {brand} · {post}." (each post named; "and {n} more" past three). The API decides; the page shows its answer, and offers no Disconnect while the profile says one is under way. (1.3) When the profile says the account is in use (`accounts[].inUse`, AH-FR-12), the row has no Disconnect and says under the account's name: "In use by a post under way. You can disconnect it once that post is paid or its hold goes back." Reconnect stays. A refusal from the API (a post started since the page loaded) still shows the line above, naming each post. |
 
 ### Signing out and deleting
@@ -60,7 +60,7 @@ One settings page, reached from the name menu, that says who is signed in, where
 | ID | Requirement |
 | --- | --- |
 | ST-FR-09 | **Sign out.** "Sign out" at the end of the page, doing what the menu's does (SI-FR-12). (1.2) With `NEXT_PUBLIC_LEGAL_PAGES` on, "Privacy policy" and "Terms" sit beside it, linking to `/privacy` and `/terms` ([legal pages](legal-pages-frd.md) LG-FR-15). (1.4) The legal pages' flag is retired (LG 1.1), so these links always show. |
-| ST-FR-10 | **Delete account (behind the flag).** "Delete account" at the very end, apart from the rest. When nothing is open it opens an inline confirmation saying what happens: "Your profile, your connected accounts and your drafts are deleted. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and email removed. This can't be undone." A field "Type delete to confirm" and "Delete my account", on only once "delete" is typed. Sent as `DELETE /me`; on success the creator is signed out and lands on the home page. (1.2) With `NEXT_PUBLIC_LEGAL_PAGES` on, the section also links "How deleting works" to `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-15). (1.3) Always offered; no flag. The confirmation says, as AH-FR-17 to AH-FR-21 do: "Your profile, your connected accounts, your drafts, and each deal's brief, checklist and check results are deleted, and brands' links to your deals stop working. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed. Signing in again starts a new, empty account. This can't be undone." Before it opens, the section says "Removes your profile, your connected accounts and everything in your deals." (1.4) The legal pages' flag is retired (LG 1.1), so these links always show. |
+| ST-FR-10 | **Delete account (behind the flag).** "Delete account" at the very end, apart from the rest. When nothing is open it opens an inline confirmation saying what happens: "Your profile, your connected accounts and your drafts are deleted. Sponing keeps the payment records it must (amounts, dates and PayPal references), with your name and email removed. This can't be undone." A field "Type delete to confirm" and "Delete my account", on only once "delete" is typed. Sent as `DELETE /me`; on success the creator is signed out and lands on the home page. (1.2) With `NEXT_PUBLIC_LEGAL_PAGES` on, the section also links "How deleting works" to `/data-deletion` ([legal pages](legal-pages-frd.md) LG-FR-15). (1.3) Always offered; no flag. The confirmation says, as AH-FR-17 to AH-FR-21 do: "Your profile, your connected accounts, your drafts, and each deal's brief, checklist and check results are deleted, and brands' links to your deals stop working. Sponing keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed. Signing in again starts a new, empty account. This can't be undone." Before it opens, the section says "Removes your profile, your connected accounts and everything in your deals." (1.4) The legal pages' flag is retired (LG 1.1), so these links always show. |
 | ST-FR-11 | **Refused while anything is open.** While any deal has a post held and not yet paid or released, a payout not settled, or is waiting on its brand, deleting is refused and the section lists what's in the way, one line per deal ("Glow Theory: a post is held"), and says: "Finish or cancel these first." No confirmation opens. The API decides; the page shows its answer. |
 | ST-FR-12 | **The flag.** Disconnecting and deleting show only when the build flag `NEXT_PUBLIC_ACCOUNT_REMOVAL` is "enabled". It stays off until Furqaan's routes and their types are in `contract/`; then turning it on is the only change. With it off, neither shows, and nothing says they're coming. (1.3) **Retired.** Both routes are in the contract and live (AH 1.0): Disconnect and Delete account always show, as ST-FR-07, ST-FR-08 and ST-FR-10 say. |
 
@@ -133,3 +133,5 @@ One settings page, reached from the name menu, that says who is signed in, where
 | 1.3 signed | Revision 1.3 signed by William | none |
 | 1.4 | The legal pages' flag is retired (LG 1.1): Privacy policy and Terms beside Sign out, and How deleting works in Delete account, always show | none |
 | 1.4 signed | Revision 1.4 signed by William | none |
+| 1.5 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.5 signed | Revision 1.5 signed by William | none |

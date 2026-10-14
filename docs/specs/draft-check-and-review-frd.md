@@ -1,6 +1,6 @@
 # Draft check and review: FRD
 
-**Status:** Signed by Furqaan (revision 1.2). It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
+**Status:** Draft 1.3, not signed (revision 1.2 signed by Furqaan). It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
 
 **Surface:** Backend. Steps 4 and 5 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: the creator sends a draft of a held post, it is checked against the agreed checklist with evidence for every item, the creator can ask the brand to accept what the check could not decide, and a fully passing draft opens the brand's 48-hour review window, which ends in an approval, an objection or silence.
 
@@ -10,7 +10,7 @@
 
 A deal can now be agreed and held, and then it stops. The creator has nowhere to send the video, nothing checks it, and the brand has nothing to review. William's draft check and brand review pages are finished and show made-up results.
 
-This step is also where Cleared's central promise is kept or broken. A creator needs to know, while a fix is still possible, whether the video meets what was agreed. A brand needs to see proof for each item, not a claim. And the money rule that silence clears a fully passing draft is only safe if "passing" means something a person could check: every pass has to point at a real moment in the video.
+This step is also where Sponing's central promise is kept or broken. A creator needs to know, while a fix is still possible, whether the video meets what was agreed. A brand needs to see proof for each item, not a claim. And the money rule that silence clears a fully passing draft is only safe if "passing" means something a person could check: every pass has to point at a real moment in the video.
 
 ## Solution
 
@@ -32,8 +32,8 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 8. As a creator, I want items that can only be checked on the published post to say so, so that I do not try to fix them in the draft.
 9. As a creator, I want to send a new draft and see what changed since the last one, so that I know my fix worked and nothing else broke.
 10. As a creator, I want to be told that a new draft cancels my open asks, the brand's acceptances and its objections, so that I am not surprised.
-11. As a creator, I want a check that fails on Cleared's side to be retried without my doing anything, and to be told it is not my fault, so that I do not waste time sending the file again.
-12. As a creator, I want a failed check not to use up one of my checks, so that Cleared's problems do not cost me.
+11. As a creator, I want a check that fails on Sponing's side to be retried without my doing anything, and to be told it is not my fault, so that I do not waste time sending the file again.
+12. As a creator, I want a failed check not to use up one of my checks, so that Sponing's problems do not cost me.
 13. As a creator, I want to ask the brand to accept an item the check could not decide, so that a correct video is not blocked by an uncertain machine.
 14. As a creator, I want to withdraw an ask, so that I can fix the item instead.
 15. As a creator, I want to see when the brand accepted an item or asked me to fix it, with its note, so that I know what to do next.
@@ -43,7 +43,7 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 19. As a creator, I want to see which items the brand objected to and why, so that I can fix exactly those.
 20. As a creator, I want to be told plainly when my draft is approved and not to publish yet, so that I wait for the hold to be confirmed.
 21. As a creator, I want my unpublished video to be visible only to me and, when it has something to do, to this deal's brand, so that it does not leak.
-22. As a creator, I want my drafts deleted after the deal ends, so that Cleared does not keep my unpublished work.
+22. As a creator, I want my drafts deleted after the deal ends, so that Sponing does not keep my unpublished work.
 23. As a brand, I want to open a review link and land on the post that needs me, so that I do not hunt for it.
 24. As a brand, I want to watch the draft and see each item's result and evidence, so that I can judge it myself.
 25. As a brand, I want to accept an item the check was unsure of, or ask for it to be fixed with a note, so that the creator knows where they stand.
@@ -103,7 +103,7 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 | DR-FR-20 | **A model is confident or unsure.** The models are told to answer fix needed only when they are confident the thing is missing or wrong, and unsure otherwise. A fix needed item from a model carries the model's reason as its suggestion (DR-FR-24). |
 | DR-FR-21 | **One result per item,** recorded with the run: its status, its evidence (a label, the quoted words or description, and the start and end in seconds), and how it was checked. Evidence belongs to its run; an earlier run's evidence is never returned. |
 | DR-FR-22 | **A finished run** increases the post's run number by one. From the second run, each item also carries its status in the run before. |
-| DR-FR-23 | **When a service fails** (an error, a timeout or a throttle from Data Automation, Claude or Nova), no part of the run is shown. The job tries again up to 3 times with growing waits. After that the post reports a check failure on Cleared's side, and the creator can start the same draft's check again. It does not count as one of the post's 10 checks. |
+| DR-FR-23 | **When a service fails** (an error, a timeout or a throttle from Data Automation, Claude or Nova), no part of the run is shown. The job tries again up to 3 times with growing waits. After that the post reports a check failure on Sponing's side, and the creator can start the same draft's check again. It does not count as one of the post's 10 checks. |
 | DR-FR-24 | **Suggestions.** A fix needed or unsure item may carry one plain sentence of at most 280 characters saying what to change. Code writes it for exact items; the model writes it for the rest. One that is missing, too long or malformed is left out. It is guidance only and never affects a result. |
 
 ### The creator's post
@@ -114,7 +114,7 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 | DR-FR-26 | **While checking,** the post carries when the check started and its stages. The page asks again to follow it; results appear together when the run finishes. |
 | DR-FR-27 | **The draft's address.** The latest draft comes with an address that plays it for 15 minutes, and a route gives a fresh one. |
 | DR-FR-28 | **The deals list** carries each post's real state, a one-line status, and which post's next step is the creator's. |
-| DR-FR-29 | **A check failure** is reported as the file's (DR-FR-03) or Cleared's (DR-FR-23), with the file's name and whether a retry is under way. |
+| DR-FR-29 | **A check failure** is reported as the file's (DR-FR-03) or Sponing's (DR-FR-23), with the file's name and whether a retry is under way. |
 
 ### Asking the brand
 
@@ -177,8 +177,8 @@ The creator fixes what failed and sends a new draft, or asks the brand to accept
 | DR-BR-13 | The brand never sees a suggestion, an earlier run, the run number, the creator's PayPal email or their account details. |
 | DR-BR-14 | A new draft cancels every ask, acceptance and objection of the run before it, and ends its window. |
 | DR-BR-15 | One review per draft: objections are sent once. Afterwards the brand can only approve that draft. A new draft gets a new review. |
-| DR-BR-16 | A check that fails, for the file's reasons or Cleared's, is not a run. A draft refused for a limit, or failing before analysis starts, counts against no limit. Minutes count towards the daily total from the moment analysis starts, whether or not the run then finishes. |
-| DR-BR-17 | An upload is accepted only from Cleared's own app, with a creator session, and is cut off at the size limit as it arrives. |
+| DR-BR-16 | A check that fails, for the file's reasons or Sponing's, is not a run. A draft refused for a limit, or failing before analysis starts, counts against no limit. Minutes count towards the daily total from the moment analysis starts, whether or not the run then finishes. |
+| DR-BR-17 | An upload is accepted only from Sponing's own app, with a creator session, and is cut off at the size limit as it arrives. |
 | DR-BR-18 | Logs carry ids only: creator, deal, deliverable, run and item ids, and each service's own job ids, counts and timings. Never speech, on-screen text, evidence, a note, a file's name, a draft's address or a model's answer. |
 | DR-BR-19 | When a newer draft's run finishes, the older draft's file and everything read from it are deleted. Everything kept for a post's drafts is deleted 30 days after the post is paid, released or closed. |
 | DR-BR-20 | The evidence shown to the brand is the evidence the creator sees for the same run. Neither side is shown anything the other cannot check against the video. |
@@ -254,7 +254,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **Instagram and Reels.**
 - **Uploading straight to S3 from the browser,** and resuming an interrupted upload.
 - **Showing earlier runs** or their evidence.
-- **A person at Cleared deciding anything** in this step. Unsure goes to the brand.
+- **A person at Sponing deciding anything** in this step. Unsure goes to the brand.
 - **Cancelling a post** from these pages (William's cancel spec).
 - **Deployment,** infrastructure as code, and the bucket's creation by code.
 
@@ -279,7 +279,7 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 - **Every route but the upload** turns away a body over 1 MB. The service's own size limit had to rise to let a draft through, so everything else got a small one.
 - **DR-FR-14:** a value shorter than four characters has no one-character near miss.
 - **DR-FR-17:** a segment needs words quoted at both its ends, and both are looked for. The sum is done on where the words really are, not on the time the model gave.
-- **DR-FR-23:** any unexpected error in a check counts as a failure on Cleared's side, not only a service that cannot be reached.
+- **DR-FR-23:** any unexpected error in a check counts as a failure on Sponing's side, not only a service that cannot be reached.
 - **DR-FR-25:** while a newer draft is checked every draft-check item reads as checking, and its results appear together.
 - **DR-FR-37, DR-FR-38:** the brand can approve after objecting, so approving and objecting at the same moment has no single right outcome. Two approvals at once approve once.
 - **DR-FR-39:** "too late" is by the clock: an objection at or after the window's end is refused whether or not the window's job has run.
@@ -320,3 +320,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.1 | Signed by Furqaan. DR-FR-45: a session made from a review link outlasts the link's closing, and the creator can replace a link that still works. First-opened is kept on the post's review, and a draft keeps its format. Eight choices settled while building are listed. Found: Data Automation's built-in project has no transcript, so a project is needed; Nova answers for the account; the five real adapters are written and not yet proven. Eight more requests for William | none |
 | 1.2 | Demo accounts are removed: their limits on drafts (DR-FR-08) and the sample clip (DR-FR-50) go, and a draft is no longer refused for a demo limit (DR-FR-09) | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
 | 1.2 | Signed by Furqaan | none |
+| 1.3 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |

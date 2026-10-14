@@ -1,6 +1,6 @@
 # Creator brief → checklist: FRD
 
-**Status:** Signed by William (revision 1.4).
+**Status:** Signed by William (revision 1.5).
 
 **Surface:** Creator app. Step 1 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): the creator starts a deal, names its posts, gives the brand's brief, and gets a checklist per post that cites the brief, with the AI's questions answered. Step 2 (amounts, deadlines, PayPal email, connecting accounts, inviting the brand) is the next surface.
 
@@ -59,7 +59,7 @@ A short "New deal" flow. The creator names the brand and the posts (deliverables
 | BC-FR-05 | **Limits.** Under 40 characters: "This looks too short to be a brief. Paste the whole thing." Over 20,000 characters: "Briefs can be up to 20,000 characters, about 8 pages." Both are said before sending, and the button stays available to try again. |
 | BC-FR-06 | **Upload a file. Depends on backend.** A PDF or .docx upload needs the backend to store the file and extract its text. Fallback: the page offers pasting only and says nothing about files. |
 | BC-FR-07 | **Reading.** After sending, the page shows "Reading your brief…" with the brief split into numbered lines, and marks each line as the AI reaches it; items appear under their lines as they arrive. **Depends on backend** for progress; fallback: the lines show with a single "Reading" state until the result arrives. The creator can leave; coming back shows the current state. |
-| BC-FR-24 | **A limit on reading (1.4).** When the API refuses the brief because a daily limit on reading is reached, nothing is read and the page says so under the button, keeping the pasted text and the button: for the creator's own limit, "You've reached today's limit on reading briefs. You can send this one from {time}."; for the limit across everyone, "Cleared has read all the briefs it can today. You can send this one from {time}." `{time}` is when the limit resets, in the creator's local time ("3:40 pm"); without a reset time, "…You can send this one tomorrow." No limit numbers are shown: they are the backend's settings (DS-FR-26 to DS-FR-28). |
+| BC-FR-24 | **A limit on reading (1.4).** When the API refuses the brief because a daily limit on reading is reached, nothing is read and the page says so under the button, keeping the pasted text and the button: for the creator's own limit, "You've reached today's limit on reading briefs. You can send this one from {time}."; for the limit across everyone, "Sponing has read all the briefs it can today. You can send this one from {time}." `{time}` is when the limit resets, in the creator's local time ("3:40 pm"); without a reset time, "…You can send this one tomorrow." No limit numbers are shown: they are the backend's settings (DS-FR-26 to DS-FR-28). |
 | BC-FR-08 | **Couldn't read.** If the API reports the AI could not read the brief, the page says "We couldn't read this brief." with Try again, and keeps the pasted text. |
 
 ### The checklist
@@ -184,3 +184,5 @@ interface Question {
 | 1.3 | Signed by William, with Confirm and hold 1.0 | none |
 | 1.4 | The move onto the live API: the routes, request bodies and `DealDraft` matched the contract, so the pages keep them, typed from it. Differences from Furqaan's [deal set-up](deal-setup-frd.md): no line-by-line progress (BC-FR-07's fallback shows) and no file upload (BC-FR-06's fallback shows). New BC-FR-24: what the page says at a daily limit on reading (William chose a message per limit over one message or the generic error) | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md) |
 | 1.4 | Signed by William | none |
+| 1.5 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.5 signed | Revision 1.5 signed by William | none |
