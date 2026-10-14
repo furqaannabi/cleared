@@ -91,3 +91,33 @@ describe("AH-FR-06 to AH-FR-08 one row of the payment history, from the money pa
     expect(paymentRow(post, held, null)).not.toHaveProperty("firstCheckPassed");
   });
 });
+
+describe("AH-FR-30 (1.2) why a hold ended, on a released or approved-not-paid row", () => {
+  const ended = (release: MoneyView["release"], stage: MoneyView["stage"] = "released"): MoneyView => ({ ...held, stage, release });
+
+  test.each(["deadline", "day_28", "fix_window_ended", "not_accepted", "hold_not_confirmed"] as const)("%s: the reason and when, with no one named", (reason) => {
+    const row = paymentRow(post, ended({ reason, at: at("2026-10-24T23:00:00Z") }));
+    expect(row).toMatchObject({ releasedBecause: reason, releasedAt: "2026-10-24T23:00:00.000Z" });
+    expect(row).not.toHaveProperty("cancelledBy");
+  });
+
+  test.each(["creator", "brand"] as const)("cancelled by the %s says who", (by) => {
+    expect(paymentRow(post, ended({ reason: "cancelled", at: at("2026-10-15T10:00:00Z"), by }))).toMatchObject({ releasedBecause: "cancelled", cancelledBy: by });
+  });
+
+  test("a ruling not to pay reads as on the creator's post", () => {
+    expect(paymentRow(post, ended({ reason: "cleared_ruled", at: at("2026-10-26T10:00:00Z") }))).toMatchObject({ releasedBecause: "ruled_not_to_pay" });
+  });
+
+  test("approved, not paid: its reason and date too", () => {
+    expect(paymentRow(post, ended({ reason: "day_28", at: at("2026-11-07T09:05:10Z") }, "approved_not_paid"))).toMatchObject({ stage: "approved_not_paid", releasedBecause: "day_28", releasedAt: "2026-11-07T09:05:10.000Z" });
+  });
+
+  test("held, captured and paid rows carry none of them", () => {
+    for (const view of [held, captured]) {
+      const row = paymentRow(post, view);
+      expect(row).not.toHaveProperty("releasedBecause");
+      expect(row).not.toHaveProperty("releasedAt");
+    }
+  });
+});

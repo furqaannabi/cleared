@@ -32,7 +32,17 @@ export interface PaymentRow {
   paidAt?: string;
   /** Whether the first draft check that finished passed every item. Absent while none has (AH-FR-09). */
   firstCheckPassed?: boolean;
+  /** Released or approved but not paid: why the hold ended, as on the creator's post, and when (AH-FR-30). */
+  releasedBecause?: ReleasedBecause;
+  releasedAt?: string;
+  /** Who cancelled, when the reason is a cancellation (AH-FR-30). */
+  cancelledBy?: "creator" | "brand";
 }
+
+export type ReleasedBecause = "deadline" | "cancelled" | "day_28" | "fix_window_ended" | "not_accepted" | "ruled_not_to_pay" | "hold_not_confirmed";
+
+/** The release record's reason in the words the creator's post uses: a ruling by Sponing reads as ruled_not_to_pay. */
+const releasedBecause = (reason: NonNullable<MoneyView["release"]>["reason"]): ReleasedBecause => (reason === "cleared_ruled" ? "ruled_not_to_pay" : reason);
 
 /** The post a row is about, as much of it as the row carries. */
 export interface PaidPost {
@@ -81,6 +91,13 @@ export function paymentRow(post: PaidPost, money: MoneyView, firstCheckPassed?: 
     ...(money.publishedAt ? { publishedAt: money.publishedAt.toISOString() } : {}),
     ...(paidAt ? { paidAt: paidAt.toISOString() } : {}),
     ...(typeof firstCheckPassed === "boolean" ? { firstCheckPassed } : {}),
+    ...(money.release && (money.stage === "released" || money.stage === "approved_not_paid")
+      ? {
+          releasedBecause: releasedBecause(money.release.reason),
+          releasedAt: money.release.at.toISOString(),
+          ...(money.release.reason === "cancelled" && money.release.by ? { cancelledBy: money.release.by } : {}),
+        }
+      : {}),
   };
 }
 

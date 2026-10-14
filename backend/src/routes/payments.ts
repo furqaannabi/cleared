@@ -32,6 +32,10 @@ const PaymentSchema = z
     paidAt: z.string().optional(),
     // Whether the first draft check that finished passed every item. Absent while none has (AH-FR-09).
     firstCheckPassed: z.boolean().optional(),
+    // Released, or approved but not paid: why the hold ended, as on the creator's post, when, and who cancelled (AH-FR-30).
+    releasedBecause: z.enum(["deadline", "cancelled", "day_28", "fix_window_ended", "not_accepted", "ruled_not_to_pay", "hold_not_confirmed"]).optional(),
+    releasedAt: z.string().optional(),
+    cancelledBy: z.enum(["creator", "brand"]).optional(),
   })
   .openapi("Payment");
 

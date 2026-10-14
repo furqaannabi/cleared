@@ -114,6 +114,16 @@ describe("AH-FR-06 to AH-FR-08 a row follows the post to paid", () => {
     expect(row).not.toHaveProperty("receivedMinor");
   });
 
+  test("AH-FR-30 (1.2) a cancelled post says why its hold ended, when, and that the creator cancelled", async () => {
+    const world = heldWorld();
+    const deal = await world.heldPost();
+    expect((await deal.sam.send("POST", `/deliverables/${deal.post}/cancel`, { body: {} })).status).toBe(200);
+
+    const [row] = await rows(deal.sam);
+
+    expect(row).toMatchObject({ releasedBecause: "cancelled", cancelledBy: "creator", releasedAt: expect.any(String) });
+  });
+
   test("AH-FR-08 the PayPal email is nowhere in the history", async () => {
     const world = heldWorld();
     const post = await postedPublic(world);

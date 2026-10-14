@@ -4312,6 +4312,11 @@ export interface components {
             publishedAt?: string;
             paidAt?: string;
             firstCheckPassed?: boolean;
+            /** @enum {string} */
+            releasedBecause?: "deadline" | "cancelled" | "day_28" | "fix_window_ended" | "not_accepted" | "ruled_not_to_pay" | "hold_not_confirmed";
+            releasedAt?: string;
+            /** @enum {string} */
+            cancelledBy?: "creator" | "brand";
         };
         DealDraft: {
             id: string;

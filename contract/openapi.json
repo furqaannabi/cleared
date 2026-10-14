@@ -261,6 +261,28 @@
           },
           "firstCheckPassed": {
             "type": "boolean"
+          },
+          "releasedBecause": {
+            "type": "string",
+            "enum": [
+              "deadline",
+              "cancelled",
+              "day_28",
+              "fix_window_ended",
+              "not_accepted",
+              "ruled_not_to_pay",
+              "hold_not_confirmed"
+            ]
+          },
+          "releasedAt": {
+            "type": "string"
+          },
+          "cancelledBy": {
+            "type": "string",
+            "enum": [
+              "creator",
+              "brand"
+            ]
           }
         },
         "required": [
