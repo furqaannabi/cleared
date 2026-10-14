@@ -1,4 +1,5 @@
-import { KEPT } from "@/lib/legal/periods";
+import { CONTACT_EMAIL } from "@/lib/legal/contact";
+import { DELETION_BY_EMAIL, KEPT } from "@/lib/legal/periods";
 import { LegalPage, type LegalSection } from "./legal-page";
 
 const SECTIONS: LegalSection[] = [
@@ -73,7 +74,8 @@ const SECTIONS: LegalSection[] = [
       {
         list: [
           "Stop Sponing reading YouTube or Instagram by removing Sponing in your Google account’s or Instagram’s own settings.",
-          "Delete your account: see Deleting your data.",
+          // LG-FR-09 (1.3): how to delete, in the page's own words.
+          `Delete your account in Settings, or email ${CONTACT_EMAIL} and it’s done ${DELETION_BY_EMAIL}. Deleting your data says what is deleted and what is kept.`,
           "Ask what we hold about you, by email.",
         ],
       },
