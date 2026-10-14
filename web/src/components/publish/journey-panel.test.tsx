@@ -103,8 +103,8 @@ describe("PP-FR-18 to PP-FR-20 money", () => {
   });
 });
 
-describe("PP-FR-35, PP-FR-36 a payout on Cleared's side", () => {
-  test("delayed: on Cleared's side, nothing for the creator to do", async () => {
+describe("PP-FR-35, PP-FR-36 a payout on Sponing's side", () => {
+  test("delayed: on Sponing's side, nothing for the creator to do", async () => {
     stubPosts({ ...wren(), state: "captured", payout: { state: "delayed", email: "ada@example.com", at: new Date().toISOString(), canSendAgain: false } });
     const panel = await open("del_wren_video", "deal_wren");
     expect(panel).toHaveTextContent("Sending $760.00 to ada@example.com is delayed");

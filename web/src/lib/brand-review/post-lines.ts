@@ -75,7 +75,7 @@ export function postLines(deal: Pick<BrandDeal, "dealId" | "creatorName" | "post
         case "live_check":
           return { ...base, text: "Posted · checking the live post", action: { text: "View post", href, style: "link" as const } };
         case "with_cleared":
-          return { ...base, text: "A person at Cleared is deciding", action: { text: "View post", href, style: "link" as const } };
+          return { ...base, text: "A person at Sponing is deciding", action: { text: "View post", href, style: "link" as const } };
         case "taken":
           return { ...base, text: `Paid · ${formatAmount(r.amount)} taken`, action: { text: "View post", href, style: "link" as const } };
         case "approved_not_paid":

@@ -59,7 +59,7 @@ export function fromAnswer(r: Extract<ApiResult<unknown>, { ok: false }>, fileNa
     if (r.limit.field === "post")
       return { show: "limit", post: true, heading: "This post has had all the checks one post can have.", body: "So this draft can’t be checked. Your last results stay as they are." };
     const when = r.limit.resetsAt ? `from ${new Date(r.limit.resetsAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()}` : "tomorrow";
-    return { show: "limit", post: false, heading: "Cleared has checked all the video it can today.", body: `You can upload this draft ${when}.` };
+    return { show: "limit", post: false, heading: "Sponing has checked all the video it can today.", body: `You can upload this draft ${when}.` };
   }
   if (r.error === "rejected") {
     switch (r.code) {

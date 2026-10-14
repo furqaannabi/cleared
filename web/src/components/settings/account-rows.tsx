@@ -125,7 +125,7 @@ function Row({ row, onMe, result }: { row: AccountRow; onMe: (me: CreatorProfile
       {confirming && (
         <div className="mt-2 ml-12 rounded-[10px] bg-latte-wash px-3 py-2.5 text-[13.5px] text-ink-2">
           <p>
-            <b className="text-ink">Disconnect {row.name}?</b> Cleared stops reading it. You can connect it again later.
+            <b className="text-ink">Disconnect {row.name}?</b> Sponing stops reading it. You can connect it again later.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button type="button" disabled={busy} onClick={() => void confirm()} className={PRIMARY}>

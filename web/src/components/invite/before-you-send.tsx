@@ -11,8 +11,8 @@ import { SaveProblem } from "./save-problem";
 import type { Save, SaveProblems } from "./save";
 
 const WHY: Record<"youtube" | "instagram", string> = {
-  youtube: "Cleared reads it to check the live video.",
-  instagram: "Professional accounts only. Cleared reads it to check the live Reel.",
+  youtube: "Sponing reads it to check the live video.",
+  instagram: "Professional accounts only. Sponing reads it to check the live Reel.",
 };
 
 /**

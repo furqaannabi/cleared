@@ -7,7 +7,7 @@ const page = () => render(<LandingPage />);
 describe("Landing page", () => {
   test("LP-FR-01, LP-FR-02: the logo, the tagline as the only h1, and one sentence", () => {
     page();
-    expect(screen.getByRole("link", { name: "Cleared home" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Sponing home" })).toHaveAttribute("href", "/");
     const h1s = screen.getAllByRole("heading", { level: 1 });
     expect(h1s).toHaveLength(1);
     expect(h1s[0]).toHaveTextContent("Brand deals where the content and the payment clear together.");

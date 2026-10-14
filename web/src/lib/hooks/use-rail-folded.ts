@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const KEY = "cleared.rail-folded";
+const KEY = "sponing.rail-folded";
 
 function remembered(): boolean {
   try {

@@ -32,7 +32,7 @@ export function LegalPage({ title, sections, after }: { title: string; sections:
         <div className="lg:col-start-2">
           <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">{title}</h1>
           <p className="mt-1 text-meta text-ink-3">Last updated {LEGAL_UPDATED}</p>
-          <p className="mt-2 text-[14px] text-ink-2">Written for the Cleared hackathon project. Not reviewed by a lawyer.</p>
+          <p className="mt-2 text-[14px] text-ink-2">Written for the Sponing hackathon project. Not reviewed by a lawyer.</p>
         </div>
         <nav aria-label="On this page" className="mt-6 lg:sticky lg:top-6 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:self-start">
           <p className="text-label font-bold text-ink-3">On this page</p>

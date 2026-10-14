@@ -51,6 +51,6 @@ describe("HM-FR-19 the CSV", () => {
 
   test("the file is named with today's date", async () => {
     const { csvFileName } = await import("./history");
-    expect(csvFileName(new Date("2026-10-12T09:00:00.000Z"), "UTC")).toBe("cleared-payments-2026-10-12.csv");
+    expect(csvFileName(new Date("2026-10-12T09:00:00.000Z"), "UTC")).toBe("sponing-payments-2026-10-12.csv");
   });
 });

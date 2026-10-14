@@ -12,7 +12,7 @@ type DraftItemKind = components["schemas"]["DealDraft"]["items"][number]["kind"]
 export type { ApiError, ApiLimit, ApiResult } from "./answer";
 
 /**
- * The one typed client for the Cleared API. Every response is parsed with
+ * The one typed client for the Sponing API. Every response is parsed with
  * its schema before the app sees it. Paths are provisional (creator draft
  * check FRD, "Requests for Furqaan").
  *
@@ -247,7 +247,7 @@ export function createApiClient({ baseUrl }: { baseUrl: string }) {
     /** PP-FR-27: confirm a post the live check couldn't decide; the money is taken. */
     confirmPost: (dealId: string, deliverableId: string) =>
       request("POST", `${brandDeliverablePath(dealId, deliverableId)}/post/confirm`, brandDeliverableSchema),
-    /** PP-FR-27: object to a live post, with a plain-text reason; a person at Cleared decides. */
+    /** PP-FR-27: object to a live post, with a plain-text reason; a person at Sponing decides. */
     objectToPost: (dealId: string, deliverableId: string, reason: string) =>
       request("POST", `${brandDeliverablePath(dealId, deliverableId)}/post/object`, brandDeliverableSchema, { reason }),
     /** CN-FR-04 to CN-FR-10: the creator cancels one post, with an optional plain-text note for the brand. */

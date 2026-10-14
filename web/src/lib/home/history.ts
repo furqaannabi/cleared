@@ -87,7 +87,7 @@ export function paymentsCsv(rows: HistoryRow[]): string {
   return lines.map((l) => l.map(cell).join(",")).join("\r\n") + "\r\n";
 }
 
-/** "cleared-payments-2026-10-12.csv", today in the creator's time zone (HM-FR-19). */
+/** "sponing-payments-2026-10-12.csv", today in the creator's time zone (HM-FR-19). */
 export function csvFileName(now: Date, timeZone: string): string {
-  return `cleared-payments-${isoDay(now, timeZone)}.csv`;
+  return `sponing-payments-${isoDay(now, timeZone)}.csv`;
 }

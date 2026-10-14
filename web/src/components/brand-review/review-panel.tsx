@@ -139,7 +139,7 @@ function ObjectField({ actions }: { actions: ReviewActions }) {
           {actions.objectProblem}
         </p>
       )}
-      <p className="text-meta text-ink-3">A person at Cleared will decide. Your money stays held until then.</p>
+      <p className="text-meta text-ink-3">A person at Sponing will decide. Your money stays held until then.</p>
       <span className="flex flex-wrap gap-2">
         <button type="button" disabled={actions.busy} onClick={() => actions.objectToPost(text)} className={OUTLINE}>
           Send objection

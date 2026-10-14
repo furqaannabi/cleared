@@ -15,9 +15,9 @@ describe("HM-FR-05 the three totals, in what the creator receives", () => {
 });
 
 describe("HM-FR-05 (1.4) held, before the fee, and a post never paid", () => {
-  test("held for you adds the held posts' deal amounts, and says they are before Cleared's fee", () => {
+  test("held for you adds the held posts' deal amounts, and says they are before Sponing's fee", () => {
     const o = moneyOverview([held, aPayment({ deliverableId: "e", stage: "held", payout: undefined, paidAt: undefined, amountMinor: 45000, feeMinor: undefined, receivedMinor: undefined })]);
-    expect(o.held).toEqual({ text: "$1,650.00", posts: "2 posts · before Cleared’s fee" });
+    expect(o.held).toEqual({ text: "$1,650.00", posts: "2 posts · before Sponing’s fee" });
   });
 
   test("a post approved but never paid counts in no total", () => {

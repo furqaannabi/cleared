@@ -56,7 +56,7 @@ describe("DC-FR-27 money card", () => {
       ["day_28", "day 28"],
       ["fix_window_ended", "fix window ended"],
       ["not_accepted", "not accepted by Glow Theory"],
-      ["ruled_not_to_pay", "decided by Cleared"],
+      ["ruled_not_to_pay", "decided by Sponing"],
       ["hold_not_confirmed", "hold not confirmed"],
     ] as const;
     for (const [releaseReason, words] of reasons) {

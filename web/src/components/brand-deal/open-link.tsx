@@ -43,7 +43,7 @@ export function OpenLink({ token }: { token: string }) {
       ) : problem === "unreachable" ? (
         <div className="py-10">
           <p role="alert" className="text-ink-2">
-            We couldn’t reach Cleared. Check your connection and try again.
+            We couldn’t reach Sponing. Check your connection and try again.
           </p>
           <button
             type="button"

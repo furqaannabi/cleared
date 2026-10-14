@@ -39,9 +39,9 @@ describe("BC-FR-24 a limit on reading (1.4)", () => {
     expect(screen.getByRole("button", { name: "Make the checklist" })).toBeEnabled();
   });
 
-  test("the limit across everyone says Cleared has read all it can today", async () => {
+  test("the limit across everyone says Sponing has read all it can today", async () => {
     await send(refusedAt("overall", at.toISOString()));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Cleared has read all the briefs it can today. You can send this one from 3:40 pm.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sponing has read all the briefs it can today. You can send this one from 3:40 pm.");
   });
 
   test("without a reset time, tomorrow", async () => {

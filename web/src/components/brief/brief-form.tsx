@@ -10,7 +10,7 @@ const MAX = 20_000;
 /** BC-FR-24: what to say at a daily limit on reading, with when it lifts in the creator's own time. */
 function limitProblem({ field, resetsAt }: ApiLimit) {
   const when = resetsAt ? `from ${new Date(resetsAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()}` : "tomorrow";
-  const what = field === "creator" ? "You’ve reached today’s limit on reading briefs." : "Cleared has read all the briefs it can today.";
+  const what = field === "creator" ? "You’ve reached today’s limit on reading briefs." : "Sponing has read all the briefs it can today.";
   return `${what} You can send this one ${when}.`;
 }
 

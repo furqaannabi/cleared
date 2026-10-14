@@ -48,10 +48,10 @@ describe("CH-FR-02 a link that doesn't work", () => {
   });
 });
 
-test("when Cleared can't be reached, it says so and offers to try again, without calling the link dead", async () => {
+test("when Sponing can't be reached, it says so and offers to try again, without calling the link dead", async () => {
   server.use(http.post(`${apiBaseUrl}/b/:token/session`, () => HttpResponse.error(), { once: true }));
   render(<OpenLink token="tok_maple" />);
-  expect(await screen.findByText("We couldn’t reach Cleared. Check your connection and try again.")).toBeVisible();
+  expect(await screen.findByText("We couldn’t reach Sponing. Check your connection and try again.")).toBeVisible();
   expect(screen.queryByText("This link doesn’t work any more")).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "Try again" }));
   await waitFor(() => expect(replace).toHaveBeenCalledWith("/brand/deals/deal_maple"));

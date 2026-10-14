@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BrandDealPage } from "@/components/brand-deal/brand-deal-page";
 
 export const metadata: Metadata = {
-  title: "Your deal · Cleared",
+  title: "Your deal · Sponing",
   referrer: "no-referrer",
   robots: { index: false, follow: false },
 };

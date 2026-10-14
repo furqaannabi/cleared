@@ -10,7 +10,7 @@ import { server } from "@/test/server";
 import { DraftCheckPage } from "./draft-check-page";
 
 const DEAL = "deal_juniper";
-const LINK = { url: "https://cleared.example/b/review_del_juniper_video", expiresAt: "2026-10-14T12:00:00.000Z", expired: false };
+const LINK = { url: "https://sponing.example/b/review_del_juniper_video", expiresAt: "2026-10-14T12:00:00.000Z", expired: false };
 
 /** Juniper & Salt's three posts as the creator reads them; the video, in its review window, has the brand's link. */
 const juniper = (): Deliverable[] => juniperDeliverables(Date.now()).map((d) => (d.id === "del_juniper_video" ? { ...d, reviewLink: LINK } : d));
@@ -44,7 +44,7 @@ describe("DC-FR-51 approved", () => {
     render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_short" />);
     const banner = await screen.findByRole("region", { name: "Draft approved" });
     expect(banner).toHaveTextContent("Juniper & Salt approved this draft.");
-    expect(within(banner).getByText("Don’t publish yet. Cleared confirms Juniper & Salt’s hold with PayPal first.")).toBeVisible();
+    expect(within(banner).getByText("Don’t publish yet. Sponing confirms Juniper & Salt’s hold with PayPal first.")).toBeVisible();
     expect(screen.queryByRole("button", { name: /Upload/ })).toBeNull();
   });
 });
@@ -69,7 +69,7 @@ describe("DC-FR-52 (1.18) the brand's link: opened, expired, made again", () => 
   async function withLink(link: { expired: boolean }, reviewOpenedAt?: string) {
     const post = {
       ...juniper().find((d) => d.id === "del_juniper_video")!,
-      reviewLink: { url: "https://cleared.example/b/rev_juniper", expiresAt: "2026-10-14T12:00:00.000Z", ...link },
+      reviewLink: { url: "https://sponing.example/b/rev_juniper", expiresAt: "2026-10-14T12:00:00.000Z", ...link },
       ...(reviewOpenedAt ? { reviewOpenedAt } : {}),
     };
     server.use(http.get(route, () => HttpResponse.json(post)));
@@ -93,7 +93,7 @@ describe("DC-FR-52 (1.18) the brand's link: opened, expired, made again", () => 
     const post = await withLink({ expired: true });
     server.use(
       http.post(`${route}/review-link`, () =>
-        HttpResponse.json({ ...post, reviewLink: { url: "https://cleared.example/b/rev_juniper_2", expiresAt: "2026-10-16T12:00:00.000Z", expired: false } }),
+        HttpResponse.json({ ...post, reviewLink: { url: "https://sponing.example/b/rev_juniper_2", expiresAt: "2026-10-16T12:00:00.000Z", expired: false } }),
       ),
     );
     render(<DraftCheckPage dealId={DEAL} deliverableId="del_juniper_video" />);
@@ -101,6 +101,6 @@ describe("DC-FR-52 (1.18) the brand's link: opened, expired, made again", () => 
     expect(screen.queryByRole("button", { name: "Copy link for Juniper & Salt" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Make a new link" }));
     expect(await screen.findByText("New link copied")).toBeVisible();
-    expect(await navigator.clipboard.readText()).toBe("https://cleared.example/b/rev_juniper_2");
+    expect(await navigator.clipboard.readText()).toBe("https://sponing.example/b/rev_juniper_2");
   });
 });

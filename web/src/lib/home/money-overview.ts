@@ -28,11 +28,11 @@ const sum = (rows: PaymentRow[], amount: (r: PaymentRow) => number) => formatMon
 const total = (rows: PaymentRow[]): MoneyTotal => ({ text: sum(rows, (r) => r.receivedMinor ?? 0), posts: posts(rows.length) });
 
 // HM-FR-05 (1.4): what is received comes only once a hold is taken, so held money is the deal amount, before the fee.
-const heldTotal = (rows: PaymentRow[]): MoneyTotal => ({ text: sum(rows, (r) => r.amountMinor), posts: `${posts(rows.length)} · before Cleared’s fee` });
+const heldTotal = (rows: PaymentRow[]): MoneyTotal => ({ text: sum(rows, (r) => r.amountMinor), posts: `${posts(rows.length)} · before Sponing’s fee` });
 
 /**
  * The money overview from the payment rows: held for you, on its way and
- * paid, each the sum of what the creator receives after Cleared's fee, as the
+ * paid, each the sum of what the creator receives after Sponing's fee, as the
  * API reports it (the fee is never worked out here).
  *
  * @param rows - every post that has had a hold

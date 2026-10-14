@@ -29,7 +29,7 @@ export function ApprovedBanner({ deliverable }: { deliverable: Deliverable }) {
         <p className="mt-0.5 text-[14px] text-ink-2 md:text-body">
           {deliverable.approvedBy === "window" ? `No objection from ${b} in 48 hours, so this draft is approved.` : `${b} approved this draft.`}
         </p>
-        {deliverable.state === "approved" && <p className="mt-0.5 text-[14px] font-semibold text-ink md:text-body">Don’t publish yet. Cleared confirms {b}’s hold with PayPal first.</p>}
+        {deliverable.state === "approved" && <p className="mt-0.5 text-[14px] font-semibold text-ink md:text-body">Don’t publish yet. Sponing confirms {b}’s hold with PayPal first.</p>}
       </div>
     </section>
   );
@@ -70,7 +70,7 @@ export function CopyReviewLink({ deliverable, onUpdated, timeZone }: { deliverab
     await copy(r.data.reviewLink.url, "New link copied");
   }
   const opened = deliverable.reviewOpenedAt ? `${b} opened it on ${formatDay(deliverable.reviewOpenedAt)}, ${formatTime(deliverable.reviewOpenedAt)}.` : `${b} hasn’t opened it yet.`;
-  // PP-FR-40: a link back for a live post means Cleared has no email for the brand; say why it matters.
+  // PP-FR-40: a link back for a live post means Sponing has no email for the brand; say why it matters.
   const lc = deliverable.liveCheck;
   const due = lc?.state === "undecided" ? { verb: "confirm", by: lc.brandBy } : lc?.state === "not_fixable" ? { verb: "accept", by: lc.brandBy } : null;
   return (

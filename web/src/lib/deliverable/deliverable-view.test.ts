@@ -206,7 +206,7 @@ describe("DC-FR-30 next step", () => {
   test("DC-FR-51 approved: by the brand, or by the window ending; never says to publish yet", () => {
     expect(next({ state: "approved", approvedBy: "brand", approvedAt: "2026-10-08T10:00:00Z" })).toEqual({
       lead: "Glow Theory approved this draft.",
-      detail: "Don’t publish yet. Cleared confirms Glow Theory’s hold with PayPal first.",
+      detail: "Don’t publish yet. Sponing confirms Glow Theory’s hold with PayPal first.",
       action: null,
     });
     expect(next({ state: "approved", approvedBy: "window" }).lead).toBe("No objection from Glow Theory in 48 hours, so this draft is approved.");
@@ -217,7 +217,7 @@ describe("DC-FR-30 next step", () => {
     expect(why("day_28")).toMatch(/^The hold reached its 28th day with nothing decided, so the \$1,200\.00 hold was released on 24 Oct\./);
     expect(why("fix_window_ended")).toMatch(/^The fix window ended with your live post still failing/);
     expect(why("not_accepted")).toMatch(/^Glow Theory didn’t accept the post within 48 hours/);
-    expect(why("ruled_not_to_pay")).toMatch(/^A person at Cleared decided not to pay for this post/);
+    expect(why("ruled_not_to_pay")).toMatch(/^A person at Sponing decided not to pay for this post/);
     expect(why("hold_not_confirmed")).toMatch(/^PayPal couldn’t confirm Glow Theory’s hold before the deadline/);
   });
 

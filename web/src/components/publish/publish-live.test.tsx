@@ -90,7 +90,7 @@ describe("PP-FR-38 (1.3) names the creator's channel when the profile has it", (
 });
 
 describe("PP-FR-40 (1.3) the brand's link for a live post", () => {
-  const link = { url: "https://app.cleared.test/b/tok", expiresAt: "2099-01-01T00:00:00.000Z", expired: false };
+  const link = { url: "https://app.sponing.test/b/tok", expiresAt: "2099-01-01T00:00:00.000Z", expired: false };
   test.each([
     ["confirm", { state: "undecided" as const, what: ["paid_promotion" as const], brandBy: "2026-10-13T14:00:00.000Z" }],
     ["accept", { state: "not_fixable" as const, reason: "not_the_approved_file" as const, brandBy: "2026-10-13T14:00:00.000Z" }],

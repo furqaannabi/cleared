@@ -85,7 +85,7 @@ export function GettingPaid({ me, onMe }: { me: CreatorProfile; onMe: (me: Creat
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[15px] font-bold">{me.paypalEmail ?? "Add the email we pay you at."}</p>
-          {me.paypalEmail && <p className="text-[13.5px] text-ink-3">Every payout goes here, after Cleared’s 5% fee.</p>}
+          {me.paypalEmail && <p className="text-[13.5px] text-ink-3">Every payout goes here, after Sponing’s 5% fee.</p>}
           <p aria-live="polite" className="text-[13.5px] font-bold text-pass">
             {kept ? "Saved." : ""}
           </p>

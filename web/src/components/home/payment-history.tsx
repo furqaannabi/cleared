@@ -36,7 +36,7 @@ function Card({ row }: { row: HistoryRow }) {
       </div>
       <dl className="mt-2.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[13.5px]">
         {field("Deal amount", row.amount)}
-        {field("Cleared’s fee", row.fee)}
+        {field("Sponing’s fee", row.fee)}
         {field("Received", row.received, true)}
         {field("Payout reference", row.payoutReference)}
         {field("Hold reference", row.holdReference)}

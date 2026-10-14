@@ -212,7 +212,7 @@ describe("PP-FR-26 to PP-FR-30 after posting", () => {
     expect(await within(review()).findByText(/Ada Okafor’s payment is on its way\./)).toBeVisible();
   });
 
-  test("objecting needs a reason, then a person at Cleared decides", async () => {
+  test("objecting needs a reason, then a person at Sponing decides", async () => {
     const user = userEvent.setup();
     const post = await openPost(posted({ state: "confirm", endsAt: later(), what: ["paid_promotion"] }), "YouTube Short");
     post.on("post", "/post/object", (p, { body }) => ({ ...p, review: { state: "with_cleared", reason: (body as { reason: string }).reason, ruleBy: later() } }));
@@ -221,7 +221,7 @@ describe("PP-FR-26 to PP-FR-30 after posting", () => {
     expect(within(review()).getByText("Say why you’re objecting.")).toBeVisible();
     await user.type(within(review()).getByRole("textbox", { name: "Why are you objecting?" }), "The label isn’t on.");
     await user.click(within(review()).getByRole("button", { name: "Send objection" }));
-    expect(await within(review()).findByText("A person at Cleared is deciding")).toBeVisible();
+    expect(await within(review()).findByText("A person at Sponing is deciding")).toBeVisible();
   });
 
   test("failed for good: accept the post anyway, after a confirmation; silence returns the money", async () => {

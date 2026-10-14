@@ -37,7 +37,7 @@ describe("DC-FR-45, DC-FR-53 (1.18) what the page says when a draft can't go", (
     expect(fromAnswer({ ok: false, error: "draft_limit", limit: { field: "overall", resetsAt: at.toISOString() } }, "a.mp4")).toEqual({
       show: "limit",
       post: false,
-      heading: "Cleared has checked all the video it can today.",
+      heading: "Sponing has checked all the video it can today.",
       body: "You can upload this draft from 3:40 pm.",
     });
     expect(fromAnswer({ ok: false, error: "draft_limit", limit: { field: "overall" } }, "a.mp4")).toMatchObject({ body: "You can upload this draft tomorrow." });

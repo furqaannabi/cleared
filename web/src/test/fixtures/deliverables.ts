@@ -75,7 +75,7 @@ export const glowTheoryVideoReleased: Deliverable = {
   releaseReason: "deadline",
 };
 
-/** The same deliverable after run 3 failed on Cleared's side, with no automatic retry. */
+/** The same deliverable after run 3 failed on Sponing's side, with no automatic retry. */
 export const glowTheoryVideoFailedOurs: Deliverable = {
   ...glowTheoryVideo,
   id: "del_glow_failed_ours",

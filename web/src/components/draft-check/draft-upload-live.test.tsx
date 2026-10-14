@@ -69,7 +69,7 @@ describe("DC-FR-53 (1.18) a limit on drafts", () => {
   test("the daily limit says when, and uploading stays", async () => {
     server.use(http.post(draftRoute, () => apiError({ code: "draft_limit", field: "overall" }, 429)));
     await userEvent.upload(await open(), file());
-    expect(await screen.findByRole("alert", { name: "Cleared has checked all the video it can today." })).toHaveTextContent("You can upload this draft tomorrow.");
+    expect(await screen.findByRole("alert", { name: "Sponing has checked all the video it can today." })).toHaveTextContent("You can upload this draft tomorrow.");
     expect(screen.getByLabelText("Upload new draft")).toBeInTheDocument();
   });
 });

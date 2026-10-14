@@ -122,7 +122,7 @@ function Review({ post, setPost, reload }: { post: BrandDeliverable; setPost: (p
 
   return (
     <BrandFrame invited={{ creator: post.creatorName, brand: post.brandName }}>
-      <title>{`${label} · ${post.brandName} × ${post.creatorName} · Cleared`}</title>
+      <title>{`${label} · ${post.brandName} × ${post.creatorName} · Sponing`}</title>
       <ChecklistWordsProvider words={words}>
         <SeekProvider seek={post.draft ? seek : null}>
           <Link href={`/brand/deals/${post.dealId}`} className="inline-flex min-h-11 items-center text-[13.5px] font-bold text-espresso underline underline-offset-3">

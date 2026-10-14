@@ -15,7 +15,7 @@ const POSTS: Post[] = [
   { deliverableId: "del_maple_reel", platform: "instagram_reel", itemCount: 4, amount: "450.00", deadlineDays: 10, cancel: { allowed: true } },
   { deliverableId: "del_maple_short", platform: "youtube_short", itemCount: 3, amount: "300.00", deadlineDays: 7, cancel: { allowed: true } },
 ];
-const LINK = { url: "https://cleared.example/b/tok_maple", expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(), expired: false };
+const LINK = { url: "https://sponing.example/b/tok_maple", expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(), expired: false };
 const ACCOUNTS = [
   { platform: "youtube" as const, name: "Ada Okafor", inUse: false },
   { platform: "instagram" as const, name: "ada.makes", inUse: false },

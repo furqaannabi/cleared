@@ -57,7 +57,7 @@ export function nextStep(d: Deliverable, timeZone?: string): NextStep {
       // DC-FR-51: never "publish now"; the hold is re-confirmed first (step 6).
       return {
         lead: d.approvedBy === "window" ? `No objection from ${d.brandName} in 48 hours, so this draft is approved.` : `${d.brandName} approved this draft.`,
-        detail: `Don’t publish yet. Cleared confirms ${d.brandName}’s hold with PayPal first.`,
+        detail: `Don’t publish yet. Sponing confirms ${d.brandName}’s hold with PayPal first.`,
         action: null,
       };
     // PP FRD: past Approved the journey says what happens next; its action lives in the journey panel.
@@ -155,7 +155,7 @@ function releasedStep(d: Deliverable, timeZone?: string): NextStep {
   } else if (d.releaseReason === "not_accepted") {
     why = `${d.brandName} didn’t accept the post within 48 hours, so the ${amount} hold went back to them${on}.`;
   } else if (d.releaseReason === "ruled_not_to_pay") {
-    why = `A person at Cleared decided not to pay for this post, so the ${amount} hold went back to ${d.brandName}${on}.`;
+    why = `A person at Sponing decided not to pay for this post, so the ${amount} hold went back to ${d.brandName}${on}.`;
   } else if (d.releaseReason === "hold_not_confirmed") {
     why = `PayPal couldn’t confirm ${d.brandName}’s hold before the deadline, so the ${amount} hold was released${on}.`;
   } else if (d.cancelled) {

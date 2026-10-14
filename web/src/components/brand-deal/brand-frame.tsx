@@ -3,7 +3,7 @@ import { LegalLinks } from "@/components/legal/legal-links";
 import { Logo } from "@/components/shell/logo";
 
 /**
- * The brand's slim frame: the Cleared logo and, once the deal is known,
+ * The brand's slim frame: the Sponing logo and, once the deal is known,
  * "{creator} invited {brand}". No rail and none of the creator's navigation.
  *
  * @param invited - the creator and brand, when known

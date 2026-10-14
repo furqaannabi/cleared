@@ -14,7 +14,7 @@ const POINTS = [
   "PayPal reserves the amount for each post. Nothing is taken from your account yet.",
   "It’s taken only after Ada Okafor’s post is live and passes its check, and never more than you approved.",
   "It comes back to you if Ada Okafor misses the deadline, if either of you cancels before Ada Okafor is told to publish, or on day 28 at the latest.",
-  "You pay the amounts above and nothing more. Cleared’s 5% fee comes out of Ada Okafor’s payout.",
+  "You pay the amounts above and nothing more. Sponing’s 5% fee comes out of Ada Okafor’s payout.",
   "This is PayPal’s sandbox. No real money moves.",
 ];
 

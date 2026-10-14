@@ -2,11 +2,11 @@ import { LegalPage, type LegalSection } from "./legal-page";
 
 const SECTIONS: LegalSection[] = [
   {
-    id: "what-cleared-is",
-    heading: "What Cleared is",
+    id: "what-sponing-is",
+    heading: "What Sponing is",
     blocks: [
-      "Cleared runs a sponsorship deal that a creator and a brand have already agreed. It is not a marketplace, and it is not a party to their agreement.",
-      "Cleared is a hackathon project on PayPal’s sandbox. No real money moves.",
+      "Sponing runs a sponsorship deal that a creator and a brand have already agreed. It is not a marketplace, and it is not a party to their agreement.",
+      "Sponing is a hackathon project on PayPal’s sandbox. No real money moves.",
     ],
   },
   {
@@ -22,7 +22,7 @@ const SECTIONS: LegalSection[] = [
           "The held money is taken only after the published post passes its live check, and never more than was held.",
           "A missed deadline or a cancelled deal gives the hold back to the brand. Either side can cancel until the creator has a go-ahead.",
           "A hold that hasn’t been taken or given back by day 28 is given back to the brand.",
-          "Cleared’s fee is 5% of the deliverable’s amount, taken from the creator’s payout, in whole cents rounded down. PayPal’s own charges come out of that fee.",
+          "Sponing’s fee is 5% of the deliverable’s amount, taken from the creator’s payout, in whole cents rounded down. PayPal’s own charges come out of that fee.",
         ],
       },
     ],
@@ -46,7 +46,7 @@ const SECTIONS: LegalSection[] = [
     id: "what-we-cant-promise",
     heading: "What we can’t promise",
     blocks: [
-      "We can’t promise that YouTube, Instagram or PayPal are always available, or that PayPal accepts every hold, capture or payout. When one of them fails, Cleared says why and what happens next.",
+      "We can’t promise that YouTube, Instagram or PayPal are always available, or that PayPal accepts every hold, capture or payout. When one of them fails, Sponing says why and what happens next.",
     ],
   },
   {
@@ -57,8 +57,8 @@ const SECTIONS: LegalSection[] = [
 ];
 
 /**
- * `/terms`: what Cleared is and isn't, the money rules in plain words, the AI
- * and its limits, the platforms' rules, what Cleared can't promise, and the
+ * `/terms`: what Sponing is and isn't, the money rules in plain words, the AI
+ * and its limits, the platforms' rules, what Sponing can't promise, and the
  * account.
  *
  * @see docs/specs/legal-pages-frd.md LG-FR-11, LG-FR-12

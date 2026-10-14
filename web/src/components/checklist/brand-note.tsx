@@ -5,7 +5,7 @@ import { useChecklistWords } from "./checklist-words";
  * On an item the brand objected to (DC-FR-49): "The check passed this.
  * {brand} asked you to change it:" and the note. On an Unsure item the brand declined: "{brand} asked you to fix this" and
  * the brand's note, as plain text. Sits above the evidence, so the brand's own
- * words come before Cleared's suggestion. Renders nothing otherwise. On the
+ * words come before Sponing's suggestion. Renders nothing otherwise. On the
  * brand's review the brand's own words: "You objected:" (RW-FR-08).
  *
  * @param item - the item; shown only when it is Unsure and declined

@@ -15,7 +15,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
   return (
     <html lang="en" className={`${bricolage.variable} ${figtree.variable} antialiased`}>
       <body className="min-h-dvh bg-ground px-4 text-ink">
-        <title>Something went wrong · Cleared</title>
+        <title>Something went wrong · Sponing</title>
         <main id="main">
           <ErrorMessage error={error} retry={() => window.location.reload()} action="Reload" />
         </main>

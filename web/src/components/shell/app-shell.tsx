@@ -62,7 +62,7 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
         <aside aria-label="Main" className={`sticky top-0 z-20 flex h-dvh flex-col bg-espresso-deep py-[22px] ${folded ? "px-2" : "px-3.5"}`}>
           {/* DC-FR-31 (1.20): the logo goes to the landing page; DC-FR-55 (1.24): the fold beside it, or under the seal when folded. */}
           <div className={folded ? "grid justify-items-center gap-2" : "flex items-center justify-between gap-2"}>
-            <Link href="/" aria-label="Cleared, home page" className={`rounded-nav ${folded ? "px-1.5" : "px-2.5"}`}>
+            <Link href="/" aria-label="Sponing, home page" className={`rounded-nav ${folded ? "px-1.5" : "px-2.5"}`}>
               <Logo mark={folded} />
             </Link>
             <FoldButton folded={folded} onToggle={toggleFolded} />
@@ -94,7 +94,7 @@ function Frame({ currentDealId, page, children }: { currentDealId: string | null
     <div className="min-h-dvh">
       <SkipLink />
       <header className="sticky top-0 z-20 flex items-center justify-between bg-espresso-deep px-4 py-3">
-        <Link href="/" aria-label="Cleared, home page" className="rounded-nav">
+        <Link href="/" aria-label="Sponing, home page" className="rounded-nav">
           <Logo compact />
         </Link>
         <Sheet

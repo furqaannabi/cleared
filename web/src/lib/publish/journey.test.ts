@@ -82,12 +82,12 @@ describe("PP-FR-09 to PP-FR-15 the live check", () => {
     expect(fix).toMatchObject({ title: "1 item to fix on your live post", state: "problem" });
     expect(fix.body).toBe("Fix Marked as a paid promotion and check again before Sat 10 Oct, 14:00.");
     expect(now({ ...posted, liveCheck: { state: "undecided", what: ["file_record", "paid_promotion"], brandBy: "2026-10-10T14:00:00Z" } }).body).toBe(
-      "We couldn’t check whether it’s the same file and YouTube’s paid promotion label automatically. Juniper & Salt has until Sat 10 Oct, 14:00 to confirm. If they say nothing, you’re paid. If they object, a person at Cleared decides.",
+      "We couldn’t check whether it’s the same file and YouTube’s paid promotion label automatically. Juniper & Salt has until Sat 10 Oct, 14:00 to confirm. If they say nothing, you’re paid. If they object, a person at Sponing decides.",
     );
     expect(now({ ...posted, liveCheck: { state: "not_fixable", reason: "not_the_approved_file", brandBy: "2026-10-10T14:00:00Z" } }).body).toBe(
       "Your live post doesn’t match the approved draft. Juniper & Salt has until Sat 10 Oct, 14:00 to accept it anyway. If they don’t, the hold goes back to them.",
     );
-    expect(now({ ...posted, liveCheck: { state: "objected", reason: "No label.", ruleBy: "2026-10-13T12:00:00Z" } })).toMatchObject({ title: "A person at Cleared is deciding" });
+    expect(now({ ...posted, liveCheck: { state: "objected", reason: "No label.", ruleBy: "2026-10-13T12:00:00Z" } })).toMatchObject({ title: "A person at Sponing is deciding" });
   });
 
   test("PP-FR-38: a channel to reconnect, and a video not found, each with its action and the deadline still running", () => {
@@ -142,7 +142,7 @@ describe("PP-FR-09 to PP-FR-15 the live check", () => {
     expect(by("brand_confirmed").steps.find((s) => s.key === "live_check")).toMatchObject({ state: "done", title: "Juniper & Salt confirmed your live post." });
     expect(by("brand_silence").steps.find((s) => s.key === "live_check")?.title).toBe("Juniper & Salt didn’t answer in 48 hours, so your live post is approved.");
     expect(by("brand_accepted").steps.find((s) => s.key === "live_check")?.title).toBe("Juniper & Salt accepted your live post.");
-    expect(by("cleared").steps.find((s) => s.key === "live_check")?.title).toBe("A person at Cleared approved your live post.");
+    expect(by("cleared").steps.find((s) => s.key === "live_check")?.title).toBe("A person at Sponing approved your live post.");
     expect(by("cleared").steps.find((s) => s.key === "captured")).toMatchObject({ state: "now", body: "Collecting Juniper & Salt’s payment with PayPal…" });
     expect(j({ ...posted, liveCheck: { state: "passed" } }).steps.find((s) => s.key === "captured")?.body).toBe("Collecting Juniper & Salt’s payment with PayPal…");
   });
@@ -157,7 +157,7 @@ describe("PP-FR-16 to PP-FR-23 money", () => {
   test("captured: the API's figures, never the page's; sending", () => {
     const v = j({ state: "captured", liveCheck: { state: "passed" }, capture: cap, payout: { state: "sending", email: "ada@example.com", canSendAgain: false } });
     expect(v).toMatchObject({ heading: "Captured from Juniper & Salt", amount: "$350.00" });
-    expect(v.steps.find((s) => s.title === "Captured")?.meta).toBe("9 Oct · PayPal ref DEMO-CAP · less Cleared’s 5% fee, $17.50");
+    expect(v.steps.find((s) => s.title === "Captured")?.meta).toBe("9 Oct · PayPal ref DEMO-CAP · less Sponing’s 5% fee, $17.50");
     expect(now({ state: "captured", capture: cap, payout: { state: "sending", email: "ada@example.com", canSendAgain: false } }).title).toBe("Sending $332.50 to ada@example.com");
   });
 
@@ -174,13 +174,13 @@ describe("PP-FR-16 to PP-FR-23 money", () => {
     expect(j({ state: "captured", capture: cap, payout: { state: "failed", email: "a@b.co", canSendAgain: false } }).action).toBeNull();
   });
 
-  test("PP-FR-35: a payout PayPal won't send is delayed on Cleared's side, current, with nothing to do", () => {
+  test("PP-FR-35: a payout PayPal won't send is delayed on Sponing's side, current, with nothing to do", () => {
     const v = j({ state: "captured", capture: cap, payout: { state: "delayed", email: "ada@example.com", canSendAgain: false } });
     expect(v).toMatchObject({ heading: "Captured from Juniper & Salt", action: null });
     expect(v.steps.find((s) => s.key === "paid")).toMatchObject({
       state: "now",
       title: "Sending $332.50 to ada@example.com is delayed",
-      body: "The delay is on Cleared’s side, with our PayPal account. Your money is safe with Cleared, and we keep trying until it’s sent. There’s nothing you need to do.",
+      body: "The delay is on Sponing’s side, with our PayPal account. Your money is safe with Sponing, and we keep trying until it’s sent. There’s nothing you need to do.",
     });
   });
 
@@ -198,7 +198,7 @@ describe("PP-FR-16 to PP-FR-23 money", () => {
     const v = j({ state: "paid", capture: cap, payout: { state: "paid", email: "ada@example.com", reference: "DEMO-PAY", at: "2026-10-10T09:00:00Z", canSendAgain: false } });
     expect(v).toMatchObject({ heading: "Cleared", amount: "$332.50", action: null });
     expect(v.steps.every((s) => s.state === "done")).toBe(true);
-    expect(v.steps.at(-1)).toMatchObject({ title: "Paid $332.50 to ada@example.com", meta: "10 Oct · Payout ref DEMO-PAY · after Cleared’s 5% fee" });
+    expect(v.steps.at(-1)).toMatchObject({ title: "Paid $332.50 to ada@example.com", meta: "10 Oct · Payout ref DEMO-PAY · after Sponing’s 5% fee" });
   });
 
   test("capture refused and approved, not paid", () => {
@@ -208,7 +208,7 @@ describe("PP-FR-16 to PP-FR-23 money", () => {
     const anp = j({ state: "approved_not_paid" });
     expect(anp.heading).toBe("Approved, not paid");
     expect(anp.steps.find((s) => s.state === "problem")?.body).toBe(
-      "This post was approved, but PayPal never let Cleared collect Juniper & Salt’s payment, so you weren’t paid through Cleared.",
+      "This post was approved, but PayPal never let Sponing collect Juniper & Salt’s payment, so you weren’t paid through Sponing.",
     );
   });
 });

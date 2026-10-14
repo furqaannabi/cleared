@@ -103,7 +103,7 @@ describe("HM-FR-16 to HM-FR-19 the payment history", () => {
     const cards = within(history).getAllByRole("article");
     expect(cards).toHaveLength(2);
     expect(cards[0]).toHaveTextContent("Kora Audio · YouTube video");
-    expect(cards[0]).toHaveTextContent("Deal amount$800.00Cleared’s fee$40.00Received$760.00Payout reference5UX0294KQ1Hold reference7HK21934LM");
+    expect(cards[0]).toHaveTextContent("Deal amount$800.00Sponing’s fee$40.00Received$760.00Payout reference5UX0294KQ1Hold reference7HK21934LM");
     expect(within(cards[0]).getByRole("link", { name: /Kora Audio/ })).toHaveAttribute("href", "/deals/deal_kora/deliverables/del_kora_video");
     expect(cards[1]).toHaveTextContent("=Tide Studio · Short");
   });
@@ -126,7 +126,7 @@ describe("HM-FR-16 to HM-FR-19 the payment history", () => {
     const saved: Blob[] = [];
     vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: (b: Blob) => (saved.push(b), "blob:csv"), revokeObjectURL: () => {} }));
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
-      expect(this.download).toMatch(/^cleared-payments-\d{4}-\d{2}-\d{2}\.csv$/);
+      expect(this.download).toMatch(/^sponing-payments-\d{4}-\d{2}-\d{2}\.csv$/);
     });
     await openPayments([tide, aPayment()]);
     await userEvent.click(await screen.findByRole("button", { name: "Download CSV" }));

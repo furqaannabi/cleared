@@ -9,7 +9,7 @@ function problemWith(text: string): string | null {
   if (!/^\d+$/.test(text.trim())) return "Enter a number of days, from 1 to 21.";
   const n = Number(text);
   if (n < 1) return "At least 1 day.";
-  if (n > MAX_DAYS) return "Up to 21 days. PayPal only holds money for 29 days, so Cleared keeps a margin.";
+  if (n > MAX_DAYS) return "Up to 21 days. PayPal only holds money for 29 days, so Sponing keeps a margin.";
   return null;
 }
 

@@ -150,9 +150,9 @@ describe("PP-FR-25 to PP-FR-31 after the draft is approved", () => {
     expect(v.actions).toMatchObject({ confirmPost: false, acceptPost: true });
   });
 
-  test("with Cleared, taken, capture refused, approved not paid", () => {
+  test("with Sponing, taken, capture refused, approved not paid", () => {
     expect(view(deliverable({ state: "with_cleared", reason: "No label.", ruleBy: "2026-10-14T12:00:00Z" })).next).toEqual({
-      lead: "A person at Cleared is deciding",
+      lead: "A person at Sponing is deciding",
       detail: "You objected: “No label.” We decide by 14 Oct. Your money stays held until then.",
     });
     expect(view(deliverable({ state: "taken", amount: "1500.00", reference: "DEMO-CAP", at: "2026-10-09T10:00:00Z", creatorPaid: true })).next).toEqual({
@@ -198,7 +198,7 @@ describe("PP-FR-25 to PP-FR-31 after the draft is approved", () => {
       view(deliverable({ state: "released", releasedAt: "2026-10-24T00:10:00Z", reason })).next.detail;
     expect(why("not_accepted")).toBe("You didn’t accept the post within 48 hours, so your $1,500.00 came back to you on 24 Oct.");
     expect(why("fix_window_ended")).toBe("Ada Okafor didn’t fix the live post in time, so your $1,500.00 came back to you on 24 Oct.");
-    expect(why("ruled_not_to_pay")).toBe("A person at Cleared decided not to pay, so your $1,500.00 came back to you on 24 Oct.");
+    expect(why("ruled_not_to_pay")).toBe("A person at Sponing decided not to pay, so your $1,500.00 came back to you on 24 Oct.");
   });
 
   test("CN-FR-10: a cancelled post says who cancelled it, and the creator's note", () => {

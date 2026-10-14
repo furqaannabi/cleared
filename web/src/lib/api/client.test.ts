@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from "vitest";
 import { server } from "@/test/server";
 import { createApiClient } from "./client";
 
-const BASE = "https://api.cleared.test";
+const BASE = "https://api.sponing.test";
 const api = createApiClient({ baseUrl: BASE });
 
 // Synthetic, in the provisional FRD shape.

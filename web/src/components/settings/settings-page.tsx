@@ -12,7 +12,7 @@ import { TEXT_LINK } from "./styles";
 
 /**
  * The creator's settings (design A, the quiet list, with the profile band):
- * who is signed in, where the money goes, which accounts Cleared reads,
+ * who is signed in, where the money goes, which accounts Sponing reads,
  * Sign out, and Delete account apart at the end.
  *
  * @see docs/specs/settings-frd.md ST-FR-01 to ST-FR-14 (1.3); design/settings/option-a.html
@@ -35,10 +35,10 @@ export function SettingsPage() {
         </div>
       </div>
       <div className="mt-4 rounded-[20px] border border-line bg-surface px-[18px] py-1.5 shadow-panel md:px-[26px] md:py-2">
-        <Section label="Getting paid" purpose="Where Cleared sends your payouts.">
+        <Section label="Getting paid" purpose="Where Sponing sends your payouts.">
           <GettingPaid me={me} onMe={setMe} />
         </Section>
-        <Section label="Connected accounts" purpose="Cleared only reads them, to check your posts.">
+        <Section label="Connected accounts" purpose="Sponing only reads them, to check your posts.">
           <AccountRows rows={view.accounts} onMe={setMe} />
         </Section>
       </div>

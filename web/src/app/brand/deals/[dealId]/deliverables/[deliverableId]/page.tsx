@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BrandReviewPage } from "@/components/brand-review/brand-review-page";
 
 export const metadata: Metadata = {
-  title: "Review the draft · Cleared",
+  title: "Review the draft · Sponing",
   referrer: "no-referrer",
   robots: { index: false, follow: false },
 };

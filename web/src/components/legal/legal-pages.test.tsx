@@ -14,7 +14,7 @@ describe("LG-FR-01, LG-FR-02, LG-FR-04, LG-FR-16 the reading layout", () => {
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(title);
     expect(screen.getByText(/^Last updated /)).toBeInTheDocument();
-    expect(screen.getByText("Written for the Cleared hackathon project. Not reviewed by a lawyer.")).toBeInTheDocument();
+    expect(screen.getByText("Written for the Sponing hackathon project. Not reviewed by a lawyer.")).toBeInTheDocument();
     const toc = screen.getByRole("navigation", { name: "On this page" });
     const sections = screen.getAllByRole("heading", { level: 2 });
     expect(sections.length).toBeGreaterThan(1);
@@ -43,7 +43,7 @@ describe("LG-FR-05 to LG-FR-10 the privacy policy", () => {
       "A live Reel’s video, fetched to check it: only until it’s matched to your draft, a few minutes.",
       "The brief, checklist, notes, check results and their evidence, and the brand’s email: while your account exists.",
       "Access to YouTube and Instagram: until you disconnect, access ends, or you delete your account.",
-      "Payment records (amounts, dates and PayPal references): for as long as Cleared runs, with no name or email once your account is deleted.",
+      "Payment records (amounts, dates and PayPal references): for as long as Sponing runs, with no name or email once your account is deleted.",
       "Your account, after you delete it: deleted at once; its files within 24 hours.",
       "Sessions: 14 days after last use.",
       "Server logs: 30 days; they hold ids only.",
@@ -57,7 +57,7 @@ describe("LG-FR-11, LG-FR-12 the terms", () => {
   test("not a marketplace, sandbox only, the money rules and the AI rule", () => {
     render(<TermsPage />);
     expect(screen.getByText(/It is not a marketplace/)).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "What Cleared is" })).getByText(/No real money moves/)).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "What Sponing is" })).getByText(/No real money moves/)).toBeInTheDocument();
     const money = screen.getByRole("region", { name: "How the money works" });
     for (const rule of ["$20 to $10,000", "48 hours from a fully passing draft", "re-confirms the hold", "passes its live check", "gives the hold back to the brand", "day 28", "5% of the deliverable’s amount"]) {
       expect(money).toHaveTextContent(rule);
@@ -75,6 +75,6 @@ describe("LG-FR-13 (1.1) deleting your data", () => {
     expect(how).toHaveTextContent("It is done within 30 days.");
     const what = screen.getByRole("region", { name: "What is deleted, and what is kept" });
     expect(what).toHaveTextContent("Your profile, your connected accounts, your drafts, and each deal’s brief, checklist and check results are deleted, and brands’ links to your deals stop working.");
-    expect(what).toHaveTextContent("Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed.");
+    expect(what).toHaveTextContent("Sponing keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed.");
   });
 });

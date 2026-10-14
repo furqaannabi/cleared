@@ -121,7 +121,7 @@ export function brandReviewView(d: BrandDeliverable, now: Date, { timeZone }: { 
         day_28: `Nothing was decided by the hold’s 28th day, so your ${amount} came back to you on ${on}.`,
         fix_window_ended: `${c} didn’t fix the live post in time, so your ${amount} came back to you on ${on}.`,
         not_accepted: `You didn’t accept the post within 48 hours, so your ${amount} came back to you on ${on}.`,
-        ruled_not_to_pay: `A person at Cleared decided not to pay, so your ${amount} came back to you on ${on}.`,
+        ruled_not_to_pay: `A person at Sponing decided not to pay, so your ${amount} came back to you on ${on}.`,
         hold_not_confirmed: `PayPal couldn’t confirm your hold before the deadline, so your ${amount} came back to you on ${on}.`,
       };
       return { ...base, state: r.state, next: { lead: "The hold came back to you.", detail: why[r.reason] } };
@@ -162,7 +162,7 @@ export function brandReviewView(d: BrandDeliverable, now: Date, { timeZone }: { 
       return {
         ...base,
         state: r.state,
-        next: { lead: "A person at Cleared is deciding", detail: `You objected: “${r.reason}” We decide by ${formatDay(r.ruleBy, timeZone)}. Your money stays held until then.` },
+        next: { lead: "A person at Sponing is deciding", detail: `You objected: “${r.reason}” We decide by ${formatDay(r.ruleBy, timeZone)}. Your money stays held until then.` },
       };
     case "taken":
       return {
@@ -183,6 +183,6 @@ export function brandReviewView(d: BrandDeliverable, now: Date, { timeZone }: { 
     case "taking":
       return { ...base, state: r.state, next: { lead: `Approved. Taking your ${amount} with PayPal…`, detail: "" } };
     case "approved_not_paid":
-      return { ...base, state: r.state, next: { lead: "Approved, not paid", detail: "PayPal never let Cleared take your payment for this post, so nothing was taken." } };
+      return { ...base, state: r.state, next: { lead: "Approved, not paid", detail: "PayPal never let Sponing take your payment for this post, so nothing was taken." } };
   }
 }

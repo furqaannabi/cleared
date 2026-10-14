@@ -64,7 +64,7 @@ export function BrandDealPage({ dealId }: { dealId: string }) {
 
   return (
     <BrandFrame invited={{ creator: deal.creatorName, brand: deal.brandName }}>
-      <title>{`${deal.brandName} × ${deal.creatorName} · Cleared`}</title>
+      <title>{`${deal.brandName} × ${deal.creatorName} · Sponing`}</title>
       <h1 className="font-head text-page-title-phone font-bold tracking-[-0.01em] md:text-page-title">Your deal with {deal.creatorName}</h1>
       <p className="mt-2 max-w-[60ch] text-[15.5px] text-ink-2">
         {/* RW-FR-01: once the drafts start coming, the page is where they're reviewed. */}
@@ -113,7 +113,7 @@ function DealBody({ deal, onDeal }: { deal: BrandDeal; onDeal: (deal: BrandDeal)
     }
     // CH-FR-29: the session ended; the email and notes stay to try again after opening the link.
     if (r.error === "signed_out") return setAgreeProblem(sessionEnded(deal.creatorName));
-    if (r.error !== "rejected") return setAgreeProblem("We couldn’t reach Cleared. Try again.");
+    if (r.error !== "rejected") return setAgreeProblem("We couldn’t reach Sponing. Try again.");
     // CH-FR-15: most likely the creator sent a new version while the brand was reading.
     const fresh = await api.getBrandDeal(deal.dealId);
     if (fresh.ok && fresh.data.version !== deal.version) {

@@ -7,9 +7,9 @@ const STEPS = [
 ];
 
 /**
- * Cleared's promise, drawn as the deal ahead (design C): three steps on the
+ * Sponing's promise, drawn as the deal ahead (design C): three steps on the
  * landing's dashed marigold thread, down the page on phones and across from
- * `lg:`. Each names when it happens, what Cleared does and what it means.
+ * `lg:`. Each names when it happens, what Sponing does and what it means.
  *
  * @see docs/specs/sign-in-frd.md SI-FR-08; design/sign-in/option-c.html
  */

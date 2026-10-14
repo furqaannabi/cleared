@@ -8,7 +8,7 @@ import "./landing.css";
 import { SignedInProvider } from "./way-in";
 
 /**
- * The landing page at `/`, written for creators: what Cleared does, the
+ * The landing page at `/`, written for creators: what Sponing does, the
  * product itself, one deal from start to paid, the rules that protect the
  * creator, a note for the brand, and one way in, "Sign in with Google" (LP 1.3).
  * Static and the same for everyone; once loaded, one `GET /me` in the browser

@@ -43,7 +43,7 @@ export function readConnectResult(search: string): { platform: ConnectPlatform; 
 
 function problem(platform: ConnectPlatform, reason: string) {
   const name = NAME[platform];
-  if (reason === "declined") return `${name} isn’t connected, because access wasn’t allowed. Cleared only reads ${READS[platform]}.`;
+  if (reason === "declined") return `${name} isn’t connected, because access wasn’t allowed. Sponing only reads ${READS[platform]}.`;
   if (reason === "no_channel" && platform === "youtube") return "That Google account has no YouTube channel. Connect the account that owns your channel.";
   if (reason === "not_professional" && platform === "instagram")
     return "That Instagram account isn’t a professional account. Switch it to Creator or Business in Instagram, then connect again.";

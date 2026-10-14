@@ -54,10 +54,10 @@ describe("HM-FR-05, HM-FR-06 the money overview", () => {
       ],
     });
     const money = await screen.findByRole("region", { name: "Your money" });
-    expect(within(money).getByText("Held for you").closest("div")).toHaveTextContent("Held for you$2,660.001 post · before Cleared’s fee");
+    expect(within(money).getByText("Held for you").closest("div")).toHaveTextContent("Held for you$2,660.001 post · before Sponing’s fee");
     expect(within(money).getByText("On its way").closest("div")).toHaveTextContent("On its way$1,140.001 post");
     expect(within(money).getByText("Paid").closest("div")).toHaveTextContent("Paid$6,412.501 post");
-    expect(within(money).getByText("On its way and Paid are what you receive, after Cleared’s 5% fee.")).toBeVisible();
+    expect(within(money).getByText("On its way and Paid are what you receive, after Sponing’s 5% fee.")).toBeVisible();
     expect(within(money).getByRole("link", { name: "Juniper & Salt · Reel: the payout didn’t go through." })).toHaveAttribute("href", "/deals/deal_j/deliverables/del_j");
   });
 

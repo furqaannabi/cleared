@@ -36,7 +36,7 @@ describe("DC-FR-31 app shell", () => {
     screenWidth(1280);
     shell();
     const rail = screen.getByRole("complementary", { name: "Main" });
-    expect(within(rail).getByText("Cleared")).toBeVisible();
+    expect(within(rail).getByText("Sponing")).toBeVisible();
     expect(await within(rail).findByRole("link", { name: /Northbound Coffee/ })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Deals" })).toBeNull();
     expect(screen.getByText("Page content")).toBeVisible();
@@ -123,7 +123,7 @@ describe("DC-FR-31 (1.20) the logo", () => {
   test.each([1280, 375])("links to the landing page at %ipx", (px) => {
     screenWidth(px);
     shell();
-    expect(screen.getByRole("link", { name: "Cleared, home page" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Sponing, home page" })).toHaveAttribute("href", "/");
   });
 });
 

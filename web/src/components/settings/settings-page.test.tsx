@@ -81,7 +81,7 @@ describe("ST-FR-07, ST-FR-08 disconnecting", () => {
     server.use(http.delete(route, () => HttpResponse.json(aProfile({ name: "Ada Okafor", accounts: [] }))));
     await openSettings();
     await userEvent.click(screen.getByRole("button", { name: "Disconnect YouTube" }));
-    expect(screen.getByText(/Cleared stops reading it\. You can connect it again later\./)).toBeVisible();
+    expect(screen.getByText(/Sponing stops reading it\. You can connect it again later\./)).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Disconnect" }));
     expect(await screen.findByRole("link", { name: "Connect YouTube" })).toBeVisible();
   });
@@ -132,7 +132,7 @@ describe("ST-FR-10, ST-FR-11 deleting the account", () => {
     await openSettings();
     await userEvent.click(screen.getByRole("button", { name: "Delete account" }));
     expect(screen.getByText(/Signing in again starts a new, empty account\./).closest("p")).toHaveTextContent(
-      "Your profile, your connected accounts, your drafts, and each deal’s brief, checklist and check results are deleted, and brands’ links to your deals stop working. Cleared keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed. Signing in again starts a new, empty account. This can’t be undone.",
+      "Your profile, your connected accounts, your drafts, and each deal’s brief, checklist and check results are deleted, and brands’ links to your deals stop working. Sponing keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed. Signing in again starts a new, empty account. This can’t be undone.",
     );
     const go = screen.getByRole("button", { name: "Delete my account" });
     expect(go).toBeDisabled();

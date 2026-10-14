@@ -43,7 +43,7 @@ export function useJourneyActions(d: Deliverable, onUpdated: (d: Deliverable) =>
       if (fresh.ok) onUpdated(fresh.data);
       setProblem(words?.text ?? refused);
       setReconnect(words?.reconnect ?? null);
-    } else setProblem(words?.text ?? "We couldn’t reach Cleared. Try again.");
+    } else setProblem(words?.text ?? "We couldn’t reach Sponing. Try again.");
     return false;
   }
 

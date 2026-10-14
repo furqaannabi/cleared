@@ -80,7 +80,7 @@ export function DeleteAccount() {
       {open && (
         <div className="mt-1">
           <p className="max-w-[60ch] text-[13.5px] text-ink-3">
-            Your profile, your connected accounts, your drafts, and each deal’s brief, checklist and check results are deleted, and brands’ links to your deals stop working. Cleared
+            Your profile, your connected accounts, your drafts, and each deal’s brief, checklist and check results are deleted, and brands’ links to your deals stop working. Sponing
             keeps the payment records it must (amounts, dates and PayPal references), with your name and emails removed. Signing in again starts a new, empty account.{" "}
             <b className="text-ink">This can’t be undone.</b>
           </p>

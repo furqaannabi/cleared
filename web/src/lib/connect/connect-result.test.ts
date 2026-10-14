@@ -18,8 +18,8 @@ describe("IN-FR-11 (1.3) connecting through the backend", () => {
     const ig = (r: string) => readConnectResult(`?connecting=instagram&connect=${r}`)?.message;
     expect(yt("failed")).toBe("We couldn’t connect YouTube. Try again.");
     expect(ig("failed")).toBe("We couldn’t connect Instagram. Try again.");
-    expect(yt("declined")).toBe("YouTube isn’t connected, because access wasn’t allowed. Cleared only reads your channel.");
-    expect(ig("declined")).toBe("Instagram isn’t connected, because access wasn’t allowed. Cleared only reads your Reels.");
+    expect(yt("declined")).toBe("YouTube isn’t connected, because access wasn’t allowed. Sponing only reads your channel.");
+    expect(ig("declined")).toBe("Instagram isn’t connected, because access wasn’t allowed. Sponing only reads your Reels.");
     expect(yt("no_channel")).toBe("That Google account has no YouTube channel. Connect the account that owns your channel.");
     expect(ig("not_professional")).toBe(
       "That Instagram account isn’t a professional account. Switch it to Creator or Business in Instagram, then connect again.",

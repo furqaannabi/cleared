@@ -49,7 +49,7 @@ const APPROVED_BY: Record<Extract<NonNullable<Deliverable["liveCheck"]>, { state
   brand_confirmed: (b) => `${b} confirmed your live post.`,
   brand_silence: (b) => `${b} didn’t answer in 48 hours, so your live post is approved.`,
   brand_accepted: (b) => `${b} accepted your live post.`,
-  cleared: () => "A person at Cleared approved your live post.",
+  cleared: () => "A person at Sponing approved your live post.",
 };
 
 /** "31h 12m", or "42m" under an hour. */
@@ -117,7 +117,7 @@ export function journey(d: Deliverable, now: Date, { timeZone, channel }: { time
       title: "You can post now",
       meta: "Go-ahead · PayPal confirmed the hold",
       countdown: { text: left(ms), lastHour: ms < 3_600_000 },
-      // PP-FR-08 (1.3): Cleared doesn't look for a Reel it wasn't given.
+      // PP-FR-08 (1.3): Sponing doesn't look for a Reel it wasn't given.
       body:
         d.platform === "instagram_reel"
           ? `Post before ${at(d.goAhead.endsAt)}. Give us your Reel’s link before ${at(d.deadline)}. We don’t look for it.`
@@ -158,7 +158,7 @@ export function journey(d: Deliverable, now: Date, { timeZone, channel }: { time
       Object.assign(live, {
         state: "now",
         title: `${b} to confirm`,
-        body: `We couldn’t check ${undecidedWords(lc.what)} automatically. ${b} has until ${at(lc.brandBy)} to confirm. If they say nothing, you’re paid. If they object, a person at Cleared decides.`,
+        body: `We couldn’t check ${undecidedWords(lc.what)} automatically. ${b} has until ${at(lc.brandBy)} to confirm. If they say nothing, you’re paid. If they object, a person at Sponing decides.`,
       });
     else if (lc?.state === "not_fixable")
       Object.assign(live, { state: "now", title: `${b} to accept`, body: `${notFixableWords[lc.reason]} ${b} has until ${at(lc.brandBy)} to accept it anyway. If they don’t, the hold goes back to them.` });
@@ -193,7 +193,7 @@ export function journey(d: Deliverable, now: Date, { timeZone, channel }: { time
       });
       action = { kind: "posted", label: "I’ve posted it", disabled: false };
     } else if (lc?.state === "objected")
-      Object.assign(live, { state: "now", title: "A person at Cleared is deciding", body: `${b} objected: “${lc.reason}”. We decide by ${day(lc.ruleBy)}.` });
+      Object.assign(live, { state: "now", title: "A person at Sponing is deciding", body: `${b} objected: “${lc.reason}”. We decide by ${day(lc.ruleBy)}.` });
   }
 
   // PP-FR-16 to PP-FR-23, PP-FR-35, PP-FR-36
@@ -201,7 +201,7 @@ export function journey(d: Deliverable, now: Date, { timeZone, channel }: { time
   const c = d.capture && "reference" in d.capture ? d.capture : undefined;
   const refused = d.capture && "refused" in d.capture ? d.capture : undefined;
   const captured: JourneyStep = c
-    ? { key: "captured", title: "Captured", state: "done", meta: `${day(c.at)} · PayPal ref ${c.reference} · less Cleared’s 5% fee, ${formatAmount(c.fee)}` }
+    ? { key: "captured", title: "Captured", state: "done", meta: `${day(c.at)} · PayPal ref ${c.reference} · less Sponing’s 5% fee, ${formatAmount(c.fee)}` }
     : { key: "captured", title: "Captured", state: "todo", meta: `${formatMoney(d.hold.amountMinor, d.hold.currency)} from ${b}` };
   // PP-FR-39 (1.3): approved, waiting for the capture.
   if (s === "published" && approvedLive && !c && !refused) Object.assign(captured, { state: "now", body: `Collecting ${b}’s payment with PayPal…` });
@@ -209,14 +209,14 @@ export function journey(d: Deliverable, now: Date, { timeZone, channel }: { time
     Object.assign(captured, { state: "now", body: `Approved. PayPal couldn’t take ${b}’s payment yet. We try again until ${day(refused.retryUntil)} and have told ${b}.` });
   }
   if (s === "approved_not_paid") {
-    Object.assign(captured, { state: "problem", body: `This post was approved, but PayPal never let Cleared collect ${b}’s payment, so you weren’t paid through Cleared.` });
+    Object.assign(captured, { state: "problem", body: `This post was approved, but PayPal never let Sponing collect ${b}’s payment, so you weren’t paid through Sponing.` });
   }
 
   const p = d.payout;
-  const paid: JourneyStep = { key: "paid", title: "Paid", state: "todo", meta: `To ${d.payoutEmail}, after Cleared’s 5% fee` };
+  const paid: JourneyStep = { key: "paid", title: "Paid", state: "todo", meta: `To ${d.payoutEmail}, after Sponing’s 5% fee` };
   if (c && p) {
     const amount = formatAmount(c.payout);
-    if (p.state === "paid") Object.assign(paid, { state: "done", title: `Paid ${amount} to ${p.email}`, meta: `${p.at ? `${day(p.at)} · ` : ""}Payout ref ${p.reference} · after Cleared’s 5% fee` });
+    if (p.state === "paid") Object.assign(paid, { state: "done", title: `Paid ${amount} to ${p.email}`, meta: `${p.at ? `${day(p.at)} · ` : ""}Payout ref ${p.reference} · after Sponing’s 5% fee` });
     else if (p.state === "sending") Object.assign(paid, { state: "now", title: `Sending ${amount} to ${p.email}`, meta: undefined, body: "PayPal usually takes a few minutes." });
     else if (p.state === "cancelling")
       Object.assign(paid, { state: "now", title: `Sending ${amount} again`, meta: undefined, body: `PayPal is cancelling the unclaimed payment first, then we send it to ${p.email}.` });
@@ -225,7 +225,7 @@ export function journey(d: Deliverable, now: Date, { timeZone, channel }: { time
         state: "now",
         title: `Sending ${amount} to ${p.email} is delayed`,
         meta: undefined,
-        body: "The delay is on Cleared’s side, with our PayPal account. Your money is safe with Cleared, and we keep trying until it’s sent. There’s nothing you need to do.",
+        body: "The delay is on Sponing’s side, with our PayPal account. Your money is safe with Sponing, and we keep trying until it’s sent. There’s nothing you need to do.",
       });
     else if (p.state === "unclaimed") {
       Object.assign(paid, { state: "problem", title: `PayPal is holding ${amount} for ${p.email}`, meta: "Payout unclaimed", body: "Accept it in PayPal with that email, or have it sent again." });

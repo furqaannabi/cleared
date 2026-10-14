@@ -73,7 +73,7 @@ export const aBrandPost = (p: Partial<BrandPost> = {}): BrandPost => ({
   hold: { amount: "1500.00", reference: "7HK21934LM", deadline: "2026-11-01T23:59:00.000Z" },
   review: { state: "window", endsAt: new Date(Date.now() + 31 * 3600_000).toISOString() },
   draft: {
-    url: "https://media.cleared.test/draft.mp4",
+    url: "https://media.sponing.test/draft.mp4",
     urlExpiresAt: new Date(Date.now() + 3600_000).toISOString(),
     durationSec: 408,
     items: [

@@ -49,7 +49,7 @@ export function MoneyCard({ overview }: { overview: MoneyOverview }) {
       </div>
       <div className="relative grid gap-1 bg-surface px-[18px] py-3 lg:px-[26px]">
         {/* HM-FR-05 (1.4): held money is the deal amount; the other two are what is received. */}
-        <p className="text-[13.5px] text-ink-3">On its way and Paid are what you receive, after Cleared’s 5% fee.</p>
+        <p className="text-[13.5px] text-ink-3">On its way and Paid are what you receive, after Sponing’s 5% fee.</p>
         {overview.stuck.lines.length > 0 && (
           <ul>
             {overview.stuck.lines.map((line) => (

@@ -48,7 +48,7 @@ export function MoneyHeldPanel({ creator }: { creator: string }) {
     "PayPal reserves the amount for each post. Nothing is taken from your account yet.",
     `It’s taken only after ${creator}’s post is live and passes its check, and never more than you approved.`,
     `It comes back to you if ${creator} misses the deadline, if either of you cancels before ${creator} is told to publish, or on day 28 at the latest.`,
-    `You pay the amounts above and nothing more. Cleared’s 5% fee comes out of ${creator}’s payout.`,
+    `You pay the amounts above and nothing more. Sponing’s 5% fee comes out of ${creator}’s payout.`,
     "This is PayPal’s sandbox. No real money moves.",
   ];
   return (

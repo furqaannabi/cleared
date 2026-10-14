@@ -14,7 +14,7 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "Cleared",
+  title: "Sponing",
   description: "Brand deals where the content and the payment clear together.",
 };
 

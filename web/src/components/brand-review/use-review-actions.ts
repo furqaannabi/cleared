@@ -52,7 +52,7 @@ export function useReviewActions(post: BrandDeliverable, setPost: (p: BrandDeliv
       return true;
     }
     if (r.error !== "rejected") {
-      setProblem("We couldn’t reach Cleared. Try again.");
+      setProblem("We couldn’t reach Sponing. Try again.");
       return false;
     }
     const fresh = await reload();

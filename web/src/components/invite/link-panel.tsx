@@ -16,7 +16,7 @@ function shortDate(iso: string): string {
 
 /**
  * The brand's link once it exists: the link with Copy and (where the browser
- * has one) Share, who can open it, and when it expires. Cleared never emails
+ * has one) Share, who can open it, and when it expires. Sponing never emails
  * it (IN 1.3). The link only ever comes from the API; it is never stored or
  * logged.
  *
@@ -81,7 +81,7 @@ export function LinkPanel({
           {canShare && (
             <button
               type="button"
-              onClick={() => navigator.share({ title: `Cleared · ${brandName}`, url: link.url }).catch(() => {})}
+              onClick={() => navigator.share({ title: `Sponing · ${brandName}`, url: link.url }).catch(() => {})}
               className="inline-flex min-h-11 items-center rounded-pill border border-latte-line bg-surface px-[18px] font-bold text-espresso hover:bg-latte-wash"
             >
               Share

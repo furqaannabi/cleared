@@ -72,7 +72,7 @@ const SECTIONS: LegalSection[] = [
     blocks: [
       {
         list: [
-          "Stop Cleared reading YouTube or Instagram by removing Cleared in your Google account’s or Instagram’s own settings.",
+          "Stop Sponing reading YouTube or Instagram by removing Sponing in your Google account’s or Instagram’s own settings.",
           "Delete your account: see Deleting your data.",
           "Ask what we hold about you, by email.",
         ],
@@ -89,7 +89,7 @@ const SECTIONS: LegalSection[] = [
 ];
 
 /**
- * `/privacy`: what Cleared collects and why, what it never does, who handles
+ * `/privacy`: what Sponing collects and why, what it never does, who handles
  * it, how long it is kept, the reader's choices and cookies.
  *
  * @see docs/specs/legal-pages-frd.md LG-FR-05 to LG-FR-10

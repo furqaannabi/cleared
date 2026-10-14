@@ -5,7 +5,7 @@ import type { CheckFailedBanner as Banner } from "@/lib/deliverable/next-step";
  * Full-width banner when a check couldn't run, between the header and the
  * results. Says what happened, that the hold is still in place (at every
  * width), and which run's results are shown below. A file problem (the
- * creator's to fix) is fail-tinted with a cross seal; a problem on Cleared's
+ * creator's to fix) is fail-tinted with a cross seal; a problem on Sponing's
  * side is a plain panel with a grey refresh seal. No button: the next-step
  * bar carries the action.
  *

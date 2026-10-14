@@ -3,7 +3,7 @@ import { Logo } from "@/components/shell/logo";
 import { InstagramOnlyNote, SignInButton } from "./sign-in-buttons";
 
 /**
- * `/sign-in`: the Cleared mark, "Sign in to see your deals" and "Sign in
+ * `/sign-in`: the Sponing mark, "Sign in to see your deals" and "Sign in
  * with Google", which returns the creator to `next` (SI-FR-06). Nothing else.
  *
  * @param next - where the creator was going

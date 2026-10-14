@@ -111,7 +111,7 @@ describe("IN-FR-07 deadlines in days after the hold", () => {
     const days = screen.getByRole("spinbutton", { name: "Days after the hold for the Instagram Reel" });
     await userEvent.type(days, "30");
     await userEvent.tab();
-    expect(days).toHaveAccessibleDescription("Up to 21 days. PayPal only holds money for 29 days, so Cleared keeps a margin.");
+    expect(days).toHaveAccessibleDescription("Up to 21 days. PayPal only holds money for 29 days, so Sponing keeps a margin.");
     expect(patches(sent)).toEqual([]);
   });
 });
@@ -183,7 +183,7 @@ describe("IN-FR-09 to IN-FR-11, IN-FR-13 Before you send", () => {
   });
 });
 
-const LINK = { url: "https://cleared.example/b/tok_glow", expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(), expired: false };
+const LINK = { url: "https://sponing.example/b/tok_glow", expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(), expired: false };
 
 /** Every term in place: amounts, deadlines, both accounts, the PayPal email. Creating the link answers with it. */
 async function openFilledInvite(brandEmail?: string) {
@@ -201,7 +201,7 @@ describe("IN-FR-16, IN-FR-17 creating the link", () => {
     await openFilledInvite("sam@glowtheory.com");
     await user.click(screen.getByRole("button", { name: "Create link for Glow Theory" }));
     const panel = await screen.findByRole("region", { name: "Send this link to Glow Theory" });
-    const url = within(panel).getByText(/^https:\/\/cleared\.example\/b\//);
+    const url = within(panel).getByText(/^https:\/\/sponing\.example\/b\//);
     expect(within(panel).getByText("Anyone with this link can open this deal. Send it only to Glow Theory.")).toBeVisible();
     expect(within(panel).getByText(/^Expires on \d{1,2} \w{3}\.$/)).toBeVisible();
     expect(within(panel).queryByText(/emailed/)).toBeNull();
@@ -226,7 +226,7 @@ describe("IN-FR-16, IN-FR-17 creating the link", () => {
 describe("IN-FR-18, IN-FR-19 a new link, and changing the terms", () => {
   async function withLink() {
     const invite = await openFilledInvite();
-    invite.on("post", "/link/renew", (d) => ({ ...d, link: { ...LINK, url: "https://cleared.example/b/tok_glow_2" } }));
+    invite.on("post", "/link/renew", (d) => ({ ...d, link: { ...LINK, url: "https://sponing.example/b/tok_glow_2" } }));
     invite.on("delete", "/link", ({ link: _, ...d }) => (void _, { ...d, step: "invite" }));
     await userEvent.click(screen.getByRole("button", { name: "Create link for Glow Theory" }));
     return screen.findByRole("region", { name: "Send this link to Glow Theory" });

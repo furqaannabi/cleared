@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DraftCheckPage } from "@/components/draft-check/draft-check-page";
 
-export const metadata: Metadata = { title: "Draft check · Cleared" };
+export const metadata: Metadata = { title: "Draft check · Sponing" };
 
 /**
  * DC-FR-35: the creator's draft check page for one deliverable. Ids are
