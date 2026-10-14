@@ -1,6 +1,6 @@
 # Creator home: FRD
 
-**Status:** Signed by William (revision 1.7).
+**Status:** Signed by William (revision 1.8).
 
 **Surface:** The creator's home, in two pages (1.2). The overview at `/deals`: the money overview, the performance figures and the deals with what needs the creator first; signing in and the landing page's button land here. Payments at `/payments`: what was paid each month and the payment history with its CSV. The brand has no home.
 
@@ -44,7 +44,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 | ID | Requirement |
 | --- | --- |
 | HM-FR-01 | **Where it lives.** `/deals`, in the creator frame, signed-in only (SI-FR-06). It no longer opens the first deal (LP-FR-15, 1.4). (1.2) Page title "Overview". "Overview" is the first link in the rail and the phone's Deals sheet (DC-FR-31, 1.21), marked current here. |
-| HM-FR-02 | **Order.** (1.2) The money overview; the performance figures ("How you're doing"); the deals. "Paid each month" and the payment history are on Payments (HM-FR-23). With the flag off (HM-FR-20) only the deals show. (1.4) No flag: the money sections always show once the creator has a deal. |
+| HM-FR-02 | **Order.** (1.2) The money overview; the performance figures ("How you're doing"); the deals. "Paid each month" and the payment history are on Payments (HM-FR-23). With the flag off (HM-FR-20) only the deals show. (1.4) No flag: the money sections always show once the creator has a deal. (1.8) "What's due next" (HM-FR-27) sits between the money overview and the performance figures. |
 | HM-FR-03 | **No deals yet.** With no deals, the page says "You have no deals yet." with a "Start a deal" link to `/deals/new`, and nothing else: no totals, figures, charts or history. |
 | HM-FR-04 | **Loading and failing.** While a section loads it shows the app's loading state for that section. If the deals fail, the page says "We couldn't load your deals." with Try again (as LP-FR-15 did). If the payments fail, the money sections are replaced by one line "We couldn't load your payments." with Try again; the deals still show. |
 
@@ -56,6 +56,12 @@ One home page that answers "where's my money?" first: three totals in what the c
 | HM-FR-06 | **What's stuck.** When any post on its way has a payout that failed or wasn't claimed, a line under "On its way" names each: "{brand} · {post}: the payout didn't go through." or "{brand} · {post}: PayPal is waiting for you to accept it.", each linking to the post, where its fix lives (PP). Past three, "and {n} more". |
 | HM-FR-25 | **See payments.** (1.2) Under the "Paid" total, a link "See payments" to `/payments`. "Held for you" and "On its way" have no link; the stuck lines keep linking to their posts (HM-FR-06). (1.4) Always shown. |
 | HM-FR-07 | **Amounts.** Dollars with cents ("$1,140.00"), from integer minor units; totals added in minor units, never floats. |
+
+### What's due next (1.8)
+
+| ID | Requirement |
+| --- | --- |
+| HM-FR-27 | **What's due next.** On Overview, its own section between the money overview and "How you're doing": heading "What's due next", then "Held for you, not yet posted. What you'll receive." The posts that are held (stage `held`) and not yet published, soonest deadline first, at most three, then "and {n} more" when there are more. Each row: "{brand} · {post}", "Due {Fri 23 Oct}" (the deadline as DC-FR-44 reads it, in the creator's time zone; "Due today" and "Due tomorrow" in bold ink, never colour alone), and what the creator will receive (`receivedMinor`). Each row links to its post. With no such post the section is left out. Design B of `design/home/money-additions.html`. |
 
 ### Performance
 
@@ -85,8 +91,8 @@ One home page that answers "where's my money?" first: three totals in what the c
 | ID | Requirement |
 | --- | --- |
 | HM-FR-23 | **Where it lives.** `/payments`, in the creator frame, signed-in only (SI-FR-06). Page title "Payments". "Payments" is the second link in the rail and the phone's Deals sheet, under Overview (DC-FR-31, 1.21), marked current here. In order: the line for the year (HM-FR-24), "Paid each month" (HM-FR-12), the payment history with Download CSV (HM-FR-16 to HM-FR-19). Loading and failing as HM-FR-04: if the payments fail, the page says "We couldn't load your payments." with Try again. (1.4) Always routed; there is no flag. |
-| HM-FR-24 | **The year.** Under the title, one line: "{total} received in {year} · {n} posts" (for one, "1 post"): what the creator received from posts paid this calendar year, in their time zone, from the same rows as the history. Left out while nothing has been paid this year. |
-| HM-FR-26 | **Nothing paid yet.** With no paid post, in place of the chart and the history: "Nothing paid yet." and "Each post you're paid for shows here with its PayPal references, ready to download." When anything is held or on its way, a third line says how much: "{held} is held for you and {on its way} is on its way.", leaving out a part that is zero, with a link "See your overview" to `/deals`. No chart, grid or Download CSV. |
+| HM-FR-24 | **The year.** Under the title, one line: "{total} received in {year} · {n} posts" (for one, "1 post"): what the creator received from posts paid this calendar year, in their time zone, from the same rows as the history. Left out while nothing has been paid this year. (1.8) Under it, quieter: "{deal amounts} in deal amounts, less {fees} in Sponing’s fees", the same posts' deal amounts and fees added in minor units. Shown only with the first line. |
+| HM-FR-26 | **Nothing paid yet.** With no paid post, in place of the chart and the history: "Nothing paid yet." and "Each post you're paid for shows here with its PayPal references, ready to download." When anything is held or on its way, a third line says how much: "{held} is held for you and {on its way} is on its way.", leaving out a part that is zero, with a link "See your overview" to `/deals`. No chart, grid or Download CSV. (1.8) If any post was not paid (HM-FR-29), its list follows under the heading "Not paid", with no tabs. |
 
 ### The payment history
 
@@ -95,7 +101,15 @@ One home page that answers "where's my money?" first: three totals in what the c
 | HM-FR-16 | **One row per paid post.** Date paid, brand, post ("YouTube video", "Short", "Reel"), deal amount, Sponing's fee, received, payout reference and hold reference, newest first, each linking to its post. Only paid posts; money on its way is in the overview. Shown once any post has been paid. (1.2) On Payments. |
 | HM-FR-17 | **Desktop grid.** From `md:`, AG Grid: sort by date, brand or amount; filter by brand; references in the tabular face, selectable to copy. No sideways scroll at `md:`; lower-priority columns (hold reference, fee) collapse first. |
 | HM-FR-18 | **Phone cards.** Below `md:`, one card per row with the same fields in the same order. Both renderings come from one list of rows and show the same thing for every row. |
-| HM-FR-19 | **CSV.** "Download CSV" exports the whole history whatever the grid is filtered to, built in the browser, named `cleared-payments-{YYYY-MM-DD}.csv`. Columns: Date paid, Brand, Post, Deal amount, Fee, Received, Payout reference, Hold reference. Amounts as plain decimals ("1140.00"), dates as `YYYY-MM-DD`. Any field starting with `=`, `+`, `-`, `@`, tab or carriage return is prefixed with `'`; fields are quoted per RFC 4180. |
+| HM-FR-19 | **CSV.** "Download CSV" exports the whole history whatever the grid is filtered to, built in the browser, named `sponing-payments-{YYYY-MM-DD}.csv` (1.8: the product's name). Columns: Date paid, Brand, Post, Deal amount, Fee, Received, Payout reference, Hold reference. Amounts as plain decimals ("1140.00"), dates as `YYYY-MM-DD`. Any field starting with `=`, `+`, `-`, `@`, tab or carriage return is prefixed with `'`; fields are quoted per RFC 4180. |
+
+### Paid and Not paid (1.8)
+
+| ID | Requirement |
+| --- | --- |
+| HM-FR-28 | **Two tabs.** Under "Payment history", when at least one post was not paid: tabs "Paid {n}" and "Not paid {n}" in the checklist builder's pill style, each at least 44 px tall, as a tab list with keyboard arrows. Paid is selected first and is the history as before (HM-FR-16 to HM-FR-19); Download CSV shows only on Paid. With no post not paid there are no tabs and the history is as before. The year line and the chart stay above the tabs. |
+| HM-FR-29 | **Not paid.** One row per post whose stage is `released` or `approved_not_paid`, newest first by when its hold ended (`releasedAt`), under the line "Posts whose hold went back to the brand, or was never collected." Each row: that date, "{brand} · {post}", the deal amount, and why; each links to its post. A plain list at every width, not AG Grid, and not in the CSV. |
+| HM-FR-30 | **Why, in a few words.** By `releasedBecause`: deadline, "The deadline passed before you posted"; cancelled, "You cancelled the post" or "{brand} cancelled the post" (by `cancelledBy`); day 28, "The hold ran out on day 28"; fix window ended, "Your live post still failed when the fix window ended"; not accepted, "{brand} didn’t accept the post in time"; ruled not to pay, "Sponing decided not to pay"; hold not confirmed, "PayPal couldn’t confirm the hold". Stage `approved_not_paid`, whatever the reason: "Approved, but PayPal didn’t let Sponing collect it". |
 
 ### The flag, responsive and accessibility
 
@@ -137,6 +151,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 | HM-FR-05 to HM-FR-19 | `GET /me/payments`: one row per post that has ever had a hold, for the signed-in creator only: `dealId`, `deliverableId`, `brandName`, `platform`, `amountMinor`, `feeMinor`, `receivedMinor`, `currency`, `stage` (`held`, `captured`, `paid`, `released`, `closed`), `payout` (`state` as on `CreatorPost`, `reference`, `at`) when captured, `holdReference`, `heldAt`, `deadline`, `publishedAt`, `paidAt`, and `firstCheckPassed` (true, false, or null while no check has finished) (1.4) Answered by AH 1.0 (AH-FR-05 to AH-FR-09), with three differences: `stage` has `approved_not_paid` and no `closed`; `feeMinor` and `receivedMinor` are absent until the hold is taken; `firstCheckPassed` is absent until a check finishes. |
 | HM-FR-15 | Whether a post is waiting on the creator is worked out here from `GET /deals` states; if the API would rather say it (`deliverables[].needsCreator`), the page uses that. 1.3: the API says it (AH-FR-04) |
 | All | The route and its types in `contract/` (1.4) Done for payments. |
+| HM-FR-29, HM-FR-30 (1.8) | On released and approved-not-paid rows: why the hold ended, when, and who cancelled (AH 1.2, AH-FR-30) |
 | HM-FR-05 (1.4) | What the creator will receive for a held post (`receivedMinor`, with `feeMinor`), worked out by the backend's fee rule, so "Held for you" can read after the fee like the other two totals |
 
 ## Testing Decisions
@@ -146,6 +161,7 @@ One home page that answers "where's my money?" first: three totals in what the c
 - **Components:** home with no deals; with deals and the flag off; with the flag on: totals, stuck line linking to the post, figures absent and present, chart text equivalents; history as cards at 375 px and as a grid from `md:`, the same rows in both; Download CSV gives the whole history while filtered; payments failing leaves the deals.
 - **1.2:** the overview without the chart and history, with "See payments" under Paid; Payments with the line for the year (shown, left out with nothing paid this year, "1 post"), the chart, the history and CSV; nothing paid yet with and without held or on-its-way money; with the flag off, no Payments link, no "See payments", and `/payments` not found; the rail's Overview and Payments links, each marked current on its page.
 - **1.4:** Held for you as deal amounts with "before Sponing's fee"; the footer; `approved_not_paid` in no total and not in the history; rows without a fee or received amount accepted; the payment row checked against the contract's `Payment` at compile time; no flag anywhere.
+- **1.8:** what's due next: only held, unpublished posts, soonest first, three then "and {n} more", today and tomorrow, left out with none, at a time-zone edge; the year's second line (sums in minor units, left out with the first); the tabs only when something was not paid, Paid first with Download CSV, Not paid without it, arrow keys between them; every reason and both cancellers; `approved_not_paid` worded the same whatever its reason; not-paid rows newest first and never in the CSV; nothing paid yet with a Not paid list and no tabs; the CSV's new name.
 - **Live end to end:** by hand until Furqaan's test-session route exists.
 
 ## Out of Scope
@@ -179,3 +195,5 @@ One home page that answers "where's my money?" first: three totals in what the c
 | 1.6 signed | Revision 1.6 signed by William | none |
 | 1.7 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
 | 1.7 signed | Revision 1.7 signed by William | none |
+| 1.8 | From William: "What's due next" on Overview as its own section (design B, HM-FR-27); the year line's second line with deal amounts and Sponing's fees (HM-FR-24); Paid and Not paid tabs on Payments, with each reason in a few words and who cancelled (HM-FR-28 to HM-FR-30, HM-FR-26); the CSV's name follows the product's (HM-FR-19). Needs AH 1.2 | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.8 signed | Revision 1.8 signed by William | none |

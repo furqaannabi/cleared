@@ -1,6 +1,6 @@
 # Account and history: FRD
 
-**Status:** Signed by William (revision 1.1). Four of its decisions are product behaviour William shares (what deleting an account removes, revoking at Google, how long things are kept, and a test session); they are recorded as Furqaan's for him to agree.
+**Status:** Signed by William (revision 1.2). Four of its decisions are product behaviour William shares (what deleting an account removes, revoking at Google, how long things are kept, and a test session); they are recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. What William's home, Settings and legal pages have asked for and the contract does not have: a post that was never held, as both sides see it; the creator's payment history; disconnecting an account; deleting the account; how long Sponing keeps things; and a way for end-to-end tests to be signed in on the live backend.
 
@@ -69,6 +69,7 @@ End-to-end tests get a session through a route that exists only when a secret is
 | AH-FR-07 | **Amounts are the money path's.** The amount is always there. The fee and what the creator receives are there once the hold is taken, as the money path worked them out at capture (MP-FR-24, MP-FR-27), and are never recomputed here. All are whole minor units. |
 | AH-FR-08 | **The payout,** once the hold is taken: its state as on the creator's post, its PayPal reference and when. The PayPal email is not in the history. |
 | AH-FR-09 | **Passed first time.** When a post's first draft check finishes, whether every item passed is recorded with the post. It is true, false, or absent while no check has finished. |
+| AH-FR-30 | **Why a hold ended (1.2).** A row whose stage is `released` or `approved_not_paid` also carries `releasedBecause` (`deadline`, `cancelled`, `day_28`, `fix_window_ended`, `not_accepted`, `ruled_not_to_pay` or `hold_not_confirmed`, the same words the creator's post uses), `releasedAt` (when the release was decided), and, when the reason is `cancelled`, `cancelledBy` (`creator` or `brand`). They are read from the money path's release record, never worked out here (AH-BR-01). Other rows carry none of them. |
 
 ### Disconnecting an account
 
@@ -171,6 +172,7 @@ End-to-end tests get a session through a route that exists only when a secret is
 
 - A good test here states a situation and checks what someone could observe: the answer a route gives, what each side is shown, the rows that exist afterwards, the files left in the bucket, and which calls reached Google. Tests are named after the AH-FR or AH-BR they prove.
 - **Tooling:** as the other backend specs. Bun's test runner, the Docker Postgres, the fake PayPal, and the stand-ins for Google, storage and the rest.
+- **1.2:** each release reason gives its `releasedBecause` and `releasedAt`; a cancel by each side gives `cancelledBy`; a ruling not to pay reads `ruled_not_to_pay`; an approved, not paid row carries its reason and date; held, captured and paid rows carry none; the contract lists the three fields.
 - **The payment history** is tested as a table over the money path's stages: held, captured with each payout state, paid, released, approved and not paid; amounts in minor units against the money path's own; another creator's posts never listed; a post never held never listed.
 - **Deleting** gets the most attention. For each reason in AH-FR-16, the refusal and nothing deleted. For a finished deal: every table checked for what is gone and what stays, the kept money records compared field by field with before, and no name or email anywhere in them. The brand's link refused afterwards. Files gone after the job. Signing in again gives an empty account.
 - **Disconnecting:** refused with each post in the way; the token gone before Google is asked; Google failing changes nothing; another creator's connection untouched.
@@ -223,3 +225,5 @@ End-to-end tests get a session through a route that exists only when a secret is
 | 1.0 | Signed by Furqaan, with the eight items added while drafting accepted as written | none |
 | 1.1 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
 | 1.1 signed | Revision 1.1 signed by William | none |
+| 1.2 | From William, for the Payments page's Not paid list (HM 1.8): released and approved-not-paid rows carry why the hold ended, when, and who cancelled (AH-FR-30) | none |
+| 1.2 signed | Revision 1.2 signed by William | none |

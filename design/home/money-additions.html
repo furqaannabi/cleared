@@ -1,0 +1,184 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What's due next, and Not paid</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hm.css"><style>
+/* HM 1.8 mockups: "What's due next" on Overview (two placements) and the year line and "Not paid" on Payments.
+   Shared pieces from hm.css / hm.js; the money card is the built latte card. New classes prefixed hm2-. Example data. */
+.hm2-cap{font-size:12.5px;font-weight:800;color:var(--ink-3);margin:0 0 6px}
+.hm2-opt{margin-top:40px}
+.hm2-opt>h2{font-family:var(--head);font-size:21px;line-height:1.2}
+.hm2-opt>p{color:var(--ink-2);max-width:78ch;margin:4px 0 14px}
+
+/* the money card as built: latte, espresso figures, white strip at the bottom */
+.hm2-money{position:relative;margin-top:16px;overflow:hidden;border-radius:20px;border:1px solid var(--latte-line);background:var(--latte);box-shadow:0 2px 4px rgb(63 51 34/.06),0 12px 28px rgb(63 51 34/.1)}
+.hm2-money::after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:rgb(255 255 255/.45);top:-90px;right:-70px;pointer-events:none}
+.hm2-track{display:grid;position:relative;z-index:1}
+.hm2-stage{padding:16px 18px;color:var(--espresso-ink)}
+.hm2-stage+.hm2-stage{border-top:1px solid rgb(63 51 34/.14)}
+.hm2-lab{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--ink-2)}
+.hm2-lab svg{width:16px;height:16px}
+.hm2-amt{font-family:var(--head);font-size:30px;font-weight:800;line-height:1.1;margin-top:4px;letter-spacing:-.01em}
+.hm2-stage.paid .hm2-amt{font-size:34px}
+.hm2-cnt{font-size:13px;color:var(--ink-2);margin-top:2px}
+.hm2-see{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:14px;font-weight:700;color:var(--espresso-ink);text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgb(63 51 34/.35)}
+.hm2-see svg{width:15px;height:15px}
+.hm2-foot{position:relative;z-index:1;display:grid;gap:4px;background:var(--surface);padding:12px 18px;border-top:1px solid var(--latte-line)}
+.h-stuck{display:flex;gap:8px;font-size:14px;color:var(--fail);text-decoration:none;min-height:44px;align-items:center}
+.h-stuck svg{width:18px;height:18px;flex:none}
+.h-stuck span{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--fail-line)}
+.h-desk .hm2-track{grid-template-columns:1fr 1fr 1.15fr}
+.h-desk .hm2-stage{padding:22px 26px}
+.h-desk .hm2-stage+.hm2-stage{border-top:0;border-left:1px solid rgb(63 51 34/.14)}
+.h-desk .hm2-amt{font-size:34px}.h-desk .hm2-stage.paid .hm2-amt{font-size:38px}
+.h-desk .hm2-foot{padding:12px 26px}
+
+/* what's due next: one row per post, the day and the amount right-aligned */
+.hm2-due-h{font-size:13.5px;font-weight:700;color:var(--ink-2);margin-top:6px}
+.hm2-due{display:grid}
+.hm2-row{display:grid;grid-template-columns:minmax(0,1fr) auto 16px;gap:2px 12px;align-items:center;min-height:44px;padding:8px 0;text-decoration:none;border-top:1px solid var(--line-soft)}
+.hm2-row:first-child{border-top:0}
+.hm2-row>svg{width:16px;height:16px;color:var(--ink-3);grid-column:3;grid-row:1/span 2}
+.hm2-what{font-size:14px;color:var(--ink-2);min-width:0}
+.hm2-what b{color:var(--ink);font-weight:700}
+.hm2-when{font-size:13.5px;color:var(--ink-3);grid-column:1}
+.hm2-when.soon{color:var(--ink);font-weight:700}
+.hm2-got{font-size:14px;font-weight:800;grid-column:2;grid-row:1/span 2;text-align:right}
+.hm2-more{font-size:13.5px;color:var(--ink-3);padding:6px 0 2px}
+.h-desk .hm2-row{grid-template-columns:minmax(0,1fr) 170px 110px 16px;grid-template-rows:auto}
+.h-desk .hm2-when{grid-column:2;grid-row:1}
+.h-desk .hm2-got{grid-column:3;grid-row:1}
+.h-desk .hm2-row>svg{grid-column:4;grid-row:1}
+/* A: in the card's strip, the fee note first, a rule, then the list */
+.hm2-a .hm2-due-h{padding-top:8px;border-top:1px solid var(--line-soft);margin-top:4px}
+/* B: its own panel */
+.hm2-b{margin-top:20px;padding:16px 18px 10px}
+.hm2-b .h-sec{font-size:19px}
+.hm2-b .hm2-sub{font-size:13.5px;color:var(--ink-3);margin:2px 0 4px}
+.h-desk .hm2-b{padding:20px 26px 12px}
+
+/* how you're doing, as built (shortened) */
+.hm2-doing{margin-top:20px;padding:18px}
+.hm2-figs{display:grid;margin-top:10px}
+.hm2-fig{padding:10px 0;border-top:1px solid var(--line-soft)}
+.hm2-fig:first-child{border-top:0;padding-top:2px}
+.hm2-fn{font-size:13.5px;font-weight:700;color:var(--ink-2)}
+.hm2-fv{font-size:19px;font-weight:800;line-height:1.2}
+.hm2-fl{font-size:13px;color:var(--ink-3)}
+.h-desk .hm2-doing{padding:22px 26px}
+.h-desk .hm2-figs{grid-template-columns:repeat(3,minmax(0,1fr));gap:0 30px}
+.h-desk .hm2-fig{border-top:0;padding:4px 0 0}
+.h-desk .hm2-fig+.hm2-fig{border-left:1px solid var(--line-soft);padding-left:30px}
+.hm2-fade{height:46px;margin-top:22px;border-radius:20px 20px 0 0;background:linear-gradient(var(--surface),var(--ground));border:1px solid var(--line);border-bottom:0}
+
+/* payments */
+.hm2-year{margin-top:6px;font-size:15px;color:var(--ink-2)}
+.hm2-year b{color:var(--ink);font-weight:800}
+.hm2-year2{font-size:13.5px;color:var(--ink-3);margin-top:2px}
+.h-desk .hm2-year{font-size:16px}
+.hm2-chart{margin-top:16px;padding:18px}
+.hm2-ch{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+.hm2-ch b{font-family:var(--head);font-size:21px}
+.h-desk .hm2-chart{padding:22px 26px}
+.h-desk .hm2-chart .h-bars{height:170px;gap:22px}
+.h-desk .hm2-chart .h-months{gap:22px}
+.h-desk .hm2-chart .h-bar i{max-width:72px}
+.hm2-hist{margin-top:28px}
+.hm2-hh{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+
+/* not paid: a plain list, newest first */
+.hm2-np{margin-top:32px}
+.hm2-np .hm2-sub{font-size:13.5px;color:var(--ink-3);margin:2px 0 12px;max-width:62ch}
+.hm2-npl{padding:4px 18px}
+.h-desk .hm2-npl{padding:4px 26px}
+.hm2-nr{display:grid;grid-template-columns:minmax(0,1fr) auto 16px;gap:2px 12px;align-items:center;padding:12px 0;min-height:44px;text-decoration:none;border-top:1px solid var(--line-soft)}
+.hm2-nr:first-child{border-top:0}
+.hm2-nr>svg{width:16px;height:16px;color:var(--ink-3);grid-column:3;grid-row:1/span 3}
+.hm2-nw{font-size:14.5px;min-width:0}
+.hm2-nw b{font-weight:800}
+.hm2-ny{font-size:14px;color:var(--ink-2);grid-column:1}
+.hm2-nd{font-size:13px;color:var(--ink-3);grid-column:1}
+.hm2-na{font-size:14px;color:var(--ink-3);grid-column:2;grid-row:1;text-align:right;white-space:nowrap}
+.h-desk .hm2-nr{grid-template-columns:110px minmax(0,1fr) minmax(0,1.4fr) 110px 16px;grid-template-rows:auto}
+.h-desk .hm2-nd{grid-column:1;grid-row:1}
+.h-desk .hm2-nw{grid-column:2;grid-row:1}
+.h-desk .hm2-ny{grid-column:3;grid-row:1}
+.h-desk .hm2-na{grid-column:4;grid-row:1}
+.h-desk .hm2-nr>svg{grid-column:5;grid-row:1}
+.h-row.hm2-sub-r{font-weight:600}
+/* tabs under Payment history, as the checklist builder's, 44 px tall */
+.hm2-tabs{display:flex;width:max-content;max-width:100%;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px;margin-bottom:12px}
+.hm2-tab{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:700;color:var(--ink-2)}
+.hm2-tab small{font-size:12px;font-weight:600;opacity:.75}
+.hm2-tab.on{background:var(--espresso);color:#fff}
+.hm2-np-tab .hm2-sub{font-size:13.5px;color:var(--ink-3);margin:0 0 10px}
+</style></head><body><main class="h-doc">
+<h1>What’s due next, and Not paid</h1>
+<p class="h-why">Three additions (HM 1.8). On <b>Overview</b>, the held posts not yet published, soonest deadline first, at most three: two places for them. On <b>Payments</b>, a second line under the year’s total, and a plain “Not paid” list under the history for posts whose hold went back or was never collected. Each at 390 px, then desktop at 1280 px. Example data.</p>
+
+<section class="hm2-opt"><h2>A · In the money card’s white strip</h2>
+<p>Under the three totals, after the fee note and any stuck payout: “What’s due next” with one row per post. Everything about money stays in one card; the strip already holds lines about single posts.</p>
+<div class="h-pair" id="a"></div></section>
+
+<section class="hm2-opt"><h2>B · A section of its own</h2>
+<p>A small panel between the money card and “How you’re doing”, with its own heading. It reads more as a to-do list, and the money card stays as it is.</p>
+<div class="h-pair" id="b"></div></section>
+
+<section class="hm2-opt"><h2>Payments · tabs: Paid, Not paid</h2>
+<p>The year line (with the deal amounts and Sponing’s fees under it) and the chart stay above: they are about what you received. Under “Payment history”, two tabs. <b>Paid</b> is today’s history, with Download CSV. <b>Not paid</b> lists posts whose hold went back to the brand or was never collected: date, post, deal amount, and why. With nothing unpaid there are no tabs, and the page is as today.</p>
+<p class="hm2-cap" style="margin-top:18px">The Paid tab</p><div class="h-pair" id="pay"></div>
+<p class="hm2-cap" style="margin-top:28px">The Not paid tab</p><div class="h-pair" id="pay2"></div></section>
+</main>
+<script src="hm.js"></script><script>
+const SP = (html) => html.replaceAll("Cleared", "Sponing");
+const COINS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>';
+const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+
+function railFor(on) {
+  const row = (b, av, name, st) => `<div class="h-row"><b class="${av}">${b}</b><span>${name}<small>${st}</small></span></div>`;
+  return `<aside class="h-rail"><span class="h-logo"><i></i>Sponing</span><span class="h-new">+ New deal</span>
+  <div class="h-row hm2-sub-r${on === "overview" ? " on" : ""}">${I.home}<span>Overview</span></div>
+  <div class="h-row hm2-sub-r${on === "payments" ? " on" : ""}">${COINS}<span>Payments</span></div>
+  <span class="h-nav">Deals</span>
+  ${row("GT", "", "Glow Theory", "Upload your draft")}${row("PC", "sun", "Pine &amp; Co", "Brand review · 31h left")}${row("MM", "", "Maple &amp; Moss", "Go-ahead to publish")}${row("JS", "sky", "Juniper &amp; Salt", "Payout didn’t go through")}
+  <div class="h-row h-me"><b>AO</b><span>Ada Okafor<small>Creator</small></span></div></aside>`;
+}
+const topBar2 = () => `<div class="h-top"><span class="h-logo"><i></i>Sponing</span><span>${I.menu}Deals</span></div>`;
+
+/* held, not yet published, soonest deadline first; amounts after the fee add up to Held for you */
+const DUE = [
+  ["Glow Theory", "YouTube video", "Due today", true, "$760.00"],
+  ["Pine &amp; Co", "Short", "Due tomorrow", true, "$427.50"],
+  ["Maple &amp; Moss", "Reel", "Due Fri 23 Oct", false, "$1,472.50"],
+];
+const dueRows = () => `<div class="hm2-due">${DUE.map(([b, p, w, soon, amt]) =>
+  `<a href="#" class="hm2-row"><span class="hm2-what"><b>${b}</b> · ${p}</span><span class="hm2-when${soon ? " soon" : ""}">${w}</span><span class="hm2-got">${amt}</span>${CHEV}</a>`).join("")}</div>`;
+
+const stage = (cls, ic, lab, t, extra = "") => `<div class="hm2-stage ${cls}"><p class="hm2-lab">${ic}${lab}</p><p class="hm2-amt">${t.amount}</p><p class="hm2-cnt">${t.posts}</p>${extra}</div>`;
+const card = (strip) => `<section aria-label="Your money" class="hm2-money"><div class="hm2-track">${stage("", I.lock, "Held for you", TOTALS.held)}${stage("", I.clock, "On its way", TOTALS.way)}${stage("paid", I.check, "Paid", TOTALS.paid, `<a class="hm2-see" href="#">See payments ${I.arrow}</a>`)}</div>
+  <div class="hm2-foot"><p class="h-quiet">On its way and Paid are what you receive, after Sponing’s 5% fee.</p>${stuckLine()}${strip}</div></section>`;
+const doing = () => `<section class="h-panel hm2-doing"><h2 class="h-sec">How you’re doing</h2><div class="hm2-figs">${FIGURES.map((f) => `<div class="hm2-fig"><p class="hm2-fn">${f.name}</p><p class="hm2-fv">${f.value}</p><p class="hm2-fl">${f.line}</p></div>`).join("")}</div></section><div class="hm2-fade"></div>`;
+
+const overviewA = () => `<p class="h-title">Overview</p>${card(`<div class="hm2-a"><p class="hm2-due-h">What’s due next</p>${dueRows()}</div>`)}${doing()}`;
+const overviewB = () => `<p class="h-title">Overview</p>${card("")}
+  <section class="h-panel hm2-b"><h2 class="h-sec">What’s due next</h2><p class="hm2-sub">Held for you, not yet posted. What you’ll receive.</p>${dueRows()}</section>${doing()}`;
+
+const NOT_PAID = [
+  ["3 Oct 2026", "Pine &amp; Co", "YouTube video", "$450.00", "The deadline passed before you posted"],
+  ["28 Sep 2026", "Maple &amp; Moss", "Short", "$1,200.00", "Maple &amp; Moss cancelled the post"],
+  ["12 Sep 2026", "Kora Audio", "Reel", "$300.00", "Approved, but PayPal didn’t let Sponing collect it"],
+];
+const tabs = (on) => `<div class="hm2-tabs" role="tablist" aria-label="Payment history"><span role="tab" aria-selected="${on === "paid"}" class="hm2-tab${on === "paid" ? " on" : ""}">Paid <small>6</small></span><span role="tab" aria-selected="${on === "not"}" class="hm2-tab${on === "not" ? " on" : ""}">Not paid <small>3</small></span></div>`;
+const notPaidList = () => `<div class="hm2-np-tab"><p class="hm2-sub">Posts whose hold went back to the brand, or was never collected.</p>
+  <div class="h-panel hm2-npl">${NOT_PAID.map(([d, b, p, amt, why]) => `<a href="#" class="hm2-nr"><span class="hm2-nw"><b>${b}</b> · ${p}</span><span class="hm2-ny">${why}</span><span class="hm2-nd">${d}</span><span class="hm2-na">${amt}</span>${CHEV}</a>`).join("")}</div></div>`;
+const payments = (desk, on) => `<p class="h-title">Payments</p>
+  <p class="hm2-year"><b>$6,412.50</b> received in 2026 · 6 posts</p><p class="hm2-year2">$6,750.00 in deal amounts, less $337.50 in Sponing’s fees</p>
+  <section class="h-panel hm2-chart"><div class="hm2-ch"><b>Paid each month</b><span class="h-quiet">What you received</span></div>${bars()}</section>
+  <section class="hm2-hist"><div class="hm2-hh"><h2 class="h-sec">Payment history</h2>${on === "paid" ? `<a class="h-btn" href="#">${I.down}Download CSV</a>` : ""}</div>${tabs(on)}
+  ${on === "paid" ? SP(desk ? grid() : cards().split("</article>").slice(0, 2).join("</article>") + "</article>") : notPaidList()}</section>`;
+const pair = (id, on, phone, desk) => (document.getElementById(id).innerHTML =
+  `<div><p class="hm2-cap">390 px</p><div class="h-phone">${topBar2()}<div class="h-page">${phone}</div></div></div><div><p class="hm2-cap">Desktop, 1280 px</p><div class="h-desk">${railFor(on)}<div class="h-main">${desk}</div></div></div>`);
+pair("a", "overview", overviewA(), overviewA());
+pair("b", "overview", overviewB(), overviewB());
+pair("pay", "payments", payments(false, "paid"), payments(true, "paid"));
+pair("pay2", "payments", payments(false, "not"), payments(true, "not"));
+</script></body></html>
