@@ -742,7 +742,7 @@ describe("MP-FR-18 live check cannot decide", () => {
     expect(transition(confirmed, silence("2026-10-19T09:40:00Z"))).toEqual({ ok: true, state: confirmed, effects: [] });
   });
 
-  test("an objection goes to a person at Cleared, and silence no longer pays", () => {
+  test("an objection goes to a person at Sponing, and silence no longer pays", () => {
     const objection: MoneyEvent = { type: "brand_objected", reason: "The link goes to the wrong page.", at: at("2026-10-18T08:00:00Z") };
     const objected = after(undecided(), objection);
 
@@ -765,7 +765,7 @@ describe("MP-FR-18 live check cannot decide", () => {
   });
 });
 
-describe("MP-FR-19 Cleared's ruling", () => {
+describe("MP-FR-19 Sponing's ruling", () => {
   const objected = () =>
     after(published(), liveCheck("cannot_decide"), {
       type: "brand_objected",
@@ -796,7 +796,7 @@ describe("MP-FR-19 Cleared's ruling", () => {
     });
   });
 
-  test("a ruling is refused when nothing is waiting on Cleared", () => {
+  test("a ruling is refused when nothing is waiting on Sponing", () => {
     expect(transition(published(), { type: "cleared_ruled", decision: "pay", at: at("2026-10-20T10:00:00Z") })).toEqual({
       ok: false,
       reason: "nothing_to_rule_on",
@@ -1039,7 +1039,7 @@ describe("MP-BR-08 a finished deliverable", () => {
     ["reporting a post published", { type: "post_published", publishedAt: at("2026-10-25T10:00:00Z"), at: at("2026-10-25T10:05:00Z") }],
     ["a live check result", liveCheck("passed", "2026-10-25T10:10:00Z")],
     ["the brand confirming", { type: "brand_confirmed", at: at("2026-10-25T10:10:00Z") }],
-    ["Cleared ruling", { type: "cleared_ruled", decision: "pay", at: at("2026-10-25T10:10:00Z") }],
+    ["Sponing ruling", { type: "cleared_ruled", decision: "pay", at: at("2026-10-25T10:10:00Z") }],
   ])("refuses %s after release", (_, event) => {
     expect(transition(released(), event)).toEqual({ ok: false, reason: "finished" });
   });
@@ -1599,7 +1599,7 @@ describe("MP-FR-32 release", () => {
     });
   });
 
-  test("a release PayPal will not carry out is put in front of a person at Cleared", () => {
+  test("a release PayPal will not carry out is put in front of a person at Sponing", () => {
     expect(transition(released(), cancelAnswered("failed"))).toMatchObject({
       ok: true,
       effects: [{ type: "notify", to: "cleared", about: "release_failed" }],
@@ -1654,7 +1654,7 @@ describe("MP-FR-45 a payout PayPal will not send (revision 1.3)", () => {
   /** Captured, and PayPal refused to send the payout at 09:40:10 on 17 October. */
   const notSent = () => after(captured(), payoutStarted(), refusedAt("2026-10-17T09:40:10Z"));
 
-  test("it stays captured, is tried again in 6 hours, and Cleared and the creator are told", () => {
+  test("it stays captured, is tried again in 6 hours, and Sponing and the creator are told", () => {
     expect(transition(after(captured(), payoutStarted()), refusedAt("2026-10-17T09:40:10Z"))).toMatchObject({
       ok: true,
       state: { stage: "captured", payout: { id: "pay_1", status: "not_sent" } },

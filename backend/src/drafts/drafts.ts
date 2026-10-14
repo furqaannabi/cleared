@@ -30,7 +30,7 @@ export interface DraftSettings {
   dailySeconds: number;
   /** How long an address that reads a draft works for (DR-BR-12). */
   addressSeconds: number;
-  /** How many times a check that failed on Cleared's side is tried again, and the first wait before one (DR-FR-23). */
+  /** How many times a check that failed on Sponing's side is tried again, and the first wait before one (DR-FR-23). */
   retries: number;
   retryWaitSeconds: number;
   /** How often the reading of a video is asked after, and how long it may take before it counts as failed. */
@@ -75,7 +75,7 @@ export type DraftRefused =
   | { refused: "too_large" }
   | { refused: "file"; failure: FileFailure };
 
-export type RetryRefused = { refused: "not_found" | "not_held" | "released" } | /** No check of this post failed on Cleared's side. */ { refused: "no_failed_check" };
+export type RetryRefused = { refused: "not_found" | "not_held" | "released" } | /** No check of this post failed on Sponing's side. */ { refused: "no_failed_check" };
 
 export interface DraftAccepted {
   deliverableId: string;
@@ -84,7 +84,7 @@ export interface DraftAccepted {
   run: number;
 }
 
-/** The services a check asks. Left out when they are not set up: every check then fails on Cleared's side. */
+/** The services a check asks. Left out when they are not set up: every check then fails on Sponing's side. */
 export interface CheckServices {
   speech: SpeechAndText;
   judge: Judge;
@@ -242,7 +242,7 @@ export function createDrafts(deps: {
     /**
      * Checks a draft (DR-FR-10 to DR-FR-24). Reading the video takes minutes, so the job starts it and
      * comes back to ask. When the reading is done it checks every item and records the run. A failure
-     * on Cleared's side shows nothing of the run: the job waits and tries again, and after the last
+     * on Sponing's side shows nothing of the run: the job waits and tries again, and after the last
      * try the post reports the failure (DR-FR-23).
      */
     async check_draft(payload, { now: at }) {
@@ -411,7 +411,7 @@ export function createDrafts(deps: {
     },
 
     /**
-     * Starts the same draft's check again, after it failed on Cleared's side (DR-FR-23). Nothing is
+     * Starts the same draft's check again, after it failed on Sponing's side (DR-FR-23). Nothing is
      * uploaded and nothing more is counted: a failed check was never one of the post's checks.
      */
     async retryCheck(creatorId: string, deliverableId: string): Promise<DraftAccepted | RetryRefused> {

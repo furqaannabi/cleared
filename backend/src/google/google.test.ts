@@ -8,7 +8,7 @@ import { exportJWK, generateKeyPair, SignJWT, type JWK } from "jose";
 import { createGoogle } from "./google";
 
 const CLIENT_ID = "client-id.apps.googleusercontent.com";
-const REDIRECT = "https://api.cleared.test/auth/google/callback";
+const REDIRECT = "https://api.sponing.test/auth/google/callback";
 const NOW = new Date("2026-10-09T09:00:00Z");
 
 let signingKey: CryptoKey;

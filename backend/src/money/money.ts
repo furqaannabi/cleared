@@ -314,7 +314,7 @@ export function createMoney(deps: MoneyDeps) {
       const known = reference ? await prisma.payPalCall.findFirst({ where: { reference } }) : null;
       if (!reference || !known) return { outcome: "ignored" };
       const state = await readState(known.deliverableId);
-      // Only a release Cleared itself asked for is confirmed here. A hold that ended any other way is
+      // Only a release Sponing itself asked for is confirmed here. A hold that ended any other way is
       // found the next time it is read, when the creator asks for the go-ahead.
       const releasing = state?.release && !state.release.confirmedAt && state.hold?.reference === reference;
       if (!releasing) return outcome(known.deliverableId, false);
@@ -634,7 +634,7 @@ export function createMoney(deps: MoneyDeps) {
         if (cancelled.outcome === "unknown") return OPEN;
         if (cancelled.outcome === "not_cancellable") {
           // It is no longer unclaimed. If the creator accepted it, it is paid. If it came back by itself,
-          // the money is with Cleared again, which is all a cancellation would have done.
+          // the money is with Sponing again, which is all a cancellation would have done.
           const status = await paypal.readPayout(sending.reference);
           if (status.outcome === "succeeded") {
             await answered(call, { type: "payout_answered", payoutId, outcome: "succeeded", reference: status.reference, at: now() });
@@ -872,7 +872,7 @@ export function createMoney(deps: MoneyDeps) {
     /** The brand accepts a live post that failed on something that cannot be fixed (MP-FR-21). */
     brandAccepted: (deliverableId: string) => act(deliverableId, { type: "brand_accepted", at: now() }),
 
-    /** A person at Cleared rules on a brand's objection (MP-FR-19). */
+    /** A person at Sponing rules on a brand's objection (MP-FR-19). */
     clearedRuled: (deliverableId: string, decision: "pay" | "release") =>
       act(deliverableId, { type: "cleared_ruled", decision, at: now() }),
 

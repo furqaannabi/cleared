@@ -110,7 +110,7 @@ describe("AH-FR-15, AH-FR-17 deleting", () => {
     const response = await remove(sam);
 
     expect(response.status).toBe(204);
-    expect(response.headers.get("set-cookie")).toMatch(/cleared_session=;/);
+    expect(response.headers.get("set-cookie")).toMatch(/sponing_session=;/);
     expect((await phone.send("GET", "/me")).status).toBe(401);
     expect(await counts()).toMatchObject({ creator: 0, session: 0, connectedAccount: 0 });
   });

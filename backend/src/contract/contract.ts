@@ -26,7 +26,7 @@ export function contractDocument(): string {
   const document = createApp({ prisma }).getOpenAPI31Document({
     openapi: "3.1.0",
     info: {
-      title: "Cleared API",
+      title: "Sponing API",
       version: "1.0.0",
       description:
         "Steps 1 to 3 of a deal: signing in, deals, brief to checklist, the invite and the brand's link, change requests, agreeing and the holds. " +

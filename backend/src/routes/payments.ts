@@ -13,7 +13,7 @@ const PaymentSchema = z
     brandName: z.string(),
     platform: z.enum(PLATFORMS),
     amountMinor: z.number().int(),
-    // Cleared's fee and what the creator receives: there once the hold is taken, as the money path fixed them (AH-FR-07).
+    // Sponing's fee and what the creator receives: there once the hold is taken, as the money path fixed them (AH-FR-07).
     feeMinor: z.number().int().optional(),
     receivedMinor: z.number().int().optional(),
     currency: z.enum(["USD"]),

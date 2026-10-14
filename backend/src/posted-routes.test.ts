@@ -368,7 +368,7 @@ describe("PT-FR-15 check again", () => {
   });
 });
 
-describe("PT-FR-09 if they forget to say so, Cleared reads their channel when the money path asks", () => {
+describe("PT-FR-09 if they forget to say so, Sponing reads their channel when the money path asks", () => {
   const goAheadEnds = async (post: Awaited<ReturnType<typeof goAheadGiven>>) => ((await post.money()).goAhead as { until: Date }).until;
 
   test("when a go-ahead ends with the video public, the go-ahead is kept, the post counts as published from that moment, and the live check runs", async () => {

@@ -37,7 +37,7 @@ export interface MoneyState extends MoneyTerms {
   closed: Closed | null;
   /** The latest try at capturing the hold. */
   capture: Capture | null;
-  /** Cleared's fee and what the creator is paid, in cents. Fixed when the capture completes (MP-FR-27). */
+  /** Sponing's fee and what the creator is paid, in cents. Fixed when the capture completes (MP-FR-27). */
   feeCents: number | null;
   payoutCents: number | null;
   /** The latest payout to the creator. There is never more than one in flight (MP-FR-30). */
@@ -49,7 +49,7 @@ export interface Payout {
   /**
    * sending: PayPal has not reported a result. unclaimed: waiting for the creator to accept the money.
    * failed: finished without paying. cancelling: an unclaimed payout is being cancelled so `nextId` can be sent.
-   * not_sent: PayPal will not send it, for a reason on Cleared's side; it is sent again on a timer (MP-FR-45).
+   * not_sent: PayPal will not send it, for a reason on Sponing's side; it is sent again on a timer (MP-FR-45).
    */
   status: "sending" | "not_sent" | "unclaimed" | "failed" | "cancelling" | "paid";
   /** How many times PayPal has refused to send it. It is sent again under the same id each time (MP-FR-45). */
@@ -84,7 +84,7 @@ export interface Approval {
 export type WaitingOn =
   /** The live check could not decide. The brand confirms or objects; silence pays (MP-FR-18). */
   | { for: "brand_to_confirm"; until: Date }
-  /** The brand objected. A person at Cleared rules. The reason is untrusted text, never acted on (MP-BR-13). */
+  /** The brand objected. A person at Sponing rules. The reason is untrusted text, never acted on (MP-BR-13). */
   | { for: "cleared_to_rule"; objection: string }
   /** The live check failed on something fixable. The creator fixes it and it is checked again (MP-FR-20). */
   | { for: "creator_to_fix"; until: Date }
@@ -321,7 +321,7 @@ export interface MoneySettings {
   brandWindowHours: number;
   /** The least time a creator gets to fix a failed live post, when the deadline is nearer (MP-FR-20). */
   fixWindowHours: number;
-  /** Cleared's fee, in hundredths of a percent: 500 is 5% (MP-FR-27). */
+  /** Sponing's fee, in hundredths of a percent: 500 is 5% (MP-FR-27). */
   feeBasisPoints: number;
   /** How long after a refused capture the next try is made (MP-FR-25). */
   captureRetryHours: number;

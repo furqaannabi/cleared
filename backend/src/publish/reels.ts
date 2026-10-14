@@ -3,7 +3,7 @@
  * the live check.
  *
  * Instagram has no unlisted upload, so there is nothing to look at before the Reel is public. For the
- * go-ahead, what Cleared can check is that it can still read the creator's account, so that a creator
+ * go-ahead, what Sponing can check is that it can still read the creator's account, so that a creator
  * whose access is gone is told before they post, not after. Once it is posted the creator gives its
  * link: the Reel is found among their own media, recorded, and checked. The live check reads the
  * Reel's record, decides once whether its video is the approved draft, checks the caption, and gives
@@ -34,7 +34,7 @@ export type ReelGoAheadRefused =
   | { refused: "not_found" }
   /** The Reel's draft is not approved, so there is nothing to post yet. */
   | { refused: "not_approved" }
-  /** Cleared cannot read the creator's Instagram account: not connected, revoked, or expired (IG-FR-13). */
+  /** Sponing cannot read the creator's Instagram account: not connected, revoked, or expired (IG-FR-13). */
   | { refused: "reconnect_instagram" }
   /** Instagram itself failed. Nothing was decided; the creator tries again. */
   | { refused: "instagram_unavailable" }

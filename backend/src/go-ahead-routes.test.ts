@@ -90,7 +90,7 @@ describe("PT-FR-01, PT-FR-05 asking for the go-ahead", () => {
   });
 });
 
-describe("PT-FR-01, PT-FR-02, PT-BR-05 no go-ahead without a video Cleared has read and matched", () => {
+describe("PT-FR-01, PT-FR-02, PT-BR-05 no go-ahead without a video Sponing has read and matched", () => {
   test.each([
     ["text that is not a link", "my video", 400, { code: "not_a_youtube_link", field: "videoUrl" }],
     ["a link to another site", "https://vimeo.com/123456789", 400, { code: "not_a_youtube_link", field: "videoUrl" }],
@@ -162,7 +162,7 @@ describe("PT-FR-05 the money path's answer is passed on as it is", () => {
     const post = await approved(world);
     world.youtube.has(VIDEO);
     const hold = (await world.money.view(post.post))!.hold;
-    // The hold ends on PayPal's side without Cleared knowing.
+    // The hold ends on PayPal's side without Sponing knowing.
     await world.paypal.cancelHold(hold.state === "held" ? hold.reference : "");
 
     const response = await post.goAhead();

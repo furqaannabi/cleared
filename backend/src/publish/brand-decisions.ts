@@ -29,7 +29,7 @@ export function createBrandDecisions(deps: {
   return {
     /** The brand confirms a live post the check could not decide on (MP-FR-18). */
     confirm: (dealId: string, deliverableId: string) => pass(dealId, deliverableId, (money) => money.brandConfirmed(deliverableId)),
-    /** The brand objects, with its reason. A person at Cleared then rules (MP-FR-18, MP-FR-19). */
+    /** The brand objects, with its reason. A person at Sponing then rules (MP-FR-18, MP-FR-19). */
     object: (dealId: string, deliverableId: string, reason: string) => pass(dealId, deliverableId, (money) => money.brandObjected(deliverableId, reason)),
     /** The brand accepts a live post that failed on something that cannot be fixed (MP-FR-21). */
     accept: (dealId: string, deliverableId: string) => pass(dealId, deliverableId, (money) => money.brandAccepted(deliverableId)),

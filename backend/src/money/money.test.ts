@@ -633,7 +633,7 @@ describe("MP-FR-14 not confirmed", () => {
   test("a hold that no longer stands gives no go-ahead, and the brand is told", async () => {
     const world = setUp();
     const deliverableId = await readyToPublish(world);
-    // The hold ends on PayPal's side without Cleared knowing.
+    // The hold ends on PayPal's side without Sponing knowing.
     await world.paypal.cancelHold(holdReference(world)!);
     world.timeIs("2026-10-10T13:00:00Z");
 
@@ -808,7 +808,7 @@ describe("MP-FR-18 and MP-FR-19 the live check cannot decide", () => {
     expect(await world.money.view(deliverableId)).toMatchObject({ stage: "captured", approval: { by: "brand_silence" } });
   });
 
-  test("an objection goes to a person at Cleared, and silence no longer pays", async () => {
+  test("an objection goes to a person at Sponing, and silence no longer pays", async () => {
     const world = setUp();
     const deliverableId = await published(world);
     await world.money.liveCheckResult(deliverableId, "cannot_decide");
@@ -822,7 +822,7 @@ describe("MP-FR-18 and MP-FR-19 the live check cannot decide", () => {
     expect(world.paypal.capturedCents()).toBe(0);
   });
 
-  test("Cleared ruling to pay captures the hold, re-confirming it first because its guarantee has ended (MP-FR-24)", async () => {
+  test("Sponing ruling to pay captures the hold, re-confirming it first because its guarantee has ended (MP-FR-24)", async () => {
     const world = setUp();
     const deliverableId = await published(world);
     await world.money.liveCheckResult(deliverableId, "cannot_decide");
@@ -839,7 +839,7 @@ describe("MP-FR-18 and MP-FR-19 the live check cannot decide", () => {
     expect(world.paypal.capturedCents()).toBe(120_000);
   });
 
-  test("Cleared ruling not to pay gives the hold back to the brand (MP-FR-32)", async () => {
+  test("Sponing ruling not to pay gives the hold back to the brand (MP-FR-32)", async () => {
     const world = setUp();
     const deliverableId = await published(world);
     await world.money.liveCheckResult(deliverableId, "cannot_decide");
@@ -1056,7 +1056,7 @@ describe("MP-FR-29 and MP-FR-30 a payout that does not arrive", () => {
 });
 
 describe("MP-FR-45 a payout PayPal will not send", () => {
-  test("it stays captured, Cleared and the creator are told, and it is sent again 6 hours later under the same id", async () => {
+  test("it stays captured, Sponing and the creator are told, and it is sent again 6 hours later under the same id", async () => {
     const world = setUp();
     const deliverableId = await published(world);
     world.paypal.next("sendPayout", "refused");
@@ -1128,10 +1128,10 @@ describe("MP-FR-33 and MP-FR-34 cancelling", () => {
 });
 
 describe("MP-FR-32 a release PayPal will not carry out", () => {
-  test("it is put in front of a person at Cleared", async () => {
+  test("it is put in front of a person at Sponing", async () => {
     const world = setUp();
     const deliverableId = await readyToPublish(world);
-    // The hold is taken on PayPal's side without Cleared knowing, so it can no longer be given back.
+    // The hold is taken on PayPal's side without Sponing knowing, so it can no longer be given back.
     await world.paypal.captureHold({ requestId: "outside", reference: holdReference(world)!, amountCents: 120_000 });
 
     await world.money.cancel(deliverableId, "brand");
@@ -1380,8 +1380,8 @@ describe("MP-FR-37 what an event can do", () => {
 
   test.each<[string, string, Record<string, unknown>]>([
     ["a kind of event this code does not act on", "BILLING.SUBSCRIPTION.CREATED", { id: "SUB-1" }],
-    ["an event about a payout that is not Cleared's", "PAYMENT.PAYOUTS-ITEM.SUCCEEDED", { payout_batch_id: "NOT-OURS", payout_item_id: "ITEM-9" }],
-    ["an event about a hold that is not Cleared's", "PAYMENT.AUTHORIZATION.CREATED", { id: "AUTH-NOT-OURS", status: "CREATED", supplementary_data: { related_ids: { order_id: "ORDER-NOT-OURS" } } }],
+    ["an event about a payout that is not Sponing's", "PAYMENT.PAYOUTS-ITEM.SUCCEEDED", { payout_batch_id: "NOT-OURS", payout_item_id: "ITEM-9" }],
+    ["an event about a hold that is not Sponing's", "PAYMENT.AUTHORIZATION.CREATED", { id: "AUTH-NOT-OURS", status: "CREATED", supplementary_data: { related_ids: { order_id: "ORDER-NOT-OURS" } } }],
     ["an event with nothing in it", "PAYMENT.CAPTURE.COMPLETED", {}],
   ])("%s is stored as ignored and changes nothing", async (_, type, resource) => {
     const world = setUp();
@@ -1406,7 +1406,7 @@ describe("MP-FR-37 what an event can do", () => {
 
 describe("MP-FR-39 money taken back after a capture", () => {
   test.each(["PAYMENT.CAPTURE.REFUNDED", "PAYMENT.CAPTURE.REVERSED"])(
-    "%s is recorded and put in front of a person at Cleared, and no money is moved",
+    "%s is recorded and put in front of a person at Sponing, and no money is moved",
     async (type) => {
       const world = setUp();
       const deliverableId = await captured(world);

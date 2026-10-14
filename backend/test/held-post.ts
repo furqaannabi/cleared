@@ -34,7 +34,7 @@ import { FakePayPal } from "./fake-paypal";
 import { FakeStorage } from "./fake-storage";
 import { FakeYouTube } from "./fake-youtube";
 
-export const APP = "https://app.cleared.test";
+export const APP = "https://app.sponing.test";
 const at = (iso: string) => new Date(iso);
 
 /** Empties every table a deal touches. */
@@ -188,7 +188,7 @@ export function heldWorld(
       update: connection,
     });
     await accounts.setPaypalEmail(creatorId, `${first}.pay@example.com`);
-    browser.cookies.set("cleared_session", await createSessions({ prisma, now: clock }).start(creatorId));
+    browser.cookies.set("sponing_session", await createSessions({ prisma, now: clock }).start(creatorId));
     return browser;
   }
 

@@ -1,6 +1,6 @@
 /**
  * Publishing (publish to paid spec PT-FR-01 to PT-FR-10): the creator asks for the go-ahead with the
- * video on their channel, and says when it is public. Cleared reads the video from YouTube each time.
+ * video on their channel, and says when it is public. Sponing reads the video from YouTube each time.
  * For the go-ahead it must be the approved draft's file on the creator's own channel, and only then is
  * the money path asked, which alone decides whether there is a go-ahead (PT-BR-01, PT-BR-05). Once the
  * video is seen public the money path is told, and the live check is started. Nothing is ever written
@@ -33,7 +33,7 @@ export type GoAheadRefused =
   | { refused: "not_a_youtube_link" }
   /** The post's draft is not approved, so there is nothing to publish yet. */
   | { refused: "not_approved" }
-  /** Cleared cannot read the creator's YouTube: never really connected, revoked, or expired (PT-FR-07). */
+  /** Sponing cannot read the creator's YouTube: never really connected, revoked, or expired (PT-FR-07). */
   | { refused: "reconnect_youtube" }
   /** YouTube itself failed. Nothing was decided; the creator tries again. */
   | { refused: "youtube_unavailable" }

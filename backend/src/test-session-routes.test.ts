@@ -11,7 +11,7 @@ import { resetDatabase } from "../test/held-post";
 
 beforeEach(resetDatabase);
 
-const APP = "https://app.cleared.test";
+const APP = "https://app.sponing.test";
 const SECRET = "s3cr3t-for-tests-only-0123456789-abcdefghij";
 
 function setUp(options: { secret?: string; limit?: number } = {}) {
@@ -31,7 +31,7 @@ function setUp(options: { secret?: string; limit?: number } = {}) {
       headers: { ...(init.body === undefined ? {} : { "content-type": "application/json" }), ...headers },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
     });
-  const cookieOf = (response: Response) => response.headers.getSetCookie().find((cookie) => cookie.startsWith("cleared_session="));
+  const cookieOf = (response: Response) => response.headers.getSetCookie().find((cookie) => cookie.startsWith("sponing_session="));
   const answer = async (response: Response) => ({ status: response.status, body: await response.text(), cookie: cookieOf(response) });
   return { app, ask, logged, answer, cookieOf, later: (minutes: number) => void (now = new Date(now.getTime() + minutes * 60_000)) };
 }

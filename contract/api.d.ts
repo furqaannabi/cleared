@@ -2416,7 +2416,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Object to paying for a live post the check could not decide on, with a reason in plain text; a person at Cleared then decides (PT-FR-18) */
+        /** Object to paying for a live post the check could not decide on, with a reason in plain text; a person at Sponing then decides (PT-FR-18) */
         post: {
             parameters: {
                 query?: never;
@@ -2760,7 +2760,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start the same draft's check again, after it failed on Cleared's side (DR-FR-23) */
+        /** Start the same draft's check again, after it failed on Sponing's side (DR-FR-23) */
         post: {
             parameters: {
                 query?: never;

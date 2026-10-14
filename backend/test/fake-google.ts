@@ -38,7 +38,7 @@ export class FakeGoogle implements GooglePort {
   readonly revoked: string[] = [];
   /** Makes revoking fail: Google says no, or cannot be reached at all. */
   revokeFails?: "refused" | "unreachable";
-  /** Called as Google is asked to revoke, so a test can look at what Cleared still holds at that moment. */
+  /** Called as Google is asked to revoke, so a test can look at what Sponing still holds at that moment. */
   onRevoke?: () => Promise<void>;
 
   signInUrl(input: Started): string {

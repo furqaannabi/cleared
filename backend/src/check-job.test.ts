@@ -224,7 +224,7 @@ describe("DR-FR-23 when a service fails", () => {
     expect(world.speech.started).toHaveLength(1);
   });
 
-  test("the waits grow, and after three more tries the post reports a failure on Cleared's side", async () => {
+  test("the waits grow, and after three more tries the post reports a failure on Sponing's side", async () => {
     const world = heldWorld();
     const { sam, post } = await world.heldPost();
     world.judge.down = true;

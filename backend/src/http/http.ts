@@ -11,10 +11,10 @@ export interface AppEnv {
   Variables: { creatorId: string; requestId: string };
 }
 
-export const SESSION_COOKIE = "cleared_session";
+export const SESSION_COOKIE = "sponing_session";
 
 /** A brand's session cookie has the deal in its name, so one browser can hold several deals' sessions. */
-const brandCookie = (dealId: string) => `cleared_brand_${dealId}`;
+const brandCookie = (dealId: string) => `sponing_brand_${dealId}`;
 /** The only routes a brand's cookie is sent to: its own deal's. */
 const brandPath = (dealId: string) => `/brand/deals/${dealId}`;
 
@@ -80,7 +80,7 @@ export function letBrandIn(c: Context, dealId: string, token: string, appOrigin:
 }
 
 /**
- * Refuses a changing request unless it comes from Cleared's own app (DS-BR-03): its origin must be the
+ * Refuses a changing request unless it comes from Sponing's own app (DS-BR-03): its origin must be the
  * app's address, and a body must be JSON. This is on top of the SameSite cookie. `open` lists the paths
  * that are called by someone other than the app's scripts, which is PayPal alone. It also lists the
  * paths whose body is a file: they must still come from the app's own address.
@@ -98,7 +98,7 @@ export function ownAppOnly(appOrigin: string, open: { noOrigin: string[]; files:
 }
 
 /**
- * A path on Cleared's own app to send the browser to, or undefined if `next` is anything else
+ * A path on Sponing's own app to send the browser to, or undefined if `next` is anything else
  * (DS-FR-04). It never returns an address on another site.
  */
 export function ownPath(next: string | undefined, appOrigin: string): string | undefined {

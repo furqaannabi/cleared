@@ -53,7 +53,7 @@ describe("PT-FR-18 confirm or object, when the live check could not decide", () 
     expect(captures(world)).toBe(1);
   });
 
-  test("objecting with a reason is passed to the money path: a person at Cleared rules, and nothing is captured", async () => {
+  test("objecting with a reason is passed to the money path: a person at Sponing rules, and nothing is captured", async () => {
     const world = heldWorld();
     const post = await undecidedPost(world);
 
@@ -145,7 +145,7 @@ describe("PT-BR-08 only the brand of that deal can decide", () => {
 });
 
 describe("PT-FR-20, PT-FR-21 when the brand's 48 hours start, a fresh link is made and emailed to the brand", () => {
-  const linkIn = (text: string) => text.match(/https:\/\/app\.cleared\.test\/b\/[A-Za-z0-9_-]+/)?.[0];
+  const linkIn = (text: string) => text.match(/https:\/\/app\.sponing\.test\/b\/[A-Za-z0-9_-]+/)?.[0];
   const openWith = (world: HeldWorld, link: string) => world.visitor().send("POST", `/b/${link.split("/b/")[1]}/session`);
   type Seen = { reviewLink?: { url: string } };
   const creatorSees = async (post: { sam: { send: (method: string, path: string) => Promise<Response> }; post: string }) => (await (await post.sam.send("GET", `/deliverables/${post.post}`)).json()) as Seen;
@@ -158,7 +158,7 @@ describe("PT-FR-20, PT-FR-21 when the brand's 48 hours start, a fresh link is ma
     expect(world.email.sent).toHaveLength(1);
     const [email] = world.email.sent;
     expect(email!.to).toBe("maya@glow.example");
-    expect(email!.subject).toBe("Confirm Sam Rivera's live post on Cleared");
+    expect(email!.subject).toBe("Confirm Sam Rivera's live post on Sponing");
     expect(email!.text).toContain("Sam Rivera's YouTube video for Glow Skincare is live.");
     expect(email!.text).toContain("confirm the post or object");
     expect(email!.text).toContain("If you say nothing by October 11, 2026 at 8:00 AM (America/New_York), your hold is taken and Sam Rivera is paid.");
@@ -174,7 +174,7 @@ describe("PT-FR-20, PT-FR-21 when the brand's 48 hours start, a fresh link is ma
     await notFixablePost(world, { noticeEmail: "maya@glow.example" });
 
     const [email] = world.email.sent;
-    expect(email!.subject).toBe("Sam Rivera's live post needs your decision on Cleared");
+    expect(email!.subject).toBe("Sam Rivera's live post needs your decision on Sponing");
     expect(email!.text).toContain("it is not the video you approved");
     expect(email!.text).toContain("If you do not accept it by October 11, 2026 at 8:00 AM (America/New_York), your hold is released back to you and Sam Rivera is not paid.");
   });
@@ -192,7 +192,7 @@ describe("PT-FR-20, PT-FR-21 when the brand's 48 hours start, a fresh link is ma
 
     expect(world.email.asked).toBe(0);
     const { reviewLink } = await creatorSees(post);
-    expect(reviewLink!.url).toStartWith("https://app.cleared.test/b/");
+    expect(reviewLink!.url).toStartWith("https://app.sponing.test/b/");
     expect((await openWith(world, reviewLink!.url)).status).toBe(200);
   });
 
@@ -242,7 +242,7 @@ describe("PT-FR-20, PT-FR-21 when the brand's 48 hours start, a fresh link is ma
 
     expect(world.email.sent).toHaveLength(0);
     expect(world.email.asked).toBe(5);
-    expect((await creatorSees(post)).reviewLink!.url).toStartWith("https://app.cleared.test/b/");
+    expect((await creatorSees(post)).reviewLink!.url).toStartWith("https://app.sponing.test/b/");
     expect(await prisma.job.count({ where: { name: "brand_notice", status: "pending" } })).toBe(0);
     expect(JSON.stringify(world.logged)).toContain("could not be emailed");
   });
@@ -323,7 +323,7 @@ describe("PT-FR-23 where it stands, for the brand", () => {
     expect((await dealPage(post)).posts[0]!.review).toEqual({ state: "confirm", endsAt: "2026-10-11T12:00:00.000Z", what: ["file_record"] });
   });
 
-  test("its acceptance is wanted until a time, with why; and after an objection a person at Cleared is deciding, by when", async () => {
+  test("its acceptance is wanted until a time, with why; and after an objection a person at Sponing is deciding, by when", async () => {
     const world = heldWorld();
     const failed = await notFixablePost(world);
     expect((await failed.brandReads()).review).toEqual({ state: "accept", endsAt: "2026-10-11T12:00:00.000Z", reason: "not_the_approved_file" });

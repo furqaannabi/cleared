@@ -1,4 +1,4 @@
-/** After publishing: the live check's results, the brand's and Cleared's decisions, the deadline and day 28 (MP-FR-16 to MP-FR-23). */
+/** After publishing: the live check's results, the brand's and Sponing's decisions, the deadline and day 28 (MP-FR-16 to MP-FR-23). */
 
 import { approve, refuse, release, unchanged } from "./outcomes";
 import { hoursAfter, latest } from "./time";
@@ -31,7 +31,7 @@ export function afterPublishingTransition(
     case "live_check_result": {
       if (state.stage !== "held" || !state.hold) return refuse("not_held");
       if (!state.publishedAt) return refuse("not_published");
-      // Once paying is approved, or a person at Cleared is ruling, a new result changes nothing.
+      // Once paying is approved, or a person at Sponing is ruling, a new result changes nothing.
       if (state.approval || state.waitingOn?.for === "cleared_to_rule") return unchanged(state);
       const brandWindowEnds = hoursAfter(event.at, settings.brandWindowHours);
       switch (event.result) {

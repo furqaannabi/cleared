@@ -9,7 +9,7 @@ import { createDeals, defaultDealSettings, type DealSettings } from "./deals/dea
 import { runDueJobs } from "./jobs/jobs";
 import { createSessions } from "./sessions/sessions";
 
-const APP = "https://app.cleared.test";
+const APP = "https://app.sponing.test";
 const at = (iso: string) => new Date(iso);
 
 beforeEach(async () => {
@@ -62,7 +62,7 @@ function setUp(settings: Partial<DealSettings> = {}) {
       name,
       email: `${name.split(" ")[0]!.toLowerCase()}@example.com`,
     });
-    browser.cookies.set("cleared_session", await createSessions({ prisma, now: clock }).start(creatorId));
+    browser.cookies.set("sponing_session", await createSessions({ prisma, now: clock }).start(creatorId));
     return browser;
   }
   return {
@@ -117,7 +117,7 @@ describe("DS-FR-13 start a deal", () => {
     expect(listed.sort()).toEqual(["instagram_reel", "youtube_video+instagram_reel"]);
   });
 
-  test("a kind of post Cleared does not cover is still refused", async () => {
+  test("a kind of post Sponing does not cover is still refused", async () => {
     const sam = await setUp().creator();
 
     const response = await sam.send("POST", "/deals", { body: { brandName: "Glow Skincare", deliverables: [{ platform: "instagram_story" }] } });

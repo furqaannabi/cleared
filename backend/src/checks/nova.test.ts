@@ -20,7 +20,7 @@ function standIn(answer: { stopReason: string; text?: string } | "throws") {
   const model = createNovaVideoModel({
     model: "us.amazon.nova-pro-v1:0",
     region: "us-east-1",
-    bucket: "cleared-drafts",
+    bucket: "sponing-drafts",
     log: (...parts) => logged.push(parts),
     client: {
       async send(command: { input: Sent }) {
@@ -50,7 +50,7 @@ describe("what Nova is sent", () => {
     expect(request!.system).toEqual([{ text: SHOWN_INSTRUCTIONS }]);
     expect(request).not.toHaveProperty("toolConfig");
     expect(request!.messages).toHaveLength(1);
-    expect(request!.messages[0]!.content[0]).toEqual({ video: { format: "mov", source: { s3Location: { uri: "s3://cleared-drafts/drafts/p/d" } } } });
+    expect(request!.messages[0]!.content[0]).toEqual({ video: { format: "mov", source: { s3Location: { uri: "s3://sponing-drafts/drafts/p/d" } } } });
     expect(request!.messages[0]!.content[1]!.text).toContain("serum: Show the serum in use");
   });
 

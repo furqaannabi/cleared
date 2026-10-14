@@ -34,7 +34,7 @@ describe("DS-FR-47 the contract", () => {
   test("every route and every shape it answers with can be written into one OpenAPI document", () => {
     const { app } = setUp();
 
-    const document = app.getOpenAPI31Document({ openapi: "3.1.0", info: { title: "Cleared", version: "0" } });
+    const document = app.getOpenAPI31Document({ openapi: "3.1.0", info: { title: "Sponing", version: "0" } });
 
     expect(Object.keys(document.paths ?? {})).toEqual(
       expect.arrayContaining(["/me", "/deals/{dealId}", "/deals/{dealId}/invite/link", "/b/{token}/session", "/brand/deals/{dealId}"]),

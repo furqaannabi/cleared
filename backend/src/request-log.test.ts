@@ -15,7 +15,7 @@ import { createSessions } from "./sessions/sessions";
 
 beforeEach(resetDatabase);
 
-const APP = "https://app.cleared.test";
+const APP = "https://app.sponing.test";
 type Line = { message: string; details: Record<string, unknown> };
 
 function setUp() {
@@ -34,7 +34,7 @@ function setUp() {
   async function creator() {
     const { id } = await prisma.creator.create({ data: { googleId: "108234567890123456789", name: "Sam Rivera", email: "sam@example.com", createdAt: new Date() } });
     const browser = browserFor(app, APP);
-    browser.cookies.set("cleared_session", await createSessions({ prisma, now: () => new Date() }).start(id));
+    browser.cookies.set("sponing_session", await createSessions({ prisma, now: () => new Date() }).start(id));
     const deal = (await (await browser.send("POST", "/deals", { body: { brandName: "Glow Skincare", deliverables: [{ platform: "youtube_video" }] } })).json()) as { id: string; deliverables: { id: string }[] };
     requests.length = 0;
     return { browser, creatorId: id, dealId: deal.id, post: deal.deliverables[0]!.id };
@@ -125,7 +125,7 @@ describe("DS-FR-49 a log of requests", () => {
   test("no IP address and no user agent, whatever the request says of itself", async () => {
     const world = setUp();
 
-    await world.app.request("/me", { headers: { "user-agent": "Mozilla/5.0 (a real browser)", "x-forwarded-for": "203.0.113.7", referer: "https://app.cleared.test/deals/secret-looking" } });
+    await world.app.request("/me", { headers: { "user-agent": "Mozilla/5.0 (a real browser)", "x-forwarded-for": "203.0.113.7", referer: "https://app.sponing.test/deals/secret-looking" } });
 
     for (const never of ["Mozilla", "203.0.113.7", "secret-looking"]) expect(world.logged()).not.toContain(never);
   });

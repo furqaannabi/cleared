@@ -147,7 +147,7 @@ describe("PT-FR-13 the worst finding wins", () => {
     expect((await run([items.link, items.disclosure, items.publication], video)).answer).toBe(expected);
   });
 
-  test("everything Cleared could not decide is listed, not only the first", async () => {
+  test("everything Sponing could not decide is listed, not only the first", async () => {
     const result = await run([items.disclosure], { paidPromotion: undefined, fileSizeBytes: undefined });
 
     expect(result.undecided).toEqual(["file_record", "paid_promotion"]);

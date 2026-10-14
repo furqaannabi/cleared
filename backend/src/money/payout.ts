@@ -78,7 +78,7 @@ export function payoutTransition(state: MoneyState, event: PayoutEvent, settings
           if (payout.status !== "cancelling" || !payout.nextId) return unchanged(state);
           return sendPayout(state, payout.nextId);
         case "refused": {
-          // Nothing was sent, and the reason is on Cleared's side, so the creator is not asked to fix anything.
+          // Nothing was sent, and the reason is on Sponing's side, so the creator is not asked to fix anything.
           if (payout.status !== "sending") return unchanged(state);
           const refusals = (payout.refusals ?? 0) + 1;
           return {

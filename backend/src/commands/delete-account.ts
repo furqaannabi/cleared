@@ -1,5 +1,5 @@
 /**
- * The command a person at Cleared deletes an account with, when its creator asked by email and
+ * The command a person at Sponing deletes an account with, when its creator asked by email and
  * cannot do it themselves in Settings (account and history spec AH-FR-22;
  * docs/decisions/2026-10-12-deleting-an-account-keeps-the-money-records.md). Run from the backend
  * folder by someone with access to the service:

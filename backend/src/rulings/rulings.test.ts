@@ -1,5 +1,5 @@
 /**
- * Rulings by a person at Cleared (publish to paid spec PT-FR-34, PT-FR-35, PT-BR-14): what is waiting,
+ * Rulings by a person at Sponing (publish to paid spec PT-FR-34, PT-FR-35, PT-BR-14): what is waiting,
  * and recording "pay" or "release" with who ruled. The money path alone acts on a ruling.
  */
 import { beforeEach, describe, expect, test } from "bun:test";
@@ -13,7 +13,7 @@ beforeEach(resetDatabase);
 const OBJECTION = "The link goes to the wrong product page.";
 const captures = (world: HeldWorld) => world.paypal.calls.filter((call) => call.method === "captureHold").length;
 
-/** A live post the brand objected to: a person at Cleared has to rule. */
+/** A live post the brand objected to: a person at Sponing has to rule. */
 async function objected(world: HeldWorld, reason = OBJECTION) {
   const post = await undecidedPost(world);
   expect((await post.object(reason)).status).toBe(200);
@@ -70,7 +70,7 @@ describe("PT-FR-34 the list of posts waiting for a ruling", () => {
 });
 
 describe("PT-FR-35 a ruling is recorded with who made it, and passed to the money path", () => {
-  test("pay: paying is approved by Cleared, the hold is captured, and the ruling is kept with the name", async () => {
+  test("pay: paying is approved by Sponing, the hold is captured, and the ruling is kept with the name", async () => {
     const world = heldWorld();
     const post = await objected(world);
     world.timeIs("2026-10-10T09:00:00Z");
@@ -82,7 +82,7 @@ describe("PT-FR-35 a ruling is recorded with who made it, and passed to the mone
     expect(await prisma.ruling.findMany()).toEqual([{ deliverableId: post.post, decision: "pay", by: "Furqaan Nabi", at: new Date("2026-10-10T09:00:00Z") }]);
   });
 
-  test("release: the hold goes back to the brand, with the reason that a person at Cleared ruled", async () => {
+  test("release: the hold goes back to the brand, with the reason that a person at Sponing ruled", async () => {
     const world = heldWorld();
     const post = await objected(world);
 

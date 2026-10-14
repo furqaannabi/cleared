@@ -105,7 +105,7 @@ export const env = {
   drafts: drafts(),
   email: email(),
   instagram: instagram(),
-  /** The address of Cleared's own app: the only origin that may make changing requests (DS-BR-03). */
+  /** The address of Sponing's own app: the only origin that may make changing requests (DS-BR-03). */
   appOrigin: process.env.APP_ORIGIN ?? "http://localhost:3000",
   paypal: paypal(),
 };

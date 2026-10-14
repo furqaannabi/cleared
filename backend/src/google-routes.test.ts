@@ -9,8 +9,8 @@ import { createApp } from "./app";
 import { prisma } from "./db";
 import { localSecrets } from "./secrets/secrets";
 
-const APP = "https://app.cleared.test";
-const API = "https://api.cleared.test";
+const APP = "https://app.sponing.test";
+const API = "https://api.sponing.test";
 const at = (iso: string) => new Date(iso);
 const secrets = localSecrets(Buffer.alloc(32, 7).toString("base64"));
 
@@ -79,14 +79,14 @@ describe("DS-FR-01 sign in with Google", () => {
   test("what is kept in the browser while it is at Google cannot be read by the page, and goes when it is back", async () => {
     const world = setUp();
     const { response, state } = await startAt(world, "/auth/google");
-    const pending = response.headers.getSetCookie().find((cookie) => cookie.startsWith("cleared_pending="))!;
+    const pending = response.headers.getSetCookie().find((cookie) => cookie.startsWith("sponing_pending="))!;
 
     expect(pending).toContain("HttpOnly");
     expect(pending).toContain("Secure");
     expect(pending).toContain("SameSite=Lax");
 
     await world.browser.visit(`/auth/google/callback?code=${world.google.approve(state, sam)}&state=${state}`);
-    expect(world.browser.cookies.has("cleared_pending")).toBe(false);
+    expect(world.browser.cookies.has("sponing_pending")).toBe(false);
   });
 
   test.each([
@@ -113,7 +113,7 @@ describe("DS-FR-01 sign in with Google", () => {
     const response = await stranger.visit(`/auth/google/callback?code=${code}&state=${state}`);
 
     expect(response.headers.get("location")).toBe(`${APP}/sign-in?problem=google`);
-    expect(stranger.cookies.has("cleared_session")).toBe(false);
+    expect(stranger.cookies.has("sponing_session")).toBe(false);
   });
 
   test("the same answer used a second time signs nobody in", async () => {

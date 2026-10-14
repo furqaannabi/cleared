@@ -53,7 +53,7 @@ export interface LiveCheckResult {
   items: LiveItemResult[];
   /** Why the post cannot be fixed, when it cannot. */
   notFixable?: "not_your_channel" | "not_the_approved_file";
-  /** Everything Cleared could not decide, for the brand to be told what it is confirming. */
+  /** Everything Sponing could not decide, for the brand to be told what it is confirming. */
   undecided: ("file_record" | "paid_promotion" | "written_item")[];
 }
 

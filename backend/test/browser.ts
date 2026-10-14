@@ -6,7 +6,7 @@ interface App {
 export function browserFor(app: App, appOrigin: string) {
   const cookies = new Map<string, string>();
 
-  /** Sends a request as a script on Cleared's own app would, unless `origin` says otherwise. */
+  /** Sends a request as a script on Sponing's own app would, unless `origin` says otherwise. */
   async function send(
     method: string,
     path: string,

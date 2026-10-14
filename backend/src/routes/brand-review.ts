@@ -213,7 +213,7 @@ export function registerBrandReviewRoutes(app: OpenAPIHono<AppEnv>, deps: { sess
     createRoute({
       method: "post",
       path: "/brand/deals/{dealId}/deliverables/{deliverableId}/post/object",
-      summary: "Object to paying for a live post the check could not decide on, with a reason in plain text; a person at Cleared then decides (PT-FR-18)",
+      summary: "Object to paying for a live post the check could not decide on, with a reason in plain text; a person at Sponing then decides (PT-FR-18)",
       middleware: [session] as const,
       request: { ...post, ...body(z.object({ reason: z.string().trim().min(1).max(500) })) },
       responses: { ...livePost, 400: responses[400] },

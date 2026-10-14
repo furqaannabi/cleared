@@ -72,7 +72,7 @@ describe("PT-FR-24 the live check's state, with the time that matters", () => {
     expect(live(view, check({ undecided: ["file_record", "paid_promotion"] }))).toEqual({ state: "undecided", what: ["file_record", "paid_promotion"], brandBy: "2026-10-11T12:00:00.000Z" });
   });
 
-  test("objected: the brand's reason, and that a person at Cleared rules by day 28", () => {
+  test("objected: the brand's reason, and that a person at Sponing rules by day 28", () => {
     const view = published({ waitingOn: { for: "cleared_to_rule", objection: "The link goes to the wrong page." } });
     expect(live(view)).toEqual({ state: "objected", reason: "The link goes to the wrong page.", ruleBy: "2026-11-06T09:00:00.000Z" });
   });
@@ -100,7 +100,7 @@ describe("PT-FR-24 the live check's state, with the time that matters", () => {
 });
 
 describe("PT-FR-24, PT-BR-13 the capture and the payout, with amounts as decimal strings", () => {
-  test("captured: PayPal's reference, when, the amount, Cleared's fee and what the creator is paid", () => {
+  test("captured: PayPal's reference, when, the amount, Sponing's fee and what the creator is paid", () => {
     const view = laterView(captured({ payout: { status: "sending", canSendAgain: false } }), { video, check: check() });
     expect(view.state).toBe("captured");
     expect(view.capture).toEqual({ reference: "CAP-1", at: "2026-10-09T12:01:05.000Z", amount: "1200.00", fee: "60.00", payout: "1140.00" });
@@ -122,7 +122,7 @@ describe("PT-FR-24, PT-BR-13 the capture and the payout, with amounts as decimal
     ["unclaimed", { status: "unclaimed", canSendAgain: true }, { state: "unclaimed", canSendAgain: true }],
     ["failed, with why", { status: "failed", why: "returned", canSendAgain: true }, { state: "failed", reason: "returned", canSendAgain: true }],
     ["being cancelled so it can be sent again", { status: "cancelling", canSendAgain: false }, { state: "cancelling", canSendAgain: false }],
-    ["delayed on Cleared's side", { status: "not_sent", canSendAgain: false }, { state: "delayed", canSendAgain: false }],
+    ["delayed on Sponing's side", { status: "not_sent", canSendAgain: false }, { state: "delayed", canSendAgain: false }],
   ] as const)("a payout that is %s", (_what, payout, shown) => {
     expect(laterView(captured({ payout }), { video, check: check() }).payout).toEqual({ email: "sam.pay@example.com", ...shown });
   });
@@ -172,7 +172,7 @@ describe("PT-FR-23, PT-BR-09 where a post stands for the brand after its draft i
     expect(brand(view, check({ notFixable: "not_your_channel" })).review).toEqual({ state: "accept", endsAt: "2026-10-11T12:00:00.000Z", reason: "not_your_channel" });
   });
 
-  test("a person at Cleared is deciding, by day 28, with the brand's own reason", () => {
+  test("a person at Sponing is deciding, by day 28, with the brand's own reason", () => {
     const view = published({ waitingOn: { for: "cleared_to_rule", objection: "Wrong link." } });
     expect(brand(view).review).toEqual({ state: "with_cleared", reason: "Wrong link.", ruleBy: "2026-11-06T09:00:00.000Z" });
   });

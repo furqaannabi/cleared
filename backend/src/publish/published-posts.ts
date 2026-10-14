@@ -24,7 +24,7 @@ export function createPublishedPosts(deps: ReaderDeps & { now: () => Date }): Pu
       // A Reel counts as published only once its link was given and it was recorded, which is the moment above (IG-FR-18). It is not looked for on YouTube.
       if (post?.platform === "instagram_reel") return null;
       const channel = post?.deal.creatorId ? await reader.channelOf(post.deal.creatorId) : undefined;
-      // A channel Cleared cannot read shows it nothing published. The deadline runs as for any post not seen in time (PT-FR-17).
+      // A channel Sponing cannot read shows it nothing published. The deadline runs as for any post not seen in time (PT-FR-17).
       if (!channel) return null;
       const video = await reader.read(channel.refreshToken, recorded.videoId);
       // YouTube itself failed: there is no answer either way, and the money path asks again.

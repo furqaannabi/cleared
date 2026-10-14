@@ -25,7 +25,7 @@ test("one notice reaches a real inbox, and sending it again under the same key i
     platform: "youtube_video",
     endsAt: new Date(Date.now() + 48 * 3600 * 1000),
     timeZone: "America/New_York",
-    link: "https://app.cleared.example/b/this-is-a-made-up-link",
+    link: "https://app.sponing.example/b/this-is-a-made-up-link",
   });
   const idempotencyKey = `sandbox-${crypto.randomUUID()}`;
 

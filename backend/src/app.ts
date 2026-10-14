@@ -46,7 +46,7 @@ export interface AppDeps {
   prisma: PrismaClient;
   money?: Money;
   log?: (...parts: unknown[]) => void;
-  /** The address of Cleared's own app. The only origin that may make changing requests (DS-BR-03). */
+  /** The address of Sponing's own app. The only origin that may make changing requests (DS-BR-03). */
   appOrigin?: string;
   /** Told of each request once it is answered (DS-FR-49). Without it no request is logged; errors and request ids are unaffected. */
   requestLog?: RequestLogger;

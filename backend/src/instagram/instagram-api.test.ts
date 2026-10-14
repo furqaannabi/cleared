@@ -55,12 +55,12 @@ function standIn(answers: { code?: Answer; long?: Answer; me?: Answer; renew?: A
 
 describe("IG-FR-02, IG-BR-01 the sign-in address", () => {
   test("Instagram's own sign-in, for this app, asking for one permission: to read the account's profile and media", () => {
-    const url = new URL(standIn().instagram.signInUrl({ state: "state-1", redirectUri: "https://api.cleared.test/connect/instagram/callback" }));
+    const url = new URL(standIn().instagram.signInUrl({ state: "state-1", redirectUri: "https://api.sponing.test/connect/instagram/callback" }));
 
     expect(`${url.origin}${url.pathname}`).toBe("https://www.instagram.com/oauth/authorize");
     expect(Object.fromEntries(url.searchParams)).toEqual({
       client_id: "app-id",
-      redirect_uri: "https://api.cleared.test/connect/instagram/callback",
+      redirect_uri: "https://api.sponing.test/connect/instagram/callback",
       response_type: "code",
       scope: "instagram_business_basic",
       state: "state-1",
@@ -72,7 +72,7 @@ describe("IG-FR-03 exchanging the code", () => {
   test("the code is exchanged with the app's secret, then for a token that lasts 60 days", async () => {
     const { instagram, calls } = standIn();
 
-    expect(await instagram.exchange({ code: "code-1", redirectUri: "https://api.cleared.test/connect/instagram/callback" })).toEqual({
+    expect(await instagram.exchange({ code: "code-1", redirectUri: "https://api.sponing.test/connect/instagram/callback" })).toEqual({
       ok: true,
       token: "token-sam",
       expiresAt: new Date(NOW.getTime() + SIXTY_DAYS * 1000),
@@ -85,7 +85,7 @@ describe("IG-FR-03 exchanging the code", () => {
       client_id: "app-id",
       client_secret: "app-secret",
       grant_type: "authorization_code",
-      redirect_uri: "https://api.cleared.test/connect/instagram/callback",
+      redirect_uri: "https://api.sponing.test/connect/instagram/callback",
       code: "code-1",
     });
     expect(`${second!.url.origin}${second!.url.pathname}`).toBe("https://graph.instagram.com/access_token");
@@ -95,7 +95,7 @@ describe("IG-FR-03 exchanging the code", () => {
   test("Instagram ends a code with \"#_\" in the browser's address: it is not part of the code", async () => {
     const { instagram, calls } = standIn();
 
-    await instagram.exchange({ code: "code-1#_", redirectUri: "https://api.cleared.test/cb" });
+    await instagram.exchange({ code: "code-1#_", redirectUri: "https://api.sponing.test/cb" });
 
     expect(new URLSearchParams(String(calls[0]!.init.body)).get("code")).toBe("code-1");
   });
@@ -103,7 +103,7 @@ describe("IG-FR-03 exchanging the code", () => {
   test("the answer may come wrapped in a list, as Instagram's newer answers do", async () => {
     const { instagram } = standIn({ code: { status: 200, body: { data: [{ access_token: "short-sam", user_id: "1", permissions: "instagram_business_basic" }] } } });
 
-    expect(await instagram.exchange({ code: "code-1", redirectUri: "https://api.cleared.test/cb" })).toMatchObject({ ok: true, token: "token-sam" });
+    expect(await instagram.exchange({ code: "code-1", redirectUri: "https://api.sponing.test/cb" })).toMatchObject({ ok: true, token: "token-sam" });
   });
 
   test.each([
@@ -116,7 +116,7 @@ describe("IG-FR-03 exchanging the code", () => {
   ] as const)("%s connects nothing", async (_what, answers) => {
     const { instagram } = standIn(answers as never);
 
-    expect(await instagram.exchange({ code: "code-1", redirectUri: "https://api.cleared.test/cb" })).toEqual({ ok: false });
+    expect(await instagram.exchange({ code: "code-1", redirectUri: "https://api.sponing.test/cb" })).toEqual({ ok: false });
   });
 });
 
@@ -172,7 +172,7 @@ describe("IG-FR-06 renewing a token", () => {
 
 describe("IG-BR-02, IG-BR-12 nothing of a token, a code, the secret or a name is logged or thrown", () => {
   test.each([
-    ["an exchange", {}, (port: ReturnType<typeof standIn>["instagram"]) => port.exchange({ code: "code-1", redirectUri: "https://api.cleared.test/cb" })],
+    ["an exchange", {}, (port: ReturnType<typeof standIn>["instagram"]) => port.exchange({ code: "code-1", redirectUri: "https://api.sponing.test/cb" })],
     ["an account read", {}, (port: ReturnType<typeof standIn>["instagram"]) => port.account("token-sam")],
     ["a refusal that repeats the token", { me: lost }, (port: ReturnType<typeof standIn>["instagram"]) => port.account("token-sam")],
     ["a network failure that repeats the token and the secret", { renew: "fails" }, (port: ReturnType<typeof standIn>["instagram"]) => port.renew("token-sam")],

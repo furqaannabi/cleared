@@ -69,9 +69,9 @@ describe("DR-FR-12 what was said and what was on screen, with their times", () =
 
 describe("finding the result", () => {
   test("the path is read from the note Data Automation leaves, wherever it is nested", () => {
-    const note = { job_id: "j", output_metadata: [{ asset_id: 0, segment_metadata: [{ standard_output_path: "s3://cleared-drafts/drafts/p/d.reading/j/0/standard_output/0/result.json" }] }] };
+    const note = { job_id: "j", output_metadata: [{ asset_id: 0, segment_metadata: [{ standard_output_path: "s3://sponing-drafts/drafts/p/d.reading/j/0/standard_output/0/result.json" }] }] };
 
-    expect(standardOutputPath(note)).toBe("s3://cleared-drafts/drafts/p/d.reading/j/0/standard_output/0/result.json");
+    expect(standardOutputPath(note)).toBe("s3://sponing-drafts/drafts/p/d.reading/j/0/standard_output/0/result.json");
     expect(standardOutputPath({ job_id: "j" })).toBeUndefined();
   });
 });
@@ -81,11 +81,11 @@ describe("what Data Automation is asked", () => {
   function standIn(status: Record<string, unknown>) {
     const sent: { name: string; input: Record<string, unknown> }[] = [];
     const read: string[] = [];
-    const note = { output_metadata: [{ segment_metadata: [{ standard_output_path: "s3://cleared-drafts/drafts/p/d.reading/j/result.json" }] }] };
+    const note = { output_metadata: [{ segment_metadata: [{ standard_output_path: "s3://sponing-drafts/drafts/p/d.reading/j/result.json" }] }] };
     const reader = createDataAutomation({
       region: "us-east-1",
-      bucket: "cleared-drafts",
-      projectArn: "arn:aws:bedrock:us-east-1:123456789012:data-automation-project/cleared",
+      bucket: "sponing-drafts",
+      projectArn: "arn:aws:bedrock:us-east-1:123456789012:data-automation-project/sponing",
       profileArn: "arn:aws:bedrock:us-east-1:123456789012:data-automation-profile/us.data-automation-v1",
       read: async (key) => {
         read.push(key);
@@ -107,9 +107,9 @@ describe("what Data Automation is asked", () => {
     expect(await reader.start("drafts/p/d")).toEqual({ jobId: "arn:aws:bedrock:us-east-1:123456789012:data-automation-invocation/j" });
 
     expect(sent[0]!.input).toMatchObject({
-      inputConfiguration: { s3Uri: "s3://cleared-drafts/drafts/p/d" },
-      outputConfiguration: { s3Uri: "s3://cleared-drafts/drafts/p/d.reading/" },
-      dataAutomationConfiguration: { dataAutomationProjectArn: "arn:aws:bedrock:us-east-1:123456789012:data-automation-project/cleared" },
+      inputConfiguration: { s3Uri: "s3://sponing-drafts/drafts/p/d" },
+      outputConfiguration: { s3Uri: "s3://sponing-drafts/drafts/p/d.reading/" },
+      dataAutomationConfiguration: { dataAutomationProjectArn: "arn:aws:bedrock:us-east-1:123456789012:data-automation-project/sponing" },
       dataAutomationProfileArn: "arn:aws:bedrock:us-east-1:123456789012:data-automation-profile/us.data-automation-v1",
     });
   });
@@ -123,7 +123,7 @@ describe("what Data Automation is asked", () => {
   });
 
   test("on success the note is read, then the result it points to, both from the drafts bucket", async () => {
-    const { reader, read } = standIn({ status: "Success", outputConfiguration: { s3Uri: "s3://cleared-drafts/drafts/p/d.reading/j/job_metadata.json" } });
+    const { reader, read } = standIn({ status: "Success", outputConfiguration: { s3Uri: "s3://sponing-drafts/drafts/p/d.reading/j/job_metadata.json" } });
 
     const done = await reader.result("j");
 

@@ -23,7 +23,7 @@ export const USAGE = [
   "  published <id>                                 the approved post is live",
   "  live-check <id> passed|cannot_decide|failed_fixable|failed_not_fixable",
   "  confirm <id> | object <id> | accept <id>       the brand's answer about a live post",
-  "  rule <id> pay|release                          Cleared's ruling on an objection",
+  "  rule <id> pay|release                          Sponing's ruling on an objection",
   "  cancel <id> creator|brand",
   "  payout-again <id> [new-email]                  send the payout again, after one ended unpaid",
   "  jobs                                           run every job that is due",
@@ -34,7 +34,7 @@ export const USAGE = [
 ];
 
 /** With no PayPal account behind it, a payout to this address sits unclaimed, which is a flow worth seeing. */
-const DEFAULT_PAYOUT_EMAIL = "cleared-sandbox-creator@example.com";
+const DEFAULT_PAYOUT_EMAIL = "sponing-sandbox-creator@example.com";
 
 export interface CommandResult {
   lines: string[];

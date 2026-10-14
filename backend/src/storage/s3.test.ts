@@ -38,7 +38,7 @@ describe("what S3 is asked", () => {
         return answers[command.constructor.name]?.(command.input) ?? {};
       },
     };
-    return { sent, storage: createS3Storage({ bucket: "cleared-drafts", region: "us-east-1", client: client as never }) };
+    return { sent, storage: createS3Storage({ bucket: "sponing-drafts", region: "us-east-1", client: client as never }) };
   }
 
   test("everything under a prefix is deleted, page after page, and nothing outside it is named", async () => {
@@ -53,8 +53,8 @@ describe("what S3 is asked", () => {
     await storage.deleteUnder("drafts/p/d");
 
     expect(sent.filter((each) => each.name === "ListObjectsV2Command").map((each) => each.input)).toEqual([
-      { Bucket: "cleared-drafts", Prefix: "drafts/p/d", ContinuationToken: undefined },
-      { Bucket: "cleared-drafts", Prefix: "drafts/p/d", ContinuationToken: "more" },
+      { Bucket: "sponing-drafts", Prefix: "drafts/p/d", ContinuationToken: undefined },
+      { Bucket: "sponing-drafts", Prefix: "drafts/p/d", ContinuationToken: "more" },
     ]);
     expect(sent.filter((each) => each.name === "DeleteObjectsCommand").map((each) => (each.input.Delete as { Objects: unknown }).Objects)).toEqual([
       [{ Key: "drafts/p/d" }, { Key: "drafts/p/d.reading/job.json" }],
@@ -73,7 +73,7 @@ describe("what S3 is asked", () => {
   test("a small object is read whole, and one that is not there reads as nothing", async () => {
     const there = standIn({ GetObjectCommand: () => ({ Body: { transformToByteArray: async () => new Uint8Array([1, 2, 3]) } }) });
     expect(await there.storage.read("drafts/p/d.heard.json")).toEqual(new Uint8Array([1, 2, 3]));
-    expect(there.sent[0]).toEqual({ name: "GetObjectCommand", input: { Bucket: "cleared-drafts", Key: "drafts/p/d.heard.json" } });
+    expect(there.sent[0]).toEqual({ name: "GetObjectCommand", input: { Bucket: "sponing-drafts", Key: "drafts/p/d.heard.json" } });
 
     const missing = standIn({
       GetObjectCommand: () => {
@@ -94,6 +94,6 @@ describe("what S3 is asked", () => {
   });
 
   test("an object is named for AWS's own services by bucket and key", () => {
-    expect(standIn().storage.uri("drafts/p/d")).toBe("s3://cleared-drafts/drafts/p/d");
+    expect(standIn().storage.uri("drafts/p/d")).toBe("s3://sponing-drafts/drafts/p/d");
   });
 });

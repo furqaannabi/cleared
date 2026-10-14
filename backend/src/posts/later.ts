@@ -28,7 +28,7 @@ export type PostLiveCheck =
 export type PostCapture = { reference: string; at: string; amount: string; fee: string; payout: string } | { refused: true; retryUntil: string };
 
 export interface PostPayout {
-  /** delayed: PayPal will not send it yet, for a reason on Cleared's side (MP-FR-45). */
+  /** delayed: PayPal will not send it yet, for a reason on Sponing's side (MP-FR-45). */
   state: "sending" | "cancelling" | "delayed" | "unclaimed" | "failed" | "paid";
   /** The PayPal email it goes to. For the creator only (PT-BR-09). */
   email: string;

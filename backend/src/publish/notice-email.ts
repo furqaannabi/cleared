@@ -34,15 +34,15 @@ export function noticeEmail(input: NoticeInput): { subject: string; text: string
   const brand = oneLine(input.brandName);
   const post = PLATFORM[input.platform] ?? "post";
   const by = when(input.endsAt, input.timeZone);
-  const closing = ["Review the post:", input.link, "", "This link opens this deal on Cleared and nothing else. It stops working once you have decided, or when the time is up."];
+  const closing = ["Review the post:", input.link, "", "This link opens this deal on Sponing and nothing else. It stops working once you have decided, or when the time is up."];
 
   if (input.kind === "confirm") {
     return {
-      subject: `Confirm ${creator}'s live post on Cleared`,
+      subject: `Confirm ${creator}'s live post on Sponing`,
       text: [
         `${creator}'s ${post} for ${brand} is live.`,
         "",
-        "Cleared could not check everything about it automatically, so it is yours to decide: confirm the post or object to it.",
+        "Sponing could not check everything about it automatically, so it is yours to decide: confirm the post or object to it.",
         "",
         `If you say nothing by ${by}, your hold is taken and ${creator} is paid.`,
         "",
@@ -52,7 +52,7 @@ export function noticeEmail(input: NoticeInput): { subject: string; text: string
   }
   const why = input.notFixable === "not_your_channel" ? "it is not on the channel the deal was agreed for" : "it is not the video you approved";
   return {
-    subject: `${creator}'s live post needs your decision on Cleared`,
+    subject: `${creator}'s live post needs your decision on Sponing`,
     text: [
       `${creator}'s ${post} for ${brand} is live, but ${why}. That cannot be fixed once a post is public.`,
       "",

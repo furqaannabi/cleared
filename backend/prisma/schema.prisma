@@ -419,7 +419,7 @@ model DraftCheck {
   fileFailure    Json?
   /// Where a running check has got to: reading, said, shown or confirming (DR-FR-10).
   stage          String?
-  /// How many times the running check has failed on Cleared's side. It is tried again a few times (DR-FR-23).
+  /// How many times the running check has failed on Sponing's side. It is tried again a few times (DR-FR-23).
   failures       Int       @default(0)
   /// The reading of the video that Data Automation is doing, or has done, for the running check.
   speechJobId    String?
@@ -475,7 +475,7 @@ model DraftUsage {
 }
 
 // The post on its platform that a deliverable was published as. For YouTube it is the video the
-// go-ahead was asked for (publish to paid spec PT-FR-05): Cleared read it and found it to be the
+// go-ahead was asked for (publish to paid spec PT-FR-05): Sponing read it and found it to be the
 // approved draft's file, or could not tell. For a Reel it is the one the creator gave the link of,
 // found among their own media (Instagram Reels spec IG-FR-16). It is what the live check looks at.
 model PostVideo {
@@ -493,7 +493,7 @@ model PostVideo {
   /// check has decided it once (IG-FR-22), then same, different, unknown, or not_fetched.
   fileMatch     String
   recordedAt    DateTime
-  /// When Cleared first saw the video public: the moment the post counts as published (PT-FR-10).
+  /// When Sponing first saw the video public: the moment the post counts as published (PT-FR-10).
   seenPublicAt  DateTime?
 }
 
@@ -543,7 +543,7 @@ model PostCancel {
   note          String?
 }
 
-// A ruling by a person at Cleared on a live post the brand objected to (publish to paid spec PT-FR-35):
+// A ruling by a person at Sponing on a live post the brand objected to (publish to paid spec PT-FR-35):
 // what was ruled, by whom, and when. It is made by a command, never by a route (PT-BR-14). The money
 // path acts on it; this row keeps the name.
 model Ruling {

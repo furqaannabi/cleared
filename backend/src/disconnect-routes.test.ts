@@ -149,7 +149,7 @@ describe("AH-FR-13 withdrawn at Google", () => {
   test("once the stored access is deleted, Google is asked once to revoke it", async () => {
     const world = heldWorld();
     const sam = await world.creator();
-    /** What Cleared still held at the moment Google was asked. */
+    /** What Sponing still held at the moment Google was asked. */
     let heldThen: string[] | undefined;
     world.google.onRevoke = async () => void (heldThen = await connected());
 

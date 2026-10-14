@@ -201,4 +201,4 @@ const server = Bun.serve({
   // thing sent; every other route has its own, much smaller limit.
   maxRequestBodySize: defaultDraftSettings.maxBytes + 1024 * 1024,
 });
-console.log(`Cleared's API is listening on port ${server.port}`);
+console.log(`Sponing's API is listening on port ${server.port}`);

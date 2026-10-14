@@ -13,7 +13,7 @@ import { createMoney } from "./money/money";
 import { recordedPosts } from "./money/published-post";
 import { createSessions } from "./sessions/sessions";
 
-const APP = "https://app.cleared.test";
+const APP = "https://app.sponing.test";
 const at = (iso: string) => new Date(iso);
 
 beforeEach(async () => {
@@ -71,7 +71,7 @@ function setUp(options: { money?: false } = {}) {
     const { creatorId } = await accounts.signInWithGoogle({ googleId: `google-${name}`, name, email: `${first}@example.com` });
     await accounts.connectYouTube(creatorId, { externalId: `channel-${first}`, name, refreshTokenEncrypted: "sealed" });
     await accounts.setPaypalEmail(creatorId, `${first}.pay@example.com`);
-    browser.cookies.set("cleared_session", await createSessions({ prisma, now: clock }).start(creatorId));
+    browser.cookies.set("sponing_session", await createSessions({ prisma, now: clock }).start(creatorId));
     return browser;
   }
 
@@ -139,7 +139,7 @@ describe("DS-FR-34 swap the link for a session", () => {
     const [cookie, ...others] = response.headers.getSetCookie();
     expect(others).toEqual([]);
     const [pair, ...attributes] = cookie!.split("; ");
-    expect(pair).toMatch(new RegExp(`^cleared_brand_${deal.id}=[A-Za-z0-9_-]{43}$`));
+    expect(pair).toMatch(new RegExp(`^sponing_brand_${deal.id}=[A-Za-z0-9_-]{43}$`));
     expect(attributes.sort()).toEqual(["HttpOnly", `Max-Age=${6 * 24 * 60 * 60}`, `Path=/brand/deals/${deal.id}`, "SameSite=Lax", "Secure"]);
   });
 
@@ -193,7 +193,7 @@ describe("DS-FR-34 swap the link for a session", () => {
     await open(maya, glow.token);
 
     // Even if the browser were made to send Glow's session to Pine's routes.
-    maya.cookies.set(`cleared_brand_${pine.deal.id}`, maya.cookies.get(`cleared_brand_${glow.deal.id}`)!);
+    maya.cookies.set(`sponing_brand_${pine.deal.id}`, maya.cookies.get(`sponing_brand_${glow.deal.id}`)!);
 
     expect((await brandDeal(maya, pine.deal.id)).status).toBe(401);
     expect((await brandDeal(maya, glow.deal.id)).status).toBe(200);
@@ -206,12 +206,12 @@ describe("DS-FR-34 swap the link for a session", () => {
     const maya = world.visitor();
     await open(maya, token);
 
-    maya.cookies.set("cleared_session", maya.cookies.get(`cleared_brand_${deal.id}`)!);
+    maya.cookies.set("sponing_session", maya.cookies.get(`sponing_brand_${deal.id}`)!);
     expect((await maya.send("GET", "/deals")).status).toBe(401);
     expect((await maya.send("GET", `/deals/${deal.id}/invite`)).status).toBe(401);
 
     expect((await brandDeal(sam, deal.id)).status).toBe(401);
-    sam.cookies.set(`cleared_brand_${deal.id}`, sam.cookies.get("cleared_session")!);
+    sam.cookies.set(`sponing_brand_${deal.id}`, sam.cookies.get("sponing_session")!);
     expect((await brandDeal(sam, deal.id)).status).toBe(401);
   });
 });

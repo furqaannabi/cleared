@@ -1,4 +1,4 @@
-/** Capturing the hold, and Cleared's fee (MP-FR-24 to MP-FR-27). */
+/** Capturing the hold, and Sponing's fee (MP-FR-24 to MP-FR-27). */
 
 import { refuse, unchanged } from "./outcomes";
 import { GUARANTEE_DAYS, daysAfter, hoursAfter } from "./time";

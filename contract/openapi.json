@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Cleared API",
+    "title": "Sponing API",
     "version": "1.0.0",
     "description": "Steps 1 to 3 of a deal: signing in, deals, brief to checklist, the invite and the brand's link, change requests, agreeing and the holds. A creator's session and a brand's are HttpOnly cookies set by this API. Every error has one shape: a code and, where useful, the field it is about."
   },
@@ -5270,7 +5270,7 @@
     },
     "/brand/deals/{dealId}/deliverables/{deliverableId}/post/object": {
       "post": {
-        "summary": "Object to paying for a live post the check could not decide on, with a reason in plain text; a person at Cleared then decides (PT-FR-18)",
+        "summary": "Object to paying for a live post the check could not decide on, with a reason in plain text; a person at Sponing then decides (PT-FR-18)",
         "parameters": [
           {
             "schema": {
@@ -5662,7 +5662,7 @@
     },
     "/deliverables/{deliverableId}/check/retry": {
       "post": {
-        "summary": "Start the same draft's check again, after it failed on Cleared's side (DR-FR-23)",
+        "summary": "Start the same draft's check again, after it failed on Sponing's side (DR-FR-23)",
         "parameters": [
           {
             "schema": {

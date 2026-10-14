@@ -82,7 +82,7 @@ export interface CreatorPost {
   payoutEmail: string;
   /** Whether the creator may publish now, once they have asked. Absent before they ask. */
   goAhead?: PostGoAhead;
-  /** The published post: its link, made by code, and when Cleared first saw it public (PT-FR-10). */
+  /** The published post: its link, made by code, and when Sponing first saw it public (PT-FR-10). */
   post?: { url: string; publishedAt: string };
   /** Where the live check stands, with the time that matters. */
   liveCheck?: PostLiveCheck;

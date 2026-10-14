@@ -68,7 +68,7 @@ describe("DR-FR-01, DR-FR-05 sending a draft", () => {
     expect(checked(allPass).items[0]).not.toHaveProperty("previous");
   });
 
-  test("a check that fails on Cleared's side is not a run: the number stays and the last results stay", () => {
+  test("a check that fails on Sponing's side is not a run: the number stays and the last results stay", () => {
     const first = checked(oneUnsure);
     const failed = after(first, { type: "draft_started", at: T0 }, { type: "run_failed", at: T0 });
 

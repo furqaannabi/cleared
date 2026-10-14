@@ -101,7 +101,7 @@ export type Invites = ReturnType<typeof createInvites>;
 export function createInvites(deps: {
   prisma: PrismaClient;
   now: () => Date;
-  /** The address of Cleared's own app, which a link opens. */
+  /** The address of Sponing's own app, which a link opens. */
   appOrigin: string;
   /** Works out a link's token from its salt. Without it no link is made or shown. */
   linkKeys?: LinkKeys;

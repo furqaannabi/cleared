@@ -78,7 +78,7 @@ export function captureOutcome(capture: { id?: string; status?: string }): Captu
   }
 }
 
-/** The parts of a PayPal payout batch this code reads. Cleared sends one payout per batch. */
+/** The parts of a PayPal payout batch this code reads. Sponing sends one payout per batch. */
 export interface PayoutAnswer {
   batch_header?: { batch_status?: string };
   items?: { payout_item_id?: string; transaction_status?: string }[];

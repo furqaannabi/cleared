@@ -1,6 +1,6 @@
 /**
  * Deleting an account asked for by email (account and history spec AH-FR-22): the command a person at
- * Cleared runs. It runs the same code as the route, is refused for the same reasons, and asks for the
+ * Sponing runs. It runs the same code as the route, is refused for the same reasons, and asks for the
  * email to be typed again before it deletes.
  */
 import { beforeEach, describe, expect, test } from "bun:test";

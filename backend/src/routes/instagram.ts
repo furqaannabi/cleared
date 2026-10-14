@@ -15,7 +15,7 @@ import type { Sessions } from "../sessions/sessions";
 import { NextSchema } from "./shared";
 
 /** Its own cookie, so a trip to Google and a trip to Instagram cannot be mistaken for each other. */
-const PENDING_COOKIE = "cleared_pending_instagram";
+const PENDING_COOKIE = "sponing_pending_instagram";
 /** How long a creator has at Instagram's screen before the trip has to be started again. */
 const PENDING_SECONDS = 10 * 60;
 

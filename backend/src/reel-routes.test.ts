@@ -214,7 +214,7 @@ describe("IG-FR-11, IG-FR-12 a Reel's go-ahead: the account is read, then the ho
     const world = heldWorld();
     const reel = await approvedReel(world);
     const hold = (await world.money.view(reel.post))!.hold;
-    // The hold ends on PayPal's side without Cleared knowing.
+    // The hold ends on PayPal's side without Sponing knowing.
     await world.paypal.cancelHold(hold.state === "held" ? hold.reference : "");
 
     const response = await reel.goAhead();

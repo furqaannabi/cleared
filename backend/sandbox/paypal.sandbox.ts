@@ -63,7 +63,7 @@ describe("the PayPal sandbox: paying out", () => {
     async () => {
       const requestId = newRequestId();
       // example.com is reserved, so nobody can ever claim it.
-      const input = { requestId, email: `cleared-sandbox-${requestId.slice(0, 8)}@example.com`, amountCents: 100 };
+      const input = { requestId, email: `sponing-sandbox-${requestId.slice(0, 8)}@example.com`, amountCents: 100 };
 
       const sent = await paypal.sendPayout(input);
       expect(sent).toEqual({ outcome: "accepted", payoutReference: expect.any(String) });

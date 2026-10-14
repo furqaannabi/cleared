@@ -1,5 +1,5 @@
 /**
- * The commands a person at Cleared rules with (publish to paid spec PT-FR-34, PT-FR-35;
+ * The commands a person at Sponing rules with (publish to paid spec PT-FR-34, PT-FR-35;
  * docs/decisions/2026-10-10-a-ruling-is-a-command-not-a-page.md). Run from the backend folder by
  * someone with access to the service:
  *

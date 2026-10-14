@@ -1,5 +1,5 @@
 /**
- * Rulings by a person at Cleared (publish to paid spec PT-FR-34, PT-FR-35;
+ * Rulings by a person at Sponing (publish to paid spec PT-FR-34, PT-FR-35;
  * docs/decisions/2026-10-10-a-ruling-is-a-command-not-a-page.md). When a brand objects to a live post
  * the check could not decide, a named person rules: pay, or release. This module lists what is waiting
  * and records a ruling with who made it. It is reached only from a command run by someone with access
@@ -62,7 +62,7 @@ export function createRulings(deps: { prisma: PrismaClient; now: () => Date; mon
   const { prisma, now, money } = deps;
 
   return {
-    /** Every post waiting for a person at Cleared to rule, the one due soonest first (PT-FR-34). */
+    /** Every post waiting for a person at Sponing to rule, the one due soonest first (PT-FR-34). */
     async list(): Promise<Waiting[]> {
       const held = await prisma.deliverableMoney.findMany({ where: { stage: "held" }, select: { deliverableId: true } });
       const waiting: Waiting[] = [];

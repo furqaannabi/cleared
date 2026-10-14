@@ -14,7 +14,7 @@ import type { Secrets } from "../secrets/secrets";
 import type { Sessions } from "../sessions/sessions";
 import { NextSchema } from "./shared";
 
-const PENDING_COOKIE = "cleared_pending";
+const PENDING_COOKIE = "sponing_pending";
 /** How long a visitor has at Google's screen before the trip has to be started again. */
 const PENDING_SECONDS = 10 * 60;
 

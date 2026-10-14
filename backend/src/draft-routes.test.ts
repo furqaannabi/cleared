@@ -101,7 +101,7 @@ describe("DR-FR-01, DR-FR-02 sending a draft", () => {
   });
 });
 
-describe("DR-BR-17 an upload is accepted only from Cleared's own app, and is cut off at the size limit", () => {
+describe("DR-BR-17 an upload is accepted only from Sponing's own app, and is cut off at the size limit", () => {
   test("a file posted from another site, or from no site, is refused before any of it is read", async () => {
     const world = heldWorld();
     const { sam, post } = await world.heldPost();

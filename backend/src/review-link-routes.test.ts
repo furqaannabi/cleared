@@ -56,7 +56,7 @@ describe("DR-FR-44 a review link", () => {
     const link = (await post.readPost()).reviewLink!;
 
     expect(link).toEqual({
-      url: expect.stringMatching(/^https:\/\/app\.cleared\.test\/b\/[A-Za-z0-9_-]{43}$/),
+      url: expect.stringMatching(/^https:\/\/app\.sponing\.test\/b\/[A-Za-z0-9_-]{43}$/),
       expiresAt: new Date(world.now().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       expired: false,
     });
@@ -134,7 +134,7 @@ describe("DR-FR-45 a review link stops working when the brand has nothing left t
     await post.maya.send("POST", `${post.brand}/approve`);
 
     expect(await tried(world, link)).toEqual(dead);
-    expect(await tried(world, { ...link, url: "https://app.cleared.test/b/never-a-link" })).toEqual(dead);
+    expect(await tried(world, { ...link, url: "https://app.sponing.test/b/never-a-link" })).toEqual(dead);
     expect(await post.readPost()).not.toHaveProperty("reviewLink");
     expect(await (await colleague.send("GET", post.brand)).json()).toMatchObject({ review: { state: "approved" } });
   });

@@ -242,7 +242,7 @@ describe("DR-FR-27 the draft's address", () => {
 });
 
 describe("DR-FR-29 a check failure", () => {
-  test("a failure on Cleared's side: the post says so, names the file, and the last results stay", async () => {
+  test("a failure on Sponing's side: the post says so, names the file, and the last results stay", async () => {
     const world = heldWorld({ drafts: { retries: 0 } });
     const { sam, post: id } = await world.heldPost();
     world.videoModel.verdict = "fix_needed";

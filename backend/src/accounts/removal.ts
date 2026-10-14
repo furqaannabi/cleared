@@ -1,8 +1,8 @@
 /**
- * Taking an account away from Cleared (account and history spec AH-FR-10 to AH-FR-22): disconnecting
+ * Taking an account away from Sponing (account and history spec AH-FR-10 to AH-FR-22): disconnecting
  * YouTube or Instagram, and deleting the account.
  *
- * Disconnecting is refused while a post on that platform is under way. Otherwise Cleared's own copy
+ * Disconnecting is refused while a post on that platform is under way. Otherwise Sponing's own copy
  * of the access is deleted first, always, and only then is Google asked to revoke it, so a failure at
  * Google can never keep it (AH-BR-06;
  * docs/decisions/2026-10-12-disconnecting-deletes-then-revokes-at-google.md). Instagram has no call to
@@ -59,7 +59,7 @@ export function createAccountRemoval(deps: {
   const { prisma, google, secrets, money, storage, log } = deps;
   const now = deps.now ?? (() => new Date());
 
-  /** Hands a stored token back to Google to revoke, once. A no changes nothing: Cleared's copy is already gone. */
+  /** Hands a stored token back to Google to revoke, once. A no changes nothing: Sponing's copy is already gone. */
   async function revokeAtGoogle(creatorId: string, encrypted: string | null | undefined): Promise<void> {
     if (!google || !secrets || !encrypted) return;
     let token: string | undefined;
@@ -205,7 +205,7 @@ export function createAccountRemoval(deps: {
       await prisma.connectedAccount.delete({ where: { id: account.id } });
       log?.("An account was disconnected", { creatorId, platform });
 
-      // Cleared's copy is gone. Google is now asked, once, to withdraw what it gave (AH-FR-13).
+      // Sponing's copy is gone. Google is now asked, once, to withdraw what it gave (AH-FR-13).
       if (platform === "youtube") await revokeAtGoogle(creatorId, account.refreshTokenEncrypted);
       return { disconnected: true };
     },

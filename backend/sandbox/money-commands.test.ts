@@ -126,7 +126,7 @@ describe("MP-FR-44 the sandbox script", () => {
     expect(result.text).toContain("draft_not_cleared");
   });
 
-  test("cancel and Cleared's ruling are commands too", async () => {
+  test("cancel and Sponing's ruling are commands too", async () => {
     const { paypal, run } = setUp();
     await run("new 1200 --at 2026-10-10T09:00:00Z");
     const { id, orderId } = await theDeliverable();

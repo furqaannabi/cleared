@@ -26,7 +26,7 @@ async function make(name: string, ...extra: string[]) {
 }
 
 beforeAll(async () => {
-  folder = await mkdtemp(join(tmpdir(), "cleared-ffmpeg-"));
+  folder = await mkdtemp(join(tmpdir(), "sponing-ffmpeg-"));
   await make("clip.mp4");
   await make("clip.mov");
   await make("clip.mkv");

@@ -10,8 +10,8 @@ import { prisma } from "./db";
 import { localSecrets } from "./secrets/secrets";
 import { createSessions } from "./sessions/sessions";
 
-const APP = "https://app.cleared.test";
-const API = "https://api.cleared.test";
+const APP = "https://app.sponing.test";
+const API = "https://api.sponing.test";
 const sam: Person = { googleId: "google-1", name: "Sam Rivera", email: "sam@example.com", channel: null };
 const at = (iso: string) => new Date(iso);
 
@@ -29,7 +29,7 @@ function setUp(startAt = "2026-10-09T09:00:00Z") {
   const app = createApp({ prisma, appOrigin: APP, apiOrigin: API, now: () => now, google, secrets: localSecrets(Buffer.alloc(32, 7).toString("base64")) });
   const cookies = new Map<string, string>();
 
-  /** Sends a request as the browser on Cleared's own app would, and keeps any cookie set in the answer. */
+  /** Sends a request as the browser on Sponing's own app would, and keeps any cookie set in the answer. */
   async function send(method: string, path: string, options: { body?: unknown; origin?: string | null; form?: boolean } = {}) {
     const headers = new Headers();
     const origin = options.origin === undefined ? APP : options.origin;
@@ -57,7 +57,7 @@ function setUp(startAt = "2026-10-09T09:00:00Z") {
     /** Signs this browser in as a creator who came through Google, without the trip to Google. */
     async signInWithGoogle(google = { googleId: "google-1", name: "Sam Rivera", email: "sam@example.com" }) {
       const { creatorId } = await createAccounts({ prisma, now: () => now }).signInWithGoogle(google);
-      cookies.set("cleared_session", await createSessions({ prisma, now: () => now }).start(creatorId));
+      cookies.set("sponing_session", await createSessions({ prisma, now: () => now }).start(creatorId));
       return creatorId;
     },
     /** Signs this browser in the way a person does: to Google, approve, and back. The answer is the one that sets the session. */
@@ -81,7 +81,7 @@ describe("DS 1.2 there are no demo accounts: every creator signs in with Google"
 
     expect(asForm.status).toBe(415);
     expect(asJson.status).toBe(404);
-    expect(browser.cookies.has("cleared_session")).toBe(false);
+    expect(browser.cookies.has("sponing_session")).toBe(false);
     expect(await prisma.creator.count()).toBe(0);
   });
 
@@ -113,7 +113,7 @@ describe("DS-FR-08 who is signed in", () => {
 
   test("a cookie nobody was given signs nobody in", async () => {
     const browser = setUp();
-    browser.cookies.set("cleared_session", "made-up-token");
+    browser.cookies.set("sponing_session", "made-up-token");
 
     expect((await browser.send("GET", "/me")).status).toBe(401);
   });
@@ -125,7 +125,7 @@ describe("DS-BR-02 the session", () => {
 
     const response = await browser.signIn();
 
-    const cookie = response.headers.getSetCookie().find((entry) => entry.startsWith("cleared_session="))!;
+    const cookie = response.headers.getSetCookie().find((entry) => entry.startsWith("sponing_session="))!;
     expect(cookie).toContain("HttpOnly");
     expect(cookie).toContain("Secure");
     expect(cookie).toContain("SameSite=Lax");
@@ -136,7 +136,7 @@ describe("DS-BR-02 the session", () => {
     const browser = setUp();
     await browser.signIn();
 
-    const token = browser.cookies.get("cleared_session")!;
+    const token = browser.cookies.get("sponing_session")!;
     const stored = JSON.stringify(await prisma.session.findMany());
 
     expect(token.length).toBeGreaterThanOrEqual(43);
@@ -146,7 +146,7 @@ describe("DS-BR-02 the session", () => {
   test("the token is in no response body or address", async () => {
     const browser = setUp();
     const response = await browser.signIn();
-    const token = browser.cookies.get("cleared_session")!;
+    const token = browser.cookies.get("sponing_session")!;
 
     expect(response.headers.get("location")).not.toContain(token);
     expect(await (await browser.send("GET", "/me")).text()).not.toContain(token);
@@ -184,17 +184,17 @@ describe("DS-FR-05 sign out", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({});
-    expect(browser.cookies.has("cleared_session")).toBe(false);
+    expect(browser.cookies.has("sponing_session")).toBe(false);
     expect(await prisma.session.count()).toBe(0);
   });
 
   test("the same cookie sent again signs nobody in", async () => {
     const browser = setUp();
     await browser.signIn();
-    const token = browser.cookies.get("cleared_session")!;
+    const token = browser.cookies.get("sponing_session")!;
     await browser.send("POST", "/auth/sign-out");
 
-    browser.cookies.set("cleared_session", token);
+    browser.cookies.set("sponing_session", token);
 
     expect((await browser.send("GET", "/me")).status).toBe(401);
   });
@@ -287,10 +287,10 @@ describe("DS-FR-10 the PayPal email", () => {
   });
 });
 
-describe("DS-BR-03 changing requests come only from Cleared's own app", () => {
+describe("DS-BR-03 changing requests come only from Sponing's own app", () => {
   test.each([
     ["another site", "https://evil.example"],
-    ["a look-alike address", "https://app.cleared.test.evil.example"],
+    ["a look-alike address", "https://app.sponing.test.evil.example"],
     ["no origin at all", null],
   ])("a changing request from %s is refused and changes nothing", async (_, origin) => {
     const browser = setUp();
@@ -323,7 +323,7 @@ describe("DS-BR-03 changing requests come only from Cleared's own app", () => {
   test("a body that is not JSON is refused", async () => {
     const browser = setUp();
     await browser.signInWithGoogle();
-    const cookie = `cleared_session=${browser.cookies.get("cleared_session")}`;
+    const cookie = `sponing_session=${browser.cookies.get("sponing_session")}`;
     const app = createApp({ prisma, appOrigin: APP });
 
     const response = await app.request("/me/paypal-email", {
@@ -369,7 +369,7 @@ describe("DS-FR-04 back where they were going", () => {
     return browser;
   }
 
-  test("a path on Cleared's own app is used", async () => {
+  test("a path on Sponing's own app is used", async () => {
     const response = await (await returning()).signIn("?next=%2Fdeals%2Fabc%3Ftab%3Dfix");
 
     expect(response.headers.get("location")).toBe(`${APP}/deals/abc?tab=fix`);

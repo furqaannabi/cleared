@@ -37,7 +37,7 @@ export type GoAheadView =
   | { state: "none" | "confirming" | "not_confirmed" | "ended" }
   | { state: "running" | "wait_until"; until: Date };
 
-/** Whose move it is. cleared is Cleared itself: its checks, or a person there. */
+/** Whose move it is. cleared is Sponing itself: its checks, or a person there. */
 type Who = "brand" | "creator" | "cleared" | "paypal" | "nobody";
 
 /**

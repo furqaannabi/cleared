@@ -15,7 +15,7 @@ const CHANNELS_URL = "https://www.googleapis.com/youtube/v3/channels?part=snippe
 const ISSUERS = ["https://accounts.google.com", "accounts.google.com"];
 
 const IDENTITY_SCOPE = "openid email profile";
-/** Read-only: Cleared can see the creator's channel and videos, and can change nothing (DS-BR-14). */
+/** Read-only: Sponing can see the creator's channel and videos, and can change nothing (DS-BR-14). */
 const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.readonly";
 
 const TIMEOUT_MS = 15_000;

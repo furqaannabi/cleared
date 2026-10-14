@@ -194,7 +194,7 @@ export function registerDeliverableRoutes(
     createRoute({
       method: "post",
       path: "/deliverables/{deliverableId}/check/retry",
-      summary: "Start the same draft's check again, after it failed on Cleared's side (DR-FR-23)",
+      summary: "Start the same draft's check again, after it failed on Sponing's side (DR-FR-23)",
       middleware: [creator] as const,
       request: { params: z.object({ deliverableId: z.string().min(1).max(64) }) },
       responses: {

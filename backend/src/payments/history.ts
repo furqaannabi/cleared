@@ -17,7 +17,7 @@ export interface PaymentRow {
   platform: Platform;
   /** Whole minor units, as every amount here is (AH-BR-07). */
   amountMinor: number;
-  /** Cleared's fee and what the creator receives, once the hold is taken: fixed by the money path at capture (MP-FR-27). */
+  /** Sponing's fee and what the creator receives, once the hold is taken: fixed by the money path at capture (MP-FR-27). */
   feeMinor?: number;
   receivedMinor?: number;
   currency: "USD";

@@ -5,7 +5,7 @@
 import { describe, expect, test } from "bun:test";
 import { createResend } from "./resend";
 
-const message = { to: "maya@glow.example", subject: "Confirm Sam Rivera's live post on Cleared", text: "Review the post:\nhttps://app.cleared.test/b/secret-token", idempotencyKey: "brand-notice-1" };
+const message = { to: "maya@glow.example", subject: "Confirm Sam Rivera's live post on Sponing", text: "Review the post:\nhttps://app.sponing.test/b/secret-token", idempotencyKey: "brand-notice-1" };
 
 /** A network that answers as the test says, and remembers what it was sent. */
 function standIn(answer: { status: number; body?: string } | "fails") {
@@ -13,7 +13,7 @@ function standIn(answer: { status: number; body?: string } | "fails") {
   const logged: unknown[] = [];
   const email = createResend({
     apiKey: "re_test_key",
-    from: "Cleared <notices@cleared.example>",
+    from: "Sponing <notices@sponing.example>",
     log: (...parts) => logged.push(parts),
     fetch: (async (url: string | URL | Request, init?: RequestInit) => {
       calls.push({ url: String(url), init: init ?? {} });
@@ -36,7 +36,7 @@ describe("PT-FR-21 one plain-text message to one address, through Resend", () =>
     const headers = new Headers(calls[0]!.init.headers);
     expect(headers.get("authorization")).toBe("Bearer re_test_key");
     expect(headers.get("content-type")).toBe("application/json");
-    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ from: "Cleared <notices@cleared.example>", to: ["maya@glow.example"], subject: message.subject, text: message.text });
+    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ from: "Sponing <notices@sponing.example>", to: ["maya@glow.example"], subject: message.subject, text: message.text });
   });
 
   test("the message's own key goes with it, so a retry is never a second email", async () => {

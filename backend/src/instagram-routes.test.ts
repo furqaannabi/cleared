@@ -12,8 +12,8 @@ import { createInstagramConnections } from "./instagram/connections";
 import { runDueJobs } from "./jobs/jobs";
 import { localSecrets } from "./secrets/secrets";
 
-const APP = "https://app.cleared.test";
-const API = "https://api.cleared.test";
+const APP = "https://app.sponing.test";
+const API = "https://api.sponing.test";
 const at = (iso: string) => new Date(iso);
 const secrets = localSecrets(Buffer.alloc(32, 7).toString("base64"));
 

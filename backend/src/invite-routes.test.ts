@@ -10,7 +10,7 @@ import { localLinkKeys } from "./invites/link-keys";
 import { runDueJobs } from "./jobs/jobs";
 import { createSessions } from "./sessions/sessions";
 
-const APP = "https://app.cleared.test";
+const APP = "https://app.sponing.test";
 const at = (iso: string) => new Date(iso);
 
 beforeEach(async () => {
@@ -55,7 +55,7 @@ function setUp(options: { linkKey?: false } = {}) {
       await prisma.connectedAccount.create({ data: { creatorId, platform: "instagram", externalId: `ig-${first}`, name: first, refreshTokenEncrypted: "sealed", connectedAt: clock() } });
     }
     if (has.paypalEmail !== false) await accounts.setPaypalEmail(creatorId, `${first}.pay@example.com`);
-    browser.cookies.set("cleared_session", await createSessions({ prisma, now: clock }).start(creatorId));
+    browser.cookies.set("sponing_session", await createSessions({ prisma, now: clock }).start(creatorId));
     return browser;
   }
 
@@ -290,7 +290,7 @@ async function dealWithTerms(world: ReturnType<typeof setUp>, browser: Browser) 
 }
 
 describe("DS-FR-31 create the link", () => {
-  test("it makes a link to Cleared's app that expires in 7 days, saves version 1 and waits for the brand", async () => {
+  test("it makes a link to Sponing's app that expires in 7 days, saves version 1 and waits for the brand", async () => {
     const world = setUp();
     const sam = await world.creator();
     const deal = await dealWithTerms(world, sam);
@@ -302,7 +302,7 @@ describe("DS-FR-31 create the link", () => {
     expect(invite).toMatchObject({
       step: "waiting_for_brand",
       version: 1,
-      link: { url: expect.stringMatching(/^https:\/\/app\.cleared\.test\/b\/[A-Za-z0-9_-]{43}$/), expiresAt: "2026-10-16T09:00:00.000Z", expired: false },
+      link: { url: expect.stringMatching(/^https:\/\/app\.sponing\.test\/b\/[A-Za-z0-9_-]{43}$/), expiresAt: "2026-10-16T09:00:00.000Z", expired: false },
     });
     expect(await prisma.termsVersion.findMany({ where: { dealId: deal.id } })).toMatchObject([
       {
