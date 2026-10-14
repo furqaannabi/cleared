@@ -1,6 +1,6 @@
 # Publish to paid: FRD
 
-**Status:** Draft 1.3, not signed (revision 1.2 signed by Furqaan). It accepts William's cancel spec as the backend's rules and adds to what his publish and pay, confirm and hold, and cancel pages call; those additions are listed for him. One of its decisions is product behaviour he shares (email for the brand's notices) and is recorded as Furqaan's for him to agree.
+**Status:** Signed by William (revision 1.3). It accepts William's cancel spec as the backend's rules and adds to what his publish and pay, confirm and hold, and cancel pages call; those additions are listed for him. One of its decisions is product behaviour he shares (email for the brand's notices) and is recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. Steps 6 to 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and cancelling, as an API the pages William has built can call: the creator asks for the go-ahead and publishes, Sponing checks the live post against YouTube's own record of it, the brand decides what the check could not, and both sides see the hold captured and the creator paid, or released.
 
@@ -274,3 +274,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.2 | Demo accounts are removed, so the shared demo channel goes (PT-FR-36) with its setting | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
 | 1.2 | Signed by Furqaan | none |
 | 1.3 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.3 signed | Revision 1.3 signed by William | none |

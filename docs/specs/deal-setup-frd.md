@@ -1,6 +1,6 @@
 # Deal set-up: FRD
 
-**Status:** Draft 1.5, not signed (revision 1.4 signed by Furqaan). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no demo accounts) are Furqaan's; William has to agree.
+**Status:** Signed by William (revision 1.5). The decisions it shares with the frontend (no Cognito, the API on its own subdomain, the generated contract, no demo accounts) are Furqaan's; William has to agree.
 
 **Surface:** Backend. Steps 1 to 3 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: a creator signs in, starts a deal, has its brief turned into a checklist, sets the terms and makes the brand's link; the brand opens the link, asks for changes or agrees, and approves a PayPal hold for each post.
 
@@ -358,3 +358,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.4 | A job that fails is logged at once, without its message (DS-FR-52), and the jobs table keeps the same in place of the message (DS-FR-53). A job that finishes or waits is not logged | [A failed job](../decisions/2026-10-13-a-failed-job-is-logged-and-kept-without-its-message.md) |
 | 1.4 | Signed by Furqaan | none |
 | 1.5 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.5 signed | Revision 1.5 signed by William | none |

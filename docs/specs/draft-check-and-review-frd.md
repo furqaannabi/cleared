@@ -1,6 +1,6 @@
 # Draft check and review: FRD
 
-**Status:** Draft 1.3, not signed (revision 1.2 signed by Furqaan). It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
+**Status:** Signed by William (revision 1.3). It accepts two of William's records as written (a fresh link per review, an objection settled by the two sides) and adds to what his draft check and brand review pages call; those additions are listed for him.
 
 **Surface:** Backend. Steps 4 and 5 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), as an API the pages William has built can call: the creator sends a draft of a held post, it is checked against the agreed checklist with evidence for every item, the creator can ask the brand to accept what the check could not decide, and a fully passing draft opens the brand's 48-hour review window, which ends in an approval, an objection or silence.
 
@@ -321,3 +321,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.2 | Demo accounts are removed: their limits on drafts (DR-FR-08) and the sample clip (DR-FR-50) go, and a draft is no longer refused for a demo limit (DR-FR-09) | [No demo accounts](../decisions/2026-10-11-no-demo-accounts.md) |
 | 1.2 | Signed by Furqaan | none |
 | 1.3 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.3 signed | Revision 1.3 signed by William | none |

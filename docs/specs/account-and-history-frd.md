@@ -1,6 +1,6 @@
 # Account and history: FRD
 
-**Status:** Draft 1.1, not signed (revision 1.0 signed by Furqaan). Four of its decisions are product behaviour William shares (what deleting an account removes, revoking at Google, how long things are kept, and a test session); they are recorded as Furqaan's for him to agree.
+**Status:** Signed by William (revision 1.1). Four of its decisions are product behaviour William shares (what deleting an account removes, revoking at Google, how long things are kept, and a test session); they are recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. What William's home, Settings and legal pages have asked for and the contract does not have: a post that was never held, as both sides see it; the creator's payment history; disconnecting an account; deleting the account; how long Sponing keeps things; and a way for end-to-end tests to be signed in on the live backend.
 
@@ -222,3 +222,4 @@ End-to-end tests get a session through a route that exists only when a secret is
 | 0.1 | First draft, from the question session with Furqaan: deleting an account removes what the creator made and said and keeps anonymous money records; disconnecting deletes stored access and then asks Google to revoke it; drafts 30 days after a post ends, with the job the earlier decision lacked, and the rest kept with the account; a request by email done within 30 days with a command; a test session behind a secret for one fixed test creator, and no other test route. The not-held states and the payment history follow William's requests | [Deleting an account](../decisions/2026-10-12-deleting-an-account-keeps-the-money-records.md), [disconnecting](../decisions/2026-10-12-disconnecting-deletes-then-revokes-at-google.md), [how long things are kept](../decisions/2026-10-12-how-long-cleared-keeps-things.md), [a test session](../decisions/2026-10-12-a-test-session-behind-a-secret.md) |
 | 1.0 | Signed by Furqaan, with the eight items added while drafting accepted as written | none |
 | 1.1 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.1 signed | Revision 1.1 signed by William | none |

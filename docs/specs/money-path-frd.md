@@ -1,6 +1,6 @@
 # Money path: FRD
 
-**Status:** Draft 1.6, not signed (revision 1.5 signed by Furqaan). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
+**Status:** Signed by William (revision 1.6). The shared product rules in it (the fee, cancelling, unheld posts, who decides a payment the live check cannot, and the fix window) are decided by Furqaan; William can supersede them.
 
 **Surface:** Backend. Everything that happens to one deliverable's money, from the brand approving a hold to the deliverable being cleared or its hold being released: steps 3, 6 and 8 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), and the money side of every row in [When something does not go to plan](../PRODUCT.md#when-something-does-not-go-to-plan).
 
@@ -280,3 +280,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.5 | MP-FR-22: a post found published when the module asks at the deadline counts as in time; the module no longer compares the moment it was seen with the deadline. Found while building the live check: a video public for days, first seen five seconds after the deadline, was released | [A post found public at the deadline is in time](../decisions/2026-10-10-a-post-found-public-at-the-deadline-is-in-time.md) |
 | 1.5 | Signed by Furqaan | none |
 | 1.6 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.6 signed | Revision 1.6 signed by William | none |

@@ -1,6 +1,6 @@
 # Instagram Reels: FRD
 
-**Status:** Draft 1.3, not signed (revision 1.2 signed by Furqaan). It adds Instagram to what William's invite, publish and pay, and profile pages call; those additions are listed for him. One of its decisions is product behaviour he shares (no Meta review for the hackathon) and is recorded as Furqaan's for him to agree.
+**Status:** Signed by William (revision 1.3). It adds Instagram to what William's invite, publish and pay, and profile pages call; those additions are listed for him. One of its decisions is product behaviour he shares (no Meta review for the hackathon) and is recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. Instagram Reels through the whole of [How a deal runs](../PRODUCT.md#how-a-deal-runs): a creator connects their Instagram account, a deal can hold a Reel, and the Reel gets its own go-ahead, its own way of saying "I've posted it", and its own live check. Everything else a Reel needs already exists and is not rebuilt: the checklist, the draft check on the file, the review, the money path, the brand's decisions, cancelling and rulings.
 
@@ -247,3 +247,4 @@ Decisions in this spec that change, or add to, what his signed specs and built p
 | 1.2 | A fetched video is read at most three times, then the brand is asked (IG-FR-26). A video too large, or of a kind the service does not read, counts as not fetched (IG-FR-20, IG-FR-24) | [Three readings](../decisions/2026-10-12-a-reels-reading-is-tried-three-times.md) |
 | 1.2 | Signed by Furqaan | none |
 | 1.3 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
+| 1.3 signed | Revision 1.3 signed by William | none |
