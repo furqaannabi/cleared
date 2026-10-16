@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${bricolage.variable} ${figtree.variable} antialiased`}>
       <body className="min-h-dvh">
         {children}
+        <Analytics />
       </body>
     </html>
   );
