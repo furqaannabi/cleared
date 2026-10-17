@@ -286,7 +286,8 @@ export function createPosts(deps: {
         const found = results.get(agreed.id);
         const item = review.items.find((each) => each.id === agreed.id);
         if (!found || !item || !showResults) {
-          const status = LIVE_KINDS.includes(kind) ? "at_live_check" : review.phase === "checking" ? "checking" : "not_checked";
+          // A check stopped by a release never finishes: its items read as not checked, never as checking (CN-FR-10).
+          const status = LIVE_KINDS.includes(kind) ? "at_live_check" : review.phase === "checking" && !released ? "checking" : "not_checked";
           return { ...base, status, checkedBy: howChecked({ kind, exact: agreed.exact }) };
         }
         return {
@@ -309,7 +310,7 @@ export function createPosts(deps: {
       const checkFailure: CheckFailure | undefined =
         review.phase === "check_failed"
           ? { kind: "ours", retrying: false, fileName }
-          : review.phase === "checking" && (row?.failures ?? 0) > 0
+          : review.phase === "checking" && !released && (row?.failures ?? 0) > 0
             ? { kind: "ours", retrying: true, fileName }
             : fileFailure
               ? { kind: "file", ...fileFailure }

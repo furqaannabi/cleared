@@ -271,6 +271,22 @@ describe("PT-FR-32 the deals list shows cancelled posts, and a deal whose posts 
   });
 });
 
+describe("CN-FR-10 a post cancelled while its draft is being checked", () => {
+  test("shows as released, with no item still checking and no check under way", async () => {
+    const world = heldWorld();
+    const held = await world.heldPost();
+    const sent = await held.sam.send("POST", `/deliverables/${held.post}/draft?fileName=cut.mp4`, { file: { bytes: new Uint8Array(2_000).fill(7) } });
+    expect(sent.status).toBe(200);
+    expect((await held.sam.send("POST", `/deliverables/${held.post}/cancel`, { body: {} })).status).toBe(200);
+
+    const post = (await creatorPost(held.sam, held.post)) as { state: string; items: { status: string }[]; stages?: unknown; checkFailure?: unknown };
+    expect(post.state).toBe("released");
+    expect(post.items.length).toBeGreaterThan(0);
+    expect(post.items.filter((item) => item.status === "checking")).toEqual([]);
+    expect(post.stages).toBeUndefined();
+  });
+});
+
 describe("AH-FR-31 (1.3) a deal cancelled after the brand agreed still names a post to open", () => {
   test("every held post cancelled: the first post that was held, and no step", async () => {
     const world = heldWorld();
