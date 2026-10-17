@@ -39,7 +39,9 @@ export function ChecklistBuilder({ draft, onChange }: { draft: DealDraft; onChan
   };
 
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:gap-7">
+    <div className="grid gap-5 lg:gap-7">
+      {/* The sticky brief pane is held inside its parent, so the columns get their own: it stops above the ready bar instead of sliding over it. */}
+      <div className="grid items-start gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:gap-7">
       <BriefPane view={view} draft={draft} selectedLine={selectedLine} save={save} readOnly={readOnly} />
       <div className="grid gap-4">
         {!readOnly && view.openQuestions.length > 0 && <QuestionsPanel draft={draft} questions={view.openQuestions} save={save} />}
@@ -62,9 +64,8 @@ export function ChecklistBuilder({ draft, onChange }: { draft: DealDraft; onChan
           {!readOnly && <AddItemForm draft={draft} currentTab={view.currentTab} save={save} />}
         </div>
       </div>
-      <div className="lg:col-span-2">
-        <ReadyBar draft={draft} view={view} save={save} problem={problems._ || null} />
       </div>
+      <ReadyBar draft={draft} view={view} save={save} problem={problems._ || null} />
     </div>
   );
 }
