@@ -524,7 +524,8 @@ export const brandDeliverableSchema = z.object({
 export const holdStartSchema = z.object({ orderId: z.string().min(1).max(64) });
 
 /** DC-FR-45 (1.18): the API took the draft and its check has started. */
-export const draftAcceptedSchema = z.object({ deliverableId: z.string().min(1), state: z.literal("checking"), run: z.number().int().positive() });
+// `run` counts the runs that have finished (DR-BR-16), so a post's first draft answers 0.
+export const draftAcceptedSchema = z.object({ deliverableId: z.string().min(1), state: z.literal("checking"), run: z.number().int().nonnegative() });
 const draftAcceptedIsTheContracts: SameShape<z.infer<typeof draftAcceptedSchema>, components["schemas"]["DraftAccepted"]> = true;
 void draftAcceptedIsTheContracts;
 

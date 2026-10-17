@@ -23,6 +23,11 @@ describe("DC-FR-45 (1.18) uploading a draft", () => {
     expect(progress.at(-1)).toBe(100);
   });
 
+  test("a post's first draft is taken: no run has finished yet, so the API answers run 0", async () => {
+    server.use(http.post(draft, () => HttpResponse.json({ deliverableId: "del_glow_video", state: "checking", run: 0 })));
+    expect(await api.uploadDraft("del_glow_video", file())).toEqual({ ok: true, data: { deliverableId: "del_glow_video", state: "checking", run: 0 } });
+  });
+
   test("a file the API refuses keeps its code, with the length and the cap", async () => {
     server.use(http.post(draft, () => apiError({ code: "file_too_long", lengthSec: 1020, lengthCapSec: 900 }, 422)));
     expect(await api.uploadDraft("del_glow_video", file())).toEqual({ ok: false, error: "rejected", code: "file_too_long", file: { lengthSec: 1020, lengthCapSec: 900 } });
