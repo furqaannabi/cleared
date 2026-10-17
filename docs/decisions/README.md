@@ -114,3 +114,4 @@ What changes because of this: docs, code, scope, risks.
 | 2026-10-13 | [The brand holds with a PayPal account or a card, and nothing else](2026-10-13-brand-holds-with-paypal-or-card.md) | Accepted (William); Furqaan to agree |
 | 2026-10-14 | [The product is named Sponing](2026-10-14-the-product-is-named-sponing.md) | Accepted |
 | 2026-10-14 | [The stored names cleared_ruled, cleared_to_rule and with_cleared stay](2026-10-14-stored-cleared-names-stay.md) | Accepted |
+| 2026-10-14 | [Allynt Labs runs Sponing, and the legal pages drop "hackathon"](2026-10-14-allynt-labs-runs-sponing.md) | Accepted (Furqaan); William to agree |

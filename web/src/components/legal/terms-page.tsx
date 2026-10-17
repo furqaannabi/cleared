@@ -6,7 +6,7 @@ const SECTIONS: LegalSection[] = [
     heading: "What Sponing is",
     blocks: [
       "Sponing runs a sponsorship deal that a creator and a brand have already agreed. It is not a marketplace, and it is not a party to their agreement.",
-      "Sponing is a hackathon project on PayPal’s sandbox. No real money moves.",
+      "Sponing is run by Allynt Labs. It runs on PayPal’s sandbox: no real money moves.",
     ],
   },
   {

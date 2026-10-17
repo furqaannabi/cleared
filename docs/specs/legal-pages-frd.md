@@ -1,6 +1,6 @@
 # Legal pages: FRD
 
-**Status:** Signed by William (revision 1.2).
+**Status:** Signed by Furqaan (revision 1.3); earlier revisions signed by William. Naming Allynt Labs and the contact address are Furqaan's decisions; William has to agree.
 
 **Surface:** Three reading pages for anyone, signed in or not: the privacy policy at `/privacy`, the terms at `/terms`, and the data-deletion instructions at `/data-deletion`. Linked from the landing page's footer, the sign-in page, Settings, and the brand's deal and review pages.
 
@@ -12,7 +12,7 @@ Sponing signs creators in with Google, reads their YouTube and Instagram account
 
 ## Solution
 
-Three plain pages in one reading layout, written from what Sponing actually does, each saying it was written for this hackathon project and not reviewed by a lawyer. The privacy policy says what is collected, why, who processes it and how long it is kept; the terms set out the deal and money rules; the data-deletion page says how to delete an account and what is kept afterwards.
+Three plain pages in one reading layout, written from what Sponing actually does, each saying Sponing is run by Allynt Labs. The privacy policy says what is collected, why, who processes it and how long it is kept; the terms set out the deal and money rules; the data-deletion page says how to delete an account and what is kept afterwards.
 
 ## User Stories
 
@@ -24,7 +24,7 @@ Three plain pages in one reading layout, written from what Sponing actually does
 6. As a brand, I want to read the rules the held money follows before I approve a hold, so that I know when it's taken or given back.
 7. As a brand, I want to know what Sponing keeps about me (my email, my PayPal references), so that I'm not surprised.
 8. As either side, I want to know Sponing isn't a party to our agreement and isn't a marketplace, so that I know what it does and doesn't do.
-9. As either side, I want to know this is a sandbox project where no real money moves, so that nobody mistakes it for a live service.
+9. As either side, I want to know who runs Sponing and that it runs on PayPal's sandbox where no real money moves, so that nobody mistakes it for a live service.
 10. As a reader on a phone, I want the pages easy to read with my thumb, so that I can check them anywhere.
 11. As a Google or Meta reviewer, I want stable URLs with specific answers, so that the app's settings point somewhere real.
 
@@ -34,10 +34,10 @@ Three plain pages in one reading layout, written from what Sponing actually does
 
 | ID | Requirement |
 | --- | --- |
-| LG-FR-01 | **One reading layout.** The landing page's header and footer (LP-FR-01, LP-FR-12), then the page title in Bricolage, "Last updated {date}" under it in ink-3, a line "Written for the Sponing hackathon project. Not reviewed by a lawyer.", and the sections. Body in Figtree at a measure of about 70 characters on the light ground. |
+| LG-FR-01 | **One reading layout.** The landing page's header and footer (LP-FR-01, LP-FR-12), then the page title in Bricolage, "Last updated {date}" under it in ink-3, a line "Written for the Sponing hackathon project. Not reviewed by a lawyer.", and the sections. (1.3) The line is "Sponing is run by Allynt Labs." Body in Figtree at a measure of about 70 characters on the light ground. |
 | LG-FR-02 | **Sections listed first.** A list of the page's sections, each linking to its heading. From `lg:` it sits in a sticky left column beside the text; on phones it is one column above the text. Each section heading has an anchor id. |
 | LG-FR-03 | **Static and the same for everyone.** Server Components, no API calls, no client script of their own. Readable without signing in. |
-| LG-FR-04 | **Contact.** Each page ends with "Questions or requests: williamikeji@gmail.com" as a mailto link. |
+| LG-FR-04 | **Contact.** Each page ends with "Questions or requests: williamikeji@gmail.com" as a mailto link. (1.3) The address is hi@sponing.com, here and wherever these pages give it (LG-FR-13). |
 
 ### The privacy policy (`/privacy`)
 
@@ -47,14 +47,14 @@ Three plain pages in one reading layout, written from what Sponing actually does
 | LG-FR-06 | **What we never do.** Never see or store a Google, Instagram or PayPal password; never post, edit or delete anything on YouTube or Instagram (read-only scopes); never sell data or show ads; never let an AI move money (PRODUCT.md rules). Tokens are encrypted at rest and never sent to the browser; drafts are private and shown only to the two sides of their deal through short-lived links (CLAUDE.md security rules). |
 | LG-FR-07 | **Who processes it.** PayPal (holds, capture, payouts; sandbox only), Amazon Web Services (hosting, database, file storage, encryption, and Amazon Bedrock for reading briefs and checking drafts), Google (sign-in and YouTube), Meta (Instagram), Resend (the brand's two emails), Vercel (hosting the web app). Each named once, with what it is used for. (1.1) Confirmed by Furqaan (AH 1.0): the list is right, and the backend sends errors to no monitoring service. |
 | LG-FR-08 | **How long it is kept.** Drafts after a deal ends; transcripts and check results; payment records; account data after deleting; server logs. Each period is Furqaan's answer (Requests below); until all are answered the page is not linked (LG-FR-14). (1.1) The periods, from AH-FR-24: drafts, and the speech, on-screen text and frames read from them, "30 days after the post ends (paid, its hold returned, or closed)"; a live Reel's fetched video, "only until it's matched to your draft, a few minutes"; the brief, checklist, notes, check results and evidence, and the brand's email, "while your account exists"; access to YouTube and Instagram, "until you disconnect, access ends, or you delete your account"; payment records, "for as long as Sponing runs, with no name or email once your account is deleted"; your account after you delete it, "deleted at once; its files within 24 hours"; sessions, "14 days after last use"; server logs, "30 days; they hold ids only". |
-| LG-FR-09 | **Your choices.** Disconnect YouTube or Instagram (Settings, when switched on; or revoke Sponing in Google or Instagram's own settings); delete your account (`/data-deletion`); ask what Sponing holds about you by email (LG-FR-04). |
+| LG-FR-09 | **Your choices.** Disconnect YouTube or Instagram (Settings, when switched on; or revoke Sponing in Google or Instagram's own settings); delete your account (`/data-deletion`); ask what Sponing holds about you by email (LG-FR-04). (1.3) The page says how to delete in its own words, not only by pointing to `/data-deletion` (Meta asks that a privacy policy say how to request deletion): "Delete your account in Settings, or email hi@sponing.com and it's done within 30 days. Deleting your data says what is deleted and what is kept." |
 | LG-FR-10 | **Cookies.** One HttpOnly session cookie for a signed-in creator and one per deal for a brand opened from a link; no tracking or advertising cookies (SI-BR-01, the brand-access ADR). |
 
 ### The terms (`/terms`)
 
 | ID | Requirement |
 | --- | --- |
-| LG-FR-11 | **What Sponing is and isn't.** Sponing runs a sponsorship deal a creator and a brand have already agreed; it is not a marketplace and not a party to their agreement. It is a hackathon project on PayPal's sandbox: no real money moves. Then, each from PRODUCT.md's rules in plain words: one post on one platform per deliverable, each with its own hold; both sides agree the checklist before any hold; the review window is 48 hours from a fully passing draft and only a fully passing draft clears on silence; no publishing without a re-confirmed hold, and a go-ahead lasts 48 hours; capture only after a passing live check; a missed deadline or a cancel releases the hold to the brand; either side can cancel until there is a go-ahead; a hold is released on day 28 if nothing else has ended it; Sponing's 5% fee comes out of the creator's payout, in whole cents rounded down; a hold is $20 to $10,000. |
+| LG-FR-11 | **What Sponing is and isn't.** Sponing runs a sponsorship deal a creator and a brand have already agreed; it is not a marketplace and not a party to their agreement. It is a hackathon project on PayPal's sandbox: no real money moves. (1.3) That line is "Sponing is run by Allynt Labs. It runs on PayPal's sandbox: no real money moves." Then, each from PRODUCT.md's rules in plain words: one post on one platform per deliverable, each with its own hold; both sides agree the checklist before any hold; the review window is 48 hours from a fully passing draft and only a fully passing draft clears on silence; no publishing without a re-confirmed hold, and a go-ahead lasts 48 hours; capture only after a passing live check; a missed deadline or a cancel releases the hold to the brand; either side can cancel until there is a go-ahead; a hold is released on day 28 if nothing else has ended it; Sponing's 5% fee comes out of the creator's payout, in whole cents rounded down; a hold is $20 to $10,000. |
 | LG-FR-12 | **The AI and its limits.** AI reads the brief and checks the draft and gives findings with evidence; code checks the evidence; anything unsure goes to a person; the AI never moves money. The AI can be wrong, which is why every finding shows its evidence and either side can object or ask. Each side keeps to YouTube's and Instagram's rules, including the paid-partnership label (always checked by a person on Instagram). Sponing can't promise that YouTube, Instagram or PayPal are available, or that PayPal accepts every hold, capture or payout; when one fails, the page says why and what happens next. Then the account, deleting it (`/data-deletion`), and contact. |
 
 ### The data-deletion page (`/data-deletion`)
@@ -83,7 +83,7 @@ Three plain pages in one reading layout, written from what Sponing actually does
 ## Implementation Decisions
 
 - **Routes:** `/privacy`, `/terms`, `/data-deletion`, static, outside the creator app's signed-in layout.
-- **Modules:** one **reading layout** component (header, title, last updated, the project line, the sections list, the sections, contact, footer) taking a page's sections as data; each page's text as structured content (section id, heading, paragraphs and lists), tested for its required statements.
+- **Modules:** one **reading layout** component (header, title, last updated, the line naming who runs Sponing, the sections list, the sections, contact, footer) taking a page's sections as data; each page's text as structured content (section id, heading, paragraphs and lists), tested for its required statements.
 - **Flag:** `NEXT_PUBLIC_LEGAL_PAGES`, read at build time like the others; off by default.
 - **Visual:** inherits DESIGN.md; no mockup round (William's choice). Screenshots at 375 px and desktop before commit.
 
@@ -103,7 +103,7 @@ Three plain pages in one reading layout, written from what Sponing actually does
 ## Testing Decisions
 
 - Tests check what a reader sees, named after the LG-FR they prove.
-- **Pages:** each page's title, last-updated line, project line, sections list linking to every section, contact link; the privacy policy names every processor and every thing collected; the terms carry each money rule and the AI rule; the data-deletion page with the removal flag on and off.
+- **Pages:** each page's title, last-updated line, the line naming Allynt Labs, sections list linking to every section, contact link; the privacy policy names every processor and every thing collected, and says how to delete; the terms carry each money rule and the AI rule; the data-deletion page with the removal flag on and off.
 - **Links:** with the legal flag off, no page links to the three routes; with it on, each placement in LG-FR-15 links to the right route.
 - **Layout:** at 375 px and desktop, no sideways scroll (Playwright).
 
@@ -117,6 +117,7 @@ Three plain pages in one reading layout, written from what Sponing actually does
 ## Open items
 
 - **Retention periods and deletion time** (Furqaan; LG-FR-08, LG-FR-13). (1.1) Answered by AH 1.0.
+- **hi@sponing.com receives mail** (Furqaan; LG-FR-04). On 14 October `sponing.com` has no MX record, so mail to it is lost. The pages show the address only once it receives mail. (1.3 signed) Furqaan: it will receive mail; the address goes on the pages now.
 
 ## Revision
 
@@ -128,3 +129,5 @@ Three plain pages in one reading layout, written from what Sponing actually does
 | 1.1 signed | Revision 1.1 signed by William | none |
 | 1.2 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
 | 1.2 signed | Revision 1.2 signed by William | none |
+| 1.3 | From Furqaan, checked against Meta's privacy policy expectations: the line under each title names Allynt Labs instead of the hackathon (LG-FR-01); the terms say Allynt Labs runs Sponing on PayPal's sandbox (LG-FR-11); the contact is hi@sponing.com (LG-FR-04); the privacy policy says how to delete in its own words (LG-FR-09). The landing footer is unchanged | [Allynt Labs runs Sponing](../decisions/2026-10-14-allynt-labs-runs-sponing.md) |
+| 1.3 signed | Revision 1.3 signed by Furqaan | none |

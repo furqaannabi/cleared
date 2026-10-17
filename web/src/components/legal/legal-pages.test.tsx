@@ -9,19 +9,20 @@ describe("LG-FR-01, LG-FR-02, LG-FR-04, LG-FR-16 the reading layout", () => {
     ["Privacy policy", PrivacyPage],
     ["Terms", TermsPage],
     ["Deleting your data", DataDeletionPage],
-  ] as const)("%s: title, last updated, the project line, sections listed and linked, contact", (title, Page) => {
+  ] as const)("%s: title, last updated, the line naming Allynt Labs (1.3), sections listed and linked, contact", (title, Page) => {
     render(<Page />);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(title);
     expect(screen.getByText(/^Last updated /)).toBeInTheDocument();
-    expect(screen.getByText("Written for the Sponing hackathon project. Not reviewed by a lawyer.")).toBeInTheDocument();
+    expect(screen.getByText("Sponing is run by Allynt Labs.")).toBeInTheDocument();
+    expect(screen.getByRole("main")).not.toHaveTextContent(/hackathon/i);
     const toc = screen.getByRole("navigation", { name: "On this page" });
     const sections = screen.getAllByRole("heading", { level: 2 });
     expect(sections.length).toBeGreaterThan(1);
     for (const h of sections) {
       expect(within(toc).getByRole("link", { name: h.textContent! })).toHaveAttribute("href", `#${h.id}`);
     }
-    expect(screen.getByRole("link", { name: "williamikeji@gmail.com" })).toHaveAttribute("href", "mailto:williamikeji@gmail.com");
+    expect(screen.getByRole("link", { name: "hi@sponing.com" })).toHaveAttribute("href", "mailto:hi@sponing.com");
   });
 });
 
@@ -51,13 +52,20 @@ describe("LG-FR-05 to LG-FR-10 the privacy policy", () => {
     expect(screen.queryByText(/not yet confirmed/)).toBeNull();
     expect(screen.getByRole("region", { name: "Cookies" })).toHaveTextContent("no tracking or advertising cookies");
   });
+
+  test("LG-FR-09 (1.3): says how to delete in its own words, not only by pointing to Deleting your data", () => {
+    render(<PrivacyPage />);
+    expect(screen.getByRole("region", { name: "Your choices" })).toHaveTextContent(
+      "Delete your account in Settings, or email hi@sponing.com and it’s done within 30 days. Deleting your data says what is deleted and what is kept.",
+    );
+  });
 });
 
 describe("LG-FR-11, LG-FR-12 the terms", () => {
   test("not a marketplace, sandbox only, the money rules and the AI rule", () => {
     render(<TermsPage />);
     expect(screen.getByText(/It is not a marketplace/)).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "What Sponing is" })).getByText(/No real money moves/)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "What Sponing is" })).toHaveTextContent("Sponing is run by Allynt Labs. It runs on PayPal’s sandbox: no real money moves.");
     const money = screen.getByRole("region", { name: "How the money works" });
     for (const rule of ["$20 to $10,000", "48 hours from a fully passing draft", "re-confirms the hold", "passes its live check", "gives the hold back to the brand", "day 28", "5% of the deliverable’s amount"]) {
       expect(money).toHaveTextContent(rule);
@@ -71,7 +79,7 @@ describe("LG-FR-13 (1.1) deleting your data", () => {
     render(<DataDeletionPage />);
     const how = screen.getByRole("region", { name: "How to delete your account" });
     expect(how).toHaveTextContent("open Settings and choose Delete account");
-    expect(how).toHaveTextContent("Or by email: Email williamikeji@gmail.com from the Google email you signed in with");
+    expect(how).toHaveTextContent("Or by email: Email hi@sponing.com from the Google email you signed in with");
     expect(how).toHaveTextContent("It is done within 30 days.");
     const what = screen.getByRole("region", { name: "What is deleted, and what is kept" });
     expect(what).toHaveTextContent("Your profile, your connected accounts, your drafts, and each deal’s brief, checklist and check results are deleted, and brands’ links to your deals stop working.");

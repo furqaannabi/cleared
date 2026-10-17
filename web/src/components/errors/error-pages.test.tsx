@@ -19,7 +19,7 @@ describe("EP-FR-03, EP-FR-04, EP-FR-06 something went wrong", () => {
     expect(heading).toHaveFocus();
     expect(screen.getByRole("alert")).toContainElement(heading);
     expect(screen.getByText(/Try again\. If it keeps happening, email/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "williamikeji@gmail.com" })).toHaveAttribute("href", "mailto:williamikeji@gmail.com");
+    expect(screen.getByRole("link", { name: "hi@sponing.com" })).toHaveAttribute("href", "mailto:hi@sponing.com");
     expect(screen.getByText("Reference: 3141592653")).toBeInTheDocument();
     expect(screen.queryByText(/hunter2/)).toBeNull();
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
