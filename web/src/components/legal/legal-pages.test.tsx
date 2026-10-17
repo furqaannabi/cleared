@@ -53,6 +53,11 @@ describe("LG-FR-05 to LG-FR-10 the privacy policy", () => {
     expect(screen.getByRole("region", { name: "Cookies" })).toHaveTextContent("no tracking or advertising cookies");
   });
 
+  test("LG-FR-07 (1.4): Vercel hosts the website and counts visits to its pages without cookies", () => {
+    render(<PrivacyPage />);
+    expect(screen.getByText("Vercel: hosting this website, and counting visits to its pages without cookies.")).toBeVisible();
+  });
+
   test("LG-FR-09 (1.3): says how to delete in its own words, not only by pointing to Deleting your data", () => {
     render(<PrivacyPage />);
     expect(screen.getByRole("region", { name: "Your choices" })).toHaveTextContent(

@@ -53,7 +53,7 @@ const SECTIONS: LegalSection[] = [
           "Google: signing in, and reading your YouTube channel.",
           "Meta: reading your Instagram account.",
           "Resend: the brand’s two emails.",
-          "Vercel: hosting this website.",
+          "Vercel: hosting this website, and counting visits to its pages without cookies.",
         ],
       },
     ],
