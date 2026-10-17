@@ -1,6 +1,6 @@
 # Creator invite: FRD
 
-**Status:** Signed by William (revision 1.5).
+**Status:** Signed by William (revision 1.6).
 
 **Surface:** Creator app. Step 2 of [How a deal runs](../PRODUCT.md#how-a-deal-runs): once the checklist is ready, the creator sets the amount and deadline for each post, connects the YouTube or Instagram account the posts go on, gives the PayPal email to be paid at, and sends the brand a link. The brand's side of the link (confirm the checklist, approve the hold) is the next surface.
 
@@ -89,6 +89,7 @@ An invite page that comes straight after "Checklist ready". For each post the cr
 | IN-FR-19 | **Change terms.** Turns the link off, after a confirm ("{brand}'s link will stop working. You'll make a new one when you're done."), moves the deal back to `invite`, and makes the terms editable again. "Edit checklist" is available again too. |
 | IN-FR-23 | **A refused link (1.4).** When the API refuses Create link or Send updated terms for something not in place, the bar says why in place of "We couldn't save that.", with no Try again, and the page reads the invite and the profile again, so Before you send and the button show what is really left. YouTube not connected: "Connect YouTube before you create the link." Instagram not connected: "Connect Instagram before you create the link." PayPal email missing: "Add your PayPal email before you create the link." Terms not finished: "Some terms aren't finished. Check each post's amount and deadline." For Send updated terms, each first sentence ends "before you send the updated terms." instead. Any other refusal keeps IN-FR-15's "We couldn't save that." with Try again. |
 | IN-FR-20 | **Expired.** If the API reports the link expired, the page says "This link has expired" with "Make a new link". |
+| IN-FR-24 | **While the brand is deciding (1.6).** While the page waits on the brand (the step is `waiting_for_brand`, or the brand has agreed and a post is neither held nor closed), it asks the API for the deal again every 5 seconds while the tab is shown, and not while it is hidden. What comes back is shown in place: the brand's changes (IN-FR-02's `changes_requested`), the agreement, each hold as it is made (CH-FR-25), a cancel. When the step changes, the rail and the deals list are reloaded. Once every post that is still open is held, whether the page finds that when it opens (a refresh, or a link to `/deals/{id}/invite`) or on one of these asks, it opens the post the deals list names (DC-FR-37), replacing the invite page in the history. A failed ask changes nothing on the page and the next one tries again. Nothing is asked while the creator is the one with something to do. |
 
 ### Responsive and accessibility
 
@@ -163,6 +164,7 @@ interface CreatorProfile {
 - **Amount parser:** whole and two-place amounts become decimal strings; zero, negative, three places, letters and over the bound are refused with the right message; never goes through a float.
 - **Invite view model:** needed accounts per platform mix; the deadline bound and example date; the total only when every amount is valid; "what's left" in order with the count.
 - **Components (1.3: new behaviour on per-test stubs typed from the contract):** the amount limits, typed and refused; each connect result on its card, then gone from the address; the PayPal email note listing posts that keep the old email; the brand email's line; amount and deadline entry and errors; − / + at 1 and 21; connect (mocked) and the professional-account message; PayPal email prefill and warning; brand email optional; a failed save beside its field; Create link gated, then the link view with Copy, Share and expiry, sending the timezone; Make a new link and Change terms confirms; Edit checklist going back.
+- **1.6:** asked again every 5 seconds while waiting on the brand, and not while the tab is hidden or the step is the creator's; the brand's agreement and a new hold shown without a reload; the rail reloaded when the step changes; every open post held opens the named post, replacing the page, both when the page opens already held and when a hold arrives; a failed ask keeps the page as it was.
 - **1.4:** each of the four refusal codes on Create link and on Send updated terms gives its line, no Try again, and a second read of the invite and profile; an unknown code keeps "We couldn't save that." with Try again.
 - **End to end (Playwright, on MSW):** checklist ready → invite → amounts, deadlines, connect Instagram, PayPal email → Create link → copy; the rail shows "Waiting for brand"; Change terms back to editing. At 375 px and 1280 px.
 
@@ -196,3 +198,5 @@ interface CreatorProfile {
 | 1.4 | Signed by William | none |
 | 1.5 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
 | 1.5 signed | Revision 1.5 signed by William | none |
+| 1.6 | From William, found on the hosted sandbox run: the invite page didn't change when the brand agreed or made the hold, until the page was opened again. It now asks again every 5 seconds while waiting on the brand, and opens the post once every open post is held, on opening the page too, so a refresh no longer leaves the creator on it (IN-FR-24) | none |
+| 1.6 signed | Revision 1.6 signed by William | none |

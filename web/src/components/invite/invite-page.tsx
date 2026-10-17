@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { CancelDeal } from "@/components/cancel/cancel-deal";
 import { CancelledDeal } from "@/components/cancel/cancelled-deal";
 import { PostCancelSlot } from "@/components/cancel/post-cancel-slot";
@@ -20,23 +20,29 @@ import type { DealInvite } from "@/lib/invite/types";
 import type { Save, SaveProblems } from "./save";
 import { TermsSheet } from "./terms-sheet";
 import { useInvite } from "./use-invite";
+import { useInviteWaiting } from "./use-invite-waiting";
 
 /**
  * `/deals/[dealId]/invite`: the terms the brand will see, edited in place as
  * a sponsorship terms sheet, what is left before the link, and the link.
  *
  * @param dealId - the deal
- * @see docs/specs/creator-invite-frd.md IN-FR-01 to IN-FR-23
+ * @see docs/specs/creator-invite-frd.md IN-FR-01 to IN-FR-24
  */
 export function InvitePage({ dealId }: { dealId: string }) {
   const { invite, profile, error, reload, setInvite, setProfile } = useInvite(dealId);
   const refreshDeals = useRefreshDeals();
   const [problems, setProblems] = useState<SaveProblems>({});
   // IN-FR-02: the rail follows the deal's step.
-  const takeInvite = (next: DealInvite) => {
-    if (invite && next.step !== invite.step) refreshDeals();
-    setInvite(next);
-  };
+  const step = invite?.step;
+  const takeInvite = useCallback(
+    (next: DealInvite) => {
+      if (step && next.step !== step) refreshDeals();
+      setInvite(next);
+    },
+    [step, refreshDeals, setInvite],
+  );
+  useInviteWaiting(invite, takeInvite);
   const save: Save = async (key, call, onSaved, explained) => {
     setProblems(({ [key]: _, ...rest }) => (void _, rest));
     const r = await call();
