@@ -138,7 +138,8 @@ const invite = async (sam: Browser, deal: string) => (await json(await sam.send(
 const brandDeal = async (maya: Browser, deal: string) => (await json(await maya.send("GET", `/brand/deals/${deal}`))) as { posts: Listed[]; step: string };
 const fromInvite = (sam: Browser, deal: string, post: string, note?: string) => sam.send("POST", `/deals/${deal}/invite/posts/${post}/cancel`, { body: note === undefined ? {} : { note } });
 const fromDealPage = (maya: Browser, deal: string, post: string, note?: string) => maya.send("POST", `/brand/deals/${deal}/posts/${post}/cancel`, { body: note === undefined ? {} : { note } });
-const deals = async (sam: Browser) => (await (await sam.send("GET", "/deals")).json()) as { id: string; status: string; deliverables: { id: string; state: string }[] }[];
+const deals = async (sam: Browser) =>
+  (await (await sam.send("GET", "/deals")).json()) as { id: string; status: string; step?: string; openDeliverableId?: string; deliverables: { id: string; state: string }[] }[];
 const TWO = { platforms: ["youtube_video", "youtube_short"] };
 
 describe("PT-FR-28, PT-FR-30 a post that is agreed but not yet held, cancelled from the pages that list a deal's posts", () => {
@@ -267,6 +268,46 @@ describe("PT-FR-32 the deals list shows cancelled posts, and a deal whose posts 
     await fromDealPage(deal.maya, deal.deal.id, deal.posts[0]!);
 
     expect((await deals(deal.sam))[0]).toMatchObject({ status: "Agreed · 0 of 1 held", deliverables: [{ state: "closed" }, { state: "no_draft" }] });
+  });
+});
+
+describe("AH-FR-31 (1.3) a deal cancelled after the brand agreed still names a post to open", () => {
+  test("every held post cancelled: the first post that was held, and no step", async () => {
+    const world = heldWorld();
+    const deal = await world.heldPost(TWO);
+    await fromInvite(deal.sam, deal.deal.id, deal.posts[0]!);
+    await fromInvite(deal.sam, deal.deal.id, deal.posts[1]!);
+
+    const listed = (await deals(deal.sam))[0]!;
+    expect(listed.status).toBe("Cancelled");
+    expect(listed.step).toBeUndefined();
+    expect(listed.openDeliverableId).toBe(deal.posts[0]!);
+  });
+
+  test("one post closed before its hold and one cancelled after it: the held one", async () => {
+    const world = heldWorld();
+    const deal = await world.heldPost({ ...TWO, held: false });
+    await fromDealPage(deal.maya, deal.deal.id, deal.posts[0]!);
+    const hold = `/brand/deals/${deal.deal.id}/posts/${deal.posts[1]!}/hold`;
+    const { orderId } = (await (await deal.maya.send("POST", hold)).json()) as { orderId: string };
+    world.paypal.brandApproves(orderId);
+    expect((await deal.maya.send("POST", `${hold}/approved`, { body: { orderId } })).status).toBe(200);
+    await fromInvite(deal.sam, deal.deal.id, deal.posts[1]!);
+
+    const listed = (await deals(deal.sam))[0]!;
+    expect(listed).toMatchObject({ status: "Cancelled", deliverables: [{ state: "closed" }, { state: "released" }] });
+    expect(listed.openDeliverableId).toBe(deal.posts[1]!);
+  });
+
+  test("a deal cancelled before the brand agreed keeps its step and names no post", async () => {
+    const world = heldWorld();
+    const waiting = await world.heldPost({ agreed: false });
+    await fromInvite(waiting.sam, waiting.deal.id, waiting.post);
+
+    const listed = (await deals(waiting.sam))[0]!;
+    expect(listed.status).toBe("Cancelled");
+    expect(listed.step).toBeDefined();
+    expect(listed.openDeliverableId).toBeUndefined();
   });
 });
 

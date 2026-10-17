@@ -44,5 +44,30 @@ describe("DC-FR-37 opening a deal", () => {
     );
     await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/deals/deal_new/checklist"));
   });
-});
 
+  test("1.30: a cancelled deal opens the post the API names", async () => {
+    server.use(
+      http.get(`${apiBaseUrl}/deals`, () =>
+        HttpResponse.json([{ id: "deal_off", brandName: "Flintduo", status: "Cancelled", openDeliverableId: "del_off", deliverables: [{ id: "del_off", platform: "youtube_video", state: "released", needsCreator: false, closedBecause: "cancelled" }] }]),
+      ),
+    );
+    render(
+      <DealsProvider>
+        <DealRedirect dealId="deal_off" />
+      </DealsProvider>,
+    );
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/deals/deal_off/deliverables/del_off"));
+  });
+
+  test("DC-FR-57: a deal with nothing to open says so, with a way back to Deals, and never stays loading", async () => {
+    server.use(http.get(`${apiBaseUrl}/deals`, () => HttpResponse.json([{ id: "deal_none", brandName: "Flintduo", status: "Cancelled", deliverables: [] }])));
+    render(
+      <DealsProvider>
+        <DealRedirect dealId="deal_none" />
+      </DealsProvider>,
+    );
+    expect(await screen.findByRole("heading", { name: "This deal has nothing to open." })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Back to Deals" })).toHaveAttribute("href", "/deals");
+    expect(replace).not.toHaveBeenCalled();
+  });
+});

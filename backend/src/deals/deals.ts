@@ -438,7 +438,9 @@ export function createDeals(deps: {
         const summary = { id: deal.id, brandName: deal.brandName };
         // Every post is closed, or was cancelled after it was held: the deal is cancelled, whatever step it reached.
         if (posts.length > 0 && posts.some((post) => cancelled.has(post.id)) && posts.every((post) => post.state === "closed" || (cancelled.has(post.id) && post.state === "released"))) {
-          return { ...summary, status: CANCELLED, ...(deal.step === "agreed" ? {} : { step: deal.step as Step }), deliverables: posts };
+          // After the brand agreed it opens a post (AH-FR-31): the first that was held, else the first.
+          const opens = (posts.find((post) => post.state === "released") ?? posts[0])!.id;
+          return { ...summary, status: CANCELLED, ...(deal.step === "agreed" ? { openDeliverableId: opens } : { step: deal.step as Step }), deliverables: posts };
         }
         if (deal.step !== "agreed") {
           // While the brand's changes are being answered the deal says so, whichever page the creator is on.

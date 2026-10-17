@@ -1,6 +1,6 @@
 # Creator draft check: FRD
 
-**Status:** Signed by William (revision 1.29). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
+**Status:** Signed by William (revision 1.30). Ask-the-brand (DC-FR-14 to DC-FR-18, DC-BR-02 to DC-BR-04), the deadline timezone (DC-FR-44), the Suggested fix (DC-FR-46) and the objection rule (DC-FR-49 to DC-FR-52) are decided by William; Furqaan can supersede them.
 
 **Surface:** Creator app. The page a creator sees for one deliverable while it is at step 4 of [How a deal runs](../PRODUCT.md#how-a-deal-runs), plus its side of step 5 (the brand's review: objections and approval, with the brand's side in the [brand review FRD](brand-review-frd.md)) and the released state.
 
@@ -190,8 +190,9 @@ When the AI is unsure about an item, the creator can fix it in a new draft or as
 | --- | --- |
 | DC-FR-35 | The page lives at `/deals/[dealId]/deliverables/[deliverableId]`. Ids are opaque values from the API. No brand, creator or deal name appears in the URL. |
 | DC-FR-36 | The selected item and the filter tab are kept in the URL as search parameters (`item`, `tab`). Changing them does not refetch data. Back steps through them. |
-| DC-FR-37 | `/deals/[dealId]` redirects to the deliverable whose next step is the creator's; if none, the first deliverable. |
+| DC-FR-37 | `/deals/[dealId]` redirects to the deliverable whose next step is the creator's; if none, the first deliverable. 1.30: a cancelled deal included, it opens the post the API names (AH-FR-31), where the post shows as cancelled (CN-FR-10, CN-FR-11). |
 | DC-FR-38 | A deal or deliverable that doesn't exist, or that the creator isn't a party to, shows the same "We couldn't find this deal" page. |
+| DC-FR-57 | **Nothing to open (1.30).** A deal the creator is a party to that names neither a step nor a post to open never loads forever. The page says "This deal has nothing to open." with a link "Back to Deals" (`/deals`), in the not-found page's look (DC-FR-38). |
 | DC-FR-39 | While the page's data loads, panels show their shape without content. If loading fails for any other reason, the page says so plainly and offers "Try again". |
 
 ### Responsive and accessibility
@@ -311,6 +312,7 @@ Fields:
 - Tests check what a creator sees and can do, not how components are built. Tests are named after the FR or BR they prove.
 - **Deliverable view model:** every state in DC-FR-01, the next-step copy and action for each state, DC-FR-11 at 3 days and just over, DC-FR-19, DC-FR-20 counts, DC-FR-21 and DC-BR-01 to DC-BR-06.
 - **Item status map:** every status has an icon and a word (never colour alone), Accepted by brand is never the pass colour, and each status sits in the right tab.
+- **1.30:** a cancelled deal named with a post opens that post; a deal with neither a step nor a post shows "This deal has nothing to open." and its link to Deals, never the loading shape.
 - **API client:** schema-invalid responses become errors; not-found and not-a-party give the same outcome; the video URL refreshes once on expiry and then reports failure.
 - **Components (1.18: new behaviour on per-test stubs typed from the contract):** the upload's checks before sending, its progress and Cancel, each refusal; each draft limit; the review link's opened line, expiry and new link; no hold yet. Each one with mocked API data, at 375 px and at desktop width. The ask-brand action appears only on Unsure items. DC-FR-46: the Suggested fix shows on Fix needed, Unsure, declined (after the brand's note) and Waiting for brand items, in the evidence panel and the expanded card, never on other statuses, never in the grid, and nothing at all when the hint is missing. The schema rejects a hint over 280 characters. DC-FR-48: the summary for fixed only, fixed and worse, worse only, a cancelled acceptance, more than three names, run 1 (none), and the fully passing line; re-selection when a run lands, and none on an ordinary load. The grid and the cards are tested for DC-FR-41 parity on the same fixture. (1.26) The rail's "needs you": the dot and "Needs you" on a deal whose post needs the creator, on one at the creator's step, and on one with a failed payout; none on the others; on the folded rail and the phone's Deals button; gone once the API says the post no longer needs the creator.
 - **End to end (Playwright, on MSW):** every named mock scenario at 375 px and 1280 px, including selecting an item from the timeline, grid and card, Back through selection, asking and withdrawing, and the 9:16 deliverable.
@@ -399,3 +401,5 @@ Fields:
 | 1.28 signed | Revision 1.28 signed by William | none |
 | 1.29 | The product is named Sponing: wording only, no behaviour changes. "Cleared" stays as the paid status | [The product is named Sponing](../decisions/2026-10-14-the-product-is-named-sponing.md) |
 | 1.29 signed | Revision 1.29 signed by William | none |
+| 1.30 | From William, found on the hosted sandbox run: a cancelled deal loaded forever. It opens its post (DC-FR-37, with AH-FR-31), and a deal with nothing to open says so instead of loading (new DC-FR-57) | none |
+| 1.30 signed | Revision 1.30 signed by William | none |

@@ -1,6 +1,6 @@
 # Cancel: FRD
 
-**Status:** Signed by William (revision 1.2). The cancel rules are the money path FRD's (Furqaan's).
+**Status:** Signed by William (revision 1.3). The cancel rules are the money path FRD's (Furqaan's).
 
 **Surface:** Both sides, from the invite until the go-ahead. **The creator's side:** "Cancel this post" on the draft check page (`/deals/{id}/deliverables/{id}`) and on each post's line on the invite page (`/deals/{id}/invite`), and "Cancel the deal" on the invite page. **The brand's side:** "Cancel this post" on the review page (`/brand/deals/{id}/deliverables/{id}`) and on each post's line on the deal page (`/brand/deals/{id}`), and "Cancel the deal" on the deal page. After a cancel, both sides see the post as cancelled: released, or closed if nothing was held.
 
@@ -67,7 +67,7 @@ Each post has a quiet "Cancel this post" while it can be cancelled, on both side
 | --- | --- |
 | CN-FR-10 | **A held post, cancelled.** The released state (DC-FR-10, DC-FR-29; RW-FR-01's released line; PP-FR-22, PP-FR-31) with the reason in full. Creator: "You cancelled this post on {date}." or "{brand} cancelled this post on {date}." Brand: "Your {amount} came back to you on {date}. You cancelled this post." or "… {creator} cancelled this post." The other side's note follows in quotes when there is one. Drafted asks or objections on the post are dropped, and nothing more can be done on it. |
 | CN-FR-11 | **A post not held, cancelled: Closed.** A new closed state on both sides, styled as released (latte, no lift, no amount moving): "Cancelled before it was held. Nothing was taken." with who, when and the note as in CN-FR-10. Its line on the invite page and the brand's deal page reads "Cancelled · nothing held". |
-| CN-FR-12 | **Lines and the deals list.** A cancelled post's line on either side reads "Cancelled". A deal with every post cancelled or closed shows "Cancelled" in the deals list and sits at the bottom; a deal with some posts cancelled follows its remaining posts. |
+| CN-FR-12 | **Lines and the deals list.** A cancelled post's line on either side reads "Cancelled". A deal with every post cancelled or closed shows "Cancelled" in the deals list and sits at the bottom; a deal with some posts cancelled follows its remaining posts. 1.3: opening a deal cancelled after the brand agreed, from the rail, the phone sheet or the deals list, shows its post's page (DC-FR-37, AH-FR-31): the money released, who cancelled, when, and their note (CN-FR-10); a post never held shows as closed (CN-FR-11). A deal cancelled before the brand agreed opens where it stopped, as now. |
 | CN-FR-13 | **Final.** Nothing reopens a cancelled post or deal. |
 
 ### Before the brand agrees
@@ -166,3 +166,5 @@ POST /brand/deals/{dealId}/posts/{id}/cancel      { note?: string }   // brand; 
 | 1.1 signed | Revision 1.1 signed by William | none |
 | 1.2 | The move onto the live API, from the grill-me with William: the routes and shapes match the contract; a 401 on cancelling keeps the confirmation and the note and says the session ended, worded per side (new CN-FR-19) | [Frontend on the live API](../decisions/2026-10-11-frontend-on-the-live-api.md) |
 | 1.2 signed | Revision 1.2 signed by William | none |
+| 1.3 | From William, found on the hosted sandbox run: opening a deal cancelled after its hold loaded forever. It opens its post's page (CN-FR-12) | none |
+| 1.3 signed | Revision 1.3 signed by William | none |

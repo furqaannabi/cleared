@@ -1,6 +1,6 @@
 # Account and history: FRD
 
-**Status:** Signed by William (revision 1.2). Four of its decisions are product behaviour William shares (what deleting an account removes, revoking at Google, how long things are kept, and a test session); they are recorded as Furqaan's for him to agree.
+**Status:** Signed by William (revision 1.3). Four of its decisions are product behaviour William shares (what deleting an account removes, revoking at Google, how long things are kept, and a test session); they are recorded as Furqaan's for him to agree.
 
 **Surface:** Backend. What William's home, Settings and legal pages have asked for and the contract does not have: a post that was never held, as both sides see it; the creator's payment history; disconnecting an account; deleting the account; how long Sponing keeps things; and a way for end-to-end tests to be signed in on the live backend.
 
@@ -59,6 +59,7 @@ End-to-end tests get a session through a route that exists only when a secret is
 | AH-FR-02 | **A hold PayPal did not answer.** A declined hold says why: `paypal_declined`, or `timed_out` when PayPal gave no answer in 24 hours and the attempt was cancelled (MP-FR-07). Either way nothing was taken and the brand can try again. |
 | AH-FR-03 | **On the creator's list of deals.** A post whose state is `closed` carries the same reason, `never_held` or `cancelled`. |
 | AH-FR-04 | **Waiting on the creator.** Each post on the creator's list of deals says whether its next step is the creator's, as the backend already works out for the deal's status. |
+| AH-FR-31 | **A cancelled deal opens a post (1.3).** On the creator's list of deals, a deal shown as cancelled after the brand agreed still names the post to open (`openDeliverableId`): the first post that was held, else the first post. A deal cancelled before the brand agreed keeps its step, as now, and opens there. No deal that has left set-up is ever listed with neither a step nor a post to open. |
 
 ### The creator's payment history
 
@@ -172,6 +173,7 @@ End-to-end tests get a session through a route that exists only when a secret is
 
 - A good test here states a situation and checks what someone could observe: the answer a route gives, what each side is shown, the rows that exist afterwards, the files left in the bucket, and which calls reached Google. Tests are named after the AH-FR or AH-BR they prove.
 - **Tooling:** as the other backend specs. Bun's test runner, the Docker Postgres, the fake PayPal, and the stand-ins for Google, storage and the rest.
+- **1.3:** a deal whose held posts were all cancelled after the brand agreed names its first held post to open; one with a post that was never held and one that was cancelled after its hold names the held one; a deal cancelled before the brand agreed keeps its step and names no post.
 - **1.2:** each release reason gives its `releasedBecause` and `releasedAt`; a cancel by each side gives `cancelledBy`; a ruling not to pay reads `ruled_not_to_pay`; an approved, not paid row carries its reason and date; held, captured and paid rows carry none; the contract lists the three fields.
 - **The payment history** is tested as a table over the money path's stages: held, captured with each payout state, paid, released, approved and not paid; amounts in minor units against the money path's own; another creator's posts never listed; a post never held never listed.
 - **Deleting** gets the most attention. For each reason in AH-FR-16, the refusal and nothing deleted. For a finished deal: every table checked for what is gone and what stays, the kept money records compared field by field with before, and no name or email anywhere in them. The brand's link refused afterwards. Files gone after the job. Signing in again gives an empty account.
@@ -227,3 +229,5 @@ End-to-end tests get a session through a route that exists only when a secret is
 | 1.1 signed | Revision 1.1 signed by William | none |
 | 1.2 | From William, for the Payments page's Not paid list (HM 1.8): released and approved-not-paid rows carry why the hold ended, when, and who cancelled (AH-FR-30) | none |
 | 1.2 signed | Revision 1.2 signed by William | none |
+| 1.3 | From William, found on the hosted sandbox run: a deal cancelled after its hold was listed with neither a step nor a post to open, so opening it loaded forever. It now names a post to open (AH-FR-31) | none |
+| 1.3 signed | Revision 1.3 signed by William | none |
